@@ -22,6 +22,7 @@ add_subdirectory(./external/glfw)
 add_subdirectory(./external/glm)
 
 # GLEW
+find_package(GLEW REQUIRED)
 
 # --- First party ---
 add_subdirectory(./projects/VoxelRenderer)
