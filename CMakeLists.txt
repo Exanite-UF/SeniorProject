@@ -22,11 +22,11 @@ add_subdirectory(./external/glfw)
 add_subdirectory(./external/glm)
 
 # GLEW
-add_library(glew SHARED)
+add_library(glew STATIC)
 
-target_compile_definitions(glew PRIVATE GLEW_BUILD)
+target_compile_definitions(glew PRIVATE GLEW_STATIC)
 
-target_sources(glew PRIVATE ./external/glew/src/glew.c)
+target_sources(glew PUBLIC ./external/glew/src/glew.c)
 target_include_directories(glew PUBLIC ./external/glew/include)
 target_link_libraries(glew PRIVATE ${OPENGL_LIBRARY})
 
