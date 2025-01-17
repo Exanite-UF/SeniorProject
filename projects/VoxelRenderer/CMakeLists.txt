@@ -12,3 +12,5 @@ set_target_properties(VoxelRenderer
 
 file(GLOB sources CONFIGURE_DEPENDS src/*.cpp)
 target_sources(VoxelRenderer PRIVATE ${sources})
+
+target_link_libraries(VoxelRenderer PRIVATE glfw)
