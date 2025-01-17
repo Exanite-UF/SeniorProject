@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.28)
 project(SeniorProject LANGUAGES C CXX)
 
-# From https://github.com/DenizThatMenace/More-Modern-CMake/blob/master/example-3.12/CMakeLists.txt
-# Always use '-fPIC'/'-fPIE' option.
+# This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# This postfixes a "d" to shared library names in DEBUG mode
+set(CMAKE_DEBUG_POSTFIX d)
 
 # Globally disable shared library prefix for Windows
 if (WIN32)
