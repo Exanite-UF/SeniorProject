@@ -18,4 +18,10 @@ target_link_libraries(VoxelRenderer PRIVATE glfw)
 target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 
+# --- Package ---
+
+set(CPACK_PACKAGE_NAME "VoxelRenderer")
+set(CPACK_OUTPUT_CONFIG_FILE "${CMAKE_BINARY_DIR}/CPackConfig-VoxelRenderer.cmake")
 install(TARGETS VoxelRenderer)
+
+include(CPack)
