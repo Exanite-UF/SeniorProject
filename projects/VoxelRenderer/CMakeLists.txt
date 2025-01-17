@@ -15,3 +15,4 @@ target_sources(VoxelRenderer PRIVATE ${sources})
 
 target_link_libraries(VoxelRenderer PRIVATE OpenGL::OpenGL)
 target_link_libraries(VoxelRenderer PRIVATE glfw)
+target_link_libraries(VoxelRenderer PRIVATE glm::glm)

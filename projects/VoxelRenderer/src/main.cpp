@@ -1,5 +1,7 @@
 #include <iostream>
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
+#include <glm/common.hpp>
+#include "glm/vec4.hpp"
 
 int main() {
     std::cout << "Hello world" << std::endl;
@@ -17,11 +19,13 @@ int main() {
 
     glfwMakeContextCurrent(window);
 
+    glm::vec4 clearColor{1, 0, 0, 1};
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        glClearColor(1, 0, 0, 1);
+        glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glfwSwapBuffers(window);

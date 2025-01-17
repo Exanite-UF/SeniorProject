@@ -19,6 +19,7 @@ find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 add_subdirectory(./external/glfw)
 
 # GLM
+add_subdirectory(./external/glm)
 
 # GLEW
 
