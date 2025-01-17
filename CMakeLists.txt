@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(SeniorProject LANGUAGES CXX)
+project(SeniorProject LANGUAGES C CXX)
 
 # From https://github.com/DenizThatMenace/More-Modern-CMake/blob/master/example-3.12/CMakeLists.txt
 # Always use '-fPIC'/'-fPIE' option.
@@ -22,7 +22,10 @@ add_subdirectory(./external/glfw)
 add_subdirectory(./external/glm)
 
 # GLEW
-add_subdirectory(./external/glew/build/cmake)
+add_library(glew SHARED)
+
+target_sources(glew PRIVATE ./external/glew/src/glew.c)
+target_include_directories(glew PRIVATE ./external/glew/include)
 
 # --- First party ---
 add_subdirectory(./projects/VoxelRenderer)
