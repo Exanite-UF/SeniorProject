@@ -13,6 +13,7 @@ endif()
 # --- Third party ---
 
 # OpenGL
+find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
 # GLFW
 add_subdirectory(./external/glfw)
