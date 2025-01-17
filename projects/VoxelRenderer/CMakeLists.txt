@@ -13,7 +13,7 @@ set_target_properties(VoxelRenderer
 file(GLOB sources CONFIGURE_DEPENDS src/*.cpp)
 target_sources(VoxelRenderer PRIVATE ${sources})
 
-target_link_libraries(VoxelRenderer PRIVATE OpenGL::OpenGL)
+target_link_libraries(VoxelRenderer PRIVATE ${OPENGL_LIBRARY})
 target_link_libraries(VoxelRenderer PRIVATE glfw)
 target_link_libraries(VoxelRenderer PRIVATE glm::glm)
-target_link_libraries(VoxelRenderer PRIVATE glew)
+#target_link_libraries(VoxelRenderer PRIVATE glew)
