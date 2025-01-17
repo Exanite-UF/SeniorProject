@@ -12,6 +12,9 @@ if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
+# Add CPack
+include(CPack)
+
 # --- Third party ---
 
 # OpenGL
