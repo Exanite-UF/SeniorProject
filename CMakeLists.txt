@@ -24,7 +24,7 @@ add_subdirectory(./external/glm)
 # GLEW
 add_library(glew STATIC)
 
-target_compile_definitions(glew PRIVATE GLEW_STATIC)
+target_compile_definitions(glew PUBLIC GLEW_STATIC)
 
 target_sources(glew PUBLIC ./external/glew/src/glew.c)
 target_include_directories(glew PUBLIC ./external/glew/include)
