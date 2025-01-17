@@ -1,4 +1,5 @@
 #include <iostream>
+#include "GL/glew.h"
 #include <GLFW/glfw3.h>
 #include <glm/common.hpp>
 #include "glm/vec4.hpp"
@@ -9,6 +10,11 @@ int main() {
     if (!glfwInit())
     {
         throw std::runtime_error("Failed to initialize GLFW");
+    }
+
+    if (!glewInit())
+    {
+        throw std::runtime_error("Failed to initialize GLEW");
     }
 
     auto window = glfwCreateWindow(800, 600, "Voxel Renderer", nullptr, nullptr);
