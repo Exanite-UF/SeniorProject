@@ -1,8 +1,8 @@
 #include <iostream>
-#include "GL/glew.h"
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/common.hpp>
-#include "glm/vec4.hpp"
+#include <glm/vec4.hpp>
 
 int main() {
     std::cout << "Hello world" << std::endl;
