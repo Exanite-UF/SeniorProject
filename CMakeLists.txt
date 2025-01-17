@@ -24,8 +24,11 @@ add_subdirectory(./external/glm)
 # GLEW
 add_library(glew SHARED)
 
+target_compile_definitions(glew PRIVATE GLEW_BUILD)
+
 target_sources(glew PRIVATE ./external/glew/src/glew.c)
-target_include_directories(glew PRIVATE ./external/glew/include)
+target_include_directories(glew PUBLIC ./external/glew/include)
+target_link_libraries(glew PRIVATE ${OPENGL_LIBRARY})
 
 # --- First party ---
 add_subdirectory(./projects/VoxelRenderer)
