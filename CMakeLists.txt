@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(VoxelRendering LANGUAGES CXX)
+project(SeniorProject LANGUAGES CXX)
 
 # From https://github.com/DenizThatMenace/More-Modern-CMake/blob/master/example-3.12/CMakeLists.txt
 # Always use '-fPIC'/'-fPIE' option.
@@ -15,9 +15,11 @@ endif()
 # OpenGL
 
 # GLFW
+add_subdirectory(./external/glfw)
 
 # GLM
 
 # GLEW
 
 # --- First party ---
+add_subdirectory(./projects/VoxelRenderer)
