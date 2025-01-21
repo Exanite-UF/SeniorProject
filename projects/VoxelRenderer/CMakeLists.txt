@@ -5,9 +5,9 @@ project(VoxelRenderer LANGUAGES CXX)
 
 add_executable(VoxelRenderer)
 set_target_properties(VoxelRenderer
-        PROPERTIES
-        CXX_STANDARD 23
-        OUTPUT_NAME "VoxelRenderer"
+    PROPERTIES
+    CXX_STANDARD 23
+    OUTPUT_NAME "VoxelRenderer"
 )
 
 file(GLOB sources CONFIGURE_DEPENDS ./src/*.cpp)
