@@ -146,21 +146,31 @@ int main()
         VertexPositionColor{ glm::vec3(0, 0.5, 0), glm::vec4(0, 0, 1, 1) },
     };
 
-    GLuint vertexArray;
+    // Vertex buffer
     GLuint vertexBuffer;
-    glGenVertexArrays(1, &vertexArray);
     glGenBuffers(1, &vertexBuffer);
-
-    glBindVertexArray(vertexArray);
-
-    // Position (Location 0)
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(VertexPositionColor), vertexData.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Vertex array
+    GLuint vertexArray;
+    glGenVertexArrays(1, &vertexArray);
+    glBindVertexArray(vertexArray);
+
+    // Read from vertex buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+
+    // Position (0)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionColor), (void*)offsetof(VertexPositionColor, position));
     glEnableVertexAttribArray(0);
 
+    // Color (1)
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VertexPositionColor), (void*)offsetof(VertexPositionColor, color));
     glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Create shader program
     GLuint program = createShaderProgram("content/ScreenQuad.vertex.glsl", "content/Raymarcher.fragment.glsl");
