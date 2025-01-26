@@ -5,11 +5,18 @@
 
 #include <glm/common.hpp>
 #include <glm/vec4.hpp>
+#include "glm/vec3.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
+struct VertexPositionColor
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
 
 void log(const std::string& value = "")
 {
@@ -132,11 +139,11 @@ int main()
     }
 
     // Create vertex input
-    std::vector<GLfloat> vertexData
+    std::vector<VertexPositionColor> vertexData
     {
-        -0.5, -0.5, 0,
-        0.5, -0.5, 0,
-        0, 0.5, 0,
+        VertexPositionColor{ glm::vec3(-0.5, -0.5, 0), glm::vec4(1, 0, 0, 1) },
+        VertexPositionColor{ glm::vec3(0.5, -0.5, 0), glm::vec4(0, 1, 0, 1) },
+        VertexPositionColor{ glm::vec3(0, 0.5, 0), glm::vec4(0, 0, 1, 1) },
     };
 
     GLuint vertexArray;
@@ -148,9 +155,12 @@ int main()
 
     // Position (Location 0)
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(VertexPositionColor), vertexData.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionColor), (void*)offsetof(VertexPositionColor, position));
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VertexPositionColor), (void*)offsetof(VertexPositionColor, color));
+    glEnableVertexAttribArray(1);
 
     // Create shader program
     GLuint program = createShaderProgram("content/ScreenQuad.vertex.glsl", "content/Raymarcher.fragment.glsl");
