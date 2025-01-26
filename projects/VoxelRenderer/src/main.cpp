@@ -172,8 +172,11 @@ int main()
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    GLuint emptyVertexArray;
+    glGenVertexArrays(1, &emptyVertexArray);
+
     // Create shader program
-    GLuint program = createShaderProgram("content/ScreenQuad.vertex.glsl", "content/Raymarcher.fragment.glsl");
+    GLuint program = createShaderProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
 
     // Main render loop
     glClearColor(0, 0, 0, 0);
@@ -183,7 +186,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         {
             glUseProgram(program);
-            glBindVertexArray(vertexArray);
+            glBindVertexArray(emptyVertexArray);
 
             glDrawArrays(GL_TRIANGLES, 0, 3);
 
