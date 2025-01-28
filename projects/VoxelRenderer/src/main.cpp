@@ -124,6 +124,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
+    
     auto window = glfwCreateWindow(800, 600, "Voxel Renderer", nullptr, nullptr);
     if (window == nullptr)
     {
