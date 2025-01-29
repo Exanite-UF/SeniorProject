@@ -18,6 +18,17 @@ target_link_libraries(VoxelRenderer PRIVATE glfw)
 target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 
+# --- Copy content ---
+
+add_custom_target(VoxelRenderer_CopyContent)
+add_custom_command(
+    TARGET VoxelRenderer_CopyContent POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+    ${CMAKE_CURRENT_SOURCE_DIR}/content
+    $<TARGET_FILE_DIR:VoxelRenderer>/content
+)
+add_dependencies(VoxelRenderer VoxelRenderer_CopyContent)
+
 # --- Package ---
 
 set(CPACK_PACKAGE_NAME "VoxelRenderer")
