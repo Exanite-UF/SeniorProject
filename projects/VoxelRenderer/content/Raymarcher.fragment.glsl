@@ -1,11 +1,11 @@
 #version 440
 
 uniform vec2 resolution;
-layout (r8ui, binding = 0) uniform readonly uimage3D texture1;
-layout (r8ui, binding = 1) uniform readonly uimage3D texture2;
-layout (r8ui, binding = 2) uniform readonly uimage3D texture3;
-layout (r8ui, binding = 3) uniform readonly uimage3D texture4;
-layout (r8ui, binding = 4) uniform readonly uimage3D texture5;
+layout(r8ui, binding = 0) uniform readonly uimage3D texture1;
+layout(r8ui, binding = 1) uniform readonly uimage3D texture2;
+layout(r8ui, binding = 2) uniform readonly uimage3D texture3;
+layout(r8ui, binding = 3) uniform readonly uimage3D texture4;
+layout(r8ui, binding = 4) uniform readonly uimage3D texture5;
 
 uniform vec3 camPos;
 uniform vec3 camDir;
@@ -13,23 +13,24 @@ uniform bool isWorkload;
 
 out vec4 fragColor;
 
-struct RayHit {
-	bool wasHit;
-	vec3 hitLocation;
-	vec3 normal;
-	uint mipMapsUsed;
-	float dist;
-	int iterations;
+struct RayHit
+{
+    bool wasHit;
+    vec3 hitLocation;
+    vec3 normal;
+    uint mipMapsUsed;
+    float dist;
+    int iterations;
 };
-
 
 // source: https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
 float rayboxintersect(vec3 raypos, vec3 raydir, vec3 boxmin, vec3 boxmax)
 {
-    if(all(greaterThan(raypos, boxmin)) && all(lessThan(raypos, boxmax))){ // ray is inside the box
-    	return 0;
+    if (all(greaterThan(raypos, boxmin)) && all(lessThan(raypos, boxmax)))
+    { // ray is inside the box
+        return 0;
     }
-    
+
     float t1 = (boxmin.x - raypos.x) / raydir.x;
     float t2 = (boxmax.x - raypos.x) / raydir.x;
     float t3 = (boxmin.y - raypos.y) / raydir.y;
@@ -53,30 +54,18 @@ float rayboxintersect(vec3 raypos, vec3 raydir, vec3 boxmin, vec3 boxmax)
     return tmin;
 }
 
-//Minimal aliasing (Fast)
-RayHit findIntersection2(vec3 rayPos, vec3 rayDir){
-	RayHit hit;
-	hit.mipMapsUsed = 0;
-	hit.wasHit = false;
-	
-	rayDir /= length(rayDir);
-	
-	vec3 aRayDir = 1 / abs(rayDir);//This is a constant that is used several times
-	ivec3 sRayDir = ivec3(1.5 * rayDir / abs(rayDir));//This is the sign of the ray direction (1.5 is for numerical stability)
-	vec3 iRayDir = 1 / rayDir;
-	
-	ivec3 size = 2 * imageSize(texture1);//This is the size of the voxel volume
+// Minimal aliasing (Fast)
+RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
+{
+    RayHit hit;
+    hit.mipMapsUsed = 0;
+    hit.wasHit = false;
 
-	vec3 rayStart = rayPos;
+    rayDir /= length(rayDir);
 
-	//Put the ray at the surface of the cube
-	float distToCube = rayboxintersect(rayStart, rayDir, vec3(0), vec3(size));
-	rayPos += rayDir * (distToCube - 1);
-	
-	//If the ray never entered the cube, then quit
-	if(distToCube < 0){
-		return hit;
-	}
+    vec3 aRayDir = 1 / abs(rayDir); // This is a constant that is used several times
+    ivec3 sRayDir = ivec3(1.5 * rayDir / abs(rayDir)); // This is the sign of the ray direction (1.5 is for numerical stability)
+    vec3 iRayDir = 1 / rayDir;
 
 	
 	const int iterations = 200;
@@ -162,33 +151,30 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir){
 	return hit;
 }
 
-
-vec3 hueToRGB(float hue) {
+vec3 hueToRGB(float hue)
+{
     float r = abs(hue * 6.0 - 3.0) - 1.0;
     float g = 2.0 - abs(hue * 6.0 - 2.0);
     float b = 2.0 - abs(hue * 6.0 - 4.0);
     return clamp(vec3(r, g, b), 0.0, 1.0);
 }
 
-void main(){
-	vec3 pos = camPos;
-	//pos = 0.5 * vec3(cos(time * 0.02), 0, sin(time * 0.02)) * (sin(1.61803398875 * time * 0.02) * 0.5 + 0.5);
-	vec3 forward = camDir;
-	forward /= length(forward);
-	vec3 right = cross(forward, vec3(0, 0, 1));
-	right /= length(right);
-	vec3 up = cross(right, forward);
-	up /= length(up);
+void main()
+{
+    vec3 pos = camPos;
+    // pos = 0.5 * vec3(cos(time * 0.02), 0, sin(time * 0.02)) * (sin(1.61803398875 * time * 0.02) * 0.5 + 0.5);
+    vec3 forward = camDir;
+    forward /= length(forward);
+    vec3 right = cross(forward, vec3(0, 0, 1));
+    right /= length(right);
+    vec3 up = cross(right, forward);
+    up /= length(up);
 
-	
-	float fov = (3.1415926589 / 2.f) * 1.36;
-	float z = tan(fov * 0.5);
-	
-    
+    float fov = (3.1415926589 / 2.f) * 1.36;
+    float z = tan(fov * 0.5);
 
-	vec2 uv = gl_FragCoord.xy / resolution - 0.5;
-	uv.y *= resolution.y / resolution.x;
-	
+    vec2 uv = gl_FragCoord.xy / resolution - 0.5;
+    uv.y *= resolution.y / resolution.x;
 
 	
 	ivec3 size = ivec3(16);//voxels per meter
@@ -197,34 +183,34 @@ void main(){
 	rayDir /= length(rayDir);
 	
 
-	RayHit hit = findIntersection2(rayPos, rayDir);
-	
+    RayHit hit = findIntersection2(rayPos, rayDir);
 
-
-    if(!isWorkload){
+    if (!isWorkload)
+    {
         vec3 color = abs(hit.normal) * pow(2, -hit.dist * 0.001);
 
         fragColor = vec4(color, 1) * int(hit.wasHit);
-    }else{
+    }
+    else
+    {
         fragColor = vec4(vec3(hit.iterations / 100.f), 1);
-        
-        if(hit.iterations > 100){
+
+        if (hit.iterations > 100)
+        {
             int temp = min(200, hit.iterations);
             fragColor = vec4(hueToRGB(0.5 - (hit.iterations - 100) / 200.f), 1);
         }
-
     }
-	
-
 
     /*
-	if((hit.mipMapsUsed & (1 << 6)) > 0){
-		fragColor = vec4(0, 100.f / hit.dist, 0, 1);
-	}
+        if((hit.mipMapsUsed & (1 << 6)) > 0){
+                fragColor = vec4(0, 100.f / hit.dist, 0, 1);
+        }
     */
 
-    //3 pixel radius cursor
-    if(length(gl_FragCoord.xy - resolution * 0.5) < 3){
+    // 3 pixel radius cursor
+    if (length(gl_FragCoord.xy - resolution * 0.5) < 3)
+    {
         fragColor = vec4(1);
     }
 }

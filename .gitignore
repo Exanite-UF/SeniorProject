@@ -1,3 +1,5 @@
-cmake-build*/
+/cmake-build*/
+/build/
+
 .idea/
-build/
+.vscode/
