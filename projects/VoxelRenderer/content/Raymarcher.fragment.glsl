@@ -80,7 +80,7 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir){
 
 	
 	const int iterations = 200;
-	
+	bool isOutside = false;
 	
 	for(int i = 0; i < iterations; i++){
 		hit.iterations = i;
@@ -135,11 +135,12 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir){
 
 		if(count <= 0){
 			//This means that there was a hit
-			if(i > 0){//Don't intersect with the first voxel
+			if(i > 0 && isOutside){//Don't intersect with the first voxel
 				hit.wasHit = true;
 				break;
 			}
 		}else{
+			isOutside = true;
 			//This calculates how far a mip map level should jump
 			t += mod(floor(-sRayDir * rayPos), (1 << (count - 1))) * aRayDir;//This uses the number of mip maps where there are no voxels, to determine how far to jump
 		}
@@ -190,7 +191,7 @@ void main(){
 	
 
 	
-	ivec3 size = ivec3(2048);//2 * imageSize(texture1);//This is the size of the voxel volume
+	ivec3 size = ivec3(16);//voxels per meter
 	vec3 rayPos = (pos + 0.5) * size;
 	vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
 	rayDir /= length(rayDir);

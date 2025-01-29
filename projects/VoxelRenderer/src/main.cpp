@@ -575,11 +575,11 @@ int main()
 
     
     //Make and fill the buffers
-    GLuint occupancyMap = create3DImage(1024, 1024, 1024, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap1 = create3DImage(256, 256, 256, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap2 = create3DImage(64, 64, 64, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap3 = create3DImage(16, 16, 16, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap4 = create3DImage(4, 4, 4, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint occupancyMap = create3DImage(512, 512, 512, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap1 = create3DImage(128, 128, 128, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap2 = create3DImage(32, 32, 32, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap3 = create3DImage(8, 8, 8, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap4 = create3DImage(2, 2, 2, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
 
     makeNoise(occupancyMap);
     makeMipMap(occupancyMap, mipMap1);
