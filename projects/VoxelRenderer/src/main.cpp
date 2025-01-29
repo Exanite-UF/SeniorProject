@@ -46,7 +46,6 @@ int windowWidth = 0;
 int windowHeight = 0;
 double noiseTime = 0;
 
-GLFWmonitor* primaryMonitor = nullptr;
 
 struct VertexPosition
 {
@@ -355,17 +354,63 @@ void makeMipMap(GLuint inputImage3D, GLuint outputImage3D){
     );
 }
 
+static int mini(int x, int y)
+{
+    return x < y ? x : y;
+}
+
+static int maxi(int x, int y)
+{
+    return x > y ? x : y;
+}
+
+GLFWmonitor* get_current_monitor(GLFWwindow *window)
+{
+    int nmonitors, i;
+    int wx, wy, ww, wh;
+    int mx, my, mw, mh;
+    int overlap, bestoverlap;
+    GLFWmonitor *bestmonitor;
+    GLFWmonitor **monitors;
+    const GLFWvidmode *mode;
+
+    bestoverlap = 0;
+    bestmonitor = NULL;
+
+    glfwGetWindowPos(window, &wx, &wy);
+    glfwGetWindowSize(window, &ww, &wh);
+    monitors = glfwGetMonitors(&nmonitors);
+
+    for (i = 0; i < nmonitors; i++) {
+        mode = glfwGetVideoMode(monitors[i]);
+        glfwGetMonitorPos(monitors[i], &mx, &my);
+        mw = mode->width;
+        mh = mode->height;
+
+        overlap =
+            maxi(0, mini(wx + ww, mx + mw) - maxi(wx, mx)) *
+            maxi(0, mini(wy + wh, my + mh) - maxi(wy, my));
+
+        if (bestoverlap < overlap) {
+            bestoverlap = overlap;
+            bestmonitor = monitors[i];
+        }
+    }
+
+    return bestmonitor;
+}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if(action == GLFW_PRESS && key == GLFW_KEY_F){
         GLFWmonitor* monitor = glfwGetWindowMonitor(window);
         if(monitor == NULL){
+            GLFWmonitor* currentMonitor = get_current_monitor(window);
             glfwGetWindowPos(window, &windowX, &windowY);
             glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-            const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
-            glfwSetWindowMonitor(window, primaryMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            const GLFWvidmode* mode = glfwGetVideoMode(currentMonitor);
+            glfwSetWindowMonitor(window, currentMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
         }else{
             glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
         }
@@ -471,8 +516,6 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
-
-    primaryMonitor = glfwGetPrimaryMonitor();
     
 
     auto window = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
