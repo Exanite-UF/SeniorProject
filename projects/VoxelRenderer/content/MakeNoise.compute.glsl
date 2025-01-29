@@ -4,7 +4,8 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 layout(r8ui, binding = 0) uniform uimage3D imgOutput;
 uniform float time;
-
+uniform bool isRand2;
+uniform float fillAmount;
 
 float rand(vec3 x){
 	return fract(sin(dot(x, vec3(12.9898, 78.233, 21.6452))) * 43758.5453 + time);
@@ -31,27 +32,47 @@ void main() {
     
     
     uint final = 0;
-    
-    int k = 1;
-    for(int i = 0; i < 2; i++){
-    	for(int j = 0; j < 2; j++){
-	    	for(int l = 0; l < 2; l++){
-		    	float value = 0;
-		    	vec3 temp = pos + vec3(l, j, i);
-	    		value = rand2(temp);
-				value += rand2(floor(temp / 2 + 1));
-				value += rand2(floor(temp / 4 + 2));
-				value += rand2(floor(temp / 8 + 3));
-				value /= 4;
-				if(value > 0.6){//This is how you set the density
-					final |= k;
+    if(isRand2){
+		int k = 1;
+		for(int i = 0; i < 2; i++){
+			for(int j = 0; j < 2; j++){
+				for(int l = 0; l < 2; l++){
+					float value = 0;
+					vec3 temp = pos + vec3(l, j, i);
+					value = rand2(temp);
+					value += rand2(floor(temp / 2 + 1));
+					value += rand2(floor(temp / 4 + 2));
+					value += rand2(floor(temp / 8 + 3));
+					value /= 4;
+					if(value > fillAmount){//This is how you set the density
+						final |= k;
+					}
+					k = k << 1;
 				}
-				k = k << 1;
-	    	}
-    		
-    	}
-    }
-    
+				
+			}
+		}
+	}else{
+		int k = 1;
+		for(int i = 0; i < 2; i++){
+			for(int j = 0; j < 2; j++){
+				for(int l = 0; l < 2; l++){
+					float value = 0;
+					vec3 temp = pos + vec3(l, j, i);
+					value = rand(temp);
+					value += rand(floor(temp / 2 + 1));
+					value += rand(floor(temp / 4 + 2));
+					value += rand(floor(temp / 8 + 3));
+					value /= 4;
+					if(value > fillAmount){//This is how you set the density
+						final |= k;
+					}
+					k = k << 1;
+				}
+				
+			}
+		}
+	}
 	
 	
     imageStore(imgOutput, texelCoord, uvec4(final));

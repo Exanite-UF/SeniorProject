@@ -9,6 +9,7 @@ layout (r8ui, binding = 4) uniform readonly uimage3D texture5;
 
 uniform vec3 camPos;
 uniform vec3 camDir;
+uniform bool isWorkload;
 
 out vec4 fragColor;
 
@@ -78,7 +79,7 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir){
 	}
 
 	
-	const int iterations = 1000;
+	const int iterations = 200;
 	
 	
 	for(int i = 0; i < iterations; i++){
@@ -161,6 +162,13 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir){
 }
 
 
+vec3 hueToRGB(float hue) {
+    float r = abs(hue * 6.0 - 3.0) - 1.0;
+    float g = 2.0 - abs(hue * 6.0 - 2.0);
+    float b = 2.0 - abs(hue * 6.0 - 4.0);
+    return clamp(vec3(r, g, b), 0.0, 1.0);
+}
+
 void main(){
 	vec3 pos = camPos;
 	//pos = 0.5 * vec3(cos(time * 0.02), 0, sin(time * 0.02)) * (sin(1.61803398875 * time * 0.02) * 0.5 + 0.5);
@@ -172,7 +180,7 @@ void main(){
 	up /= length(up);
 
 	
-	float fov = (3.1415926589 / 2.f) * 1.0;
+	float fov = (3.1415926589 / 2.f) * 1.36;
 	float z = tan(fov * 0.5);
 	
     
@@ -191,18 +199,23 @@ void main(){
 	RayHit hit = findIntersection2(rayPos, rayDir);
 	
 
-	//fragColor = vec4(abs(hit.normal), 1) * int(hit.wasHit);
 
-    
-	//fragColor = vec4(uv.xy, 0, 1);
-    
+    if(!isWorkload){
+        vec3 color = abs(hit.normal) * pow(2, -hit.dist * 0.001);
 
-	fragColor = vec4(vec3(hit.iterations / 100.f), 1);
+        fragColor = vec4(color, 1) * int(hit.wasHit);
+    }else{
+        fragColor = vec4(vec3(hit.iterations / 100.f), 1);
+        
+        if(hit.iterations > 100){
+            int temp = min(200, hit.iterations);
+            fragColor = vec4(hueToRGB(0.5 - (hit.iterations - 100) / 200.f), 1);
+        }
+
+    }
 	
-	if(hit.iterations > 100){
-		fragColor = vec4(1, 0, 0, 1);
-	}
-	
+
+
     /*
 	if((hit.mipMapsUsed & (1 << 6)) > 0){
 		fragColor = vec4(0, 100.f / hit.dist, 0, 1);

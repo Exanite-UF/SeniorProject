@@ -19,6 +19,14 @@
 #include <thread>
 
 
+//WASD Space Shift = movement
+//q = capture mouse
+//f = fullscreen toggle
+//e = progress through the noise's time
+//t = change between types of noise
+//scroll = change move speed
+//CTRL + scroll = change noise fill
+
 std::unordered_map<std::string, GLuint> shaderPrograms;
 std::unordered_set<int> heldKeys;
 std::array<double, 2> mousePos;
@@ -26,11 +34,17 @@ std::array<double, 2> pastMouse;
 bool invalidateMouse = true;
 double mouseWheel = 0;
 
+bool isWorkload = false;//View toggle
+bool isRand2 = true;//Noise type toggle
+float fillAmount = 0.6;
+bool remakeNoise = false;
+
 //These are only set when the switching between fullscreen and windowed
 int windowX = 0;
 int windowY = 0;
 int windowWidth = 0;
 int windowHeight = 0;
+double noiseTime = 0;
 
 GLFWmonitor* primaryMonitor = nullptr;
 
@@ -248,8 +262,10 @@ void makeNoise(GLuint image3D){
     int timeUniform = glGetUniformLocation(shaderPrograms["makeNoise"], "time");
 
     float timeValue = glfwGetTime();
-    glUniform1f(timeUniform, 0);
+    glUniform1f(timeUniform, noiseTime);
     
+    glUniform1f(glGetUniformLocation(shaderPrograms["makeNoise"], "fillAmount"), fillAmount);
+    glUniform1i(glGetUniformLocation(shaderPrograms["makeNoise"], "isRand2"), isRand2);
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -350,7 +366,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
             const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
             glfwSetWindowMonitor(window, primaryMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-            std::cout << mode->width << " " << mode->height << std::endl;
         }else{
             glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
         }
@@ -368,6 +383,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE){
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
+    if(action == GLFW_PRESS && key == GLFW_KEY_R){
+        isWorkload = !isWorkload;
+    }
+    if(action == GLFW_PRESS && key == GLFW_KEY_T){
+        isRand2 = !isRand2;
+        remakeNoise = true;
+    }
     if(action == GLFW_PRESS){
         heldKeys.insert(key);
     }
@@ -384,7 +406,14 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    mouseWheel += yoffset;
+    if(heldKeys.count(GLFW_KEY_LEFT_CONTROL)){
+        fillAmount -= yoffset * 0.01;
+        fillAmount = std::clamp(fillAmount, 0.f, 1.f);
+        remakeNoise = true;
+    }else{
+        mouseWheel += yoffset;
+    }
+    
 }
 
 std::array<float, 3> getCamDir(float theta, float phi){
@@ -518,7 +547,7 @@ int main()
     
 
     
-    std::cout << "hi" << std::endl;
+    //std::cout << "hi" << std::endl;
 
 
     //done cleanup
@@ -530,6 +559,7 @@ int main()
     double camX = 0;
     double camY = 0;
     double camZ = 0;
+    
 
     glClearColor(0, 0, 0, 0);
 
@@ -563,6 +593,7 @@ int main()
         double deltaTime = std::chrono::duration<double>(now - lastFrameTime).count();
         lastFrameTime = now;
         frameTime += deltaTime;
+        
         counter++;
         if(counter % 10 == 0){
             std::cout << 10 / frameTime << std::endl;
@@ -617,6 +648,25 @@ int main()
         }
         if(heldKeys.count(GLFW_KEY_LEFT_SHIFT)){
             camZ -= deltaTime * std::pow(2, mouseWheel * 0.1);
+        }
+
+        if(heldKeys.count(GLFW_KEY_E)){
+            noiseTime += deltaTime;
+            makeNoise(occupancyMap);
+            makeMipMap(occupancyMap, mipMap1);
+            makeMipMap(mipMap1, mipMap2);
+            makeMipMap(mipMap2, mipMap3);
+            makeMipMap(mipMap3, mipMap4);
+        }
+
+        if(remakeNoise){
+            //The noise time should not be incremented here
+            makeNoise(occupancyMap);
+            makeMipMap(occupancyMap, mipMap1);
+            makeMipMap(mipMap1, mipMap2);
+            makeMipMap(mipMap2, mipMap3);
+            makeMipMap(mipMap3, mipMap4);
+            remakeNoise = false;
         }
 
 
@@ -685,6 +735,8 @@ int main()
 
             int resolution = glGetUniformLocation(program, "resolution");
             glUniform2f(resolution, width, height);
+
+            glUniform1i(glGetUniformLocation(program, "isWorkload"), isWorkload);
 
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

@@ -18,11 +18,24 @@ target_link_libraries(VoxelRenderer PRIVATE glfw)
 target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 
+
+if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/__header.h)
+    message(FATAL_ERROR "File \"${CMAKE_CURRENT_BINARY_DIR}/__header.h\" found, \
+    this should never be created, remove!")
+endif()
+
+add_custom_target(
+  my_custom_target_that_always_runs ALL
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/__header.h
+)
+
 add_custom_command(
-  TARGET VoxelRenderer POST_BUILD
+  OUTPUT
+    ${CMAKE_CURRENT_BINARY_DIR}/__header.h  # fake! ensure we run!
+    # this command must generate: ${CMAKE_CURRENT_BINARY_DIR}/header.h
   COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/content
-    $<TARGET_FILE_DIR:VoxelRenderer>/content
+    ${CMAKE_CURRENT_BINARY_DIR}/content
 )
 
 # --- Package ---
