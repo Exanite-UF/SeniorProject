@@ -2,12 +2,12 @@ name: Format code
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
-  # pull_request:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -27,11 +27,14 @@ jobs:
       - name: Format code
         run: find ./projects -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.glsl" \) | xargs clang-format -i
 
+      - name: Show git status
+        run: git status
+
       - name: Create new pull request if necessary
         if: steps.calibre.outputs.markdown != ''
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: Format code
+          title: Format code for ${{ env.branch_name }}
           branch: ci/format/${{ env.branch_name }}
-          commit-message: Format code
+          commit-message: Format code for ${{ env.branch_name }}
