@@ -25,10 +25,9 @@ jobs:
         run: echo "branch_name=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
 
       - name: Format code
-        run: find ./projects -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.glsl" \) | xargs clang-format -i
+        run: find projects -name "*.cpp" -o -name "*.h" -o -name "*.glsl" | xargs clang-format -i
 
       - name: Create new pull request if necessary
-        if: steps.calibre.outputs.markdown != ''
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
