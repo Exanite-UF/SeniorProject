@@ -100,7 +100,7 @@ GLuint createShaderModule(std::string path, GLenum type)
     return shader;
 }
 
-GLuint createShaderProgram(std::string vertexShaderPath, std::string fragmentShaderPath)
+GLuint createGraphicsProgram(std::string vertexShaderPath, std::string fragmentShaderPath)
 {
     GLuint vertexModule = createShaderModule(vertexShaderPath, GL_VERTEX_SHADER);
     GLuint fragmentModule = createShaderModule(fragmentShaderPath, GL_FRAGMENT_SHADER);
@@ -129,7 +129,6 @@ GLuint createShaderProgram(std::string vertexShaderPath, std::string fragmentSha
     }
     glDetachShader(program, vertexModule);
     glDetachShader(program, fragmentModule);
-
     glDeleteShader(vertexModule);
     glDeleteShader(fragmentModule);
 
@@ -139,64 +138,33 @@ GLuint createShaderProgram(std::string vertexShaderPath, std::string fragmentSha
 // Loads, compiles, and links a compute shader
 GLuint createComputeProgram(std::string path)
 {
-    GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+    GLuint module = createShaderModule(path, GL_COMPUTE_SHADER);
 
-    // Load the shader
-    std::ifstream file(path);
-    if (!file.is_open())
+    GLuint program = glCreateProgram();
+    glAttachShader(program, module);
     {
-        throw std::runtime_error("Failed to open file: " + path);
+        glLinkProgram(program);
+
+        GLint isSuccess;
+        glGetProgramiv(program, GL_LINK_STATUS, &isSuccess);
+
+        if (!isSuccess)
+        {
+            GLint messageLength;
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &messageLength);
+
+            std::string message {};
+            message.resize(messageLength);
+
+            glGetProgramInfoLog(program, message.size(), nullptr, message.data());
+
+            throw std::runtime_error("Failed to link shader program: " + message);
+        }
     }
+    glDetachShader(program, module);
+    glDeleteShader(module);
 
-    std::stringstream buffer {};
-    buffer << file.rdbuf();
-
-    std::string string = buffer.str();
-    auto data = string.data();
-    // Done reading from the file
-
-    const char* shaderSource = data; // Load shader code
-    glShaderSource(computeShader, 1, &shaderSource, NULL);
-    glCompileShader(computeShader);
-
-    // Check for errors
-    GLint success;
-    glGetShaderiv(computeShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        GLint messageLength;
-        glGetShaderiv(computeShader, GL_INFO_LOG_LENGTH, &messageLength);
-
-        std::string message {};
-        message.resize(messageLength);
-
-        glGetShaderInfoLog(computeShader, message.size(), nullptr, message.data());
-
-        throw std::runtime_error("Failed to compile shader (" + path + "): " + message);
-    }
-
-    GLuint computeProgram = glCreateProgram();
-    glAttachShader(computeProgram, computeShader);
-    glLinkProgram(computeProgram);
-
-    // Check linking errors
-    glGetProgramiv(computeProgram, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        GLint messageLength;
-        glGetProgramiv(computeProgram, GL_INFO_LOG_LENGTH, &messageLength);
-
-        std::string message {};
-        message.resize(messageLength);
-
-        glGetProgramInfoLog(computeProgram, message.size(), nullptr, message.data());
-
-        throw std::runtime_error("Failed to link shader program: " + message);
-    }
-
-    glDeleteShader(computeShader);
-
-    return computeProgram;
+    return program;
 }
 
 // format and type are from glTexImage3D
@@ -549,7 +517,7 @@ int main()
     glGenVertexArrays(1, &emptyVertexArray);
 
     // Create shader program
-    GLuint program = createShaderProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
+    GLuint program = createGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
 
     // Make and fill the buffers
     GLuint occupancyMap = create3DImage(512, 512, 512, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
