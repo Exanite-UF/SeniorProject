@@ -45,11 +45,6 @@ int windowWidth = 0;
 int windowHeight = 0;
 double noiseTime = 0;
 
-struct VertexPosition
-{
-    glm::vec3 position;
-};
-
 void log(const std::string& value = "")
 {
     std::cout << value + "\n"
@@ -549,35 +544,9 @@ int main()
         throw std::runtime_error("Failed to initialize GLEW");
     }
 
-    // Create vertex input
-    std::vector<VertexPosition> vertexData {
-        VertexPosition { glm::vec3(-1.0, -1.0, 0) },
-        VertexPosition { glm::vec3(1, -1, 0) },
-        VertexPosition { glm::vec3(-1, 1, 0) },
-        VertexPosition { glm::vec3(1, 1, 0) },
-    };
-
-    // Vertex buffer
-    GLuint vertexBuffer;
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(VertexPosition), vertexData.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     // Vertex array
-    GLuint vertexArray;
-    glGenVertexArrays(1, &vertexArray);
-    glBindVertexArray(vertexArray);
-
-    // Read from vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-
-    // Position (0)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPosition), 0);
-    glEnableVertexAttribArray(0);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GLuint emptyVertexArray;
+    glGenVertexArrays(1, &emptyVertexArray);
 
     // Create shader program
     GLuint program = createShaderProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
@@ -594,10 +563,6 @@ int main()
     makeMipMap(mipMap1, mipMap2);
     makeMipMap(mipMap2, mipMap3);
     makeMipMap(mipMap3, mipMap4);
-
-    // std::cout << "hi" << std::endl;
-
-    // done cleanup
 
     // Main render loop
 
@@ -723,9 +688,8 @@ int main()
         }
 
         {
-
             glUseProgram(program);
-            glBindVertexArray(vertexArray);
+            glBindVertexArray(emptyVertexArray);
 
             glBindImageTexture(
                 0, // Image unit index (matches binding=1)
@@ -788,7 +752,7 @@ int main()
 
             glUniform1i(glGetUniformLocation(program, "isWorkload"), isWorkload);
 
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
 
             glUseProgram(0);
             glBindVertexArray(0);
