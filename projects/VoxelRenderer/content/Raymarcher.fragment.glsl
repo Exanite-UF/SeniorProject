@@ -67,88 +67,87 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
     ivec3 sRayDir = ivec3(1.5 * rayDir / abs(rayDir)); // This is the sign of the ray direction (1.5 is for numerical stability)
     vec3 iRayDir = 1 / rayDir;
 
-	
-	const int iterations = 200;
-	bool isOutside = false;
-	
-	for(int i = 0; i < iterations; i++){
-		hit.iterations = i;
-		ivec3 p = ivec3(floor(rayPos));//voxel coordinate
-		
-		vec3 t = ceil(rayPos * sRayDir) * aRayDir - rayPos * iRayDir;
-		t += vec3(lessThanEqual(t, vec3(0))) * aRayDir;//Numerical stability correction
-		
-		//Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
-		if(i > 0 && (any(greaterThan(p, ivec3(size))) || any(lessThan(p, ivec3(-1))))){
-			hit.normal = vec3(float(i) / iterations);
-			//hit.wasHit = true;
-			break;
-		}
-		
-		
-		ivec3 p2 = p & 1;//This lets us disambiguate between the 8 voxels in a cell
-		uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2);//This creates the mask that will extract the single bit that we want
-		
-		p2 = (p >> 2) & 1;//This lets us disambiguate between the 8 voxels in a cell of level 2
-		uint k2 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2);//This creates the mask that will extract the single bit that we want
-		
-		p2 = (p >> 4) & 1;//This lets us disambiguate between the 8 voxels in a cell of level 3
-		uint k3 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2);//This creates the mask that will extract the single bit that we want
-		
-		p2 = (p >> 6) & 1;//This lets us disambiguate between the 8 voxels in a cell of level 4
-		uint k4 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2);//This creates the mask that will extract the single bit that we want
-		
-		p2 = (p >> 8) & 1;//This lets us disambiguate between the 8 voxels in a cell of level 5
-		uint k5 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2);//This creates the mask that will extract the single bit that we want
-		
-		
-		
-		uint level1 = imageLoad(texture1, (p >> 1)).r;//This is the cell from the image (Warning the upper 24 bits are garbage and should be ignored)
-		
-		uint level2 = imageLoad(texture2, (p >> 3)).r;//cell for level 2
-		
-		uint level3 = imageLoad(texture3, (p >> 5)).r;//cell for level 3
-		
-		uint level4 = imageLoad(texture4, (p >> 7)).r;//cell for level 4
-		
-		uint level5 = imageLoad(texture5, (p >> 9)).r;//cell for level 4
-		
-		
-		//This is the number of mip map levels at which no voxels are found
-		int count = int(level5 == 0) + int((level5 & k5) == 0) + int(level4 == 0) + int((level4 & k4) == 0) + int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);
-		//int count = int(level4 == 0) + int((level4 & k4) == 0) + int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);
-		//int count = int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);
-		//int count = int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);//This is the number of mip map levels at which no voxels are found
-		//int count = int((level1 & k) == 0);//This is the number of mip map levels at which no voxels are found
-		
+    const int iterations = 200;
+    bool isOutside = false;
 
-		if(count <= 0){
-			//This means that there was a hit
-			if(i > 0 && isOutside){//Don't intersect with the first voxel
-				hit.wasHit = true;
-				break;
-			}
-		}else{
-			isOutside = true;
-			//This calculates how far a mip map level should jump
-			t += mod(floor(-sRayDir * rayPos), (1 << (count - 1))) * aRayDir;//This uses the number of mip maps where there are no voxels, to determine how far to jump
-		}
-		
-		//This keep track of which mip maps were used
-		hit.mipMapsUsed |= (1 << (count - 1)) * int(i > 0);
-		
-		//Find which jump amount to use next
-		float minT = min(min(t.x, t.y), t.z);
-		hit.normal = -sRayDir * ivec3(minT == t.x, minT == t.y, minT == t.z);//Set the normal
-				
-		rayPos += rayDir * (minT) - hit.normal * 0.001;//0.001 is for numerical stability (yes it causes a small aliasing artifact)
-	}
-	
-	
-	hit.hitLocation = rayPos;
-	hit.dist = length(rayPos - rayStart);
-	
-	return hit;
+    for (int i = 0; i < iterations; i++)
+    {
+        hit.iterations = i;
+        ivec3 p = ivec3(floor(rayPos)); // voxel coordinate
+
+        vec3 t = ceil(rayPos * sRayDir) * aRayDir - rayPos * iRayDir;
+        t += vec3(lessThanEqual(t, vec3(0))) * aRayDir; // Numerical stability correction
+
+        // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
+        if (i > 0 && (any(greaterThan(p, ivec3(size))) || any(lessThan(p, ivec3(-1)))))
+        {
+            hit.normal = vec3(float(i) / iterations);
+            // hit.wasHit = true;
+            break;
+        }
+
+        ivec3 p2 = p & 1; // This lets us disambiguate between the 8 voxels in a cell
+        uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+
+        p2 = (p >> 2) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 2
+        uint k2 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+
+        p2 = (p >> 4) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 3
+        uint k3 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+
+        p2 = (p >> 6) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 4
+        uint k4 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+
+        p2 = (p >> 8) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 5
+        uint k5 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+
+        uint level1 = imageLoad(texture1, (p >> 1)).r; // This is the cell from the image (Warning the upper 24 bits are garbage and should be ignored)
+
+        uint level2 = imageLoad(texture2, (p >> 3)).r; // cell for level 2
+
+        uint level3 = imageLoad(texture3, (p >> 5)).r; // cell for level 3
+
+        uint level4 = imageLoad(texture4, (p >> 7)).r; // cell for level 4
+
+        uint level5 = imageLoad(texture5, (p >> 9)).r; // cell for level 4
+
+        // This is the number of mip map levels at which no voxels are found
+        int count = int(level5 == 0) + int((level5 & k5) == 0) + int(level4 == 0) + int((level4 & k4) == 0) + int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);
+        // int count = int(level4 == 0) + int((level4 & k4) == 0) + int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);
+        // int count = int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);
+        // int count = int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k) == 0);//This is the number of mip map levels at which no voxels are found
+        // int count = int((level1 & k) == 0);//This is the number of mip map levels at which no voxels are found
+
+        if (count <= 0)
+        {
+            // This means that there was a hit
+            if (i > 0 && isOutside)
+            { // Don't intersect with the first voxel
+                hit.wasHit = true;
+                break;
+            }
+        }
+        else
+        {
+            isOutside = true;
+            // This calculates how far a mip map level should jump
+            t += mod(floor(-sRayDir * rayPos), (1 << (count - 1))) * aRayDir; // This uses the number of mip maps where there are no voxels, to determine how far to jump
+        }
+
+        // This keep track of which mip maps were used
+        hit.mipMapsUsed |= (1 << (count - 1)) * int(i > 0);
+
+        // Find which jump amount to use next
+        float minT = min(min(t.x, t.y), t.z);
+        hit.normal = -sRayDir * ivec3(minT == t.x, minT == t.y, minT == t.z); // Set the normal
+
+        rayPos += rayDir * (minT)-hit.normal * 0.001; // 0.001 is for numerical stability (yes it causes a small aliasing artifact)
+    }
+
+    hit.hitLocation = rayPos;
+    hit.dist = length(rayPos - rayStart);
+
+    return hit;
 }
 
 vec3 hueToRGB(float hue)
@@ -176,12 +175,10 @@ void main()
     vec2 uv = gl_FragCoord.xy / resolution - 0.5;
     uv.y *= resolution.y / resolution.x;
 
-	
-	ivec3 size = ivec3(16);//voxels per meter
-	vec3 rayPos = (pos + 0.5) * size;
-	vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
-	rayDir /= length(rayDir);
-	
+    ivec3 size = ivec3(16); // voxels per meter
+    vec3 rayPos = (pos + 0.5) * size;
+    vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
+    rayDir /= length(rayDir);
 
     RayHit hit = findIntersection2(rayPos, rayDir);
 
