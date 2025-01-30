@@ -27,6 +27,9 @@ jobs:
       - name: Format code
         run: find ./projects -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.glsl" \) | xargs clang-format -i
 
+      - name: Show git status
+        run: git status
+
       - name: Create new pull request if necessary
         if: steps.calibre.outputs.markdown != ''
         uses: peter-evans/create-pull-request@v7
