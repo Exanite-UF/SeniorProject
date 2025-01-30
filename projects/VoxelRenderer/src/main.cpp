@@ -551,9 +551,7 @@ int main()
     // Create shader program
     GLuint program = createShaderProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
 
-
-    
-    //Make and fill the buffers
+    // Make and fill the buffers
     GLuint occupancyMap = create3DImage(512, 512, 512, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
     GLuint mipMap1 = create3DImage(128, 128, 128, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
     GLuint mipMap2 = create3DImage(32, 32, 32, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
