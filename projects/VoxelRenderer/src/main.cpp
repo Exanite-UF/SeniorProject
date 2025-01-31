@@ -325,7 +325,7 @@ int main()
         counter++;
         if (counter % 10 == 0)
         {
-            //            log(10 / frameTime);
+            log(std::to_string(10 / frameTime));
             frameTime = 0;
         }
 
@@ -461,11 +461,6 @@ int main()
         else
         {
             mouseWheel += input.getMouseScroll().y;
-        }
-
-        if (input.getMouseScroll().y != 0)
-        {
-            log(std::to_string(input.getMouseScroll().y));
         }
 
         {
