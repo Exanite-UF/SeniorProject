@@ -1,12 +1,11 @@
 // Include GLEW before OpenGL and GLFW
-#include "glm/vec2.hpp"
-
 #include <GL/glew.h>
 
 #include <GLFW/glfw3.h>
 
-#include "glm/vec3.hpp"
 #include <glm/common.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
 #include <algorithm>
@@ -20,6 +19,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "InputManager.h"
+#include "Window.h"
+
 // WASD Space Shift = movement
 // q = capture mouse
 // f = fullscreen toggle
@@ -28,62 +30,11 @@
 // scroll = change move speed
 // CTRL + scroll = change noise fill
 
-struct InputState
+void log(const std::string& value = "")
 {
-    std::unordered_set<int> heldKeys{};
-    std::unordered_set<int> heldButtons{};
-
-    glm::vec2 mousePosition{};
-    glm::vec2 mouseScroll{};
-
-    bool isKeyHeld(const int key) const
-    {
-        return heldKeys.contains(key);
-    }
-};
-
-struct Input
-{
-    InputState current{};
-    InputState previous{};
-
-    glm::vec2 getMousePosition() const
-    {
-        return current.mousePosition;
-    }
-
-    glm::vec2 getMouseDelta() const
-    {
-        return current.mousePosition - previous.mousePosition;
-    }
-
-    glm::vec2 getMouseScroll() const
-    {
-        return current.mouseScroll;
-    }
-
-    bool isKeyHeld(const int key) const
-    {
-        return current.isKeyHeld(key);
-    }
-
-    bool isKeyPressed(const int key) const
-    {
-        return current.isKeyHeld(key) && !previous.isKeyHeld(key);
-    }
-
-    bool isKeyReleased(const int key) const
-    {
-        return !current.isKeyHeld(key) && previous.isKeyHeld(key);
-    }
-};
-
-class InputManager
-{
-private:
-public:
-    Input input{};
-};
+    std::cout << value + "\n"
+              << std::flush;
+}
 
 std::unordered_map<std::string, GLuint> shaderPrograms;
 std::unordered_set<int> heldKeys;
@@ -103,12 +54,6 @@ int windowY = 0;
 int windowWidth = 0;
 int windowHeight = 0;
 double noiseTime = 0;
-
-void log(const std::string& value = "")
-{
-    std::cout << value + "\n"
-              << std::flush;
-}
 
 void checkForContentFolder()
 {
@@ -559,12 +504,16 @@ int main()
         throw std::runtime_error("Failed to create window");
     }
 
+    auto window1 = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    window1->glfWwindow = window;
+
+    auto inputManager = std::make_shared<InputManager>();
+
     glfwGetWindowPos(window, &windowX, &windowY);
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
     // Init GLEW
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(0); // disable vsync
     glewExperimental = true;
     if (glewInit() != GLEW_OK)
     {
@@ -599,23 +548,24 @@ int main()
     double camY = 0;
     double camZ = 0;
 
+    glfwSwapInterval(0); // disable vsync
     glClearColor(0, 0, 0, 0);
 
-    glfwSetWindowSizeCallback(window, window_size_callback);
-
-    // set up user inputs
-    glfwSetKeyCallback(window, key_callback);
-
-    glfwSetCursorPosCallback(window, cursor_position_callback);
-
     if (glfwRawMouseMotionSupported())
+    {
         glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
 
     glfwGetCursorPos(window, &pastMouse[0], &pastMouse[1]);
 
+    glfwSetWindowSizeCallback(window, window_size_callback);
+    //    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetScrollCallback(window, scroll_callback);
-
     glfwSetCursorEnterCallback(window, cursor_enter_callback);
+
+    InputManager inputManager {};
+    inputManager.registerCallbacks(window);
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
