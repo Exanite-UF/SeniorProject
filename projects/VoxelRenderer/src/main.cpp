@@ -33,11 +33,7 @@
 // CTRL + scroll = change noise fill
 
 std::unordered_map<std::string, GLuint> shaderPrograms;
-std::unordered_set<int> heldKeys;
-std::array<double, 2> mousePos;
-std::array<double, 2> pastMouse;
 bool invalidateMouse = true;
-double mouseWheel = 0;
 
 bool isWorkload = false; // View toggle
 bool isRand2 = true; // Noise type toggle
@@ -263,6 +259,8 @@ int main()
     }
 
     auto window1 = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    auto inputManager = window1->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    auto& input = inputManager->input;
     window1->glfwWindowHandle = window;
     window1->registerCallbacks();
 
@@ -303,6 +301,7 @@ int main()
     double camX = 0;
     double camY = 0;
     double camZ = 0;
+    double mouseWheel = 0;
 
     glfwSwapInterval(0); // disable vsync
     glClearColor(0, 0, 0, 0);
@@ -311,8 +310,6 @@ int main()
     {
         glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
-
-    glfwGetCursorPos(window, &pastMouse[0], &pastMouse[1]);
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
@@ -328,19 +325,21 @@ int main()
         counter++;
         if (counter % 10 == 0)
         {
-            std::cout << 10 / frameTime << std::endl;
+            //            log(10 / frameTime);
             frameTime = 0;
         }
 
-        glfwPollEvents();
+        window1->update();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int width, height;
         glfwGetWindowSize(window, &width, &height);
         if (!invalidateMouse)
         {
-            theta -= (mousePos[0] - pastMouse[0]) * 0.002;
-            phi -= (mousePos[1] - pastMouse[1]) * 0.002;
+            auto mouseDelta = input.getMouseDelta();
+
+            theta -= mouseDelta.x * 0.002;
+            phi -= mouseDelta.y * 0.002;
             phi = std::min(std::max(phi, -3.1415926589 / 2), 3.1415926589 / 2);
         }
         else
@@ -348,49 +347,46 @@ int main()
             invalidateMouse = false;
         }
 
-        pastMouse[0] = mousePos[0];
-        pastMouse[1] = mousePos[1];
-
         auto right = getRight(theta, phi);
         auto forward = getForward(theta, phi);
         auto camDirection = getCamDir(theta, phi);
 
-        if (heldKeys.count(GLFW_KEY_A))
+        if (input.isKeyHeld(GLFW_KEY_A))
         {
             camX -= right[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY -= right[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ -= right[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
-        if (heldKeys.count(GLFW_KEY_D))
+        if (input.isKeyHeld(GLFW_KEY_D))
         {
             camX += right[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY += right[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ += right[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
 
-        if (heldKeys.count(GLFW_KEY_W))
+        if (input.isKeyHeld(GLFW_KEY_W))
         {
             camX += forward[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY += forward[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ += forward[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
-        if (heldKeys.count(GLFW_KEY_S))
+        if (input.isKeyHeld(GLFW_KEY_S))
         {
             camX -= forward[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY -= forward[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ -= forward[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
 
-        if (heldKeys.count(GLFW_KEY_SPACE))
+        if (input.isKeyHeld(GLFW_KEY_SPACE))
         {
             camZ += deltaTime * std::pow(2, mouseWheel * 0.1);
         }
-        if (heldKeys.count(GLFW_KEY_LEFT_SHIFT))
+        if (input.isKeyHeld(GLFW_KEY_LEFT_SHIFT))
         {
             camZ -= deltaTime * std::pow(2, mouseWheel * 0.1);
         }
 
-        if (heldKeys.count(GLFW_KEY_E))
+        if (input.isKeyHeld(GLFW_KEY_E))
         {
             noiseTime += deltaTime;
             makeNoise(occupancyMap);
@@ -409,6 +405,67 @@ int main()
             makeMipMap(mipMap2, mipMap3);
             makeMipMap(mipMap3, mipMap4);
             remakeNoise = false;
+        }
+
+        if (input.isKeyPressed(GLFW_KEY_F))
+        {
+            GLFWmonitor* monitor = glfwGetWindowMonitor(window);
+            if (monitor == NULL)
+            {
+                GLFWmonitor* currentMonitor = Window::getCurrentMonitor(window);
+                glfwGetWindowPos(window, &windowX, &windowY);
+                glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+                const GLFWvidmode* mode = glfwGetVideoMode(currentMonitor);
+                glfwSetWindowMonitor(window, currentMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            }
+            else
+            {
+                glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
+            }
+        }
+        if (input.isKeyPressed(GLFW_KEY_Q))
+        {
+            int mode = glfwGetInputMode(window, GLFW_CURSOR);
+
+            if (mode == GLFW_CURSOR_DISABLED)
+            {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+            else
+            {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+        }
+        if (input.isKeyPressed(GLFW_KEY_ESCAPE))
+        {
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        }
+        if (input.isKeyPressed(GLFW_KEY_R))
+        {
+            isWorkload = !isWorkload;
+        }
+        if (input.isKeyPressed(GLFW_KEY_T))
+        {
+            isRand2 = !isRand2;
+            remakeNoise = true;
+        }
+
+        // Scroll
+        if (input.isKeyHeld(GLFW_KEY_LEFT_CONTROL))
+        {
+            fillAmount -= input.getMouseScroll().y * 0.01;
+            fillAmount = std::clamp(fillAmount, 0.f, 1.f);
+            remakeNoise = true;
+        }
+        else
+        {
+            mouseWheel += input.getMouseScroll().y;
+        }
+
+        if (input.getMouseScroll().y != 0)
+        {
+            log(std::to_string(input.getMouseScroll().y));
         }
 
         {

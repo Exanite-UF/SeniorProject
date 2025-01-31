@@ -8,11 +8,7 @@
 
 // TODO: Not all of these need to be part of the Window
 extern std::unordered_map<std::string, GLuint> shaderPrograms;
-extern std::unordered_set<int> heldKeys;
-extern std::array<double, 2> mousePos;
-extern std::array<double, 2> pastMouse;
 extern bool invalidateMouse;
-extern double mouseWheel;
 
 extern bool isWorkload; // View toggle
 extern bool isRand2; // Noise type toggle
@@ -31,6 +27,12 @@ class Window
 public:
     GLFWwindow* glfwWindowHandle;
     std::shared_ptr<InputManager> inputManager = std::make_shared<InputManager>();
+
+    void update()
+    {
+        glfwPollEvents();
+        inputManager->update();
+    }
 
     static GLFWmonitor* getCurrentMonitor(GLFWwindow* window)
     {
@@ -82,57 +84,7 @@ public:
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         if (self)
         {
-            if (action == GLFW_PRESS && key == GLFW_KEY_F)
-            {
-                GLFWmonitor* monitor = glfwGetWindowMonitor(window);
-                if (monitor == NULL)
-                {
-                    GLFWmonitor* currentMonitor = getCurrentMonitor(window);
-                    glfwGetWindowPos(window, &windowX, &windowY);
-                    glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
-                    const GLFWvidmode* mode = glfwGetVideoMode(currentMonitor);
-                    glfwSetWindowMonitor(window, currentMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-                }
-                else
-                {
-                    glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
-                }
-            }
-            if (action == GLFW_PRESS && key == GLFW_KEY_Q)
-            {
-                int mode = glfwGetInputMode(window, GLFW_CURSOR);
-
-                if (mode == GLFW_CURSOR_DISABLED)
-                {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                }
-                else
-                {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                }
-            }
-            if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE)
-            {
-                glfwSetWindowShouldClose(window, GLFW_TRUE);
-            }
-            if (action == GLFW_PRESS && key == GLFW_KEY_R)
-            {
-                isWorkload = !isWorkload;
-            }
-            if (action == GLFW_PRESS && key == GLFW_KEY_T)
-            {
-                isRand2 = !isRand2;
-                remakeNoise = true;
-            }
-            if (action == GLFW_PRESS)
-            {
-                heldKeys.insert(key);
-            }
-            if (action == GLFW_RELEASE)
-            {
-                heldKeys.erase(key);
-            }
+            self->inputManager->onKey(window, key, scancode, action, mods);
         }
     };
 
@@ -141,7 +93,7 @@ public:
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         if (self)
         {
-            // Do stuff
+            self->inputManager->onMouseButton(window, button, action, mods);
         }
     };
 
@@ -150,8 +102,7 @@ public:
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         if (self)
         {
-            mousePos[0] = xpos;
-            mousePos[1] = ypos;
+            self->inputManager->onCursorPos(window, xpos, ypos);
         }
     };
 
@@ -160,16 +111,7 @@ public:
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         if (self)
         {
-            if (heldKeys.count(GLFW_KEY_LEFT_CONTROL))
-            {
-                fillAmount -= yoffset * 0.01;
-                fillAmount = std::clamp(fillAmount, 0.f, 1.f);
-                remakeNoise = true;
-            }
-            else
-            {
-                mouseWheel += yoffset;
-            }
+            self->inputManager->onScroll(window, xoffset, yoffset);
         }
     };
 
