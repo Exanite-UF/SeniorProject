@@ -1,0 +1,33 @@
+\doxysection{R\+:/\+Repos/\+Senior\+Project Directory Reference}
+\hypertarget{dir_70babe66534af90945f9a456dc97dbc1}{}\label{dir_70babe66534af90945f9a456dc97dbc1}\index{R:/Repos/SeniorProject Directory Reference@{R:/Repos/SeniorProject Directory Reference}}
+
+
+\doxysubsection{Detailed Description}
+\hypertarget{README.md_autotoc_md1}{}\doxysubsection{\texorpdfstring{Getting started}{Getting started}}\label{README.md_autotoc_md1}
+
+\begin{DoxyEnumerate}
+\item Clone the repo.
+\item Ensure Git submodules are up to date\+:
+\end{DoxyEnumerate}
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{git\ submodule\ update\ -\/-\/init\ -\/-\/recursive}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyEnumerate}
+\item Open the root repo folder (or CMake\+Lists.\+txt) file as a project in your IDE or use CMake through the command line.
+\end{DoxyEnumerate}\hypertarget{README.md_autotoc_md2}{}\doxysubsection{\texorpdfstring{Packaging}{Packaging}}\label{README.md_autotoc_md2}
+This project uses CPack to package the built project. The project must be built first before packaging.
+
+To package\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\#\ Must\ be\ ran\ inside\ the\ generated\ CMake\ build\ directory}
+\DoxyCodeLine{cmake\ -\/-\/build\ .}
+\DoxyCodeLine{cpack\ -\/-\/config\ CPackConfig-\/VoxelRenderer.cmake}
+
+\end{DoxyCode}
+ 
