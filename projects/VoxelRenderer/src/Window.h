@@ -2,6 +2,7 @@
 
 #include "InputManager.h"
 #include <GLFW/glfw3.h>
+#include <glm/common.hpp>
 #include <memory>
 #include <unordered_map>
 
@@ -24,16 +25,6 @@ extern int windowY;
 extern int windowWidth;
 extern int windowHeight;
 extern double noiseTime;
-
-static int mini(int x, int y)
-{
-    return x < y ? x : y;
-}
-
-static int maxi(int x, int y)
-{
-    return x > y ? x : y;
-}
 
 class Window
 {
@@ -65,7 +56,7 @@ public:
             mw = mode->width;
             mh = mode->height;
 
-            overlap = maxi(0, mini(wx + ww, mx + mw) - maxi(wx, mx)) * maxi(0, mini(wy + wh, my + mh) - maxi(wy, my));
+            overlap = glm::max(0, glm::min(wx + ww, mx + mw) - glm::max(wx, mx)) * glm::max(0, glm::min(wy + wh, my + mh) - glm::max(wy, my));
 
             if (bestoverlap < overlap)
             {
