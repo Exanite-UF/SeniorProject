@@ -20,6 +20,7 @@
 #include <unordered_set>
 
 #include "InputManager.h"
+#include "ShaderCompiler.h"
 #include "Window.h"
 
 // WASD Space Shift = movement
@@ -29,6 +30,25 @@
 // t = change between types of noise
 // scroll = change move speed
 // CTRL + scroll = change noise fill
+
+std::unordered_map<std::string, GLuint> shaderPrograms;
+std::unordered_set<int> heldKeys;
+std::array<double, 2> mousePos;
+std::array<double, 2> pastMouse;
+bool invalidateMouse = true;
+double mouseWheel = 0;
+
+bool isWorkload = false; // View toggle
+bool isRand2 = true; // Noise type toggle
+float fillAmount = 0.6;
+bool remakeNoise = false;
+
+// These are only set when the switching between fullscreen and windowed
+int windowX = 0;
+int windowY = 0;
+int windowWidth = 0;
+int windowHeight = 0;
+double noiseTime = 0;
 
 void log(const std::string& value = "")
 {
@@ -46,110 +66,6 @@ void checkForContentFolder()
     {
         log("Found content folder");
     }
-}
-
-GLuint createShaderModule(std::string path, GLenum type)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        throw std::runtime_error("Failed to open file: " + path);
-    }
-
-    std::stringstream buffer {};
-    buffer << file.rdbuf();
-
-    std::string string = buffer.str();
-    auto data = string.data();
-
-    auto shader = glCreateShader(type);
-    glShaderSource(shader, 1, &data, nullptr);
-    glCompileShader(shader);
-
-    GLint isSuccess;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &isSuccess);
-
-    if (!isSuccess)
-    {
-        GLint messageLength;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &messageLength);
-
-        std::string message {};
-        message.resize(messageLength);
-
-        glGetShaderInfoLog(shader, message.size(), nullptr, message.data());
-
-        throw std::runtime_error("Failed to compile shader (" + path + "): " + message);
-    }
-
-    return shader;
-}
-
-GLuint createGraphicsProgram(std::string vertexShaderPath, std::string fragmentShaderPath)
-{
-    GLuint vertexModule = createShaderModule(vertexShaderPath, GL_VERTEX_SHADER);
-    GLuint fragmentModule = createShaderModule(fragmentShaderPath, GL_FRAGMENT_SHADER);
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertexModule);
-    glAttachShader(program, fragmentModule);
-    {
-        glLinkProgram(program);
-
-        GLint isSuccess;
-        glGetProgramiv(program, GL_LINK_STATUS, &isSuccess);
-
-        if (!isSuccess)
-        {
-            GLint messageLength;
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &messageLength);
-
-            std::string message {};
-            message.resize(messageLength);
-
-            glGetProgramInfoLog(program, message.size(), nullptr, message.data());
-
-            throw std::runtime_error("Failed to link shader program: " + message);
-        }
-    }
-    glDetachShader(program, vertexModule);
-    glDetachShader(program, fragmentModule);
-    glDeleteShader(vertexModule);
-    glDeleteShader(fragmentModule);
-
-    return program;
-}
-
-// Loads, compiles, and links a compute shader
-GLuint createComputeProgram(std::string path)
-{
-    GLuint module = createShaderModule(path, GL_COMPUTE_SHADER);
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, module);
-    {
-        glLinkProgram(program);
-
-        GLint isSuccess;
-        glGetProgramiv(program, GL_LINK_STATUS, &isSuccess);
-
-        if (!isSuccess)
-        {
-            GLint messageLength;
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &messageLength);
-
-            std::string message {};
-            message.resize(messageLength);
-
-            glGetProgramInfoLog(program, message.size(), nullptr, message.data());
-
-            throw std::runtime_error("Failed to link shader program: " + message);
-        }
-    }
-    glDetachShader(program, module);
-    glDeleteShader(module);
-
-    return program;
 }
 
 // format and type are from glTexImage3D
@@ -347,8 +263,7 @@ int main()
 
     auto window1 = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
     window1->glfwWindowHandle = window;
-
-    auto inputManager = std::make_shared<InputManager>();
+    window1->registerCallbacks();
 
     glfwGetWindowPos(window, &windowX, &windowY);
     glfwGetWindowSize(window, &windowWidth, &windowHeight);

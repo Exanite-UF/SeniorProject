@@ -58,13 +58,4 @@ class InputManager
 private:
 public:
     Input input {};
-
-    static void onKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods)
-    {
-        log("Test");
-    }
-
-    void registerCallbacks(GLFWwindow* window)
-    {
-    }
 };
