@@ -21,6 +21,7 @@
 
 #include "InputManager.h"
 #include "ShaderCompiler.h"
+#include "VoxelWorld.h"
 #include "Window.h"
 
 // WASD Space Shift = movement
