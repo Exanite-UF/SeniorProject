@@ -203,6 +203,8 @@ void main()
 	vec3 rayPos = (pos + 0.5) * voxelsPerMeter;
 	vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
 	rayDir /= length(rayDir);
+
+    //rayPos += (forward + 2.f * z * (uv.x * right + uv.y * up)) * 100;//This would set a near clipping plane at 100 units away (it should never be this far, we don't need a near clipping plane)
 	
 
     RayHit hit = findIntersection2(rayPos, rayDir);
