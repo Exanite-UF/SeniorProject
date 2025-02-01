@@ -217,13 +217,12 @@ void main()
     }
     else
     {
-        fragColor = vec4(vec3(hit.iterations / 100.f), 1);
+        uint r = (hit.material & 1) + ((hit.material & 8) >> 2) + ((hit.material & 64) >> 4);
+        uint g = ((hit.material & (1 << 1)) >> 1) + ((hit.material & (8 << 1)) >> 3) + ((hit.material & (64 << 1)) >> 5);
+        uint b = ((hit.material & (1 << 2)) >> 2) + ((hit.material & (8 << 2)) >> 4) + ((hit.material & (64 << 2)) >> 6);
 
-        if (hit.iterations > 100)
-        {
-            int temp = min(200, hit.iterations);
-            fragColor = vec4(hueToRGB(0.5 - (hit.iterations - 100) / 200.f), 1);
-        }
+        vec3 color = vec3(r / 7.0, g / 7.0, b / 7.0);
+        fragColor = vec4(color * int(hit.wasHit), 1);
     }
 
     /*
