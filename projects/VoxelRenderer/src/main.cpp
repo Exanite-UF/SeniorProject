@@ -304,6 +304,7 @@ int main()
     double mouseWheel = 0;
 
     glfwSwapInterval(0); // disable vsync
+    glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
     if (glfwRawMouseMotionSupported())
