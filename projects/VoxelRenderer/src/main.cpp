@@ -216,7 +216,7 @@ GLuint create3DImage(int width, int height, int depth, GLenum format, GLenum typ
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage3D(
-        GL_TEXTURE_3D, 0, GL_R8UI,
+        GL_TEXTURE_3D, 0, GL_RGBA8UI,
         width, height, depth, // Dimensions for new mip level
         0, format, type, nullptr);
 
@@ -242,7 +242,7 @@ void makeNoise(GLuint image3D)
         GL_TRUE, // Layered (true for 3D textures)
         0, // Layer (ignored for 3D)
         GL_WRITE_ONLY, // Access qualifier
-        GL_R8UI // Format
+        GL_RGBA8UI // Format
     );
 
     int outputWidth, outputHeight, outputDepth;
@@ -277,7 +277,57 @@ void makeNoise(GLuint image3D)
         GL_TRUE, // Layered (true for 3D textures)
         0, // Layer (ignored for 3D)
         GL_WRITE_ONLY, // Access qualifier
-        GL_R8UI // Format
+        GL_RGBA8UI // Format
+    );
+}
+
+
+void assignMaterial(GLuint image3D)
+{
+    // Load the make noise compute shader as needed
+    if (shaderPrograms.count("assignMaterial") == 0)
+    {
+        shaderPrograms["assignMaterial"] = createComputeProgram("content/AssignMaterial.compute.glsl");
+    }
+
+    glUseProgram(shaderPrograms["assignMaterial"]);
+
+    // Bind output texture to image unit 1 (write-only)
+    glBindImageTexture(
+        0, // Image unit index (matches binding=1)
+        image3D, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA8UI // Format
+    );
+
+    int outputWidth, outputHeight, outputDepth;
+
+    glBindTexture(GL_TEXTURE_3D, image3D);
+    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
+    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
+    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
+    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
+    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
+
+    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+    // Ensure compute shader completes
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    glBindImageTexture(
+        0, // Image unit index (matches binding=1)
+        0, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA8UI // Format
     );
 }
 
@@ -299,7 +349,7 @@ void makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
         GL_TRUE, // Layered (true for 3D textures)
         0, // Layer (ignored for 3D)
         GL_READ_ONLY, // Access qualifier
-        GL_R8UI // Format
+        GL_RGBA8UI // Format
     );
 
     // Bind output texture to image unit 1 (write-only)
@@ -310,7 +360,7 @@ void makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
         GL_TRUE, // Layered (true for 3D textures)
         0, // Layer (ignored for 3D)
         GL_WRITE_ONLY, // Access qualifier
-        GL_R8UI // Format
+        GL_RGBA8UI // Format
     );
 
     int outputWidth, outputHeight, outputDepth;
@@ -338,7 +388,7 @@ void makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
         GL_TRUE, // Layered (true for 3D textures)
         0, // Layer (ignored for 3D)
         GL_WRITE_ONLY, // Access qualifier
-        GL_R8UI // Format
+        GL_RGBA8UI // Format
     );
 
     glBindImageTexture(
@@ -348,7 +398,7 @@ void makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
         GL_TRUE, // Layered (true for 3D textures)
         0, // Layer (ignored for 3D)
         GL_WRITE_ONLY, // Access qualifier
-        GL_R8UI // Format
+        GL_RGBA8UI // Format
     );
 }
 
@@ -585,11 +635,11 @@ int main()
 
     
     //Make and fill the buffers
-    GLuint occupancyMap = create3DImage(512, 512, 512, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap1 = create3DImage(128, 128, 128, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap2 = create3DImage(32, 32, 32, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap3 = create3DImage(8, 8, 8, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap4 = create3DImage(2, 2, 2, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint occupancyMap = create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap1 = create3DImage(128, 128, 128, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap2 = create3DImage(32, 32, 32, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap3 = create3DImage(8, 8, 8, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap4 = create3DImage(2, 2, 2, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
 
     makeNoise(occupancyMap);
     makeMipMap(occupancyMap, mipMap1);
@@ -597,6 +647,9 @@ int main()
     makeMipMap(mipMap2, mipMap3);
     makeMipMap(mipMap3, mipMap4);
 
+    assignMaterial(occupancyMap);
+    assignMaterial(mipMap1);
+    assignMaterial(mipMap2);
     // std::cout << "hi" << std::endl;
 
     // done cleanup
@@ -736,7 +789,7 @@ int main()
                 GL_TRUE, // Layered (true for 3D textures)
                 0, // Layer (ignored for 3D)
                 GL_READ_ONLY, // Access qualifier
-                GL_R8UI // Format
+                GL_RGBA8UI // Format
             );
 
             glBindImageTexture(
@@ -746,7 +799,7 @@ int main()
                 GL_TRUE, // Layered (true for 3D textures)
                 0, // Layer (ignored for 3D)
                 GL_READ_ONLY, // Access qualifier
-                GL_R8UI // Format
+                GL_RGBA8UI // Format
             );
 
             glBindImageTexture(
@@ -756,7 +809,7 @@ int main()
                 GL_TRUE, // Layered (true for 3D textures)
                 0, // Layer (ignored for 3D)
                 GL_READ_ONLY, // Access qualifier
-                GL_R8UI // Format
+                GL_RGBA8UI // Format
             );
 
             glBindImageTexture(
@@ -766,7 +819,7 @@ int main()
                 GL_TRUE, // Layered (true for 3D textures)
                 0, // Layer (ignored for 3D)
                 GL_READ_ONLY, // Access qualifier
-                GL_R8UI // Format
+                GL_RGBA8UI // Format
             );
 
             glBindImageTexture(
@@ -776,7 +829,7 @@ int main()
                 GL_TRUE, // Layered (true for 3D textures)
                 0, // Layer (ignored for 3D)
                 GL_READ_ONLY, // Access qualifier
-                GL_R8UI // Format
+                GL_RGBA8UI // Format
             );
 
             int camPos = glGetUniformLocation(program, "camPos");

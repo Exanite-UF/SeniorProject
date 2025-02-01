@@ -2,7 +2,7 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(r8ui, binding = 0) uniform uimage3D imgOutput;
+layout(rgba8ui, binding = 0) uniform uimage3D imgOutput;
 uniform float time;
 uniform bool isRand2;
 uniform float fillAmount;
@@ -38,11 +38,11 @@ void main()
     if (isRand2)
     {
         int k = 1;
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 2; i++)//z axis
         {
-            for (int j = 0; j < 2; j++)
+            for (int j = 0; j < 2; j++)//y axis
             {
-                for (int l = 0; l < 2; l++)
+                for (int l = 0; l < 2; l++)//x axis
                 {
                     float value = 0;
                     vec3 temp = pos + vec3(l, j, i);
@@ -63,11 +63,11 @@ void main()
     else
     {
         int k = 1;
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 2; i++)//z axis
         {
-            for (int j = 0; j < 2; j++)
+            for (int j = 0; j < 2; j++)//y axis
             {
-                for (int l = 0; l < 2; l++)
+                for (int l = 0; l < 2; l++)//x axis
                 {
                     float value = 0;
                     vec3 temp = pos + vec3(l, j, i);
@@ -86,5 +86,7 @@ void main()
         }
     }
 
-    imageStore(imgOutput, texelCoord, uvec4(final));
+    uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
+
+    imageStore(imgOutput, texelCoord, uvec4(material, final));
 }
