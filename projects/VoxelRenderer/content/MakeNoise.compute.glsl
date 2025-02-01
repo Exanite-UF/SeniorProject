@@ -51,7 +51,7 @@ void main()
                     value += rand2(floor(temp / 4 + 2));
                     value += rand2(floor(temp / 8 + 3));
                     value /= 4;
-                    if (value > fillAmount)
+                    if (value > fillAmount && value < fillAmount + 0.01)
                     { // This is how you set the density
                         final |= k;
                     }
