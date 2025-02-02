@@ -32,5 +32,16 @@ target_sources(glew PUBLIC ./external/glew-v2.2.0/src/glew.c)
 target_include_directories(glew PUBLIC ./external/glew-v2.2.0/include)
 target_link_libraries(glew PRIVATE ${OPENGL_LIBRARY})
 
+# IMGUI
+add_library(imgui STATIC)
+
+# Sources are in the included directory because imgui uses relative include paths
+file(GLOB sources CONFIGURE_DEPENDS ./external/imgui-v1.91.8/include/imgui/*.cpp)
+target_sources(imgui PRIVATE ${sources})
+target_include_directories(imgui PUBLIC ./external/imgui-v1.91.8/include)
+target_link_libraries(imgui PRIVATE glfw)
+target_link_libraries(imgui PRIVATE ${OPENGL_LIBRARY})
+
 # --- First party ---
+
 add_subdirectory(./projects/VoxelRenderer)
