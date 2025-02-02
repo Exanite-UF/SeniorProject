@@ -73,7 +73,7 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
 
     // Put the ray at the surface of the cube
     float distToCube = rayboxintersect(rayStart, rayDir, vec3(0), vec3(size));
-    rayPos += rayDir * (distToCube - 1);
+    rayPos += rayDir * (distToCube - 1);//The -1 is for numerical stability, but it requires the near clipping sphere of 1 unit away
 
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
@@ -93,7 +93,7 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
         t += vec3(lessThanEqual(t, vec3(0))) * aRayDir; // Numerical stability correction
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
-        if (i > 0 && (any(greaterThan(p, ivec3(size))) || any(lessThan(p, ivec3(-1)))))
+        if (i > 1 && (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0)))))
         {
             hit.normal = vec3(float(i) / iterations);
             // hit.wasHit = true;
