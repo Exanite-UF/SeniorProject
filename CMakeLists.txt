@@ -28,8 +28,8 @@ add_library(glew STATIC)
 
 target_compile_definitions(glew PUBLIC GLEW_STATIC)
 
-target_sources(glew PUBLIC ./external/glew/src/glew.c)
-target_include_directories(glew PUBLIC ./external/glew/include)
+target_sources(glew PUBLIC ./external/glew-v2.2.0/src/glew.c)
+target_include_directories(glew PUBLIC ./external/glew-v2.2.0/include)
 target_link_libraries(glew PRIVATE ${OPENGL_LIBRARY})
 
 # --- First party ---
