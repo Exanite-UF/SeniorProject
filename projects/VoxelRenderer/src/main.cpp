@@ -26,6 +26,7 @@
 
 #include "InputManager.h"
 #include "ShaderCompiler.h"
+#include "VoxelRenderer.h"
 #include "VoxelWorld.h"
 #include "Window.h"
 
@@ -51,24 +52,6 @@ int windowY = 0;
 int windowWidth = 0;
 int windowHeight = 0;
 double noiseTime = 0;
-
-void log(const std::string& value = "")
-{
-    std::cout << value + "\n"
-              << std::flush;
-}
-
-void checkForContentFolder()
-{
-    if (!std::filesystem::is_directory("content"))
-    {
-        throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
-    }
-    else
-    {
-        log("Found content folder");
-    }
-}
 
 // format and type are from glTexImage3D
 // format: GL_RED, GL_RED_INTEGER, GL_RG, GL_RG_INTEGER, GL_RGB, GL_RGB_INTEGER, GL_RGBA, GL_RGBA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, GL_LUMINANCE_ALPHA, GL_LUMINANCE, and GL_ALPHA
@@ -290,9 +273,8 @@ std::array<float, 3> getRight(float theta, float phi)
 
 int main()
 {
-    log("Starting Voxel Renderer");
-
-    checkForContentFolder();
+    VoxelRenderer::runStartupTests();
+    VoxelRenderer::log("Starting Voxel Renderer");
 
     // Init GLFW
     if (!glfwInit())
@@ -382,7 +364,6 @@ int main()
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
-    // TODO: Consider adding a EngineLoop class
     int counter = 0;
     double frameTime = 0;
     while (!glfwWindowShouldClose(window))
@@ -395,7 +376,7 @@ int main()
         counter++;
         if (counter % 10 == 0)
         {
-            log(std::to_string(10 / frameTime));
+            VoxelRenderer::log(std::to_string(10 / frameTime));
             frameTime = 0;
         }
 
