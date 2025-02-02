@@ -38,11 +38,11 @@ void main()
     if (isRand2)
     {
         int k = 1;
-        for (int i = 0; i < 2; i++)//z axis
+        for (int i = 0; i < 2; i++) // z axis
         {
-            for (int j = 0; j < 2; j++)//y axis
+            for (int j = 0; j < 2; j++) // y axis
             {
-                for (int l = 0; l < 2; l++)//x axis
+                for (int l = 0; l < 2; l++) // x axis
                 {
                     float value = 0;
                     vec3 temp = pos + vec3(l, j, i);
@@ -63,11 +63,11 @@ void main()
     else
     {
         int k = 1;
-        for (int i = 0; i < 2; i++)//z axis
+        for (int i = 0; i < 2; i++) // z axis
         {
-            for (int j = 0; j < 2; j++)//y axis
+            for (int j = 0; j < 2; j++) // y axis
             {
-                for (int l = 0; l < 2; l++)//x axis
+                for (int l = 0; l < 2; l++) // x axis
                 {
                     float value = 0;
                     vec3 temp = pos + vec3(l, j, i);

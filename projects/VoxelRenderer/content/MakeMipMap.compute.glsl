@@ -15,11 +15,11 @@ void main()
     uint final = 0;
 
     int k = 1;
-    for (int i = 0; i < 2; i++)//z axis
+    for (int i = 0; i < 2; i++) // z axis
     {
-        for (int j = 0; j < 2; j++)//y axis
+        for (int j = 0; j < 2; j++) // y axis
         {
-            for (int l = 0; l < 2; l++)//x axis
+            for (int l = 0; l < 2; l++) // x axis
             {
                 // pos + (l, j, i). Tell us the position of the bitlevel cell that we are in for this mip map.
                 // We need to sample a 2x2x2 set of cells in the previous mip map
