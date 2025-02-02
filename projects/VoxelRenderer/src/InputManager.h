@@ -4,10 +4,11 @@
 #include <glm/vec2.hpp>
 #include <unordered_set>
 
+//Stores a snapshot of the input state
 struct InputState
 {
-    std::unordered_set<int> heldKeys {};
-    std::unordered_set<int> heldButtons {};
+    std::unordered_set<int> heldKeys {};//Keyboard keys
+    std::unordered_set<int> heldButtons {};//Mouse buttons
 
     glm::vec2 mousePosition {};
     glm::vec2 mouseScroll {};
@@ -23,6 +24,8 @@ struct InputState
     }
 };
 
+//Used to access the state of the input
+//Provides abstractions to see changes in state between the last two updates
 struct Input
 {
     InputState current {};
@@ -74,9 +77,13 @@ struct Input
     }
 };
 
+
+//This manages the recording of the input state
 class InputManager
 {
 private:
+    //Accumulates changes to the input state, so that it always has the most recent changes to the input.
+    //These most recent inputs are then recorded in the Input object every update.
     InputState next {};
 
 public:
