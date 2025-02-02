@@ -36,7 +36,7 @@ target_link_libraries(glew PRIVATE ${OPENGL_LIBRARY})
 add_library(imgui STATIC)
 
 # Sources are in the included directory because imgui uses relative include paths
-file(GLOB sources CONFIGURE_DEPENDS ./external/imgui-v1.91.8/include/imgui/*.cpp)
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/imgui-v1.91.8/include/imgui/*.cpp)
 target_sources(imgui PRIVATE ${sources})
 target_include_directories(imgui PUBLIC ./external/imgui-v1.91.8/include)
 target_link_libraries(imgui PRIVATE glfw)
