@@ -9,7 +9,8 @@
 // TODO: Not all of these need to be part of the Window
 extern std::unordered_map<std::string, GLuint> shaderPrograms;//TODO: consider moving to a shader manager class. (The shader manager would be the only thing that interacts with the shader compiler)
 
-//TODO: The intended behavior of this flag should be possible to recreate with only the information provided from the InputManager.
+//TODO: Remove from Window.h. This is beyond the scope of what Window should be managing.
+//The intended behavior of this flag should be possible to recreate with only the information provided from the InputManager.
 //Consider adding the required information to the InputManager. It needs to know when the mouse enters the window to recreate the behavior of this flag.
 extern bool invalidateMouse; 
 
@@ -198,5 +199,14 @@ public:
         glfwSetCursorPosCallback(glfwWindowHandle, &Window::onCursorPos);
         glfwSetScrollCallback(glfwWindowHandle, &Window::onScroll);
         glfwSetCursorEnterCallback(glfwWindowHandle, &Window::onCursorEnter);
+    }
+
+    void toFullscreen(){
+        //TODO: Save state of the window for when returning to windowed mode
+        //TODO: Change the window to fullscreen mode
+    }
+
+    void toWindowed(){
+        //TODO: Change the window to windowed mode
     }
 };
