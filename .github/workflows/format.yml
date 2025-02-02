@@ -31,7 +31,6 @@ jobs:
         run: git status
 
       - name: Create new pull request if necessary
-        if: steps.calibre.outputs.markdown != ''
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

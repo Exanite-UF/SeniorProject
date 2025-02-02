@@ -73,7 +73,7 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
 
     // Put the ray at the surface of the cube
     float distToCube = rayboxintersect(rayStart, rayDir, vec3(0), vec3(size));
-    rayPos += rayDir * (distToCube - 1); // The -1 is for numerical stability, but it requires the near clipping sphere of 1 unit away
+    rayPos += rayDir * (distToCube - 0.001); // The -1 is for numerical stability, but it requires the near clipping sphere of 1 unit away
 
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
@@ -202,7 +202,7 @@ void main()
     vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
     rayDir /= length(rayDir);
 
-    rayPos += rayDir * 1;
+    rayPos += rayDir * 0.001;
 
     // rayPos += (forward + 2.f * z * (uv.x * right + uv.y * up)) * 1;//This would set a near clipping plane at 1 units away
 
