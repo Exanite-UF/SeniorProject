@@ -12,28 +12,32 @@ on:
 jobs:
   build:
     name: Format code
-    if: "!startsWith(github.ref, 'refs/heads/ci')"
     runs-on: ubuntu-latest
     permissions: write-all
+    env:
+        BRANCH_NAME: ${{ github.head_ref }}
+    if: "!startsWith(github.ref, 'refs/heads/ci')"
     steps:
 
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH_NAME }}
 
-      - name: Get current branch name
-        id: get_branch
-        run: echo "branch_name=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
+      - name: Show git status before
+        run: git status
 
       - name: Format code
         run: find ./projects -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.glsl" \) | xargs clang-format -i
 
-      - name: Show git status
+      - name: Show git status after
         run: git status
 
       - name: Create new pull request if necessary
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: Format code for ${{ env.branch_name }}
-          branch: ci/format/${{ env.branch_name }}
-          commit-message: Format code for ${{ env.branch_name }}
+          title: Format code for ${{ env.BRANCH_NAME }}
+          base: ${{ env.BRANCH_NAME }}
+          branch: ci/format/${{ env.BRANCH_NAME }}
+          commit-message: Format code for ${{ env.BRANCH_NAME }}
