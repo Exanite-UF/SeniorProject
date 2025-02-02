@@ -55,10 +55,15 @@ bool Input::isButtonReleased(const int button) const
     return !current.isButtonHeld(button) && previous.isButtonHeld(button);
 }
 
+InputManager::InputManager()
+{
+    input = std::make_unique<Input>();
+}
+
 void InputManager::update()
 {
-    input.previous = input.current;
-    input.current = next;
+    input->previous = input->current;
+    input->current = next;
 
     next.mouseScroll = glm::vec2(0);
 }

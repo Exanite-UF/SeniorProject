@@ -390,7 +390,7 @@ int main()
         glfwGetWindowSize(window, &width, &height);
         if (!invalidateMouse)
         {
-            auto mouseDelta = input.getMouseDelta();
+            auto mouseDelta = input->getMouseDelta();
 
             theta -= mouseDelta.x * 0.002;
             phi -= mouseDelta.y * 0.002;
@@ -405,42 +405,42 @@ int main()
         auto forward = getForward(theta, phi);
         auto camDirection = getCamDir(theta, phi);
 
-        if (input.isKeyHeld(GLFW_KEY_A))
+        if (input->isKeyHeld(GLFW_KEY_A))
         {
             camX -= right[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY -= right[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ -= right[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
-        if (input.isKeyHeld(GLFW_KEY_D))
+        if (input->isKeyHeld(GLFW_KEY_D))
         {
             camX += right[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY += right[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ += right[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
 
-        if (input.isKeyHeld(GLFW_KEY_W))
+        if (input->isKeyHeld(GLFW_KEY_W))
         {
             camX += forward[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY += forward[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ += forward[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
-        if (input.isKeyHeld(GLFW_KEY_S))
+        if (input->isKeyHeld(GLFW_KEY_S))
         {
             camX -= forward[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camY -= forward[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
             camZ -= forward[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
         }
 
-        if (input.isKeyHeld(GLFW_KEY_SPACE))
+        if (input->isKeyHeld(GLFW_KEY_SPACE))
         {
             camZ += deltaTime * std::pow(2, mouseWheel * 0.1);
         }
-        if (input.isKeyHeld(GLFW_KEY_LEFT_SHIFT))
+        if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
         {
             camZ -= deltaTime * std::pow(2, mouseWheel * 0.1);
         }
 
-        if (input.isKeyHeld(GLFW_KEY_E))
+        if (input->isKeyHeld(GLFW_KEY_E))
         {
             noiseTime += deltaTime;
             makeNoise(occupancyMap);
@@ -461,7 +461,7 @@ int main()
             remakeNoise = false;
         }
 
-        if (input.isKeyPressed(GLFW_KEY_F))
+        if (input->isKeyPressed(GLFW_KEY_F))
         {
             GLFWmonitor* monitor = glfwGetWindowMonitor(window);
             if (monitor == NULL)
@@ -478,7 +478,7 @@ int main()
                 glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
             }
         }
-        if (input.isKeyPressed(GLFW_KEY_Q))
+        if (input->isKeyPressed(GLFW_KEY_Q))
         {
             int mode = glfwGetInputMode(window, GLFW_CURSOR);
 
@@ -491,30 +491,30 @@ int main()
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }
         }
-        if (input.isKeyPressed(GLFW_KEY_ESCAPE))
+        if (input->isKeyPressed(GLFW_KEY_ESCAPE))
         {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
-        if (input.isKeyPressed(GLFW_KEY_R))
+        if (input->isKeyPressed(GLFW_KEY_R))
         {
             isWorkload = !isWorkload;
         }
-        if (input.isKeyPressed(GLFW_KEY_T))
+        if (input->isKeyPressed(GLFW_KEY_T))
         {
             isRand2 = !isRand2;
             remakeNoise = true;
         }
 
         // Scroll
-        if (input.isKeyHeld(GLFW_KEY_LEFT_CONTROL))
+        if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL))
         {
-            fillAmount -= input.getMouseScroll().y * 0.01;
+            fillAmount -= input->getMouseScroll().y * 0.01;
             fillAmount = std::clamp(fillAmount, 0.f, 1.f);
             remakeNoise = true;
         }
         else
         {
-            mouseWheel += input.getMouseScroll().y;
+            mouseWheel += input->getMouseScroll().y;
         }
 
         {

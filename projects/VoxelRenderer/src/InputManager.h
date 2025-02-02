@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
+#include <memory>
 #include <unordered_set>
 
 struct InputState
@@ -40,7 +41,9 @@ private:
     InputState next {};
 
 public:
-    Input input {};
+    std::unique_ptr<Input> input;
+
+    InputManager();
 
     void update();
 
