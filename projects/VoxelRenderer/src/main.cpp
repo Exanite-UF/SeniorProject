@@ -3,6 +3,11 @@
 
 #include <GLFW/glfw3.h>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+#include <imgui/imgui_stdlib.h>
+
 #include <glm/common.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -324,6 +329,16 @@ int main()
         throw std::runtime_error("Failed to initialize GLEW");
     }
 
+    // TODO: Consider refactoring this and other ImGui init/render loop/deinit code into separate class
+    // Setup IMGUI context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+    ImGui_ImplGlfw_InitForOpenGL(window1->glfwWindowHandle, true);
+    ImGui_ImplOpenGL3_Init();
+
     // Vertex array
     GLuint emptyVertexArray;
     glGenVertexArrays(1, &emptyVertexArray);
@@ -367,6 +382,7 @@ int main()
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
+    // TODO: Consider adding a EngineLoop class
     int counter = 0;
     double frameTime = 0;
     while (!glfwWindowShouldClose(window))
@@ -384,6 +400,9 @@ int main()
         }
 
         window1->update();
+        ImGui_ImplOpenGL3_NewFrame(); // TODO: Cleanup
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int width, height;
@@ -588,8 +607,27 @@ int main()
             glBindVertexArray(0);
         }
 
+        {
+            std::string str = "Hello";
+            float f;
+            ImGui::Text("Hello, world %d", 123);
+            if (ImGui::Button("Save"))
+                ;
+            ImGui::InputText("string", &str);
+            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+        }
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         glfwSwapBuffers(window);
     }
+
+    // TODO: Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    glfwTerminate();
 
     return 0;
 }
