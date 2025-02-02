@@ -73,7 +73,7 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
 
     // Put the ray at the surface of the cube
     float distToCube = rayboxintersect(rayStart, rayDir, vec3(0), vec3(size));
-    rayPos += rayDir * (distToCube - 1);//The -1 is for numerical stability, but it requires the near clipping sphere of 1 unit away
+    rayPos += rayDir * (distToCube - 1); // The -1 is for numerical stability, but it requires the near clipping sphere of 1 unit away
 
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
@@ -121,7 +121,6 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
         uvec4 l4 = imageLoad(texture4, (p >> 7));
         uvec4 l5 = imageLoad(texture5, (p >> 9));
 
-
         uint level1 = l1.a; // This is the cell from the image (Warning the upper 24 bits are garbage and should be ignored)
 
         uint level2 = l2.a; // cell for level 2
@@ -145,9 +144,9 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
             if (i > 0 && isOutside)
             { // Don't intersect with the first voxel
                 hit.wasHit = true;
-                uvec3 c1 = uvec3(greaterThan(l1.rgb & k1, uvec3(0)));//uvec3((l1.r & k1) > 0 ?  1 : 0, (l1.g & k1) > 0 ? 1 : 0, (l1.b & k1) > 0 ? 1 : 0);
-                uvec3 c2 = uvec3(greaterThan(l2.rgb & k2, uvec3(0)));//uvec3(l2.r & k2 > 0, l2.g & k2 > 0, l2.b & k2 > 0);
-                uvec3 c3 = uvec3(greaterThan(l3.rgb & k3, uvec3(0)));//uvec3(l3.r & k3 > 0, l3.g & k3 > 0, l3.b & k3 > 0);
+                uvec3 c1 = uvec3(greaterThan(l1.rgb & k1, uvec3(0))); // uvec3((l1.r & k1) > 0 ?  1 : 0, (l1.g & k1) > 0 ? 1 : 0, (l1.b & k1) > 0 ? 1 : 0);
+                uvec3 c2 = uvec3(greaterThan(l2.rgb & k2, uvec3(0))); // uvec3(l2.r & k2 > 0, l2.g & k2 > 0, l2.b & k2 > 0);
+                uvec3 c3 = uvec3(greaterThan(l3.rgb & k3, uvec3(0))); // uvec3(l3.r & k3 > 0, l3.g & k3 > 0, l3.b & k3 > 0);
                 hit.material = c1.r + (1 << 1) * c1.g + (1 << 2) * c1.b + (1 << 3) * c2.r + (1 << 4) * c2.g + (1 << 5) * c2.b + (1 << 6) * c3.r + (1 << 7) * c3.g + (1 << 8) * c3.b;
                 break;
             }
@@ -198,24 +197,22 @@ void main()
     vec2 uv = gl_FragCoord.xy / resolution - 0.5;
     uv.y *= resolution.y / resolution.x;
 
-	
-	int voxelsPerMeter = 16;//voxels per meter
-	vec3 rayPos = (pos + 0.5) * voxelsPerMeter;
-	vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
-	rayDir /= length(rayDir);
+    int voxelsPerMeter = 16; // voxels per meter
+    vec3 rayPos = (pos + 0.5) * voxelsPerMeter;
+    vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
+    rayDir /= length(rayDir);
 
     rayPos += rayDir * 1;
 
-    //rayPos += (forward + 2.f * z * (uv.x * right + uv.y * up)) * 1;//This would set a near clipping plane at 1 units away
-	
+    // rayPos += (forward + 2.f * z * (uv.x * right + uv.y * up)) * 1;//This would set a near clipping plane at 1 units away
 
     RayHit hit = findIntersection2(rayPos, rayDir);
-    //From here we render out the information we need to the frame buffers we need.
-    //At the moment we just render to the window in a manner that provides debug information.
+    // From here we render out the information we need to the frame buffers we need.
+    // At the moment we just render to the window in a manner that provides debug information.
 
     if (!isWorkload)
     {
-        //Show the value of the material information in the three textures by showing as different color channels.
+        // Show the value of the material information in the three textures by showing as different color channels.
         vec3 color = vec3((hit.material & 7) / 7.0, ((hit.material & 56) >> 3) / 7.0, ((hit.material & 448) >> 6) / 7.0);
         fragColor = vec4(color * int(hit.wasHit), 1);
     }
@@ -239,7 +236,6 @@ void main()
             fragColor = vec4(hueToRGB(0.5 - (hit.iterations - 100) / 200.f), 1);
         }
         */
-        
     }
 
     /*
