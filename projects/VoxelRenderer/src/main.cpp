@@ -382,6 +382,7 @@ int main()
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
+    // TODO: Consider adding a EngineLoop class
     int counter = 0;
     double frameTime = 0;
     while (!glfwWindowShouldClose(window))
