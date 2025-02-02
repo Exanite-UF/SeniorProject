@@ -93,11 +93,13 @@ public:
         //This finds that
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));//Get the reciever of the callback (ie. which of our Window object was this call back for)
         //Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-
-        if (self)
-        {
-            glViewport(0, 0, width, height);//Adjusts the render target size for the window (ie. the render will resize to take up the full window)
+        if(self == NULL){
+            return;
         }
+
+        glViewport(0, 0, width, height);//Adjusts the render target size for the window (ie. the render will resize to take up the full window)
+
+        //TODO: call user specified callbacks
     };
 
     static void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -107,11 +109,14 @@ public:
         //This finds that
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         //Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-
-        if (self)
-        {
-            self->inputManager->onKey(window, key, scancode, action, mods);
+        if(self == NULL){
+            return;
         }
+
+        //Call the inputManger callback for keyboard presses
+        self->inputManager->onKey(window, key, scancode, action, mods);
+
+        //TODO: call user specified callbacks
     };
 
     static void onMouseButton(GLFWwindow* window, int button, int action, int mods)
@@ -121,11 +126,14 @@ public:
         //This finds that
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         //Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-
-        if (self)
-        {
-            self->inputManager->onMouseButton(window, button, action, mods);
+        if(self == NULL){
+            return;
         }
+
+        //Call the inputManger callback for mouse clicks
+        self->inputManager->onMouseButton(window, button, action, mods);
+
+        //TODO: call user specified callbacks
     };
 
     static void onCursorPos(GLFWwindow* window, double xpos, double ypos)
@@ -135,11 +143,14 @@ public:
         //This finds that
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         //Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-
-        if (self)
-        {
-            self->inputManager->onCursorPos(window, xpos, ypos);
+        if(self == NULL){
+            return;
         }
+
+        //Call the inputManger callback for mouse movement
+        self->inputManager->onCursorPos(window, xpos, ypos);
+
+        //TODO: call user specified callbacks
     };
 
     static void onScroll(GLFWwindow* window, double xoffset, double yoffset)
@@ -149,11 +160,14 @@ public:
         //This finds that
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         //Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-
-        if (self)
-        {
-            self->inputManager->onScroll(window, xoffset, yoffset);
+        if(self == NULL){
+            return;
         }
+
+        //Call the inputManger callback for mouse scrolling
+        self->inputManager->onScroll(window, xoffset, yoffset);
+
+        //TODO: call user specified callbacks
     };
 
     static void onCursorEnter(GLFWwindow* window, int entered)
@@ -163,11 +177,12 @@ public:
         //This finds that
         auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         //Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-
-        if (self)
-        {
-            invalidateMouse = true;
+        if(self == NULL){
+            return;
         }
+
+        //TODO: Have invalidate mouse managed by the input manager
+        invalidateMouse = true;
     };
 
 
