@@ -11,24 +11,13 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
 #include "VoxelWorld.h"
+#include "GraphicsUtils.h"
 
-//TODO: call this function from a utility class
-GLuint create3DImage(int width, int height, int depth, GLenum internalFormat, GLenum format, GLenum type)
-{
-    GLuint img;
-    glGenTextures(1, &img);
+GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
+GLuint VoxelRenderer::executeRayTraceProgram;
+GLuint VoxelRenderer::resetHitInfoProgram;
+GLuint VoxelRenderer::displayToWindowProgram;
 
-    glBindTexture(GL_TEXTURE_3D, img);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage3D(
-        GL_TEXTURE_3D, 0, internalFormat,
-        width, height, depth, // Dimensions for new mip level
-        0, format, type, nullptr);
-
-    glBindTexture(GL_TEXTURE_3D, 0);
-    return img;
-}
 
 
 void VoxelRenderer::remakeTextures()
@@ -43,19 +32,14 @@ void VoxelRenderer::remakeTextures()
     glDeleteTextures(1, &rayHitNormalBuffer);
     glDeleteTextures(1, &rayHitMaterialBuffer);
 
-    glDeleteTextures(1, &depthBuffer);
-    glDeleteTextures(1, &tempDepthBuffer);
-
     //Create a new texture
-    rayStartBuffer = create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayDirectionBuffer = create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
 
-    rayHitPositionBuffer = create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitNormalBuffer = create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitMaterialBuffer = create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
+    rayHitPositionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayHitNormalBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayHitMaterialBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
 
-    depthBuffer = create3DImage(xSize, ySize, raysPerPixel, GL_R32F, GL_RED, GL_FLOAT);
-    tempDepthBuffer = create3DImage(xSize, ySize, raysPerPixel, GL_R32F, GL_RED, GL_FLOAT);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -108,19 +92,24 @@ VoxelRenderer::VoxelRenderer()
     prepareRayTraceFromCameraProgram = ShaderManager::getManager().getComputeProgram("content/PrepareRayTraceFromCamera.compute.glsl");
     executeRayTraceProgram = ShaderManager::getManager().getComputeProgram("content/ExecuteRayTrace.compute.glsl");
     resetHitInfoProgram = ShaderManager::getManager().getComputeProgram("content/ResetHitInfo.compute.glsl");
+    displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/DisplayToWindow.frag.glsl");
 }
 
 void VoxelRenderer::setResolution(int x, int y)
 {
+    if(xSize != x || ySize != y){
+        isSizingDirty = true;
+    }
     xSize = x;
     ySize = y;
-    isSizingDirty = true;
 }
 
 void VoxelRenderer::setRaysPerPixel(int number)
 {
+    if(raysPerPixel != number){
+        isSizingDirty = true;
+    }
     raysPerPixel = number;
-    isSizingDirty = true;
 }
 
 void VoxelRenderer::prepateRayTraceFromCamera(const Camera& camera)
@@ -219,10 +208,6 @@ void VoxelRenderer::prepateRayTraceFromCamera(const Camera& camera)
         GL_R16UI // Format
     );
 
-    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (ySize + 8 - 1) / 8;
-    GLuint workGroupsZ = raysPerPixel;
-
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
     // Ensure compute shader completes
@@ -267,7 +252,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
 
     //bind rayStart info
     glBindImageTexture(
-        5, // Image unit index (matches binding=0)
+        3, // Image unit index (matches binding=0)
         rayStartBuffer, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -277,7 +262,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     );
 
     glBindImageTexture(
-        6, // Image unit index (matches binding=1)
+        4, // Image unit index (matches binding=1)
         rayDirectionBuffer, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -288,7 +273,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     
     //bind hit info
     glBindImageTexture(
-        7, // Image unit index (matches binding=0)
+        5, // Image unit index (matches binding=0)
         rayHitPositionBuffer, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -298,7 +283,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     );
 
     glBindImageTexture(
-        8, // Image unit index (matches binding=0)
+        6, // Image unit index (matches binding=0)
         rayHitNormalBuffer, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -308,7 +293,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     );
 
     glBindImageTexture(
-        9, // Image unit index (matches binding=0)
+        7, // Image unit index (matches binding=0)
         rayHitMaterialBuffer, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -322,7 +307,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     GLuint workGroupsZ = raysPerPixel;
 
     for(auto& voxelWorld : worlds){
-        voxelWorld.bindVoxelTextures();
+        voxelWorld.bindTextures();
 
         glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
         glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldOrientation"), 1, glm::value_ptr(voxelWorld.getOrientation()));
@@ -330,10 +315,31 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-        voxelWorld.unbindVoxelTexture();
+        voxelWorld.unbindTextures();
     }
 
     //unbind rayStart info
+    glBindImageTexture(
+        3, // Image unit index (matches binding=0)
+        0, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA32F // Format
+    );
+
+    glBindImageTexture(
+        4, // Image unit index (matches binding=1)
+        0, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA32F // Format
+    );
+    
+    //unbind hit info
     glBindImageTexture(
         5, // Image unit index (matches binding=0)
         0, // Texture ID
@@ -345,7 +351,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     );
 
     glBindImageTexture(
-        6, // Image unit index (matches binding=1)
+        6, // Image unit index (matches binding=0)
         0, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -353,30 +359,9 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
         GL_READ_WRITE, // Access qualifier
         GL_RGBA32F // Format
     );
-    
-    //unbind hit info
+
     glBindImageTexture(
         7, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        8, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        9, // Image unit index (matches binding=0)
         0, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -386,4 +371,78 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     );
 
     glUseProgram(0);
+}
+
+void VoxelRenderer::display()
+{
+    glUseProgram(displayToWindowProgram);
+
+    glBindImageTexture(
+        0, // Image unit index (matches binding=0)
+        rayHitPositionBuffer, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA32F // Format
+    );
+
+    glBindImageTexture(
+        1, // Image unit index (matches binding=0)
+        rayHitNormalBuffer, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA32F // Format
+    );
+
+    glBindImageTexture(
+        2, // Image unit index (matches binding=0)
+        rayHitMaterialBuffer, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_R16UI // Format
+    );
+
+    glBindVertexArray(GraphicsUtils::getEmptyVertexArray());
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    
+
+    glUseProgram(0);
+    glBindVertexArray(0);
+
+    glBindImageTexture(
+        0, // Image unit index (matches binding=0)
+        0, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA32F // Format
+    );
+
+    glBindImageTexture(
+        1, // Image unit index (matches binding=0)
+        0, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_RGBA32F // Format
+    );
+
+    glBindImageTexture(
+        2, // Image unit index (matches binding=0)
+        0, // Texture ID
+        0, // Mip level
+        GL_TRUE, // Layered (true for 3D textures)
+        0, // Layer (ignored for 3D)
+        GL_READ_WRITE, // Access qualifier
+        GL_R16UI // Format
+    );
 }

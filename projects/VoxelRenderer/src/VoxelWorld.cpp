@@ -16,11 +16,11 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     uint16_t height = 512;
     uint16_t depth = 512;
     
-    this->occupancyMap = GraphicsUtils::create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap1 = GraphicsUtils::create3DImage(128, 128, 128, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap2 = GraphicsUtils::create3DImage(32, 32, 32, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap3 = GraphicsUtils::create3DImage(8, 8, 8, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap4 = GraphicsUtils::create3DImage(2, 2, 2, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->occupancyMap = GraphicsUtils::create3DImage(512, 512, 512, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->mipMap1 = GraphicsUtils::create3DImage(128, 128, 128, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->mipMap2 = GraphicsUtils::create3DImage(32, 32, 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    //this->mipMap3 = GraphicsUtils::create3DImage(8, 8, 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    //this->mipMap4 = GraphicsUtils::create3DImage(2, 2, 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
 
 	generateFromNoise(0, true, 0.6);
 
@@ -36,11 +36,11 @@ void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmo
 	makeNoise(occupancyMap, currentNoiseTime, true, 0.6);
     makeMipMap(occupancyMap, mipMap1);
     makeMipMap(mipMap1, mipMap2);
-    makeMipMap(mipMap2, mipMap3);
-    makeMipMap(mipMap3, mipMap4);
+    //makeMipMap(mipMap2, mipMap3);
+    //makeMipMap(mipMap3, mipMap4);
 }
 
-void VoxelWorld::bindTextures()
+void VoxelWorld::bindTextures() const
 {	
 	glBindImageTexture(
 		0, // Image unit index (matches binding=1)
@@ -72,9 +72,32 @@ void VoxelWorld::bindTextures()
 		GL_RGBA8UI // Format
 	);
 
-	glBindImageTexture(
-		3, // Image unit index (matches binding=1)
-		mipMap3, // Texture ID
+	//glBindImageTexture(
+	//	3, // Image unit index (matches binding=1)
+	//	mipMap3, // Texture ID
+	//	0, // Mip level
+	//	GL_TRUE, // Layered (true for 3D textures)
+	//	0, // Layer (ignored for 3D)
+	//	GL_READ_ONLY, // Access qualifier
+	//	GL_RGBA8UI // Format
+	//);
+    //
+	//glBindImageTexture(
+	//	4, // Image unit index (matches binding=1)
+	//	mipMap4, // Texture ID
+	//	0, // Mip level
+	//	GL_TRUE, // Layered (true for 3D textures)
+	//	0, // Layer (ignored for 3D)
+	//	GL_READ_ONLY, // Access qualifier
+	//	GL_RGBA8UI // Format
+	//);
+}
+
+void VoxelWorld::unbindTextures() const
+{
+    glBindImageTexture(
+		0, // Image unit index (matches binding=1)
+		0, // Texture ID
 		0, // Mip level
 		GL_TRUE, // Layered (true for 3D textures)
 		0, // Layer (ignored for 3D)
@@ -83,14 +106,59 @@ void VoxelWorld::bindTextures()
 	);
 
 	glBindImageTexture(
-		4, // Image unit index (matches binding=1)
-		mipMap4, // Texture ID
+		1, // Image unit index (matches binding=1)
+		0, // Texture ID
 		0, // Mip level
 		GL_TRUE, // Layered (true for 3D textures)
 		0, // Layer (ignored for 3D)
 		GL_READ_ONLY, // Access qualifier
 		GL_RGBA8UI // Format
 	);
+
+	glBindImageTexture(
+		2, // Image unit index (matches binding=1)
+		0, // Texture ID
+		0, // Mip level
+		GL_TRUE, // Layered (true for 3D textures)
+		0, // Layer (ignored for 3D)
+		GL_READ_ONLY, // Access qualifier
+		GL_RGBA8UI // Format
+	);
+
+	//glBindImageTexture(
+	//	3, // Image unit index (matches binding=1)
+	//	0, // Texture ID
+	//	0, // Mip level
+	//	GL_TRUE, // Layered (true for 3D textures)
+	//	0, // Layer (ignored for 3D)
+	//	GL_READ_ONLY, // Access qualifier
+	//	GL_RGBA8UI // Format
+	//);
+    //
+	//glBindImageTexture(
+	//	4, // Image unit index (matches binding=1)
+	//	0, // Texture ID
+	//	0, // Mip level
+	//	GL_TRUE, // Layered (true for 3D textures)
+	//	0, // Layer (ignored for 3D)
+	//	GL_READ_ONLY, // Access qualifier
+	//	GL_RGBA8UI // Format
+	//);
+}
+
+glm::vec3 VoxelWorld::getPosition() const
+{
+    return position;
+}
+
+glm::vec3 VoxelWorld::getScale() const
+{
+    return scale;
+}
+
+glm::quat VoxelWorld::getOrientation() const
+{
+    return orientation;
 }
 
 void VoxelWorld::makeNoise(GLuint image3D, double noiseTime, bool isRand2, float fillAmount)

@@ -1,1 +1,16 @@
 #include "Camera.h"
+
+glm::quat Camera::getOrientation() const
+{
+    return orientation;
+}
+
+glm::vec3 Camera::getPosition() const
+{
+    return position;
+}
+
+float Camera::getHorizontalFov() const
+{
+    return 3.1415926589 * 0.5;
+}

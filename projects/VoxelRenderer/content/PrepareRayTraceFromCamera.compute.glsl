@@ -12,7 +12,7 @@ uniform vec2 jitter;//([0, 1), [0, 1))
 
 //Applies a quaternion
 vec3 qtransform( vec4 q, vec3 v ){ 
-	return v + 2.0*cross(cross(v, q.xyz ) + q.w*v, q.xyz);
+	return v + 2.0*cross(q.xyz, cross(q.xyz, v) + q.w*v);
 } 
 
 //hash and random made by Spatial on 05 July 2013  (someone on stack overflow)

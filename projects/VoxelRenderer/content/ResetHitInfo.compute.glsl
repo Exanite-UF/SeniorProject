@@ -14,5 +14,5 @@ void main()
     
     imageStore(hitPosition, texelCoord, vec4(0));
     imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
-    imageStore(hitMaterial, texelCoord, vec4(0));
+    imageStore(hitMaterial, texelCoord, uvec4(0));
 }

@@ -3,6 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 class VoxelWorld
 {
@@ -20,6 +22,10 @@ private:
     GLuint mipMap4;//This texture stores the eighth and ninth mip maps
 
 	double currentNoiseTime;//This variable is used to determine the "seed" used by the random functions in the make noise shader
+
+	glm::vec3 position = glm::vec3(0, 0, 0);
+	glm::vec3 scale = glm::vec3(1, 1, 1);
+	glm::quat orientation = glm::quat(1, 0, 0, 0);
 
 	//TODO: Consider storing the width, height, and depth of the voxel world in this class
 	//Remember that the voxel world dimensions are twice the size of the dimensions of the textures
@@ -40,8 +46,13 @@ public:
 
 	//TODO: Consider renaming
 	//generateFromNoise also needs to bind textures. So calling this and then generateFromNoise will result in some of the textures that this functions binds being unbound
-	void bindTextures();
+	void bindTextures() const;
+	void unbindTextures() const;
 
 	glm::ivec3 getSize() const;//TODO: implement
+
+	glm::vec3 getPosition() const;
+	glm::vec3 getScale() const;
+	glm::quat getOrientation() const;
 
 };

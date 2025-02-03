@@ -39,6 +39,7 @@ private:
     static GLuint prepareRayTraceFromCameraProgram;
     static GLuint executeRayTraceProgram;
     static GLuint resetHitInfoProgram;
+    static GLuint displayToWindowProgram;
 
     int xSize = 0;
     int ySize = 0;
@@ -69,4 +70,6 @@ public:
     void prepateRayTraceFromCamera(const Camera& camera);
 
     void executeRayTrace(const std::vector<VoxelWorld>& worlds);
+
+    void display();
 };

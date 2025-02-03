@@ -81,6 +81,8 @@ std::array<float, 3> getRight(float theta, float phi)
 
 int main()
 {
+
+    
     VoxelRenderer::runStartupTests();
     VoxelRenderer::log("Starting Voxel Renderer");
 
@@ -141,6 +143,12 @@ int main()
     assignMaterialComputeProgram = shaderManager.getComputeProgram("content/AssignMaterial.compute.glsl");
 
     VoxelWorld voxelWorld(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    VoxelRenderer renderer;
+    Camera camera;
+    renderer.setRaysPerPixel(1);
+
+    std::vector<VoxelWorld> worlds;
+    worlds.push_back(voxelWorld);
 
     // Main render loop
     double theta = 0;
@@ -185,12 +193,14 @@ int main()
 
         int width, height;
         glfwGetWindowSize(window, &width, &height);
+        renderer.setResolution(width, height);
+
         if (!invalidateMouse)
         {
             auto mouseDelta = input->getMouseDelta();
 
             theta -= mouseDelta.x * 0.002;
-            phi -= mouseDelta.y * 0.002;
+            phi += mouseDelta.y * 0.002;
             phi = std::min(std::max(phi, -3.1415926589 / 2), 3.1415926589 / 2);
         }
         else
@@ -306,6 +316,17 @@ int main()
         }
 
         {
+            camera.position = glm::vec3(camX, camY, camZ);
+            camera.orientation = glm::angleAxis((float)theta, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)phi, glm::vec3(0, 1, 0));//glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+            renderer.prepateRayTraceFromCamera(camera);
+            renderer.executeRayTrace(worlds);
+            renderer.display();
+
+        }
+
+        /*
+        {
+
             glUseProgram(raymarcherGraphicsProgram);
             glBindVertexArray(emptyVertexArray);
 
@@ -327,6 +348,7 @@ int main()
             glUseProgram(0);
             glBindVertexArray(0);
         }
+        */
 
         {
             std::string str = "Hello";
