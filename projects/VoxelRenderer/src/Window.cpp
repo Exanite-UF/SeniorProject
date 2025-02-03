@@ -41,7 +41,8 @@ void Window::onWindowSize(GLFWwindow* window, int width, int height)
     // window, the parameter variable, stores a GLFWWindow pointer
     // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
     // This finds that
-    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window)); // Get the reciever of the callback (ie. which of our Window object was this call back for)
+    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    // Get the reciever of the callback (ie. which of our Window object was this call back for)
     // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
     if (self == NULL)
     {
@@ -122,7 +123,6 @@ void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
     // Call the inputManger callback for mouse scrolling
     self->inputManager->onScroll(window, xoffset, yoffset);
 
-    // TODO: call user specified callbacks
 }
 
 void Window::onCursorEnter(GLFWwindow* window, int entered)
@@ -137,8 +137,7 @@ void Window::onCursorEnter(GLFWwindow* window, int entered)
         return;
     }
 
-    // TODO: Have invalidate mouse managed by the input manager
-    //invalidateMouse = true;
+    self->inputManager->invalidateMouse = true;
 }
 
 void Window::registerCallbacks()

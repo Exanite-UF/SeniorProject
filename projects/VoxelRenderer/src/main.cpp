@@ -38,6 +38,7 @@
 // scroll = change move speed
 // CTRL + scroll = change noise fill
 
+// Can be replaced with input manager's once integrated into main
 bool invalidateMouse = true;
 
 bool isWorkload = false; // View toggle
