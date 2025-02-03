@@ -3,3 +3,4 @@ BasedOnStyle: WebKit
 BreakBeforeBraces: Allman
 IndentCaseLabels: true
 InsertNewlineAtEOF: true
+NamespaceIndentation: All
