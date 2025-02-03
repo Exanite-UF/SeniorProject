@@ -27,7 +27,7 @@ public:
     ShaderManager();
     ShaderManager(const ShaderManager&) = delete;
     ShaderManager& operator=(const ShaderManager&) = delete;
-
+    
     ~ShaderManager();
 
     // Loads, compiles, and links vertex and fragment shaders into a graphics program

@@ -29,7 +29,6 @@
 #include "VoxelRenderer.h"
 #include "VoxelWorld.h"
 #include "Window.h"
-#include "GraphicsUtils.h"
 
 // WASD Space Shift = movement
 // q = capture mouse
@@ -58,163 +57,6 @@ GLuint makeNoiseComputeProgram;
 GLuint makeMipMapComputeProgram;
 GLuint assignMaterialComputeProgram;
 
-void makeNoise(GLuint image3D)
-{
-    glUseProgram(makeNoiseComputeProgram);
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        image3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    int outputWidth, outputHeight, outputDepth;
-
-    glBindTexture(GL_TEXTURE_3D, image3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
-
-    int timeUniform = glGetUniformLocation(makeNoiseComputeProgram, "time");
-
-    glUniform1f(timeUniform, noiseTime);
-
-    glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
-    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
-
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-}
-
-void assignMaterial(GLuint image3D)
-{
-    glUseProgram(assignMaterialComputeProgram);
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        image3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    int outputWidth, outputHeight, outputDepth;
-
-    glBindTexture(GL_TEXTURE_3D, image3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
-
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-}
-
-void makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
-{
-    glUseProgram(makeMipMapComputeProgram);
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        inputImage3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        1, // Image unit index (matches binding=1)
-        outputImage3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    int outputWidth, outputHeight, outputDepth;
-
-    glBindTexture(GL_TEXTURE_3D, outputImage3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
-
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    // Unbind the images
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    glBindImageTexture(
-        1, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-}
 
 std::array<float, 3> getCamDir(float theta, float phi)
 {
@@ -298,22 +140,7 @@ int main()
     makeMipMapComputeProgram = shaderManager->getComputeProgram("content/MakeMipMap.compute.glsl");
     assignMaterialComputeProgram = shaderManager->getComputeProgram("content/AssignMaterial.compute.glsl");
 
-    // Make and fill the buffers
-    GLuint occupancyMap = GraphicsUtils::create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap1 = GraphicsUtils::create3DImage(128, 128, 128, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap2 = GraphicsUtils::create3DImage(32, 32, 32, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap3 = GraphicsUtils::create3DImage(8, 8, 8, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap4 = GraphicsUtils::create3DImage(2, 2, 2, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-
-    makeNoise(occupancyMap);
-    makeMipMap(occupancyMap, mipMap1);
-    makeMipMap(mipMap1, mipMap2);
-    makeMipMap(mipMap2, mipMap3);
-    makeMipMap(mipMap3, mipMap4);
-
-    assignMaterial(occupancyMap);
-    assignMaterial(mipMap1);
-    assignMaterial(mipMap2);
+    VoxelWorld voxelWorld(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
 
     // Main render loop
     double theta = 0;
@@ -412,22 +239,13 @@ int main()
 
         if (input->isKeyHeld(GLFW_KEY_E))
         {
-            noiseTime += deltaTime;
-            makeNoise(occupancyMap);
-            makeMipMap(occupancyMap, mipMap1);
-            makeMipMap(mipMap1, mipMap2);
-            makeMipMap(mipMap2, mipMap3);
-            makeMipMap(mipMap3, mipMap4);
+            voxelWorld.generateFromNoise(deltaTime, isRand2, fillAmount);
         }
 
         if (remakeNoise)
         {
             // The noise time should not be incremented here
-            makeNoise(occupancyMap);
-            makeMipMap(occupancyMap, mipMap1);
-            makeMipMap(mipMap1, mipMap2);
-            makeMipMap(mipMap2, mipMap3);
-            makeMipMap(mipMap3, mipMap4);
+            voxelWorld.generateFromNoise(0, isRand2, fillAmount);
             remakeNoise = false;
         }
 
@@ -491,55 +309,7 @@ int main()
             glUseProgram(raymarcherGraphicsProgram);
             glBindVertexArray(emptyVertexArray);
 
-            glBindImageTexture(
-                0, // Image unit index (matches binding=1)
-                occupancyMap, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                1, // Image unit index (matches binding=1)
-                mipMap1, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                2, // Image unit index (matches binding=1)
-                mipMap2, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                3, // Image unit index (matches binding=1)
-                mipMap3, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                4, // Image unit index (matches binding=1)
-                mipMap4, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
+            voxelWorld.bindTextures();
 
             int camPos = glGetUniformLocation(raymarcherGraphicsProgram, "camPos");
             glUniform3f(camPos, camX, camY, camZ);

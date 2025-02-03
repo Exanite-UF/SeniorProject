@@ -1,7 +1,5 @@
 #include "GraphicsUtils.h"
 
-#include <GL/glew.h>
-
 GLuint GraphicsUtils::create3DImage(int width, int height, int depth, GLenum format, GLenum type)
 {
     GLuint img;
