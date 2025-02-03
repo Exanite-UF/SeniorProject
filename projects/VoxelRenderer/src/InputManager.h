@@ -48,6 +48,7 @@ private:
 
 public:
     std::unique_ptr<Input> input;
+    bool invalidateMouse = true;
 
     InputManager();
 

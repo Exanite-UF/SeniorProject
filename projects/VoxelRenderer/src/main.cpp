@@ -38,6 +38,7 @@
 // scroll = change move speed
 // CTRL + scroll = change noise fill
 
+// Can be replaced with input manager's once integrated into main
 bool invalidateMouse = true;
 
 bool isWorkload = false; // View toggle
@@ -45,11 +46,6 @@ bool isRand2 = true; // Noise type toggle
 float fillAmount = 0.6;
 bool remakeNoise = false;
 
-// These are only set when the switching between fullscreen and windowed
-int windowX = 0;
-int windowY = 0;
-int windowWidth = 0;
-int windowHeight = 0;
 double noiseTime = 0;
 
 GLuint raymarcherGraphicsProgram;
@@ -57,183 +53,6 @@ GLuint makeNoiseComputeProgram;
 GLuint makeMipMapComputeProgram;
 GLuint assignMaterialComputeProgram;
 
-// format and type are from glTexImage3D
-// format: GL_RED, GL_RED_INTEGER, GL_RG, GL_RG_INTEGER, GL_RGB, GL_RGB_INTEGER, GL_RGBA, GL_RGBA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, GL_LUMINANCE_ALPHA, GL_LUMINANCE, and GL_ALPHA
-// type: GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_HALF_FLOAT, GL_FLOAT, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_24_8, and GL_FLOAT_32_UNSIGNED_INT_24_8_REV
-GLuint create3DImage(int width, int height, int depth, GLenum format, GLenum type)
-{
-    GLuint img;
-    glGenTextures(1, &img);
-
-    glBindTexture(GL_TEXTURE_3D, img);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage3D(
-        GL_TEXTURE_3D, 0, GL_RGBA8UI,
-        width, height, depth, // Dimensions for new mip level
-        0, format, type, nullptr);
-
-    glBindTexture(GL_TEXTURE_3D, 0);
-    return img;
-}
-
-void makeNoise(GLuint image3D)
-{
-    glUseProgram(makeNoiseComputeProgram);
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        image3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    int outputWidth, outputHeight, outputDepth;
-
-    glBindTexture(GL_TEXTURE_3D, image3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
-
-    int timeUniform = glGetUniformLocation(makeNoiseComputeProgram, "time");
-
-    glUniform1f(timeUniform, noiseTime);
-
-    glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
-    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
-
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-}
-
-void assignMaterial(GLuint image3D)
-{
-    glUseProgram(assignMaterialComputeProgram);
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        image3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    int outputWidth, outputHeight, outputDepth;
-
-    glBindTexture(GL_TEXTURE_3D, image3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
-
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-}
-
-void makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
-{
-    glUseProgram(makeMipMapComputeProgram);
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        inputImage3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        1, // Image unit index (matches binding=1)
-        outputImage3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    int outputWidth, outputHeight, outputDepth;
-
-    glBindTexture(GL_TEXTURE_3D, outputImage3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
-
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    // Unbind the images
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    glBindImageTexture(
-        1, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-}
 
 std::array<float, 3> getCamDir(float theta, float phi)
 {
@@ -273,24 +92,25 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
 
-    auto window = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
-    if (window == nullptr)
+
+    auto window = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    auto inputManager = window->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    auto shaderManager = std::make_shared<ShaderManager>();
+    auto& input = inputManager->input;
+    window->glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
+    auto* windowInstance = window->glfwWindowHandle;
+    window->registerCallbacks();
+
+    if (windowInstance == nullptr)
     {
         throw std::runtime_error("Failed to create window");
     }
 
-    auto window1 = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
-    auto inputManager = window1->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
-    auto shaderManager = std::make_shared<ShaderManager>();
-    auto& input = inputManager->input;
-    window1->glfwWindowHandle = window;
-    window1->registerCallbacks();
-
-    glfwGetWindowPos(window, &windowX, &windowY);
-    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    glfwGetWindowPos(windowInstance, &window->lastWindowX, &window->lastWindowY);
+    glfwGetWindowSize(windowInstance, &window->lastWindowWidth, &window->lastWindowHeight);
 
     // Init GLEW
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(windowInstance);
     glewExperimental = true;
     if (glewInit() != GLEW_OK)
     {
@@ -304,7 +124,7 @@ int main()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-    ImGui_ImplGlfw_InitForOpenGL(window1->glfwWindowHandle, true);
+    ImGui_ImplGlfw_InitForOpenGL(windowInstance, true);
     ImGui_ImplOpenGL3_Init();
 
     // Vertex array
@@ -317,22 +137,7 @@ int main()
     makeMipMapComputeProgram = shaderManager->getComputeProgram("content/MakeMipMap.compute.glsl");
     assignMaterialComputeProgram = shaderManager->getComputeProgram("content/AssignMaterial.compute.glsl");
 
-    // Make and fill the buffers
-    GLuint occupancyMap = create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap1 = create3DImage(128, 128, 128, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap2 = create3DImage(32, 32, 32, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap3 = create3DImage(8, 8, 8, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap4 = create3DImage(2, 2, 2, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-
-    makeNoise(occupancyMap);
-    makeMipMap(occupancyMap, mipMap1);
-    makeMipMap(mipMap1, mipMap2);
-    makeMipMap(mipMap2, mipMap3);
-    makeMipMap(mipMap3, mipMap4);
-
-    assignMaterial(occupancyMap);
-    assignMaterial(mipMap1);
-    assignMaterial(mipMap2);
+    VoxelWorld voxelWorld(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
 
     // Main render loop
     double theta = 0;
@@ -348,14 +153,14 @@ int main()
 
     if (glfwRawMouseMotionSupported())
     {
-        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        glfwSetInputMode(windowInstance, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
     int counter = 0;
     double frameTime = 0;
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(windowInstance))
     {
         auto now = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(now - lastFrameTime).count();
@@ -369,14 +174,14 @@ int main()
             frameTime = 0;
         }
 
-        window1->update();
+        window->update();
         ImGui_ImplOpenGL3_NewFrame(); // TODO: Cleanup
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int width, height;
-        glfwGetWindowSize(window, &width, &height);
+        glfwGetWindowSize(windowInstance, &width, &height);
         if (!invalidateMouse)
         {
             auto mouseDelta = input->getMouseDelta();
@@ -431,58 +236,45 @@ int main()
 
         if (input->isKeyHeld(GLFW_KEY_E))
         {
-            noiseTime += deltaTime;
-            makeNoise(occupancyMap);
-            makeMipMap(occupancyMap, mipMap1);
-            makeMipMap(mipMap1, mipMap2);
-            makeMipMap(mipMap2, mipMap3);
-            makeMipMap(mipMap3, mipMap4);
+            voxelWorld.generateFromNoise(deltaTime, isRand2, fillAmount);
         }
 
         if (remakeNoise)
         {
             // The noise time should not be incremented here
-            makeNoise(occupancyMap);
-            makeMipMap(occupancyMap, mipMap1);
-            makeMipMap(mipMap1, mipMap2);
-            makeMipMap(mipMap2, mipMap3);
-            makeMipMap(mipMap3, mipMap4);
+            voxelWorld.generateFromNoise(0, isRand2, fillAmount);
             remakeNoise = false;
         }
 
         if (input->isKeyPressed(GLFW_KEY_F))
         {
-            GLFWmonitor* monitor = glfwGetWindowMonitor(window);
+            GLFWmonitor* monitor = glfwGetWindowMonitor(windowInstance);
             if (monitor == NULL)
             {
-                GLFWmonitor* currentMonitor = Window::getCurrentMonitor(window);
-                glfwGetWindowPos(window, &windowX, &windowY);
-                glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
-                const GLFWvidmode* mode = glfwGetVideoMode(currentMonitor);
-                glfwSetWindowMonitor(window, currentMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+                window->toFullscreen();
             }
             else
             {
-                glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
-            }
+                window->toWindowed();
+            }   
         }
+
         if (input->isKeyPressed(GLFW_KEY_Q))
         {
-            int mode = glfwGetInputMode(window, GLFW_CURSOR);
+            int mode = glfwGetInputMode(windowInstance, GLFW_CURSOR);
 
             if (mode == GLFW_CURSOR_DISABLED)
             {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                glfwSetInputMode(windowInstance, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
             else
             {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetInputMode(windowInstance, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }
         }
         if (input->isKeyPressed(GLFW_KEY_ESCAPE))
         {
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            glfwSetWindowShouldClose(windowInstance, GLFW_TRUE);
         }
         if (input->isKeyPressed(GLFW_KEY_R))
         {
@@ -510,55 +302,7 @@ int main()
             glUseProgram(raymarcherGraphicsProgram);
             glBindVertexArray(emptyVertexArray);
 
-            glBindImageTexture(
-                0, // Image unit index (matches binding=1)
-                occupancyMap, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                1, // Image unit index (matches binding=1)
-                mipMap1, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                2, // Image unit index (matches binding=1)
-                mipMap2, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                3, // Image unit index (matches binding=1)
-                mipMap3, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
-
-            glBindImageTexture(
-                4, // Image unit index (matches binding=1)
-                mipMap4, // Texture ID
-                0, // Mip level
-                GL_TRUE, // Layered (true for 3D textures)
-                0, // Layer (ignored for 3D)
-                GL_READ_ONLY, // Access qualifier
-                GL_RGBA8UI // Format
-            );
+            voxelWorld.bindTextures();
 
             int camPos = glGetUniformLocation(raymarcherGraphicsProgram, "camPos");
             glUniform3f(camPos, camX, camY, camZ);
@@ -590,7 +334,7 @@ int main()
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(windowInstance);
     }
 
     // TODO: Cleanup
