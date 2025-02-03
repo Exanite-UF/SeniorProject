@@ -138,7 +138,7 @@ void Window::onCursorEnter(GLFWwindow* window, int entered)
     }
 
     // TODO: Have invalidate mouse managed by the input manager
-    invalidateMouse = true;
+    //invalidateMouse = true;
 }
 
 void Window::registerCallbacks()
@@ -156,13 +156,18 @@ void Window::registerCallbacks()
 
 void Window::toFullscreen()
 {
-    // TODO: Save state of the window for when returning to windowed mode
-    // TODO: Change the window to fullscreen mode
+    // Saving last windowed information
+    glfwGetWindowPos(glfwWindowHandle, &lastWindowX, &lastWindowY);
+    glfwGetWindowSize(glfwWindowHandle, &lastWindowWidth, &lastWindowWidth);
+
+    GLFWmonitor* currentMonitor = getCurrentMonitor(glfwWindowHandle);
+    const GLFWvidmode* mode = glfwGetVideoMode(currentMonitor);
+    glfwSetWindowMonitor(glfwWindowHandle, currentMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 }
 
 void Window::toWindowed()
 {
-    // TODO: Change the window to windowed mode
+    glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowX, lastWindowY, lastWindowWidth, lastWindowHeight, 0);
 }
 
 

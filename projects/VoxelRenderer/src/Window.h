@@ -9,33 +9,25 @@
 // TODO: Not all of these need to be part of the Window
 extern std::unordered_map<std::string, GLuint> shaderPrograms; // TODO: consider moving to a shader manager class. (The shader manager would be the only thing that interacts with the shader compiler)
 
-// TODO: Remove from Window.h. This is beyond the scope of what Window should be managing.
-// The intended behavior of this flag should be possible to recreate with only the information provided from the InputManager.
-// Consider adding the required information to the InputManager. It needs to know when the mouse enters the window to recreate the behavior of this flag.
-extern bool invalidateMouse;
-
-// TODO: Remove from Window.h. This is beyond the scope of what Window should be managing.
-extern bool isWorkload; // View toggle
-extern bool isRand2; // Noise type toggle
-extern float fillAmount;
-extern bool remakeNoise;
 
 // These are only set when the switching between fullscreen and windowed
 // TODO: Add these fields to the Window class
 // TODO: Find a better name, since these specifically are used to record the state of the window prior to entering fullscreen. They do not always store what their name impiles.
-extern int windowX;
-extern int windowY;
-extern int windowWidth;
-extern int windowHeight;
+//extern int windowX;
+//extern int windowY;
+//extern int windowWidth;
+//extern int windowHeight;
 
-// TODO: Remove from Window.h. This is beyond the scope of what Window should be managing.
-extern double noiseTime;
 
 class Window
 {
 public:
     GLFWwindow* glfwWindowHandle; // A pointer to the object that is the window
     std::shared_ptr<InputManager> inputManager = std::make_shared<InputManager>(); // The input manager for this window
+    int lastWindowX;
+    int lastWindowY;
+    int lastWindowWidth;
+    int lastWindowHeight;
 
     void update()
     {

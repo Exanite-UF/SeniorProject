@@ -45,11 +45,6 @@ bool isRand2 = true; // Noise type toggle
 float fillAmount = 0.6;
 bool remakeNoise = false;
 
-// These are only set when the switching between fullscreen and windowed
-int windowX = 0;
-int windowY = 0;
-int windowWidth = 0;
-int windowHeight = 0;
 double noiseTime = 0;
 
 GLuint raymarcherGraphicsProgram;
@@ -273,24 +268,25 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
 
-    auto window = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
-    if (window == nullptr)
+
+    auto window = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    auto inputManager = window->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    auto shaderManager = std::make_shared<ShaderManager>();
+    auto& input = inputManager->input;
+    window->glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
+    auto* windowInstance = window->glfwWindowHandle;
+    window->registerCallbacks();
+
+    if (windowInstance == nullptr)
     {
         throw std::runtime_error("Failed to create window");
     }
 
-    auto window1 = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
-    auto inputManager = window1->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
-    auto shaderManager = std::make_shared<ShaderManager>();
-    auto& input = inputManager->input;
-    window1->glfwWindowHandle = window;
-    window1->registerCallbacks();
-
-    glfwGetWindowPos(window, &windowX, &windowY);
-    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    glfwGetWindowPos(windowInstance, &window->lastWindowX, &window->lastWindowY);
+    glfwGetWindowSize(windowInstance, &window->lastWindowWidth, &window->lastWindowHeight);
 
     // Init GLEW
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(windowInstance);
     glewExperimental = true;
     if (glewInit() != GLEW_OK)
     {
@@ -304,7 +300,7 @@ int main()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-    ImGui_ImplGlfw_InitForOpenGL(window1->glfwWindowHandle, true);
+    ImGui_ImplGlfw_InitForOpenGL(windowInstance, true);
     ImGui_ImplOpenGL3_Init();
 
     // Vertex array
@@ -348,14 +344,14 @@ int main()
 
     if (glfwRawMouseMotionSupported())
     {
-        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        glfwSetInputMode(windowInstance, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
     int counter = 0;
     double frameTime = 0;
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(windowInstance))
     {
         auto now = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(now - lastFrameTime).count();
@@ -369,14 +365,14 @@ int main()
             frameTime = 0;
         }
 
-        window1->update();
+        window->update();
         ImGui_ImplOpenGL3_NewFrame(); // TODO: Cleanup
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int width, height;
-        glfwGetWindowSize(window, &width, &height);
+        glfwGetWindowSize(windowInstance, &width, &height);
         if (!invalidateMouse)
         {
             auto mouseDelta = input->getMouseDelta();
@@ -452,37 +448,33 @@ int main()
 
         if (input->isKeyPressed(GLFW_KEY_F))
         {
-            GLFWmonitor* monitor = glfwGetWindowMonitor(window);
+            GLFWmonitor* monitor = glfwGetWindowMonitor(windowInstance);
             if (monitor == NULL)
             {
-                GLFWmonitor* currentMonitor = Window::getCurrentMonitor(window);
-                glfwGetWindowPos(window, &windowX, &windowY);
-                glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
-                const GLFWvidmode* mode = glfwGetVideoMode(currentMonitor);
-                glfwSetWindowMonitor(window, currentMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+                window->toFullscreen();
             }
             else
             {
-                glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
-            }
+                window->toWindowed();
+            }   
         }
+
         if (input->isKeyPressed(GLFW_KEY_Q))
         {
-            int mode = glfwGetInputMode(window, GLFW_CURSOR);
+            int mode = glfwGetInputMode(windowInstance, GLFW_CURSOR);
 
             if (mode == GLFW_CURSOR_DISABLED)
             {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                glfwSetInputMode(windowInstance, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
             else
             {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetInputMode(windowInstance, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }
         }
         if (input->isKeyPressed(GLFW_KEY_ESCAPE))
         {
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            glfwSetWindowShouldClose(windowInstance, GLFW_TRUE);
         }
         if (input->isKeyPressed(GLFW_KEY_R))
         {
@@ -590,7 +582,7 @@ int main()
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(windowInstance);
     }
 
     // TODO: Cleanup
