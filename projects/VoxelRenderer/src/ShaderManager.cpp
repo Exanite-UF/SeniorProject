@@ -24,10 +24,10 @@ ShaderManager::~ShaderManager()
     }
 }
 
-GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum type)
+GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum shaderType)
 {
     // Use cached shader module if available
-    auto cacheKey = std::make_tuple(shaderPath, type);
+    auto cacheKey = std::make_tuple(shaderPath, shaderType);
     if (shaderModules.contains(cacheKey))
     {
         return shaderModules[cacheKey];
@@ -49,7 +49,7 @@ GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum type
     // We now have the shader file contents
 
     // Create and compile a new shader using the shader file contents
-    GLuint shader = glCreateShader(type);
+    GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, &data, nullptr);
     glCompileShader(shader);
 
