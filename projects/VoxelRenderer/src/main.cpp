@@ -25,7 +25,7 @@
 #include <unordered_set>
 
 #include "InputManager.h"
-#include "ShaderCompiler.h"
+#include "ShaderManager.h"
 #include "VoxelRenderer.h"
 #include "VoxelWorld.h"
 #include "Window.h"
@@ -38,7 +38,6 @@
 // scroll = change move speed
 // CTRL + scroll = change noise fill
 
-std::unordered_map<std::string, GLuint> shaderPrograms;
 bool invalidateMouse = true;
 
 bool isWorkload = false; // View toggle
@@ -52,6 +51,11 @@ int windowY = 0;
 int windowWidth = 0;
 int windowHeight = 0;
 double noiseTime = 0;
+
+GLuint raymarcherGraphicsProgram;
+GLuint makeNoiseComputeProgram;
+GLuint makeMipMapComputeProgram;
+GLuint assignMaterialComputeProgram;
 
 // format and type are from glTexImage3D
 // format: GL_RED, GL_RED_INTEGER, GL_RG, GL_RG_INTEGER, GL_RGB, GL_RGB_INTEGER, GL_RGBA, GL_RGBA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, GL_LUMINANCE_ALPHA, GL_LUMINANCE, and GL_ALPHA
@@ -75,13 +79,7 @@ GLuint create3DImage(int width, int height, int depth, GLenum format, GLenum typ
 
 void makeNoise(GLuint image3D)
 {
-    // Load the make noise compute shader as needed
-    if (shaderPrograms.count("makeNoise") == 0)
-    {
-        shaderPrograms["makeNoise"] = createComputeProgram("content/MakeNoise.compute.glsl");
-    }
-
-    glUseProgram(shaderPrograms["makeNoise"]);
+    glUseProgram(makeNoiseComputeProgram);
 
     // Bind output texture to image unit 1 (write-only)
     glBindImageTexture(
@@ -106,13 +104,12 @@ void makeNoise(GLuint image3D)
     GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
     GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
 
-    int timeUniform = glGetUniformLocation(shaderPrograms["makeNoise"], "time");
+    int timeUniform = glGetUniformLocation(makeNoiseComputeProgram, "time");
 
-    float timeValue = glfwGetTime();
     glUniform1f(timeUniform, noiseTime);
 
-    glUniform1f(glGetUniformLocation(shaderPrograms["makeNoise"], "fillAmount"), fillAmount);
-    glUniform1i(glGetUniformLocation(shaderPrograms["makeNoise"], "isRand2"), isRand2);
+    glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
+    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -132,13 +129,7 @@ void makeNoise(GLuint image3D)
 
 void assignMaterial(GLuint image3D)
 {
-    // Load the make noise compute shader as needed
-    if (shaderPrograms.count("assignMaterial") == 0)
-    {
-        shaderPrograms["assignMaterial"] = createComputeProgram("content/AssignMaterial.compute.glsl");
-    }
-
-    glUseProgram(shaderPrograms["assignMaterial"]);
+    glUseProgram(assignMaterialComputeProgram);
 
     // Bind output texture to image unit 1 (write-only)
     glBindImageTexture(
@@ -181,13 +172,7 @@ void assignMaterial(GLuint image3D)
 
 void makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
 {
-    // Load the shader as needed
-    if (shaderPrograms.count("makeMipMap") == 0)
-    {
-        shaderPrograms["makeMipMap"] = createComputeProgram("content/MakeMipMap.compute.glsl");
-    }
-
-    glUseProgram(shaderPrograms["makeMipMap"]);
+    glUseProgram(makeMipMapComputeProgram);
 
     // Bind output texture to image unit 1 (write-only)
     glBindImageTexture(
@@ -296,6 +281,7 @@ int main()
 
     auto window1 = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
     auto inputManager = window1->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
+    auto shaderManager = std::make_shared<ShaderManager>();
     auto& input = inputManager->input;
     window1->glfwWindowHandle = window;
     window1->registerCallbacks();
@@ -325,8 +311,11 @@ int main()
     GLuint emptyVertexArray;
     glGenVertexArrays(1, &emptyVertexArray);
 
-    // Create shader program
-    GLuint program = createGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
+    // Get shader programs
+    raymarcherGraphicsProgram = shaderManager->getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
+    makeNoiseComputeProgram = shaderManager->getComputeProgram("content/MakeNoise.compute.glsl");
+    makeMipMapComputeProgram = shaderManager->getComputeProgram("content/MakeMipMap.compute.glsl");
+    assignMaterialComputeProgram = shaderManager->getComputeProgram("content/AssignMaterial.compute.glsl");
 
     // Make and fill the buffers
     GLuint occupancyMap = create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
@@ -518,7 +507,7 @@ int main()
         }
 
         {
-            glUseProgram(program);
+            glUseProgram(raymarcherGraphicsProgram);
             glBindVertexArray(emptyVertexArray);
 
             glBindImageTexture(
@@ -571,16 +560,16 @@ int main()
                 GL_RGBA8UI // Format
             );
 
-            int camPos = glGetUniformLocation(program, "camPos");
+            int camPos = glGetUniformLocation(raymarcherGraphicsProgram, "camPos");
             glUniform3f(camPos, camX, camY, camZ);
 
-            int camDir = glGetUniformLocation(program, "camDir");
+            int camDir = glGetUniformLocation(raymarcherGraphicsProgram, "camDir");
             glUniform3f(camDir, camDirection[0], camDirection[1], camDirection[2]);
 
-            int resolution = glGetUniformLocation(program, "resolution");
+            int resolution = glGetUniformLocation(raymarcherGraphicsProgram, "resolution");
             glUniform2f(resolution, width, height);
 
-            glUniform1i(glGetUniformLocation(program, "isWorkload"), isWorkload);
+            glUniform1i(glGetUniformLocation(raymarcherGraphicsProgram, "isWorkload"), isWorkload);
 
             glDrawArrays(GL_TRIANGLES, 0, 3);
 
