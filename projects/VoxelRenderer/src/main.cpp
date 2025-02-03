@@ -29,6 +29,7 @@
 #include "VoxelRenderer.h"
 #include "VoxelWorld.h"
 #include "Window.h"
+#include "GraphicsUtils.h"
 
 // WASD Space Shift = movement
 // q = capture mouse
@@ -57,33 +58,13 @@ GLuint makeNoiseComputeProgram;
 GLuint makeMipMapComputeProgram;
 GLuint assignMaterialComputeProgram;
 
-// format and type are from glTexImage3D
-// format: GL_RED, GL_RED_INTEGER, GL_RG, GL_RG_INTEGER, GL_RGB, GL_RGB_INTEGER, GL_RGBA, GL_RGBA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, GL_LUMINANCE_ALPHA, GL_LUMINANCE, and GL_ALPHA
-// type: GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_HALF_FLOAT, GL_FLOAT, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_24_8, and GL_FLOAT_32_UNSIGNED_INT_24_8_REV
-GLuint create3DImage(int width, int height, int depth, GLenum format, GLenum type)
-{
-    GLuint img;
-    glGenTextures(1, &img);
-
-    glBindTexture(GL_TEXTURE_3D, img);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage3D(
-        GL_TEXTURE_3D, 0, GL_RGBA8UI,
-        width, height, depth, // Dimensions for new mip level
-        0, format, type, nullptr);
-
-    glBindTexture(GL_TEXTURE_3D, 0);
-    return img;
-}
-
 void makeNoise(GLuint image3D)
 {
     glUseProgram(makeNoiseComputeProgram);
 
     // Bind output texture to image unit 1 (write-only)
     glBindImageTexture(
-        0, // Image unit index (matches binding=1)
+        0, // Image unit index (matches binding=0)
         image3D, // Texture ID
         0, // Mip level
         GL_TRUE, // Layered (true for 3D textures)
@@ -318,11 +299,11 @@ int main()
     assignMaterialComputeProgram = shaderManager->getComputeProgram("content/AssignMaterial.compute.glsl");
 
     // Make and fill the buffers
-    GLuint occupancyMap = create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap1 = create3DImage(128, 128, 128, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap2 = create3DImage(32, 32, 32, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap3 = create3DImage(8, 8, 8, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    GLuint mipMap4 = create3DImage(2, 2, 2, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint occupancyMap = GraphicsUtils::create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap1 = GraphicsUtils::create3DImage(128, 128, 128, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap2 = GraphicsUtils::create3DImage(32, 32, 32, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap3 = GraphicsUtils::create3DImage(8, 8, 8, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    GLuint mipMap4 = GraphicsUtils::create3DImage(2, 2, 2, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
 
     makeNoise(occupancyMap);
     makeMipMap(occupancyMap, mipMap1);
