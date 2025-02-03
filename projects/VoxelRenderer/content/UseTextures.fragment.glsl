@@ -1,19 +1,25 @@
 #version 440
 
 uniform vec2 resolution;
-layout(rgba8ui, binding = 0) uniform readonly uimage3D texture1;
-layout(rgba8ui, binding = 1) uniform readonly uimage3D texture2;
-layout(rgba8ui, binding = 2) uniform readonly uimage3D texture3;
-layout(rgba8ui, binding = 3) uniform readonly uimage3D texture4;
-layout(rgba8ui, binding = 4) uniform readonly uimage3D texture5;
+
+layout(rgba32f, binding=0) uniform readonly image2D hitPos;
+layout(r16ui, binding=1) uniform readonly uimage2D materialTexture;
+layout(rgba32f, binding=2) uniform readonly image2D normalTexture;
+
+
+layout(rgba8ui, binding = 3) uniform readonly uimage3D texture1;
+layout(rgba8ui, binding = 4) uniform readonly uimage3D texture2;
+layout(rgba8ui, binding = 5) uniform readonly uimage3D texture3;
+layout(rgba8ui, binding = 6) uniform readonly uimage3D texture4;
+layout(rgba8ui, binding = 7) uniform readonly uimage3D texture5;
+
 
 uniform vec3 camPos;
-uniform vec3 camDir;
-uniform bool isWorkload;
 
-layout(location = 0) out vec4 hitPos;
-layout(location = 1) out uint material;
-layout(location = 2) out vec4 hitNormal;
+//layout(binding=0) uniform sampler2D hitPos;
+//layout(binding=1) uniform sampler2D materialTexture;
+
+out vec4 fragColor;
 
 struct RayHit
 {
@@ -173,87 +179,35 @@ RayHit findIntersection2(vec3 rayPos, vec3 rayDir)
     return hit;
 }
 
-vec3 hueToRGB(float hue)
-{
-    hue = mod(hue, 1.0);
-    float r = abs(hue * 6.0 - 3.0) - 1.0;
-    float g = 2.0 - abs(hue * 6.0 - 2.0);
-    float b = 2.0 - abs(hue * 6.0 - 4.0);
-    return clamp(vec3(r, g, b), 0.0, 1.0);
-}
-
 void main()
 {
-    vec3 pos = camPos;
-    // pos = 0.5 * vec3(cos(time * 0.02), 0, sin(time * 0.02)) * (sin(1.61803398875 * time * 0.02) * 0.5 + 0.5);
-    vec3 forward = camDir;
-    forward /= length(forward);
-    vec3 right = cross(forward, vec3(0, 0, 1));
-    right /= length(right);
-    vec3 up = cross(right, forward);
-    up /= length(up);
+    vec4 pos = imageLoad(hitPos, ivec2(gl_FragCoord.xy));
+    uint material = imageLoad(materialTexture, ivec2(gl_FragCoord.xy)).r;
+    vec3 normal = imageLoad(normalTexture, ivec2(gl_FragCoord.xy)).xyz;
 
-    float fov = (3.1415926589 / 2.f) * 1.36;
-    float z = tan(fov * 0.5);
+    //If it didn't hit any voxels in the first pass
+    if(pos.w == 0){
+        fragColor = vec4(vec3(0), 1);
+        return;
+    }
 
-    vec2 uv = gl_FragCoord.xy / resolution - 0.5;
-    uv.y *= resolution.y / resolution.x;
+    vec3 rayDir = normalize(pos.xyz - camPos);
+    rayDir = reflect(rayDir, normal);
 
-    vec3 rayPos = pos;
-    vec3 rayDir = forward + 2.f * z * (uv.x * right + uv.y * up);
-    rayDir /= length(rayDir);
-
-    rayPos += rayDir * 0.001;
-
-    // rayPos += (forward + 2.f * z * (uv.x * right + uv.y * up)) * 1;//This would set a near clipping plane at 1 units away
+    vec3 rayPos = pos.xyz;
 
     RayHit hit = findIntersection2(rayPos, rayDir);
-    // From here we render out the information we need to the frame buffers we need.
-    // At the moment we just render to the window in a manner that provides debug information.
 
-    material = hit.material;
-    hitPos = vec4(hit.hitLocation, hit.wasHit);
-    hitNormal = vec4(hit.normal, 0);
-    
-    //if (!isWorkload)
-    //{
-    //    // Show the value of the material information in the three textures by showing as different color channels.
-    //    vec3 color = vec3((hit.material & 7) / 7.0, ((hit.material & 56) >> 3) / 7.0, ((hit.material & 448) >> 6) / 7.0);
-    //    fragColor = vec4(color * int(hit.wasHit), 1);
-    //}
-    //else
-    //{
-    //
-    //    uint r = (hit.material & 1) + ((hit.material & 8) >> 2) + ((hit.material & 64) >> 4);
-    //    uint g = ((hit.material & (1 << 1)) >> 1) + ((hit.material & (8 << 1)) >> 3) + ((hit.material & (64 << 1)) >> 5);
-    //    uint b = ((hit.material & (1 << 2)) >> 2) + ((hit.material & (8 << 2)) >> 4) + ((hit.material & (64 << 2)) >> 6);
-    //
-    //    vec3 color = vec3(r / 7.0, g / 7.0, b / 7.0);
-    //    fragColor = vec4(color * int(hit.wasHit), 1);
-    //
-    //    /*
-    //    //This is the workload rendering code
-    //    fragColor = vec4(vec3(hit.iterations / 100.f), 1);
-    //
-    //    if (hit.iterations > 100)
-    //    {
-    //        int temp = min(200, hit.iterations);
-    //        fragColor = vec4(hueToRGB(0.5 - (hit.iterations - 100) / 200.f), 1);
-    //    }
-    //    */
-    //}
-    
-    
+    //vec3 pos = texture(hitPos, gl_FragCoord.xy / resolution.xy).xyz;
+    //uint material = texture(materialTexture, gl_FragCoord.xy / resolution.xy).r;
 
-    /*
-        if((hit.mipMapsUsed & (1 << 6)) > 0){
-                fragColor = vec4(0, 100.f / hit.dist, 0, 1);
-        }
-    */
+    vec3 color = pos.xyz / 1024. * pos.w;
+    color += hit.hitLocation.xyz / 1024. * int(hit.wasHit);
+    fragColor = vec4(color * 0.5, 1);
+    //fragColor = vec4(pos.xyz / 1024. * pos.w, 1);
 
-    // 3 pixel radius cursor
-    //if (length(gl_FragCoord.xy - resolution * 0.5) < 3)
-    //{
-    //    fragColor = vec4(1);
-    //}
+    //vec3 color = vec3((material & 7) / 7.0, ((material & 56) >> 3) / 7.0, ((material & 448) >> 6) / 7.0);
+    //fragColor = vec4(color * int(pos.w), 1);
+
+    //fragColor = vec4(normal * 0.5 + 0.5, 1);
 }

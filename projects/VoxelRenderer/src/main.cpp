@@ -41,7 +41,7 @@
 bool invalidateMouse = true;
 
 bool isWorkload = false; // View toggle
-bool isRand2 = true; // Noise type toggle
+bool isSinusoidalNoise = true; // Noise type toggle
 float fillAmount = 0.6;
 bool remakeNoise = false;
 
@@ -53,9 +53,12 @@ int windowHeight = 0;
 double noiseTime = 0;
 
 GLuint raymarcherGraphicsProgram;
-GLuint makeNoiseComputeProgram;
+GLuint makeSinusoidalNoiseComputeProgram;
+GLuint makeWhiteNoiseComputeProgram;
 GLuint makeMipMapComputeProgram;
 GLuint assignMaterialComputeProgram;
+
+GLuint renderUsingTexturesProgram;
 
 // format and type are from glTexImage3D
 // format: GL_RED, GL_RED_INTEGER, GL_RG, GL_RG_INTEGER, GL_RGB, GL_RGB_INTEGER, GL_RGBA, GL_RGBA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, GL_LUMINANCE_ALPHA, GL_LUMINANCE, and GL_ALPHA
@@ -79,7 +82,13 @@ GLuint create3DImage(int width, int height, int depth, GLenum format, GLenum typ
 
 void makeNoise(GLuint image3D)
 {
-    glUseProgram(makeNoiseComputeProgram);
+    GLuint program = 0;
+    if(isSinusoidalNoise){
+        program = makeSinusoidalNoiseComputeProgram;
+    }else{
+        program = makeWhiteNoiseComputeProgram;
+    }
+    glUseProgram(program);
 
     // Bind output texture to image unit 1 (write-only)
     glBindImageTexture(
@@ -104,12 +113,8 @@ void makeNoise(GLuint image3D)
     GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
     GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
 
-    int timeUniform = glGetUniformLocation(makeNoiseComputeProgram, "time");
-
-    glUniform1f(timeUniform, noiseTime);
-
-    glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
-    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
+    glUniform1f(glGetUniformLocation(program, "time"), noiseTime);
+    glUniform1f(glGetUniformLocation(program, "fillAmount"), fillAmount);
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -313,9 +318,14 @@ int main()
 
     // Get shader programs
     raymarcherGraphicsProgram = shaderManager->getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
-    makeNoiseComputeProgram = shaderManager->getComputeProgram("content/MakeNoise.compute.glsl");
+
+    makeSinusoidalNoiseComputeProgram = shaderManager->getComputeProgram("content/MakeSinusoidalNoise.compute.glsl");
+    makeWhiteNoiseComputeProgram = shaderManager->getComputeProgram("content/MakeWhiteNoise.compute.glsl");
+
     makeMipMapComputeProgram = shaderManager->getComputeProgram("content/MakeMipMap.compute.glsl");
     assignMaterialComputeProgram = shaderManager->getComputeProgram("content/AssignMaterial.compute.glsl");
+
+    renderUsingTexturesProgram = shaderManager->getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/UseTextures.fragment.glsl");
 
     // Make and fill the buffers
     GLuint occupancyMap = create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
@@ -352,6 +362,75 @@ int main()
     }
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
+
+
+    //Frame buffer stuff
+    GLuint frameBuffer = 0;
+    glGenFramebuffers(1, &frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+    GLuint posTexture;
+    glGenTextures(1, &posTexture);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, posTexture);
+
+    // Give an empty image to OpenGL ( the last "0" )
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1024, 1024, 0, GL_RGBA, GL_FLOAT, 0);
+
+    // Poor filtering. Needed !
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+
+    GLuint materialTexture;
+    glGenTextures(1, &materialTexture);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, materialTexture);
+
+    // Give an empty image to OpenGL ( the last "0" )
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, 1024, 1024, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, 0);
+
+    // Poor filtering. Needed !
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+
+    GLuint normalTexture;
+    glGenTextures(1, &normalTexture);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+
+    // Give an empty image to OpenGL ( the last "0" )
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1024, 1024, 0, GL_RGBA, GL_FLOAT, 0);
+
+    // Poor filtering. Needed !
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+
+
+    // Set "renderedTexture" as our colour attachement #0
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, posTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, materialTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normalTexture, 0);
+
+    // Set the list of draw buffers.
+    GLenum DrawBuffers[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, DrawBuffers); // "3" is the size of DrawBuffers
+
+    // Always check that our framebuffer is ok
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+        std::cout << "Something went wrong with the frame buffer" << std::endl;
+        return 1;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    glViewport(0,0,1024,1024); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+
+
 
     int counter = 0;
     double frameTime = 0;
@@ -450,6 +529,7 @@ int main()
             remakeNoise = false;
         }
 
+        /*
         if (input->isKeyPressed(GLFW_KEY_F))
         {
             GLFWmonitor* monitor = glfwGetWindowMonitor(window);
@@ -467,6 +547,7 @@ int main()
                 glfwSetWindowMonitor(window, nullptr, windowX, windowY, windowWidth, windowHeight, 0);
             }
         }
+        */
         if (input->isKeyPressed(GLFW_KEY_Q))
         {
             int mode = glfwGetInputMode(window, GLFW_CURSOR);
@@ -490,7 +571,7 @@ int main()
         }
         if (input->isKeyPressed(GLFW_KEY_T))
         {
-            isRand2 = !isRand2;
+            isSinusoidalNoise = !isSinusoidalNoise;
             remakeNoise = true;
         }
 
@@ -507,6 +588,7 @@ int main()
         }
 
         {
+            glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
             glUseProgram(raymarcherGraphicsProgram);
             glBindVertexArray(emptyVertexArray);
 
@@ -572,6 +654,203 @@ int main()
             glUniform1i(glGetUniformLocation(raymarcherGraphicsProgram, "isWorkload"), isWorkload);
 
             glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glUseProgram(0);
+            glBindVertexArray(0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glUseProgram(renderUsingTexturesProgram);
+            glBindVertexArray(emptyVertexArray);
+            
+            
+            glBindImageTexture(
+                0, // Image unit index (matches binding=1)
+                posTexture, // Texture ID
+                0, // Mip level
+                GL_FALSE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA32F // Format
+            );
+
+            glBindImageTexture(
+                1, // Image unit index (matches binding=1)
+                materialTexture, // Texture ID
+                0, // Mip level
+                GL_FALSE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_R16UI // Format
+            );
+            
+            glBindImageTexture(
+                2, // Image unit index (matches binding=1)
+                normalTexture, // Texture ID
+                0, // Mip level
+                GL_FALSE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA32F // Format
+            );
+
+
+
+            glBindImageTexture(
+                3, // Image unit index (matches binding=1)
+                occupancyMap, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                4, // Image unit index (matches binding=1)
+                mipMap1, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                5, // Image unit index (matches binding=1)
+                mipMap2, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                6, // Image unit index (matches binding=1)
+                mipMap3, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                7, // Image unit index (matches binding=1)
+                mipMap4, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            //glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
+            //glBindTexture(GL_TEXTURE_2D, posTexture);
+
+            //glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 0
+            //glBindTexture(GL_TEXTURE_2D, materialTexture);
+
+            int resolution = glGetUniformLocation(renderUsingTexturesProgram, "resolution");
+            glUniform2f(resolution, width, height);
+
+            int camPos = glGetUniformLocation(renderUsingTexturesProgram, "camPos");
+            glUniform3f(camPos, camX, camY, camZ);
+
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            
+            
+            glBindImageTexture(
+                0, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_FALSE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA32F // Format
+            );
+
+            glBindImageTexture(
+                1, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_FALSE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_R16UI // Format
+            );
+
+            glBindImageTexture(
+                2, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_FALSE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA32F // Format
+            );
+
+
+
+            glBindImageTexture(
+                3, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                4, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                5, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                6, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+
+            glBindImageTexture(
+                7, // Image unit index (matches binding=1)
+                0, // Texture ID
+                0, // Mip level
+                GL_TRUE, // Layered (true for 3D textures)
+                0, // Layer (ignored for 3D)
+                GL_READ_ONLY, // Access qualifier
+                GL_RGBA8UI // Format
+            );
+            
+
+            //glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
+            //glBindTexture(GL_TEXTURE_2D, 0);
+
+            //glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 0
+            //glBindTexture(GL_TEXTURE_2D, 0);
 
             glUseProgram(0);
             glBindVertexArray(0);

@@ -16,7 +16,7 @@ extern bool invalidateMouse;
 
 // TODO: Remove from Window.h. This is beyond the scope of what Window should be managing.
 extern bool isWorkload; // View toggle
-extern bool isRand2; // Noise type toggle
+extern bool isSinusoidalNoise; // Noise type toggle
 extern float fillAmount;
 extern bool remakeNoise;
 
