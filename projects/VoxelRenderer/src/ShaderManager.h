@@ -10,10 +10,10 @@
 class ShaderManager
 {
 private:
-    // (shaderPath, GLenum) -> (shaderModule)
+    // (shaderPath, shaderType) -> (shaderModule)
     std::unordered_map<std::tuple<std::string, GLenum>, GLuint, TupleHasher<std::tuple<std::string, GLenum>>> shaderModules;
 
-    // (vertexShaderPath, fragmentShaderPath, type) -> (shaderProgram)
+    // (vertexShaderPath, fragmentShaderPath) -> (shaderProgram)
     std::unordered_map<std::tuple<std::string, std::string>, GLuint, TupleHasher<std::tuple<std::string, std::string>>> graphicsPrograms;
 
     // (computeShaderPath) -> (shaderProgram)
@@ -21,13 +21,13 @@ private:
 
     // Loads and compiles a shader file into a shader module
     // Output is cached
-    GLuint getShaderModule(const std::string& shaderPath, GLenum type);
+    GLuint getShaderModule(const std::string& shaderPath, GLenum shaderType);
 
 public:
     ShaderManager();
     ShaderManager(const ShaderManager&) = delete;
     ShaderManager& operator=(const ShaderManager&) = delete;
-
+    
     ~ShaderManager();
 
     // Loads, compiles, and links vertex and fragment shaders into a graphics program
