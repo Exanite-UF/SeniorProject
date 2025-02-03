@@ -19,16 +19,16 @@ private:
     // (computeShaderPath) -> (shaderProgram)
     std::unordered_map<std::string, GLuint> computePrograms {};
 
+    // Loads and compiles a shader file into a shader module
+    // Output is cached
+    GLuint getShaderModule(const std::string& shaderPath, GLenum type);
+
 public:
     ShaderManager();
     ShaderManager(const ShaderManager&) = delete;
     ShaderManager& operator=(const ShaderManager&) = delete;
 
     ~ShaderManager();
-
-    // Loads and compiles a shader file into a shader module
-    // Output is cached
-    GLuint getShaderModule(const std::string& shaderPath, GLenum type);
 
     // Loads, compiles, and links vertex and fragment shaders into a graphics program
     // Output is cached
