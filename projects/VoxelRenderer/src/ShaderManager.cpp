@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 
+ShaderManager* ShaderManager::instance = nullptr;
+
 ShaderManager::ShaderManager() = default;
 
 ShaderManager::~ShaderManager()
@@ -166,4 +168,13 @@ GLuint ShaderManager::getComputeProgram(const std::string& computeShaderPath)
     computePrograms[cacheKey] = program;
 
     return program;
+}
+
+ShaderManager& ShaderManager::getManager()
+{
+    if(instance == nullptr){
+        instance = new ShaderManager();
+    }
+
+    return *instance;
 }

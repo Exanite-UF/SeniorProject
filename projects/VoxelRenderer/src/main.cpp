@@ -281,7 +281,7 @@ int main()
 
     auto window1 = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
     auto inputManager = window1->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
-    auto shaderManager = std::make_shared<ShaderManager>();
+    auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
     window1->glfwWindowHandle = window;
     window1->registerCallbacks();
@@ -312,10 +312,10 @@ int main()
     glGenVertexArrays(1, &emptyVertexArray);
 
     // Get shader programs
-    raymarcherGraphicsProgram = shaderManager->getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
-    makeNoiseComputeProgram = shaderManager->getComputeProgram("content/MakeNoise.compute.glsl");
-    makeMipMapComputeProgram = shaderManager->getComputeProgram("content/MakeMipMap.compute.glsl");
-    assignMaterialComputeProgram = shaderManager->getComputeProgram("content/AssignMaterial.compute.glsl");
+    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
+    makeNoiseComputeProgram = shaderManager.getComputeProgram("content/MakeNoise.compute.glsl");
+    makeMipMapComputeProgram = shaderManager.getComputeProgram("content/MakeMipMap.compute.glsl");
+    assignMaterialComputeProgram = shaderManager.getComputeProgram("content/AssignMaterial.compute.glsl");
 
     // Make and fill the buffers
     GLuint occupancyMap = create3DImage(512, 512, 512, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
