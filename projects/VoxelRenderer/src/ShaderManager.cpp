@@ -48,7 +48,7 @@ GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum type
     auto data = string.data();
     // We now have the shader file contents
 
-    // Create and compile a new shader using the shader file contentsw
+    // Create and compile a new shader using the shader file contents
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &data, nullptr);
     glCompileShader(shader);
