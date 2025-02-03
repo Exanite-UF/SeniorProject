@@ -50,170 +50,25 @@ public:
 
     // Find the monitor that the window is most likely to be on
     // Based on window-monitor overlap
-    static GLFWmonitor* getCurrentMonitor(GLFWwindow* window)
-    {
-        int nmonitors, i;
-        int wx, wy, ww, wh;
-        int mx, my, mw, mh;
-        int overlap, bestoverlap;
-        GLFWmonitor* bestmonitor;
-        GLFWmonitor** monitors;
-        const GLFWvidmode* mode;
-
-        bestoverlap = 0;
-        bestmonitor = NULL;
-
-        glfwGetWindowPos(window, &wx, &wy);
-        glfwGetWindowSize(window, &ww, &wh);
-        monitors = glfwGetMonitors(&nmonitors);
-
-        for (i = 0; i < nmonitors; i++)
-        {
-            mode = glfwGetVideoMode(monitors[i]);
-            glfwGetMonitorPos(monitors[i], &mx, &my);
-            mw = mode->width;
-            mh = mode->height;
-
-            overlap = glm::max(0, glm::min(wx + ww, mx + mw) - glm::max(wx, mx)) * glm::max(0, glm::min(wy + wh, my + mh) - glm::max(wy, my));
-
-            if (bestoverlap < overlap)
-            {
-                bestoverlap = overlap;
-                bestmonitor = monitors[i];
-            }
-        }
-
-        return bestmonitor;
-    }
+    static GLFWmonitor* getCurrentMonitor(GLFWwindow* window);
 
     // Gets called every time the window resizes
-    static void onWindowSize(GLFWwindow* window, int width, int height)
-    {
-        // window, the parameter variable, stores a GLFWWindow pointer
-        // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-        // This finds that
-        auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window)); // Get the reciever of the callback (ie. which of our Window object was this call back for)
-        // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-        if (self == NULL)
-        {
-            return;
-        }
+    static void onWindowSize(GLFWwindow* window, int width, int height);
 
-        glViewport(0, 0, width, height); // Adjusts the render target size for the window (ie. the render will resize to take up the full window)
+    static void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-        // TODO: call user specified callbacks
-    };
+    static void onMouseButton(GLFWwindow* window, int button, int action, int mods);
 
-    static void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
-    {
-        // window, the parameter variable, stores a GLFWWindow pointer
-        // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-        // This finds that
-        auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-        // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-        if (self == NULL)
-        {
-            return;
-        }
+    static void onCursorPos(GLFWwindow* window, double xpos, double ypos);
 
-        // Call the inputManger callback for keyboard presses
-        self->inputManager->onKey(window, key, scancode, action, mods);
+    static void onScroll(GLFWwindow* window, double xoffset, double yoffset);
 
-        // TODO: call user specified callbacks
-    };
-
-    static void onMouseButton(GLFWwindow* window, int button, int action, int mods)
-    {
-        // window, the parameter variable, stores a GLFWWindow pointer
-        // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-        // This finds that
-        auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-        // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-        if (self == NULL)
-        {
-            return;
-        }
-
-        // Call the inputManger callback for mouse clicks
-        self->inputManager->onMouseButton(window, button, action, mods);
-
-        // TODO: call user specified callbacks
-    };
-
-    static void onCursorPos(GLFWwindow* window, double xpos, double ypos)
-    {
-        // window, the parameter variable, stores a GLFWWindow pointer
-        // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-        // This finds that
-        auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-        // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-        if (self == NULL)
-        {
-            return;
-        }
-
-        // Call the inputManger callback for mouse movement
-        self->inputManager->onCursorPos(window, xpos, ypos);
-
-        // TODO: call user specified callbacks
-    };
-
-    static void onScroll(GLFWwindow* window, double xoffset, double yoffset)
-    {
-        // window, the parameter variable, stores a GLFWWindow pointer
-        // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-        // This finds that
-        auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-        // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-        if (self == NULL)
-        {
-            return;
-        }
-
-        // Call the inputManger callback for mouse scrolling
-        self->inputManager->onScroll(window, xoffset, yoffset);
-
-        // TODO: call user specified callbacks
-    };
-
-    static void onCursorEnter(GLFWwindow* window, int entered)
-    {
-        // window, the parameter variable, stores a GLFWWindow pointer
-        // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-        // This finds that
-        auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-        // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
-        if (self == NULL)
-        {
-            return;
-        }
-
-        // TODO: Have invalidate mouse managed by the input manager
-        invalidateMouse = true;
-    };
+    static void onCursorEnter(GLFWwindow* window, int entered);
 
     // This binds the callbacks so that glfwPollEvents will call them.
-    void registerCallbacks()
-    {
-        glfwSetWindowUserPointer(glfwWindowHandle, this); // This binds our Window wrapper class to the GLFWwindow object.
+    void registerCallbacks();
 
-        // This binds the various callback functions
-        glfwSetWindowSizeCallback(glfwWindowHandle, &Window::onWindowSize);
-        glfwSetKeyCallback(glfwWindowHandle, &Window::onKey);
-        glfwSetMouseButtonCallback(glfwWindowHandle, &Window::onMouseButton);
-        glfwSetCursorPosCallback(glfwWindowHandle, &Window::onCursorPos);
-        glfwSetScrollCallback(glfwWindowHandle, &Window::onScroll);
-        glfwSetCursorEnterCallback(glfwWindowHandle, &Window::onCursorEnter);
-    }
+    void toFullscreen();
 
-    void toFullscreen()
-    {
-        // TODO: Save state of the window for when returning to windowed mode
-        // TODO: Change the window to fullscreen mode
-    }
-
-    void toWindowed()
-    {
-        // TODO: Change the window to windowed mode
-    }
+    void toWindowed();
 };
