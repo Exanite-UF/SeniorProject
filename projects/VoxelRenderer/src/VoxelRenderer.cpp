@@ -1,4 +1,8 @@
 #include "VoxelRenderer.h"
+#include "TupleHasher.h"
+#include <string>
+#include <tuple>
+#include <unordered_map>
 
 void VoxelRenderer::log(const std::string& value)
 {
@@ -30,4 +34,10 @@ void VoxelRenderer::runStartupTests()
 {
     checkForContentFolder();
     assertIsTrue(NULL == nullptr, "Unsupported compiler: NULL must equal nullptr");
+
+    auto key = std::make_tuple("hello", 1);
+    std::unordered_map<std::tuple<std::string, int>, int, TupleHasher<std::tuple<std::string, int>>> map;
+    assertIsTrue(!map.contains(key), "Incorrect map implementation: Map should be empty");
+    map[key] = 1;
+    assertIsTrue(map.contains(key), "Incorrect map implementation: Map should contain key that was inserted");
 }
