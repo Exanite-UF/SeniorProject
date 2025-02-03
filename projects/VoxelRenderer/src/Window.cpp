@@ -122,7 +122,6 @@ void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
 
     // Call the inputManger callback for mouse scrolling
     self->inputManager->onScroll(window, xoffset, yoffset);
-
 }
 
 void Window::onCursorEnter(GLFWwindow* window, int entered)
@@ -168,5 +167,3 @@ void Window::toWindowed()
 {
     glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowX, lastWindowY, lastWindowWidth, lastWindowHeight, 0);
 }
-
-

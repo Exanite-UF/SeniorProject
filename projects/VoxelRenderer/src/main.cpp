@@ -53,7 +53,6 @@ GLuint makeNoiseComputeProgram;
 GLuint makeMipMapComputeProgram;
 GLuint assignMaterialComputeProgram;
 
-
 std::array<float, 3> getCamDir(float theta, float phi)
 {
     return {
@@ -91,7 +90,6 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
-
 
     auto window = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
     auto inputManager = window->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
@@ -256,7 +254,7 @@ int main()
             else
             {
                 window->toWindowed();
-            }   
+            }
         }
 
         if (input->isKeyPressed(GLFW_KEY_Q))
