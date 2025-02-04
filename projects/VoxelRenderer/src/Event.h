@@ -2,12 +2,9 @@
 
 #include <functional>
 
-template <typename T>
-struct Event;
-
 // Based on http://nercury.github.io/c++/interesting/2016/02/22/weak_ptr-and-event-cleanup.html
 template <typename... TArgs>
-struct Event<void(TArgs...)>
+class Event
 {
 private:
     std::vector<std::weak_ptr<std::function<void(TArgs...)>>> listeners;
@@ -20,7 +17,7 @@ public:
 };
 
 template <typename... TArgs>
-std::shared_ptr<std::function<void(TArgs...)>> Event<void(TArgs...)>::subscribe(std::function<void(TArgs...)> listener)
+std::shared_ptr<std::function<void(TArgs...)>> Event<TArgs...>::subscribe(std::function<void(TArgs...)> listener)
 {
     auto shared = std::make_shared<std::function<void(TArgs...)>>(listener);
     listeners.push_back(shared);
@@ -29,7 +26,7 @@ std::shared_ptr<std::function<void(TArgs...)>> Event<void(TArgs...)>::subscribe(
 }
 
 template <typename... TArgs>
-void Event<void(TArgs...)>::raise(TArgs... args)
+void Event<TArgs...>::raise(TArgs... args)
 {
     // Track recursion count because events can raise themselves
     recursionCount++;

@@ -347,7 +347,7 @@ void VoxelRendererProgram::runStartupTests()
     assertIsTrue(map.contains(key), "Incorrect map implementation: Map should contain key that was inserted");
 
     int value = 0;
-    Event<void(int)> testEvent;
+    Event<int> testEvent;
 
     assertIsTrue(value == 0, "Incorrect event implementation: value should equal 0");
     auto listener = testEvent.subscribe([&](int valueToAdd)
