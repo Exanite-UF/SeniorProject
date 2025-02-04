@@ -22,8 +22,6 @@ private:
 
     double currentNoiseTime; // This variable is used to determine the "seed" used by the random functions in the make noise shader
 
-	
-
     // TODO: Consider storing the width, height, and depth of the voxel world in this class
     // Remember that the voxel world dimensions are twice the size of the dimensions of the textures
 
@@ -35,15 +33,15 @@ private:
     glm::ivec3 getTextureSize() const; // TODO: implement
 
 public:
-	glm::vec3 position = glm::vec3(0, 0, 0);
-	glm::vec3 scale = glm::vec3(1, 1, 1);
-	glm::quat orientation = glm::quat(1, 0, 0, 0);
+    glm::vec3 position = glm::vec3(0, 0, 0);
+    glm::vec3 scale = glm::vec3(1, 1, 1);
+    glm::quat orientation = glm::quat(1, 0, 0, 0);
 
-	//TODO: Consider having the width, height, and depth assigned by the constructor rather than hard coded.
-	VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram);//Creates a voxel world
-	
-	// isRand2 = Noise type toggle
-	void generateFromNoise(double deltaTime, bool isRand2, float fillAmount);
+    // TODO: Consider having the width, height, and depth assigned by the constructor rather than hard coded.
+    VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram); // Creates a voxel world
+
+    // isRand2 = Noise type toggle
+    void generateFromNoise(double deltaTime, bool isRand2, float fillAmount);
 
     // TODO: Consider renaming
     // generateFromNoise also needs to bind textures. So calling this and then generateFromNoise will result in some of the textures that this functions binds being unbound

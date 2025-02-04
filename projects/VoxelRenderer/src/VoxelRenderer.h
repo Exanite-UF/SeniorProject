@@ -40,7 +40,7 @@ private:
     int ySize = 0;
     int raysPerPixel = 0;
 
-    bool isSizingDirty = true;//This is used to automatically remake the buffers only if the size of the buffers has changed
+    bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
 
     // This makes the images using the size and rays per pixel
     // It remakes them if textures are already bound
