@@ -43,7 +43,7 @@ void Window::onWindowSize(GLFWwindow* window, int width, int height)
     // This finds that
     auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
     // Get the reciever of the callback (ie. which of our Window object was this call back for)
-    // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
+    // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
     if (self == NULL)
     {
         return;
@@ -60,7 +60,7 @@ void Window::onKey(GLFWwindow* window, int key, int scancode, int action, int mo
     // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
     // This finds that
     auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
+    // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
     if (self == NULL)
     {
         return;
@@ -78,7 +78,7 @@ void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods)
     // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
     // This finds that
     auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
+    // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
     if (self == NULL)
     {
         return;
@@ -96,7 +96,7 @@ void Window::onCursorPos(GLFWwindow* window, double xpos, double ypos)
     // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
     // This finds that
     auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
+    // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
     if (self == NULL)
     {
         return;
@@ -114,7 +114,7 @@ void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
     // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
     // This finds that
     auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
+    // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
     if (self == NULL)
     {
         return;
@@ -122,7 +122,6 @@ void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
 
     // Call the inputManger callback for mouse scrolling
     self->inputManager->onScroll(window, xoffset, yoffset);
-
 }
 
 void Window::onCursorEnter(GLFWwindow* window, int entered)
@@ -131,7 +130,7 @@ void Window::onCursorEnter(GLFWwindow* window, int entered)
     // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
     // This finds that
     auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    // Only run the callbacks if there is a Window that that the GLFWwindow belongs to.
+    // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
     if (self == NULL)
     {
         return;
@@ -168,5 +167,3 @@ void Window::toWindowed()
 {
     glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowX, lastWindowY, lastWindowWidth, lastWindowHeight, 0);
 }
-
-

@@ -6,19 +6,6 @@
 #include <memory>
 #include <unordered_map>
 
-// TODO: Not all of these need to be part of the Window
-extern std::unordered_map<std::string, GLuint> shaderPrograms; // TODO: consider moving to a shader manager class. (The shader manager would be the only thing that interacts with the shader compiler)
-
-
-// These are only set when the switching between fullscreen and windowed
-// TODO: Add these fields to the Window class
-// TODO: Find a better name, since these specifically are used to record the state of the window prior to entering fullscreen. They do not always store what their name impiles.
-//extern int windowX;
-//extern int windowY;
-//extern int windowWidth;
-//extern int windowHeight;
-
-
 class Window
 {
 public:

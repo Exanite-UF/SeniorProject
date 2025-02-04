@@ -53,7 +53,6 @@ GLuint makeNoiseComputeProgram;
 GLuint makeMipMapComputeProgram;
 GLuint assignMaterialComputeProgram;
 
-
 std::array<float, 3> getCamDir(float theta, float phi)
 {
     return {
@@ -92,19 +91,17 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
 
-
     auto window = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
     auto inputManager = window->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
-    auto shaderManager = std::make_shared<ShaderManager>();
+    auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
     window->glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
     auto* windowInstance = window->glfwWindowHandle;
-    window->registerCallbacks();
-
     if (windowInstance == nullptr)
     {
         throw std::runtime_error("Failed to create window");
     }
+    window->registerCallbacks();
 
     glfwGetWindowPos(windowInstance, &window->lastWindowX, &window->lastWindowY);
     glfwGetWindowSize(windowInstance, &window->lastWindowWidth, &window->lastWindowHeight);
@@ -132,12 +129,19 @@ int main()
     glGenVertexArrays(1, &emptyVertexArray);
 
     // Get shader programs
-    raymarcherGraphicsProgram = shaderManager->getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
-    makeNoiseComputeProgram = shaderManager->getComputeProgram("content/MakeNoise.compute.glsl");
-    makeMipMapComputeProgram = shaderManager->getComputeProgram("content/MakeMipMap.compute.glsl");
-    assignMaterialComputeProgram = shaderManager->getComputeProgram("content/AssignMaterial.compute.glsl");
+    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
+    makeNoiseComputeProgram = shaderManager.getComputeProgram("content/MakeNoise.compute.glsl");
+    makeMipMapComputeProgram = shaderManager.getComputeProgram("content/MakeMipMap.compute.glsl");
+    assignMaterialComputeProgram = shaderManager.getComputeProgram("content/AssignMaterial.compute.glsl");
 
     VoxelWorld voxelWorld(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    VoxelRenderer renderer;
+    Camera camera;
+    renderer.setRaysPerPixel(1);
+
+    std::vector<VoxelWorld> worlds;
+    worlds.push_back(voxelWorld);
+    worlds.push_back(voxelWorld);
 
     // Main render loop
     double theta = 0;
@@ -158,14 +162,18 @@ int main()
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
+    worlds[1].position = glm::vec3(256, 0, 0);
+
     int counter = 0;
     double frameTime = 0;
+    double totalTime = 0;
     while (!glfwWindowShouldClose(windowInstance))
     {
         auto now = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(now - lastFrameTime).count();
         lastFrameTime = now;
         frameTime += deltaTime;
+        totalTime += deltaTime;
 
         counter++;
         if (counter % 10 == 0)
@@ -182,12 +190,13 @@ int main()
 
         int width, height;
         glfwGetWindowSize(windowInstance, &width, &height);
+        renderer.setResolution(width, height);
         if (!invalidateMouse)
         {
             auto mouseDelta = input->getMouseDelta();
 
             theta -= mouseDelta.x * 0.002;
-            phi -= mouseDelta.y * 0.002;
+            phi += mouseDelta.y * 0.002;
             phi = std::min(std::max(phi, -3.1415926589 / 2), 3.1415926589 / 2);
         }
         else
@@ -256,7 +265,7 @@ int main()
             else
             {
                 window->toWindowed();
-            }   
+            }
         }
 
         if (input->isKeyPressed(GLFW_KEY_Q))
@@ -299,6 +308,18 @@ int main()
         }
 
         {
+            camera.position = glm::vec3(camX, camY, camZ);
+            worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
+            worlds[0].scale = glm::vec3(1, 1, 2);
+            camera.orientation = glm::angleAxis((float)theta, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)phi, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+            renderer.prepateRayTraceFromCamera(camera);
+            renderer.executeRayTrace(worlds);
+            renderer.display();
+        }
+
+        /*
+        {
+
             glUseProgram(raymarcherGraphicsProgram);
             glBindVertexArray(emptyVertexArray);
 
@@ -320,6 +341,7 @@ int main()
             glUseProgram(0);
             glBindVertexArray(0);
         }
+        */
 
         {
             std::string str = "Hello";
