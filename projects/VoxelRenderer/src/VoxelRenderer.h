@@ -2,9 +2,6 @@
 
 #include "Camera.h"
 #include "VoxelWorld.h"
-#include <filesystem>
-#include <iostream>
-#include <string>
 #include <vector>
 
 // The voxel renderer needs to be able to render multiple voxel worlds
@@ -48,14 +45,6 @@ private:
     void handleDirtySizing(); // Remakes the textures if the sizing is dirty
 
 public:
-    static void log(const std::string& value = "");
-
-    static void checkForContentFolder();
-
-    static void assertIsTrue(bool condition, const std::string& errorMessage);
-
-    static void runStartupTests();
-
     VoxelRenderer();
 
     void setResolution(int x, int y);
