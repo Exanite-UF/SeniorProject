@@ -6,13 +6,13 @@ layout(r16ui, binding = 2) uniform uimage3D hitMaterial;
 
 out vec4 fragColor;
 
-
 void main()
 {
     ivec3 size = imageSize(hitPosition);
 
     vec3 color = vec3(0);
-    for(int i = 0; i < size.z; i++){
+    for (int i = 0; i < size.z; i++)
+    {
         vec4 pos = imageLoad(hitPosition, ivec3(gl_FragCoord.xy, i));
         vec4 normal = imageLoad(hitNormal, ivec3(gl_FragCoord.xy, i));
         uint material = imageLoad(hitMaterial, ivec3(gl_FragCoord.xy, i)).r;
@@ -29,7 +29,5 @@ void main()
     color /= size.z;
     fragColor = vec4(color, 1);
 
-
-    //fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);
-    
+    // fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);
 }
