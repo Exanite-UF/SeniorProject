@@ -162,6 +162,9 @@ int main()
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
+    worlds[1].position = glm::vec3(256, 0, 0);
+
+
     int counter = 0;
     double frameTime = 0;
     double totalTime = 0;
