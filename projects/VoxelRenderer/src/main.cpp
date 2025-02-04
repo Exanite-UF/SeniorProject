@@ -164,7 +164,7 @@ int main()
     int counter = 0;
     double frameTime = 0;
     double totalTime = 0;
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(windowInstance))
     {
         auto now = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(now - lastFrameTime).count();
