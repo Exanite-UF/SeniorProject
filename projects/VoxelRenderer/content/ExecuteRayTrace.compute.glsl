@@ -196,8 +196,7 @@ void main()
 
     float currentDepth = imageLoad(hitNormal, texelCoord).w;
 
-    vec3 voxelWorldSize = 2. * imageSize(texture1);
-    vec3 rotatedVoxelWorldCenter = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), 0.5 * vec3(voxelWorldSize));
+    vec3 voxelWorldSize = 2. * imageSize(texture1) * voxelWorldScale;
 
     rayPos -= voxelWorldPosition;// - 0.5 * vec3(voxelWorldSize);
     rayPos = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), rayPos);
