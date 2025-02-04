@@ -43,13 +43,13 @@ GLFWmonitor* Window::getCurrentMonitor(GLFWwindow* window)
 
 void Window::onWindowSize(GLFWwindow* window, int width, int height)
 {
-    // window, the parameter variable, stores a GLFWWindow pointer
-    // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-    // This finds that
-    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    // Get the reciever of the callback (ie. which of our Window object was this call back for)
+    // This is a static method, so we don't have access to our Window class
+    // However, GLFWwindow contains a pointer to our Window class. This was set using glfwSetWindowUserPointer.
+    // We now get the pointer and cast it as our Window pointer.
+    auto self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
     // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
-    if (self == NULL)
+    if (!self)
     {
         return;
     }
@@ -61,12 +61,13 @@ void Window::onWindowSize(GLFWwindow* window, int width, int height)
 
 void Window::onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    // window, the parameter variable, stores a GLFWWindow pointer
-    // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-    // This finds that
-    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    // This is a static method, so we don't have access to our Window class
+    // However, GLFWwindow contains a pointer to our Window class. This was set using glfwSetWindowUserPointer.
+    // We now get the pointer and cast it as our Window pointer.
+    auto self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
     // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
-    if (self == NULL)
+    if (!self)
     {
         return;
     }
@@ -79,12 +80,13 @@ void Window::onKey(GLFWwindow* window, int key, int scancode, int action, int mo
 
 void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
-    // window, the parameter variable, stores a GLFWWindow pointer
-    // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-    // This finds that
-    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    // This is a static method, so we don't have access to our Window class
+    // However, GLFWwindow contains a pointer to our Window class. This was set using glfwSetWindowUserPointer.
+    // We now get the pointer and cast it as our Window pointer.
+    auto self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
     // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
-    if (self == NULL)
+    if (!self)
     {
         return;
     }
@@ -97,12 +99,13 @@ void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 
 void Window::onCursorPos(GLFWwindow* window, double xpos, double ypos)
 {
-    // window, the parameter variable, stores a GLFWWindow pointer
-    // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-    // This finds that
-    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    // This is a static method, so we don't have access to our Window class
+    // However, GLFWwindow contains a pointer to our Window class. This was set using glfwSetWindowUserPointer.
+    // We now get the pointer and cast it as our Window pointer.
+    auto self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
     // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
-    if (self == NULL)
+    if (!self)
     {
         return;
     }
@@ -115,12 +118,13 @@ void Window::onCursorPos(GLFWwindow* window, double xpos, double ypos)
 
 void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
 {
-    // window, the parameter variable, stores a GLFWWindow pointer
-    // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-    // This finds that
-    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    // This is a static method, so we don't have access to our Window class
+    // However, GLFWwindow contains a pointer to our Window class. This was set using glfwSetWindowUserPointer.
+    // We now get the pointer and cast it as our Window pointer.
+    auto self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
     // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
-    if (self == NULL)
+    if (!self)
     {
         return;
     }
@@ -131,12 +135,13 @@ void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
 
 void Window::onCursorEnter(GLFWwindow* window, int entered)
 {
-    // window, the parameter variable, stores a GLFWWindow pointer
-    // We need to know which Window, the current class we are defining, the GLFWwindow belongs to
-    // This finds that
-    auto self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    // This is a static method, so we don't have access to our Window class
+    // However, GLFWwindow contains a pointer to our Window class. This was set using glfwSetWindowUserPointer.
+    // We now get the pointer and cast it as our Window pointer.
+    auto self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
     // Only run the callbacks if there is a Window that the GLFWwindow belongs to.
-    if (self == NULL)
+    if (!self)
     {
         return;
     }
