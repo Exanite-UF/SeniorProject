@@ -141,6 +141,7 @@ int main()
 
     std::vector<VoxelWorld> worlds;
     worlds.push_back(voxelWorld);
+    worlds.push_back(voxelWorld);
 
     // Main render loop
     double theta = 0;
