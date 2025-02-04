@@ -198,7 +198,7 @@ void main()
 
     vec3 voxelWorldSize = 2. * imageSize(texture1) * voxelWorldScale;
 
-    rayPos -= voxelWorldPosition;// - 0.5 * vec3(voxelWorldSize);
+    rayPos -= voxelWorldPosition; // - 0.5 * vec3(voxelWorldSize);
     rayPos = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), rayPos);
     rayPos += 0.5 * vec3(voxelWorldSize);
     rayPos /= voxelWorldScale;
@@ -212,7 +212,7 @@ void main()
 
     hit.normal = qtransform(voxelWorldOrientation, hit.normal);
 
-    hit.dist = length(rayDir * voxelWorldScale * hit.dist);//length(hit.hitLocation - rayStart);
+    hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
 
     if (hit.wasHit && hit.dist < currentDepth)
     {
