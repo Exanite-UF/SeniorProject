@@ -355,9 +355,11 @@ void VoxelRendererProgram::runStartupTests()
             log("Event was successfully called");
             value += valueToAdd;
         });
-    assertIsTrue(testEvent.getCount() == 1, "Incorrect event implementation: e.getCount() should equal 1 after subscribing");
+
     testEvent.raise(5);
     assertIsTrue(value == 5, "Incorrect event implementation: e.getCount() should equal 5");
-    testEvent.unsubscribe(listener);
-    assertIsTrue(testEvent.getCount() == 0, "Incorrect event implementation: e.getCount() should equal 0 after unsubscribing");
+
+    listener.reset();
+    testEvent.raise(5);
+    assertIsTrue(value == 5, "Incorrect event implementation: e.getCount() should equal 5");
 }

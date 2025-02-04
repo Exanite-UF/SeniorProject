@@ -5,46 +5,53 @@
 template <typename T>
 struct Event;
 
-template <typename TReturnType, typename... TArgs>
-struct Event<TReturnType(TArgs...)>
+// Based on http://nercury.github.io/c++/interesting/2016/02/22/weak_ptr-and-event-cleanup.html
+template <typename... TArgs>
+struct Event<void(TArgs...)>
 {
 private:
-    std::vector<std::function<TReturnType(TArgs...)>> listeners;
+    std::vector<std::weak_ptr<std::function<void(TArgs...)>>> listeners;
+    int recursionCount = 0;
 
 public:
-    std::function<TReturnType(TArgs...)> subscribe(std::function<TReturnType(TArgs...)> listener);
-    void unsubscribe(std::function<TReturnType(TArgs...)> listener);
+    std::shared_ptr<std::function<void(TArgs...)>> subscribe(std::function<void(TArgs...)> listener);
 
     void raise(TArgs... args);
-
-    int getCount();
 };
 
-template <typename TReturnType, typename... TArgs>
-std::function<TReturnType(TArgs...)> Event<TReturnType(TArgs...)>::subscribe(std::function<TReturnType(TArgs...)> listener)
+template <typename... TArgs>
+std::shared_ptr<std::function<void(TArgs...)>> Event<void(TArgs...)>::subscribe(std::function<void(TArgs...)> listener)
 {
-    listeners.push_back(listener);
+    auto shared = std::make_shared<std::function<void(TArgs...)>>(listener);
+    listeners.push_back(shared);
 
-    return listener;
+    return shared;
 }
 
-template <typename TReturnType, typename... TArgs>
-void Event<TReturnType(TArgs...)>::unsubscribe(std::function<TReturnType(TArgs...)> listener)
+template <typename... TArgs>
+void Event<void(TArgs...)>::raise(TArgs... args)
 {
-    // listeners.erase(listener);
-}
-
-template <typename TReturnType, typename... TArgs>
-void Event<TReturnType(TArgs...)>::raise(TArgs... args)
-{
-    for (auto listener : listeners)
+    // Track recursion count because events can raise themselves
+    recursionCount++;
+    for (std::weak_ptr<std::function<void(TArgs...)>> listener : listeners)
     {
-        listener(args...);
+        auto shared = listener.lock();
+        if (shared)
+        {
+            (*shared)(args...);
+        }
     }
-}
+    recursionCount--;
 
-template <typename TReturnType, typename... TArgs>
-int Event<TReturnType(TArgs...)>::getCount()
-{
-    return listeners.size();
+    // Only remove entries from listeners list when no events are running
+    if (recursionCount == 0)
+    {
+        for (int i = listeners.size() - 1; i >= 0; --i)
+        {
+            if (listeners.at(i).expired())
+            {
+                listeners.erase(listeners.begin() + i);
+            }
+        }
+    }
 }
