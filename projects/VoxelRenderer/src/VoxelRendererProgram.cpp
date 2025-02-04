@@ -106,10 +106,13 @@ void VoxelRendererProgram::run()
     double camZ = 0;
     double mouseWheel = 0;
 
+    // TODO: This code should be part of the Window class
     glfwSwapInterval(0); // disable vsync
+
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
+    // TODO: This code should be part of the Window class
     if (glfwRawMouseMotionSupported())
     {
         glfwSetInputMode(window->glfwWindowHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
@@ -149,8 +152,10 @@ void VoxelRendererProgram::run()
         window->update();
         inputManager->update();
 
+        // TODO: This code should be part of the Window class
         int width, height;
         glfwGetWindowSize(window->glfwWindowHandle, &width, &height);
+
         renderer.setResolution(width, height);
         if (!inputManager->invalidateMouse)
         {
@@ -169,6 +174,7 @@ void VoxelRendererProgram::run()
         auto forward = Camera::getForward(theta, phi);
         auto camDirection = Camera::getCamDir(theta, phi);
 
+        // TODO: Use glm::vec3s for this
         if (input->isKeyHeld(GLFW_KEY_A))
         {
             camX -= right[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
