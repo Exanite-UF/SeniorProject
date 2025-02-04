@@ -171,12 +171,14 @@ int main()
 
     int counter = 0;
     double frameTime = 0;
+    double totalTime = 0;
     while (!glfwWindowShouldClose(window))
     {
         auto now = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(now - lastFrameTime).count();
         lastFrameTime = now;
         frameTime += deltaTime;
+        totalTime += deltaTime;
 
         counter++;
         if (counter % 10 == 0)
@@ -317,11 +319,12 @@ int main()
 
         {
             camera.position = glm::vec3(camX, camY, camZ);
+            worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
+            worlds[0].scale = glm::vec3(1, 1, 2);
             camera.orientation = glm::angleAxis((float)theta, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)phi, glm::vec3(0, 1, 0));//glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
             renderer.prepateRayTraceFromCamera(camera);
             renderer.executeRayTrace(worlds);
             renderer.display();
-
         }
 
         /*

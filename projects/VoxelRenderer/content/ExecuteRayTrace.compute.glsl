@@ -179,6 +179,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     }
 
     hit.hitLocation = rayPos;
+    hit.dist = length(rayStart - hit.hitLocation);
 
     return hit;
 }
@@ -194,8 +195,12 @@ void main()
 
     float currentDepth = imageLoad(hitNormal, texelCoord).w;
 
-    rayPos -= voxelWorldPosition;
+    vec3 voxelWorldSize = 2. * imageSize(texture1);
+    vec3 rotatedVoxelWorldCenter = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), 0.5 * vec3(voxelWorldSize));
+
+    rayPos -= voxelWorldPosition;// - 0.5 * vec3(voxelWorldSize);
     rayPos = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), rayPos);
+    rayPos += 0.5 * vec3(voxelWorldSize);
     rayPos /= voxelWorldScale;
 
     rayDir = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), rayDir);
@@ -209,7 +214,7 @@ void main()
 
     hit.normal = qtransform(voxelWorldOrientation, hit.normal);
 
-    hit.dist = length(hit.hitLocation - rayStart);
+    hit.dist = length(rayDir * voxelWorldScale * hit.dist);//length(hit.hitLocation - rayStart);
 
     if(hit.wasHit && hit.dist < currentDepth){
         imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit));
