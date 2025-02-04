@@ -2,7 +2,6 @@
 
 GLuint GraphicsUtils::emptyVertexArray = 0;
 
-
 GLuint GraphicsUtils::create3DImage(int width, int height, int depth, GLenum internalFormat, GLenum format, GLenum type)
 {
     GLuint img;
@@ -22,7 +21,8 @@ GLuint GraphicsUtils::create3DImage(int width, int height, int depth, GLenum int
 
 GLuint GraphicsUtils::getEmptyVertexArray()
 {
-    if(emptyVertexArray == 0){
+    if (emptyVertexArray == 0)
+    {
         glGenVertexArrays(1, &emptyVertexArray);
     }
     return emptyVertexArray;

@@ -1,30 +1,28 @@
 #include "VoxelRenderer.h"
+#include "GraphicsUtils.h"
+#include "ShaderManager.h"
 #include "TupleHasher.h"
+#include "VoxelWorld.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <cmath>
+#include <glm/common.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/mat3x3.hpp>
 #include <string>
 #include <tuple>
 #include <unordered_map>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include "ShaderManager.h"
-#include <glm/common.hpp>
-#include <glm/mat3x3.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <cmath>
-#include "VoxelWorld.h"
-#include "GraphicsUtils.h"
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
 GLuint VoxelRenderer::displayToWindowProgram;
 
-
-
 void VoxelRenderer::remakeTextures()
 {
     isSizingDirty = false;
-    //This will delete the texture currently bound to this variable, and set the variable equal to 0
-    //If the variable is 0, meaning that no texture is bound, then it will do nothing
+    // This will delete the texture currently bound to this variable, and set the variable equal to 0
+    // If the variable is 0, meaning that no texture is bound, then it will do nothing
     glDeleteTextures(1, &rayStartBuffer);
     glDeleteTextures(1, &rayDirectionBuffer);
 
@@ -32,19 +30,19 @@ void VoxelRenderer::remakeTextures()
     glDeleteTextures(1, &rayHitNormalBuffer);
     glDeleteTextures(1, &rayHitMaterialBuffer);
 
-    //Create a new texture
+    // Create a new texture
     rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
 
     rayHitPositionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     rayHitNormalBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     rayHitMaterialBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
-
 }
 
 void VoxelRenderer::handleDirtySizing()
 {
-    if(isSizingDirty){
+    if (isSizingDirty)
+    {
         remakeTextures();
     }
 }
@@ -97,7 +95,8 @@ VoxelRenderer::VoxelRenderer()
 
 void VoxelRenderer::setResolution(int x, int y)
 {
-    if(xSize != x || ySize != y){
+    if (xSize != x || ySize != y)
+    {
         isSizingDirty = true;
     }
     xSize = x;
@@ -106,7 +105,8 @@ void VoxelRenderer::setResolution(int x, int y)
 
 void VoxelRenderer::setRaysPerPixel(int number)
 {
-    if(raysPerPixel != number){
+    if (raysPerPixel != number)
+    {
         isSizingDirty = true;
     }
     raysPerPixel = number;
@@ -115,14 +115,13 @@ void VoxelRenderer::setRaysPerPixel(int number)
 void VoxelRenderer::prepateRayTraceFromCamera(const Camera& camera)
 {
     handleDirtySizing();
-    
+
     glUseProgram(prepareRayTraceFromCameraProgram);
 
     glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.getPosition()));
     glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camOrientation"), 1, glm::value_ptr(camera.getOrientation()));
     glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
     glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);
-
 
     glBindImageTexture(
         0, // Image unit index (matches binding=0)
@@ -173,9 +172,7 @@ void VoxelRenderer::prepateRayTraceFromCamera(const Camera& camera)
         GL_RGBA32F // Format
     );
 
-
-
-    //Reset the hit info
+    // Reset the hit info
     glUseProgram(resetHitInfoProgram);
 
     glBindImageTexture(
@@ -250,7 +247,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
 
     glUseProgram(executeRayTraceProgram);
 
-    //bind rayStart info
+    // bind rayStart info
     glBindImageTexture(
         3, // Image unit index (matches binding=0)
         rayStartBuffer, // Texture ID
@@ -270,8 +267,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
         GL_READ_WRITE, // Access qualifier
         GL_RGBA32F // Format
     );
-    
-    //bind hit info
+
+    // bind hit info
     glBindImageTexture(
         5, // Image unit index (matches binding=0)
         rayHitPositionBuffer, // Texture ID
@@ -306,7 +303,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
     GLuint workGroupsY = (ySize + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
 
-    for(auto& voxelWorld : worlds){
+    for (auto& voxelWorld : worlds)
+    {
         voxelWorld.bindTextures();
 
         glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
@@ -318,7 +316,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
         voxelWorld.unbindTextures();
     }
 
-    //unbind rayStart info
+    // unbind rayStart info
     glBindImageTexture(
         3, // Image unit index (matches binding=0)
         0, // Texture ID
@@ -338,8 +336,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<VoxelWorld>& worlds)
         GL_READ_WRITE, // Access qualifier
         GL_RGBA32F // Format
     );
-    
-    //unbind hit info
+
+    // unbind hit info
     glBindImageTexture(
         5, // Image unit index (matches binding=0)
         0, // Texture ID
@@ -410,8 +408,6 @@ void VoxelRenderer::display()
     glBindVertexArray(GraphicsUtils::getEmptyVertexArray());
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    
 
     glUseProgram(0);
     glBindVertexArray(0);

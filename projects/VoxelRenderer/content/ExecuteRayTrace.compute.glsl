@@ -5,8 +5,8 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(rgba8ui, binding = 0) uniform readonly uimage3D texture1;
 layout(rgba8ui, binding = 1) uniform readonly uimage3D texture2;
 layout(rgba8ui, binding = 2) uniform readonly uimage3D texture3;
-//layout(rgba8ui, binding = 3) uniform readonly uimage3D texture4;
-//layout(rgba8ui, binding = 4) uniform readonly uimage3D texture5;
+// layout(rgba8ui, binding = 3) uniform readonly uimage3D texture4;
+// layout(rgba8ui, binding = 4) uniform readonly uimage3D texture5;
 
 layout(rgba32f, binding = 3) uniform readonly image3D rayPosition;
 layout(rgba32f, binding = 4) uniform readonly image3D rayDirection;
@@ -16,13 +16,13 @@ layout(rgba32f, binding = 6) uniform image3D hitNormal;
 layout(r16ui, binding = 7) uniform uimage3D hitMaterial;
 
 uniform vec3 voxelWorldPosition;
-uniform vec4 voxelWorldOrientation;//This is a quaternion
-uniform vec3 voxelWorldScale;//Size of a voxel
+uniform vec4 voxelWorldOrientation; // This is a quaternion
+uniform vec3 voxelWorldScale; // Size of a voxel
 
-
-vec3 qtransform( vec4 q, vec3 v ){ 
-	return v + 2.0*cross(cross(v, q.xyz ) + q.w*v, q.xyz);
-} 
+vec3 qtransform(vec4 q, vec3 v)
+{
+    return v + 2.0 * cross(cross(v, q.xyz) + q.w * v, q.xyz);
+}
 
 struct RayHit
 {
@@ -92,14 +92,15 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
-    float depth = length(rayDir * voxelWorldScale * distToCube);//Find how far the ray has traveled from the start
+    float depth = length(rayDir * voxelWorldScale * distToCube); // Find how far the ray has traveled from the start
 
-    //If the start of the voxel volume is behind the currently closest thing, then there is not reason to continue
-    if(depth > currentDepth){
+    // If the start of the voxel volume is behind the currently closest thing, then there is not reason to continue
+    if (depth > currentDepth)
+    {
         return hit;
     }
 
-    bool isOutside = false;//Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
+    bool isOutside = false; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -112,7 +113,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         if (i > 1 && (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0)))))
         {
-            //No voxel was hit
+            // No voxel was hit
             break;
         }
 
@@ -125,17 +126,17 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         p2 = (p >> 4) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 3
         uint k3 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
 
-        //p2 = (p >> 6) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 4
-        //uint k4 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+        // p2 = (p >> 6) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 4
+        // uint k4 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
 
-        //p2 = (p >> 8) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 5
-        //uint k5 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+        // p2 = (p >> 8) & 1; // This lets us disambiguate between the 8 voxels in a cell of level 5
+        // uint k5 = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
 
         uvec4 l1 = imageLoad(texture1, (p >> 1));
         uvec4 l2 = imageLoad(texture2, (p >> 3));
         uvec4 l3 = imageLoad(texture3, (p >> 5));
-        //uvec4 l4 = imageLoad(texture4, (p >> 7));
-        //uvec4 l5 = imageLoad(texture5, (p >> 9));
+        // uvec4 l4 = imageLoad(texture4, (p >> 7));
+        // uvec4 l5 = imageLoad(texture5, (p >> 9));
 
         uint level1 = l1.a; // This is the cell from the image (Warning the upper 24 bits are garbage and should be ignored)
 
@@ -143,12 +144,12 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         uint level3 = l3.a; // cell for level 3
 
-        //uint level4 = l4.a; // cell for level 4
+        // uint level4 = l4.a; // cell for level 4
 
-        //uint level5 = l5.a; // cell for level 4
+        // uint level5 = l5.a; // cell for level 4
 
         // This is the number of mip map levels at which no voxels are found
-        //int count = int(level5 == 0) + int((level5 & k5) == 0) + int(level4 == 0) + int((level4 & k4) == 0) + int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k1) == 0);
+        // int count = int(level5 == 0) + int((level5 & k5) == 0) + int(level4 == 0) + int((level4 & k4) == 0) + int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k1) == 0);
         int count = int(level3 == 0) + int((level3 & k3) == 0) + int(level2 == 0) + int((level2 & k2) == 0) + int(level1 == 0) + int((level1 & k1) == 0);
 
         if (count <= 0)
@@ -187,7 +188,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-    
+
     vec3 rayPos = imageLoad(rayPosition, texelCoord).xyz;
     vec3 rayDir = imageLoad(rayDirection, texelCoord).xyz;
 
@@ -206,8 +207,6 @@ void main()
     rayDir = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), rayDir);
     rayDir /= voxelWorldScale;
 
-
-
     RayHit hit = findIntersection(rayPos, rayDir, 200, currentDepth);
     hit.hitLocation *= voxelWorldScale;
     hit.hitLocation = qtransform(voxelWorldOrientation, hit.hitLocation);
@@ -216,10 +215,10 @@ void main()
 
     hit.dist = length(rayDir * voxelWorldScale * hit.dist);//length(hit.hitLocation - rayStart);
 
-    if(hit.wasHit && hit.dist < currentDepth){
+    if (hit.wasHit && hit.dist < currentDepth)
+    {
         imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit));
         imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist));
         imageStore(hitMaterial, texelCoord, uvec4(hit.material));
     }
-    
 }
