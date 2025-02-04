@@ -44,8 +44,10 @@ VoxelRendererProgram::VoxelRendererProgram()
     }
     window->registerCallbacks();
 
-    // Init GLEW
+    // TODO: This code should be part of the Window class
     glfwMakeContextCurrent(window->glfwWindowHandle);
+
+    // Init GLEW
     glewExperimental = true;
     if (glewInit() != GLEW_OK)
     {
@@ -64,9 +66,12 @@ VoxelRendererProgram::VoxelRendererProgram()
 
 VoxelRendererProgram::~VoxelRendererProgram()
 {
+    // Shutdown IMGUI
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    // Shutdown GLFW
     glfwTerminate();
 }
 
