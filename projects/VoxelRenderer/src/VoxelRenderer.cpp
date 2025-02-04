@@ -112,7 +112,7 @@ void VoxelRenderer::setRaysPerPixel(int number)
     raysPerPixel = number;
 }
 
-void VoxelRenderer::prepateRayTraceFromCamera(const Camera& camera)
+void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
 {
     handleDirtySizing();
 
