@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+#include "Event.h"
 #include "ShaderManager.h"
 #include "TupleHasher.h"
 #include "VoxelRenderer.h"
@@ -344,4 +345,19 @@ void VoxelRendererProgram::runStartupTests()
     assertIsTrue(!map.contains(key), "Incorrect map implementation: Map should be empty");
     map[key] = 1;
     assertIsTrue(map.contains(key), "Incorrect map implementation: Map should contain key that was inserted");
+
+    int value = 0;
+    Event<void(int)> testEvent;
+
+    assertIsTrue(value == 0, "Incorrect event implementation: value should equal 0");
+    auto listener = testEvent.subscribe([&](int valueToAdd)
+        {
+            log("Event was successfully called");
+            value += valueToAdd;
+        });
+    assertIsTrue(testEvent.getCount() == 1, "Incorrect event implementation: e.getCount() should equal 1 after subscribing");
+    testEvent.raise(5);
+    assertIsTrue(value == 5, "Incorrect event implementation: e.getCount() should equal 5");
+    testEvent.unsubscribe(listener);
+    assertIsTrue(testEvent.getCount() == 0, "Incorrect event implementation: e.getCount() should equal 0 after unsubscribing");
 }
