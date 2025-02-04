@@ -152,7 +152,7 @@ void Window::registerCallbacks()
     glfwSetCursorEnterCallback(glfwWindowHandle, &Window::onCursorEnter);
 }
 
-void Window::toFullscreen()
+void Window::setFullscreen()
 {
     // Saving last windowed information
     glfwGetWindowPos(glfwWindowHandle, &lastWindowX, &lastWindowY);
@@ -163,7 +163,7 @@ void Window::toFullscreen()
     glfwSetWindowMonitor(glfwWindowHandle, currentMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 }
 
-void Window::toWindowed()
+void Window::setWindowed()
 {
     glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowX, lastWindowY, lastWindowWidth, lastWindowHeight, 0);
 }

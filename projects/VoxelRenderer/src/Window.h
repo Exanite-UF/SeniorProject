@@ -47,7 +47,7 @@ public:
     // This binds the callbacks so that glfwPollEvents will call them.
     void registerCallbacks();
 
-    void toFullscreen();
+    void setFullscreen();
 
-    void toWindowed();
+    void setWindowed();
 };

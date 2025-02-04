@@ -260,11 +260,11 @@ int main()
             GLFWmonitor* monitor = glfwGetWindowMonitor(windowInstance);
             if (monitor == NULL)
             {
-                window->toFullscreen();
+                window->setFullscreen();
             }
             else
             {
-                window->toWindowed();
+                window->setWindowed();
             }
         }
 
