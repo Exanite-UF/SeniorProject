@@ -9,20 +9,20 @@
 class Window
 {
 public:
+    std::shared_ptr<InputManager> inputManager;
+
     GLFWwindow* glfwWindowHandle; // A pointer to the object that is the window
-    std::shared_ptr<InputManager> inputManager = std::make_shared<InputManager>(); // The input manager for this window
     int lastWindowX;
     int lastWindowY;
     int lastWindowWidth;
     int lastWindowHeight;
 
+    // TODO: Currently Window depends on the input manager, this dependency should be reversed. This will be doable once events are properly implemented.
+    Window(const std::shared_ptr<InputManager>& inputManager);
+
     void update()
     {
         glfwPollEvents();
-        // The requisite changes to the state of inputManager have been made by the triggering of callbacks due to glfwPollEvents
-        // This finalizes those changes
-        inputManager->update();
-
         // TODO: call user callback functions
         // TODO: find a way to only trigger callbacks on the rising and falling edges of inputs. This will probably involve editing the onWindowSize ... etc functions to support calling user specified functions.
     }

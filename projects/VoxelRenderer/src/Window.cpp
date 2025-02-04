@@ -1,5 +1,10 @@
 #include "Window.h"
 
+Window::Window(const std::shared_ptr<InputManager>& inputManager)
+{
+    this->inputManager = inputManager;
+}
+
 GLFWmonitor* Window::getCurrentMonitor(GLFWwindow* window)
 {
     int nmonitors, i;

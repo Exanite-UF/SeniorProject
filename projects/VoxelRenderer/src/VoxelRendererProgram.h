@@ -7,6 +7,9 @@
 
 #include <string>
 
+#include "InputManager.h"
+#include "Window.h"
+
 // WASD Space Shift = movement
 // q = capture mouse
 // f = fullscreen toggle
@@ -17,6 +20,9 @@
 class VoxelRendererProgram
 {
 public:
+    std::shared_ptr<Window> window;
+    std::shared_ptr<InputManager> inputManager;
+
     bool isWorkload = false; // View toggle
     bool isRand2 = true; // Noise type toggle
     float fillAmount = 0.6;

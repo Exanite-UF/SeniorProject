@@ -26,11 +26,40 @@ VoxelRendererProgram::VoxelRendererProgram()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
+    // TODO: This code should be part of the Window class
     // Create window
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
+
+    inputManager = std::make_shared<InputManager>();
+    window = std::make_shared<Window>(inputManager);
+
+    // TODO: This code should be part of the Window class
+    window->glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
+    if (window->glfwWindowHandle == nullptr)
+    {
+        throw std::runtime_error("Failed to create window");
+    }
+    window->registerCallbacks();
+
+    // Init GLEW
+    glfwMakeContextCurrent(window->glfwWindowHandle);
+    glewExperimental = true;
+    if (glewInit() != GLEW_OK)
+    {
+        throw std::runtime_error("Failed to initialize GLEW");
+    }
+
+    // Init IMGUI
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+    ImGui_ImplGlfw_InitForOpenGL(window->glfwWindowHandle, true);
+    ImGui_ImplOpenGL3_Init();
 }
 
 VoxelRendererProgram::~VoxelRendererProgram()
@@ -43,37 +72,12 @@ VoxelRendererProgram::~VoxelRendererProgram()
 
 void VoxelRendererProgram::run()
 {
-    auto window = std::make_shared<Window>(); // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
-    auto inputManager = window->inputManager; // TODO: Rename this to window and use it instead of the raw pointer once the Window class is implemented
     auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
-    window->glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
-    if (window->glfwWindowHandle == nullptr)
-    {
-        throw std::runtime_error("Failed to create window");
-    }
-    window->registerCallbacks();
 
+    // TODO: This code should be part of the Window class
     glfwGetWindowPos(window->glfwWindowHandle, &window->lastWindowX, &window->lastWindowY);
     glfwGetWindowSize(window->glfwWindowHandle, &window->lastWindowWidth, &window->lastWindowHeight);
-
-    // Init GLEW
-    glfwMakeContextCurrent(window->glfwWindowHandle);
-    glewExperimental = true;
-    if (glewInit() != GLEW_OK)
-    {
-        throw std::runtime_error("Failed to initialize GLEW");
-    }
-
-    // TODO: Consider refactoring this and other ImGui init/render loop/deinit code into separate class
-    // Setup IMGUI context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-    ImGui_ImplGlfw_InitForOpenGL(window->glfwWindowHandle, true);
-    ImGui_ImplOpenGL3_Init();
 
     // Vertex array
     GLuint emptyVertexArray;
@@ -133,11 +137,17 @@ void VoxelRendererProgram::run()
             frameTime = 0;
         }
 
-        window->update();
+        // Update IMGUI
         ImGui_ImplOpenGL3_NewFrame(); // TODO: Cleanup
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Update systems
+        window->update();
+        inputManager->update();
 
         int width, height;
         glfwGetWindowSize(window->glfwWindowHandle, &width, &height);
