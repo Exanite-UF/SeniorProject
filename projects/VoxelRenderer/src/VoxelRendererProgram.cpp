@@ -145,13 +145,13 @@ void VoxelRendererProgram::run()
             frameTime = 0;
         }
 
+        // Clear screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         // Update IMGUI
         ImGui_ImplOpenGL3_NewFrame(); // TODO: Cleanup
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
-        // Clear screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update systems
         window->update();
