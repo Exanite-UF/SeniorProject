@@ -47,13 +47,6 @@ VoxelRendererProgram::VoxelRendererProgram()
     // TODO: This code should be part of the Window class
     glfwMakeContextCurrent(window->glfwWindowHandle);
 
-    // Init GLEW
-    glewExperimental = true;
-    if (glewInit() != GLEW_OK)
-    {
-        throw std::runtime_error("Failed to initialize GLEW");
-    }
-
     // Init IMGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -62,6 +55,13 @@ VoxelRendererProgram::VoxelRendererProgram()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
     ImGui_ImplGlfw_InitForOpenGL(window->glfwWindowHandle, true);
     ImGui_ImplOpenGL3_Init();
+
+    // Init GLEW
+    glewExperimental = true;
+    if (glewInit() != GLEW_OK)
+    {
+        throw std::runtime_error("Failed to initialize GLEW");
+    }
 }
 
 VoxelRendererProgram::~VoxelRendererProgram()
