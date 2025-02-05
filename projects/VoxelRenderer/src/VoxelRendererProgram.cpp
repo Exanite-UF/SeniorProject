@@ -337,29 +337,48 @@ void VoxelRendererProgram::runStartupTests()
 {
     log("Running startup tests");
 
-    checkForContentFolder();
-    assertIsTrue(NULL == nullptr, "Unsupported compiler: NULL must equal nullptr");
+    {
+        // Make sure the content folder exists
+        checkForContentFolder();
+    }
 
-    auto key = std::make_tuple("hello", 1);
-    std::unordered_map<std::tuple<std::string, int>, int, TupleHasher<std::tuple<std::string, int>>> map;
-    assertIsTrue(!map.contains(key), "Incorrect map implementation: Map should be empty");
-    map[key] = 1;
-    assertIsTrue(map.contains(key), "Incorrect map implementation: Map should contain key that was inserted");
+    {
+        // This allows us to safely use nullptr instead of NULL
+        assertIsTrue(NULL == nullptr, "Unsupported compiler: NULL must equal nullptr");
+    }
 
-    int value = 0;
-    Event<int> testEvent;
+    {
+        // A tuple can be used as a key in a map
+        // Must make sure to provide the TupleHasher template argument
+        auto key = std::make_tuple("hello", 1);
+        std::unordered_map<std::tuple<std::string, int>, int, TupleHasher<std::tuple<std::string, int>>> map;
+        assertIsTrue(!map.contains(key), "Incorrect map implementation: Map should be empty");
+        map[key] = 1;
+        assertIsTrue(map.contains(key), "Incorrect map implementation: Map should contain key that was inserted");
+    }
 
-    assertIsTrue(value == 0, "Incorrect event implementation: value should equal 0");
-    auto listener = testEvent.subscribe([&](int valueToAdd)
-        {
-            log("Event was successfully called");
-            value += valueToAdd;
-        });
+    {
+        // This declares an event with a single int parameter
+        Event<int> testEvent;
+        int counter = 0;
 
-    testEvent.raise(5);
-    assertIsTrue(value == 5, "Incorrect event implementation: e.getCount() should equal 5");
+        // Subscribing returns a shared_ptr that acts as a subscription handle
+        // Letting the shared_ptr fall out of scope or explicitly resetting it will unsubscribe from the event
+        auto listener = testEvent.subscribe([&](int value)
+            {
+                log("Event was successfully called");
+                counter += value;
+            });
 
-    listener.reset();
-    testEvent.raise(5);
-    assertIsTrue(value == 5, "Incorrect event implementation: e.getCount() should equal 5");
+        // Listener is subscribed, this should add 5 to the counter
+        testEvent.raise(5);
+        assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
+
+        // Unsubscribe from event
+        listener.reset();
+
+        // Listener is unsubscribed, this should not affect the counter
+        testEvent.raise(5);
+        assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
+    }
 }
