@@ -135,7 +135,7 @@ void VoxelRendererProgram::run()
 
             cameraRotation.y -= mouseDelta.x * 0.002;
             cameraRotation.x += mouseDelta.y * 0.002;
-            cameraRotation.x = std::min(std::max(cameraRotation.x, -3.1415926589f / 2), 3.1415926589f / 2);
+            cameraRotation.x = std::min(std::max(cameraRotation.x, -glm::pi<float>() / 2), glm::pi<float>() / 2);
         }
         else
         {
