@@ -63,6 +63,10 @@ void VoxelRendererProgram::run()
     auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
 
+    // Configure OpenGL
+    glEnable(GL_FRAMEBUFFER_SRGB);
+    glClearColor(0, 0, 0, 0);
+
     // Vertex array
     GLuint emptyVertexArray;
     glGenVertexArrays(1, &emptyVertexArray);
@@ -73,6 +77,7 @@ void VoxelRendererProgram::run()
     makeMipMapComputeProgram = shaderManager.getComputeProgram("content/MakeMipMap.compute.glsl");
     assignMaterialComputeProgram = shaderManager.getComputeProgram("content/AssignMaterial.compute.glsl");
 
+    // Voxel rendering
     VoxelWorld voxelWorld(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     VoxelRenderer renderer;
     Camera camera;
@@ -82,16 +87,13 @@ void VoxelRendererProgram::run()
     worlds.push_back(voxelWorld);
     worlds.push_back(voxelWorld);
 
+    worlds[1].position = glm::vec3(256, 0, 0);
+
     // Main render loop
     glm::vec3 cameraPosition(0);
     glm::vec2 cameraRotation(0);
     float moveSpeed = 0;
     float mouseSensitivity = 0.002;
-
-    glEnable(GL_FRAMEBUFFER_SRGB);
-    glClearColor(0, 0, 0, 0);
-
-    worlds[1].position = glm::vec3(256, 0, 0);
 
     // Engine time
     double totalTime = 0;
