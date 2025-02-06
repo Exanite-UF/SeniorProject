@@ -44,6 +44,8 @@ Window::~Window()
 void Window::update()
 {
     glfwPollEvents();
+    glfwGetWindowSize(glfwWindowHandle, &size.x, &size.y);
+
     // TODO: call user callback functions
     // TODO: find a way to only trigger callbacks on the rising and falling edges of inputs. This will probably involve editing the onWindowSize ... etc functions to support calling user specified functions.
 }

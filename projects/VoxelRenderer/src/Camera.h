@@ -18,11 +18,6 @@ public:
     float getHorizontalFov() const;
 
     // TODO: Do we still want to use these?
-    static glm::vec3 getCamDir(float theta, float phi)
-    {
-        return { std::cos(theta) * std::cos(phi), std::sin(theta) * std::cos(phi), std::sin(phi) };
-    }
-
     static glm::vec3 getForward(float theta, float phi)
     {
         return { std::cos(theta), std::sin(theta), 0 };

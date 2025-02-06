@@ -16,6 +16,7 @@ class Window
 
 public:
     std::shared_ptr<InputManager> inputManager;
+    glm::i32vec2 size;
 
     GLFWwindow* glfwWindowHandle; // A pointer to the object that is the window
 

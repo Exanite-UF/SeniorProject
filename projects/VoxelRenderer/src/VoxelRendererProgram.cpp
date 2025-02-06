@@ -92,21 +92,23 @@ void VoxelRendererProgram::run()
 
     worlds[1].position = glm::vec3(256, 0, 0);
 
-    // Fps counter
-    int frameCounter = 0;
-    double frameTime = 0;
-
     // Engine time
     double totalTime = 0;
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
+
+    // Fps counter
+    int frameCounter = 0;
+    double frameTime = 0;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
+        // Engine time
         auto now = std::chrono::high_resolution_clock::now();
-        float deltaTime = static_cast<float>(std::chrono::duration<double>(now - previousTimestamp).count());
+        double deltaTime = std::chrono::duration<double>(now - previousTimestamp).count();
         previousTimestamp = now;
         frameTime += deltaTime;
         totalTime += deltaTime;
 
+        // Fps counter
         frameCounter++;
         if (frameCounter % 10 == 0)
         {
@@ -126,11 +128,7 @@ void VoxelRendererProgram::run()
         window->update();
         inputManager->update();
 
-        // TODO: This code should be part of the Window class
-        int width, height;
-        glfwGetWindowSize(window->glfwWindowHandle, &width, &height);
-
-        renderer.setResolution(width, height);
+        renderer.setResolution(window->size.x, window->size.y);
         if (!inputManager->invalidateMouse)
         {
             auto mouseDelta = input->getMouseDelta();
@@ -146,9 +144,7 @@ void VoxelRendererProgram::run()
 
         auto right = Camera::getRight(cameraRotation.y, cameraRotation.x);
         auto forward = Camera::getForward(cameraRotation.y, cameraRotation.x);
-        auto camDirection = Camera::getCamDir(cameraRotation.y, cameraRotation.x);
 
-        // TODO: Use glm::vec3s for this
         if (input->isKeyHeld(GLFW_KEY_A))
         {
             cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
@@ -282,10 +278,8 @@ void VoxelRendererProgram::checkForContentFolder()
     {
         throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
     }
-    else
-    {
-        log("Found content folder");
-    }
+
+    log("Found content folder");
 }
 
 void VoxelRendererProgram::assertIsTrue(const bool condition, const std::string& errorMessage)
