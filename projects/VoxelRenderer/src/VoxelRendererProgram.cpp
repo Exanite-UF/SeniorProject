@@ -86,6 +86,7 @@ void VoxelRendererProgram::run()
     glm::vec3 cameraPosition(0);
     glm::vec2 cameraRotation(0);
     float moveSpeed = 0;
+    float mouseSensitivity = 0.002;
 
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
@@ -133,8 +134,8 @@ void VoxelRendererProgram::run()
         {
             auto mouseDelta = input->getMouseDelta();
 
-            cameraRotation.y -= mouseDelta.x * 0.002;
-            cameraRotation.x += mouseDelta.y * 0.002;
+            cameraRotation.y -= mouseDelta.x * mouseSensitivity;
+            cameraRotation.x += mouseDelta.y * mouseSensitivity;
             cameraRotation.x = std::min(std::max(cameraRotation.x, -glm::pi<float>() / 2), glm::pi<float>() / 2);
         }
         else
