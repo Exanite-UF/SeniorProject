@@ -120,7 +120,7 @@ void VoxelRendererProgram::run()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update IMGUI
-        ImGui_ImplOpenGL3_NewFrame(); // TODO: Cleanup
+        ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
@@ -129,7 +129,7 @@ void VoxelRendererProgram::run()
         inputManager->update();
 
         renderer.setResolution(window->size.x, window->size.y);
-        if (!inputManager->invalidateMouse)
+        if (!inputManager->cursorEnteredThisFrame)
         {
             auto mouseDelta = input->getMouseDelta();
 
@@ -139,7 +139,7 @@ void VoxelRendererProgram::run()
         }
         else
         {
-            inputManager->invalidateMouse = false;
+            inputManager->cursorEnteredThisFrame = false;
         }
 
         auto right = Camera::getRight(cameraRotation.y, cameraRotation.x);

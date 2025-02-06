@@ -191,7 +191,7 @@ void Window::onCursorEnter(GLFWwindow* window, int entered)
         return;
     }
 
-    self->inputManager->invalidateMouse = true;
+    self->inputManager->cursorEnteredThisFrame = true;
 }
 
 void Window::registerGlfwCallbacks()
