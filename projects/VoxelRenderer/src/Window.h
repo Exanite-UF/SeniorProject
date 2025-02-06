@@ -8,24 +8,26 @@
 
 class Window
 {
+    // Stores last known window sizes/positions when not in fullscreen mode
+    glm::i32vec2 lastWindowedPosition;
+    glm::i32vec2 lastWindowedSize;
+
+    void registerGlfwCallbacks();
+
 public:
     std::shared_ptr<InputManager> inputManager;
+    glm::i32vec2 size;
 
     GLFWwindow* glfwWindowHandle; // A pointer to the object that is the window
-    int lastWindowX;
-    int lastWindowY;
-    int lastWindowWidth;
-    int lastWindowHeight;
 
     // TODO: Currently Window depends on the input manager, this dependency should be reversed. This will be doable once events are properly implemented.
-    Window(const std::shared_ptr<InputManager>& inputManager);
+    explicit Window(const std::shared_ptr<InputManager>& inputManager);
+    Window(const Window&) = delete;
+    Window& operator=(const Window&) = delete;
 
-    void update()
-    {
-        glfwPollEvents();
-        // TODO: call user callback functions
-        // TODO: find a way to only trigger callbacks on the rising and falling edges of inputs. This will probably involve editing the onWindowSize ... etc functions to support calling user specified functions.
-    }
+    ~Window();
+
+    void update();
 
     // Find the monitor that the window is most likely to be on
     // Based on window-monitor overlap
@@ -43,9 +45,6 @@ public:
     static void onScroll(GLFWwindow* window, double xoffset, double yoffset);
 
     static void onCursorEnter(GLFWwindow* window, int entered);
-
-    // This binds the callbacks so that glfwPollEvents will call them.
-    void registerCallbacks();
 
     void setFullscreen();
 
