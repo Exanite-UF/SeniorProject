@@ -3,6 +3,49 @@
 Window::Window(const std::shared_ptr<InputManager>& inputManager)
 {
     this->inputManager = inputManager;
+
+    // Configure GLFW and OpenGL
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
+
+    // Create the window
+    glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
+    if (glfwWindowHandle == nullptr)
+    {
+        throw std::runtime_error("Failed to create window");
+    }
+
+    // Set the Window's OpenGL context to be used on the current thread
+    glfwMakeContextCurrent(glfwWindowHandle);
+
+    // Register GLFW callbacks
+    registerGlfwCallbacks();
+
+    // Initialize state
+    glfwSwapInterval(0); // Disable vsync
+    glfwGetWindowPos(glfwWindowHandle, &lastWindowedPosition.x, &lastWindowedPosition.y);
+    glfwGetWindowSize(glfwWindowHandle, &lastWindowedSize.x, &lastWindowedSize.y);
+
+    // Use raw mouse motion if supported
+    // Raw mouse motion disables features such as mouse acceleration
+    if (glfwRawMouseMotionSupported())
+    {
+        glfwSetInputMode(glfwWindowHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
+}
+
+Window::~Window()
+{
+    glfwDestroyWindow(glfwWindowHandle);
+}
+
+void Window::update()
+{
+    glfwPollEvents();
+    // TODO: call user callback functions
+    // TODO: find a way to only trigger callbacks on the rising and falling edges of inputs. This will probably involve editing the onWindowSize ... etc functions to support calling user specified functions.
 }
 
 GLFWmonitor* Window::getCurrentMonitor(GLFWwindow* window)
@@ -149,7 +192,7 @@ void Window::onCursorEnter(GLFWwindow* window, int entered)
     self->inputManager->invalidateMouse = true;
 }
 
-void Window::registerCallbacks()
+void Window::registerGlfwCallbacks()
 {
     glfwSetWindowUserPointer(glfwWindowHandle, this); // This binds our Window wrapper class to the GLFWwindow object.
 
@@ -165,8 +208,8 @@ void Window::registerCallbacks()
 void Window::setFullscreen()
 {
     // Saving last windowed information
-    glfwGetWindowPos(glfwWindowHandle, &lastWindowX, &lastWindowY);
-    glfwGetWindowSize(glfwWindowHandle, &lastWindowWidth, &lastWindowWidth);
+    glfwGetWindowPos(glfwWindowHandle, &lastWindowedPosition.x, &lastWindowedPosition.y);
+    glfwGetWindowSize(glfwWindowHandle, &lastWindowedSize.x, &lastWindowedSize.y);
 
     GLFWmonitor* currentMonitor = getCurrentMonitor(glfwWindowHandle);
     const GLFWvidmode* mode = glfwGetVideoMode(currentMonitor);
@@ -175,5 +218,5 @@ void Window::setFullscreen()
 
 void Window::setWindowed()
 {
-    glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowX, lastWindowY, lastWindowWidth, lastWindowHeight, 0);
+    glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowedPosition.x, lastWindowedPosition.y, lastWindowedSize.x, lastWindowedSize.y, 0);
 }

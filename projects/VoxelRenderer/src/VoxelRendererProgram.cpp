@@ -27,26 +27,8 @@ VoxelRendererProgram::VoxelRendererProgram()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    // TODO: This code should be part of the Window class
-    // Create window
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
-
     inputManager = std::make_shared<InputManager>();
     window = std::make_shared<Window>(inputManager);
-
-    // TODO: This code should be part of the Window class
-    window->glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
-    if (window->glfwWindowHandle == nullptr)
-    {
-        throw std::runtime_error("Failed to create window");
-    }
-    window->registerCallbacks();
-
-    // TODO: This code should be part of the Window class
-    glfwMakeContextCurrent(window->glfwWindowHandle);
 
     // Init IMGUI
     IMGUI_CHECKVERSION();
@@ -81,10 +63,6 @@ void VoxelRendererProgram::run()
     auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
 
-    // TODO: This code should be part of the Window class
-    glfwGetWindowPos(window->glfwWindowHandle, &window->lastWindowX, &window->lastWindowY);
-    glfwGetWindowSize(window->glfwWindowHandle, &window->lastWindowWidth, &window->lastWindowHeight);
-
     // Vertex array
     GLuint emptyVertexArray;
     glGenVertexArrays(1, &emptyVertexArray);
@@ -105,44 +83,34 @@ void VoxelRendererProgram::run()
     worlds.push_back(voxelWorld);
 
     // Main render loop
-    double theta = 0;
-    double phi = 0;
-    double camX = 0;
-    double camY = 0;
-    double camZ = 0;
-    double mouseWheel = 0;
-
-    // TODO: This code should be part of the Window class
-    glfwSwapInterval(0); // disable vsync
+    glm::vec3 cameraPosition(0);
+    glm::vec2 cameraRotation(0);
+    float moveSpeed = 0;
 
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
-    // TODO: This code should be part of the Window class
-    if (glfwRawMouseMotionSupported())
-    {
-        glfwSetInputMode(window->glfwWindowHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-    }
-
-    auto lastFrameTime = std::chrono::high_resolution_clock::now();
-
     worlds[1].position = glm::vec3(256, 0, 0);
 
-    int counter = 0;
+    // Fps counter
+    int frameCounter = 0;
     double frameTime = 0;
+
+    // Engine time
     double totalTime = 0;
+    auto previousTimestamp = std::chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
         auto now = std::chrono::high_resolution_clock::now();
-        double deltaTime = std::chrono::duration<double>(now - lastFrameTime).count();
-        lastFrameTime = now;
+        float deltaTime = static_cast<float>(std::chrono::duration<double>(now - previousTimestamp).count());
+        previousTimestamp = now;
         frameTime += deltaTime;
         totalTime += deltaTime;
 
-        counter++;
-        if (counter % 10 == 0)
+        frameCounter++;
+        if (frameCounter % 10 == 0)
         {
-            VoxelRendererProgram::log(std::to_string(10 / frameTime));
+            log(std::to_string(10 / frameTime));
             frameTime = 0;
         }
 
@@ -167,53 +135,48 @@ void VoxelRendererProgram::run()
         {
             auto mouseDelta = input->getMouseDelta();
 
-            theta -= mouseDelta.x * 0.002;
-            phi += mouseDelta.y * 0.002;
-            phi = std::min(std::max(phi, -3.1415926589 / 2), 3.1415926589 / 2);
+            cameraRotation.y -= mouseDelta.x * 0.002;
+            cameraRotation.x += mouseDelta.y * 0.002;
+            cameraRotation.x = std::min(std::max(cameraRotation.x, -3.1415926589f / 2), 3.1415926589f / 2);
         }
         else
         {
             inputManager->invalidateMouse = false;
         }
 
-        auto right = Camera::getRight(theta, phi);
-        auto forward = Camera::getForward(theta, phi);
-        auto camDirection = Camera::getCamDir(theta, phi);
+        auto right = Camera::getRight(cameraRotation.y, cameraRotation.x);
+        auto forward = Camera::getForward(cameraRotation.y, cameraRotation.x);
+        auto camDirection = Camera::getCamDir(cameraRotation.y, cameraRotation.x);
 
         // TODO: Use glm::vec3s for this
         if (input->isKeyHeld(GLFW_KEY_A))
         {
-            camX -= right[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camY -= right[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camZ -= right[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
         }
+
         if (input->isKeyHeld(GLFW_KEY_D))
         {
-            camX += right[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camY += right[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camZ += right[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
         }
 
         if (input->isKeyHeld(GLFW_KEY_W))
         {
-            camX += forward[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camY += forward[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camZ += forward[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
         }
+
         if (input->isKeyHeld(GLFW_KEY_S))
         {
-            camX -= forward[0] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camY -= forward[1] * deltaTime * std::pow(2, mouseWheel * 0.1);
-            camZ -= forward[2] * deltaTime * std::pow(2, mouseWheel * 0.1);
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
         }
 
         if (input->isKeyHeld(GLFW_KEY_SPACE))
         {
-            camZ += deltaTime * std::pow(2, mouseWheel * 0.1);
+            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
         }
+
         if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
         {
-            camZ -= deltaTime * std::pow(2, mouseWheel * 0.1);
+            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
         }
 
         if (input->isKeyHeld(GLFW_KEY_E))
@@ -277,14 +240,14 @@ void VoxelRendererProgram::run()
         }
         else
         {
-            mouseWheel += input->getMouseScroll().y;
+            moveSpeed += input->getMouseScroll().y;
         }
 
         {
-            camera.position = glm::vec3(camX, camY, camZ);
+            camera.position = cameraPosition;
             worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
             worlds[0].scale = glm::vec3(1, 1, 2);
-            camera.orientation = glm::angleAxis((float)theta, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)phi, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+            camera.orientation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(worlds);
             renderer.display();
