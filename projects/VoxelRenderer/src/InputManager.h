@@ -48,7 +48,7 @@ private:
 
 public:
     std::unique_ptr<Input> input;
-    bool invalidateMouse = true;
+    bool cursorEnteredThisFrame = true;
 
     InputManager();
 
