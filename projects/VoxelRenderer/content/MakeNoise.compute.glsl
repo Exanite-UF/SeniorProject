@@ -35,7 +35,7 @@ void main()
     vec3 pos = 2 * texelCoord;
 
     uint final = 0;
-    if (isRand2)
+    if (!isRand2)
     {
         int k = 1;
         for (int i = 0; i < 2; i++) // z axis
@@ -76,7 +76,7 @@ void main()
                     value += rand(floor(temp / 4 + 2));
                     value += rand(floor(temp / 8 + 3));
                     value /= 4;
-                    if (value > fillAmount)
+                    if (value > 0.8)
                     { // This is how you set the density
                         final |= k;
                     }

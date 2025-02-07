@@ -11,15 +11,15 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     this->currentNoiseTime = 0;
 
     // Make and fill the buffers
-    uint16_t width = 512;
-    uint16_t height = 512;
-    uint16_t depth = 512;
+    uint16_t width = 2048;
+    uint16_t height = 2048;
+    uint16_t depth = 2048;
 
     this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     this->mipMap1 = GraphicsUtils::create3DImage(width / 8, height / 8, depth / 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     this->mipMap2 = GraphicsUtils::create3DImage(width / 32, height / 32, depth / 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    // this->mipMap3 = GraphicsUtils::create3DImage(8, 8, 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    // this->mipMap4 = GraphicsUtils::create3DImage(2, 2, 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->mipMap3 = GraphicsUtils::create3DImage(width / 128, height / 128, depth / 128, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->mipMap4 = GraphicsUtils::create3DImage(width / 512, height / 512, depth / 512, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
 
     generateFromNoise(0, true, 0.6);
 
@@ -35,8 +35,8 @@ void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmo
     makeNoise(occupancyMap, currentNoiseTime, true, 0.6);
     makeMipMap(occupancyMap, mipMap1);
     makeMipMap(mipMap1, mipMap2);
-    // makeMipMap(mipMap2, mipMap3);
-    // makeMipMap(mipMap3, mipMap4);
+    makeMipMap(mipMap2, mipMap3);
+    makeMipMap(mipMap3, mipMap4);
 }
 
 void VoxelWorld::bindTextures() const
@@ -71,25 +71,25 @@ void VoxelWorld::bindTextures() const
         GL_RGBA8UI // Format
     );
 
-    // glBindImageTexture(
-    //	3, // Image unit index (matches binding=1)
-    //	mipMap3, // Texture ID
-    //	0, // Mip level
-    //	GL_TRUE, // Layered (true for 3D textures)
-    //	0, // Layer (ignored for 3D)
-    //	GL_READ_ONLY, // Access qualifier
-    //	GL_RGBA8UI // Format
-    //);
-    //
-    // glBindImageTexture(
-    //	4, // Image unit index (matches binding=1)
-    //	mipMap4, // Texture ID
-    //	0, // Mip level
-    //	GL_TRUE, // Layered (true for 3D textures)
-    //	0, // Layer (ignored for 3D)
-    //	GL_READ_ONLY, // Access qualifier
-    //	GL_RGBA8UI // Format
-    //);
+    glBindImageTexture(
+    	3, // Image unit index (matches binding=1)
+    	mipMap3, // Texture ID
+    	0, // Mip level
+    	GL_TRUE, // Layered (true for 3D textures)
+    	0, // Layer (ignored for 3D)
+    	GL_READ_ONLY, // Access qualifier
+    	GL_RGBA8UI // Format
+    );
+    
+    glBindImageTexture(
+    	4, // Image unit index (matches binding=1)
+    	mipMap4, // Texture ID
+    	0, // Mip level
+    	GL_TRUE, // Layered (true for 3D textures)
+    	0, // Layer (ignored for 3D)
+    	GL_READ_ONLY, // Access qualifier
+    	GL_RGBA8UI // Format
+    );
 }
 
 void VoxelWorld::unbindTextures() const
@@ -124,25 +124,25 @@ void VoxelWorld::unbindTextures() const
         GL_RGBA8UI // Format
     );
 
-    // glBindImageTexture(
-    //	3, // Image unit index (matches binding=1)
-    //	0, // Texture ID
-    //	0, // Mip level
-    //	GL_TRUE, // Layered (true for 3D textures)
-    //	0, // Layer (ignored for 3D)
-    //	GL_READ_ONLY, // Access qualifier
-    //	GL_RGBA8UI // Format
-    //);
-    //
-    // glBindImageTexture(
-    //	4, // Image unit index (matches binding=1)
-    //	0, // Texture ID
-    //	0, // Mip level
-    //	GL_TRUE, // Layered (true for 3D textures)
-    //	0, // Layer (ignored for 3D)
-    //	GL_READ_ONLY, // Access qualifier
-    //	GL_RGBA8UI // Format
-    //);
+    glBindImageTexture(
+    	3, // Image unit index (matches binding=1)
+    	0, // Texture ID
+    	0, // Mip level
+    	GL_TRUE, // Layered (true for 3D textures)
+    	0, // Layer (ignored for 3D)
+    	GL_READ_ONLY, // Access qualifier
+    	GL_RGBA8UI // Format
+    );
+    
+    glBindImageTexture(
+    	4, // Image unit index (matches binding=1)
+    	0, // Texture ID
+    	0, // Mip level
+    	GL_TRUE, // Layered (true for 3D textures)
+    	0, // Layer (ignored for 3D)
+    	GL_READ_ONLY, // Access qualifier
+    	GL_RGBA8UI // Format
+    );
 }
 
 glm::vec3 VoxelWorld::getPosition() const
