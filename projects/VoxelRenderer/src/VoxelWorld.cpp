@@ -11,13 +11,13 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     this->currentNoiseTime = 0;
 
     // Make and fill the buffers
-    uint16_t width = 256;
-    uint16_t height = 256;
-    uint16_t depth = 256;
+    uint16_t width = 512;
+    uint16_t height = 512;
+    uint16_t depth = 512;
 
-    this->occupancyMap = GraphicsUtils::create3DImage(128, 128, 128, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap1 = GraphicsUtils::create3DImage(32, 32, 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap2 = GraphicsUtils::create3DImage(8, 8, 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->mipMap1 = GraphicsUtils::create3DImage(width / 8, height / 8, depth / 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    this->mipMap2 = GraphicsUtils::create3DImage(width / 32, height / 32, depth / 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap3 = GraphicsUtils::create3DImage(8, 8, 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap4 = GraphicsUtils::create3DImage(2, 2, 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
 
