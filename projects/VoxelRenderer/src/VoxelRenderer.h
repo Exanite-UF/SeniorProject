@@ -2,20 +2,16 @@
 
 #include "Camera.h"
 #include "VoxelWorld.h"
-#include <filesystem>
-#include <iostream>
-#include <string>
 #include <vector>
 
 // The voxel renderer needs to be able to render multiple voxel worlds
-
 class VoxelRenderer
 {
 private:
     // Odd Quirks of Images
     // RGB is not a valid format for an image. They must be either R, RG, or RGBA
     // Yes, openGL supports RGB textures, but in glsl there is no format specifier for rgb formated images (with a few odd exceptions)
-    // As such any image buffer that needs 3 components is forced to used 4 components
+    // As such any image buffer that needs 3 components is forced to use 4 components
 
     // These are 3D images
     // The x and y axes correspond to individual pixels
@@ -49,20 +45,12 @@ private:
     void handleDirtySizing(); // Remakes the textures if the sizing is dirty
 
 public:
-    static void log(const std::string& value = "");
-
-    static void checkForContentFolder();
-
-    static void assertIsTrue(bool condition, const std::string& errorMessage);
-
-    static void runStartupTests();
-
     VoxelRenderer();
 
     void setResolution(int x, int y);
     void setRaysPerPixel(int number);
 
-    void prepateRayTraceFromCamera(const Camera& camera);
+    void prepareRayTraceFromCamera(const Camera& camera);
 
     void executeRayTrace(const std::vector<VoxelWorld>& worlds);
 

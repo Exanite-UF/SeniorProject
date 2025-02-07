@@ -16,4 +16,15 @@ public:
     glm::quat getOrientation() const;
     glm::vec3 getPosition() const;
     float getHorizontalFov() const;
+
+    // TODO: Do we still want to use these?
+    static glm::vec3 getForward(float theta, float phi)
+    {
+        return { std::cos(theta), std::sin(theta), 0 };
+    }
+
+    static glm::vec3 getRight(float theta, float phi)
+    {
+        return { std::sin(theta), -std::cos(theta), 0 };
+    }
 };
