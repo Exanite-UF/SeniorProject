@@ -11,9 +11,11 @@ class ShaderByteBuffer{
 private:
     int bindLocation;
 
-    GLuint bufferID;
+    
 
 public:
+    GLuint bufferID;
+    
     ShaderByteBuffer();
     ~ShaderByteBuffer();
 
@@ -25,6 +27,7 @@ public:
     //Unbinds the buffer
     //It remembers the location it was bound to
     //Warning: This assumes that this buffer is bound. If not, it will unbind whatever is bound
-    void unbind();
+    void unbind() const;
+
 
 };

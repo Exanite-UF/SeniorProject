@@ -2,7 +2,6 @@
 
 ShaderByteBuffer::ShaderByteBuffer(){
     glGenBuffers(1, &bufferID);//Create the buffer
-
 }
 
 ShaderByteBuffer::~ShaderByteBuffer(){
@@ -19,9 +18,9 @@ void ShaderByteBuffer::setSize(std::uint64_t size)
 
 void ShaderByteBuffer::bind(int index){
     bindLocation = index;
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bufferID, index);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferID);
 }
 
-void ShaderByteBuffer::unbind(){
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, bindLocation);
+void ShaderByteBuffer::unbind() const{
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindLocation, 0);
 }

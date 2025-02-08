@@ -248,7 +248,6 @@ void VoxelRendererProgram::run()
             moveSpeed += input->getMouseScroll().y;
         }
 
-        auto start = std::chrono::high_resolution_clock::now();
         {
             camera.position = cameraPosition;
             //worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
@@ -276,8 +275,6 @@ void VoxelRendererProgram::run()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window->glfwWindowHandle);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
     }
 }
 

@@ -56,7 +56,7 @@ public:
 
     void prepareRayTraceFromCamera(const Camera& camera);
 
-    void executeRayTrace(const std::vector<VoxelWorld>& worlds);
+    void executeRayTrace(std::vector<VoxelWorld>& worlds);
 
     void display();
 };

@@ -21,7 +21,7 @@ void ShaderFloatBuffer::bind(int index){
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferID);
 }
 
-void ShaderFloatBuffer::unbind(){
+void ShaderFloatBuffer::unbind() const{
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindLocation, 0);
 }
 

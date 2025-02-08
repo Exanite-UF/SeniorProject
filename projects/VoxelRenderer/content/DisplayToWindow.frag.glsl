@@ -43,7 +43,9 @@ void main()
             int temp = min(200, int(material));
             colorBase = hueToRGB(0.5 - (material - 100) / 200.f);
         }
+        
 
+        //vec3 colorBase = abs(normal.xyz);
         color += colorBase;// / falloff;
     }
     color /= size.z;

@@ -1,6 +1,9 @@
 #include "VoxelWorld.h"
 
 #include "GraphicsUtils.h"
+#include <iostream>
+#include <unistd.h>
+#include <chrono>
 
 VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
 {
@@ -11,21 +14,41 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     this->currentNoiseTime = 0;
 
     // Make and fill the buffers
-    uint16_t width = 2048;
-    uint16_t height = 2048;
-    uint16_t depth = 2048;
+    xSize = 512;
+    ySize = 512;
+    zSize = 512;
 
-    this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap1 = GraphicsUtils::create3DImage(width / 8, height / 8, depth / 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap2 = GraphicsUtils::create3DImage(width / 32, height / 32, depth / 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap3 = GraphicsUtils::create3DImage(width / 128, height / 128, depth / 128, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    this->mipMap4 = GraphicsUtils::create3DImage(width / 512, height / 512, depth / 512, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+        
+    numberOfMipMapTextures = std::floor(std::log2(std::min(std::min(xSize, ySize), zSize) / 2) / 2);
+
+    //No more than 9 mip maps can be made from the occupancy map
+    if(numberOfMipMapTextures > 9){
+        numberOfMipMapTextures = 9;
+    }
+    //This should be the exact number of bytes that the occupancy map and all its mip maps take up
+    std::uint64_t bytesOfOccupancyMap = 0;
+    for(int i = 0; i <= numberOfMipMapTextures; i++){
+        std::uint64_t divisor = (1 << (2 * i));
+        divisor *= divisor * divisor;//Cube the divisor
+        mipMapStarts[i] = bytesOfOccupancyMap;
+
+        bytesOfOccupancyMap += xSize * ySize * zSize / 8 / divisor;
+    }
+
+    std::cout << numberOfMipMapTextures << std::endl;
+
+    this->occupancyMap.setSize(bytesOfOccupancyMap);
+    //this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    //this->mipMap1 = GraphicsUtils::create3DImage(width / 8, height / 8, depth / 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    //this->mipMap2 = GraphicsUtils::create3DImage(width / 32, height / 32, depth / 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    //this->mipMap3 = GraphicsUtils::create3DImage(width / 128, height / 128, depth / 128, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
+    //this->mipMap4 = GraphicsUtils::create3DImage(width / 512, height / 512, depth / 512, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
 
     generateFromNoise(0, true, 0.6);
 
-    assignMaterial(occupancyMap);
-    assignMaterial(mipMap1);
-    assignMaterial(mipMap2);
+    //assignMaterial(occupancyMap);
+    //assignMaterial(mipMap1);
+    //assignMaterial(mipMap2);
 }
 
 void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmount) // bool isRand2, float fillAmount
@@ -33,63 +56,16 @@ void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmo
     this->currentNoiseTime += deltaTime;
 
     makeNoise(occupancyMap, currentNoiseTime, true, 0.6);
-    makeMipMap(occupancyMap, mipMap1);
-    makeMipMap(mipMap1, mipMap2);
-    makeMipMap(mipMap2, mipMap3);
-    makeMipMap(mipMap3, mipMap4);
+    makeMipMaps(occupancyMap);
+    //makeMipMap(occupancyMap, mipMap1);
+    //makeMipMap(mipMap1, mipMap2);
+    //makeMipMap(mipMap2, mipMap3);
+    //makeMipMap(mipMap3, mipMap4);
 }
 
-void VoxelWorld::bindTextures() const
+void VoxelWorld::bindTextures(int occupancyMap)
 {
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        occupancyMap, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    glBindImageTexture(
-        1, // Image unit index (matches binding=1)
-        mipMap1, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    glBindImageTexture(
-        2, // Image unit index (matches binding=1)
-        mipMap2, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    glBindImageTexture(
-    	3, // Image unit index (matches binding=1)
-    	mipMap3, // Texture ID
-    	0, // Mip level
-    	GL_TRUE, // Layered (true for 3D textures)
-    	0, // Layer (ignored for 3D)
-    	GL_READ_ONLY, // Access qualifier
-    	GL_RGBA8UI // Format
-    );
-    
-    glBindImageTexture(
-    	4, // Image unit index (matches binding=1)
-    	mipMap4, // Texture ID
-    	0, // Mip level
-    	GL_TRUE, // Layered (true for 3D textures)
-    	0, // Layer (ignored for 3D)
-    	GL_READ_ONLY, // Access qualifier
-    	GL_RGBA8UI // Format
-    );
+    this->occupancyMap.bind(occupancyMap);
 }
 
 void VoxelWorld::unbindTextures() const
@@ -145,6 +121,11 @@ void VoxelWorld::unbindTextures() const
     );
 }
 
+glm::ivec3 VoxelWorld::getSize() const
+{
+    return glm::ivec3(zSize, ySize, zSize);
+}
+
 glm::vec3 VoxelWorld::getPosition() const
 {
     return position;
@@ -160,120 +141,83 @@ glm::quat VoxelWorld::getOrientation() const
     return orientation;
 }
 
-void VoxelWorld::makeNoise(GLuint image3D, double noiseTime, bool isRand2, float fillAmount)
+int VoxelWorld::getNumberOfMipMapTextures() const
+{
+    return numberOfMipMapTextures;
+}
+
+std::array<GLuint, 10> VoxelWorld::getMipMapStarts() const
+{
+
+    return mipMapStarts;
+}
+
+void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
 {
     glUseProgram(makeNoiseComputeProgram);
 
     // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        image3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
+    occupancyMap.bind(0);
+    
+    int xSize = this->xSize / 2;//Everything here needs the size of the texture, not the number of voxels
+    int ySize = this->ySize / 2;//Everything here needs the size of the texture, not the number of voxels
+    int zSize = this->zSize / 2;//Everything here needs the size of the texture, not the number of voxels
 
-    int outputWidth, outputHeight, outputDepth;
+    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (ySize + 8 - 1) / 8;
+    GLuint workGroupsZ = (zSize + 8 - 1) / 8;
 
-    glBindTexture(GL_TEXTURE_3D, image3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
-
-    int timeUniform = glGetUniformLocation(makeNoiseComputeProgram, "time");
-
-    glUniform1f(timeUniform, noiseTime);
-
+    glUniform3i(glGetUniformLocation(makeNoiseComputeProgram, "resolution"), xSize, ySize, zSize);
+    glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "time"), noiseTime);
     glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
     glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
     // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
 
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
+    occupancyMap.unbind(); 
+    glUseProgram(0);
 }
 
-void VoxelWorld::makeMipMap(GLuint inputImage3D, GLuint outputImage3D)
+void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
 {
     glUseProgram(makeMipMapComputeProgram);
 
     // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        inputImage3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
+    occupancyMap.bind(0);
+    
+    for(int i = 0; i < numberOfMipMapTextures; i++){
+        int xSize = this->xSize / 2 / (1 << (2 * i));//This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
+        int ySize = this->ySize / 2 / (1 << (2 * i));
+        int zSize = this->zSize / 2 / (1 << (2 * i));
 
-    // Bind output texture to image unit 1 (write-only)
-    glBindImageTexture(
-        1, // Image unit index (matches binding=1)
-        outputImage3D, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
+        //Work groups needs to be based on the size of the next mipmap
+        GLuint workGroupsX = (xSize / 4 + 8 - 1) / 8; // Ceiling division
+        GLuint workGroupsY = (ySize / 4 + 8 - 1) / 8;
+        GLuint workGroupsZ = (zSize / 4 + 8 - 1) / 8;
 
-    int outputWidth, outputHeight, outputDepth;
+        glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), xSize, ySize, zSize);
+    
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStarts[i]);
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStarts[i + 1]);
+        //std::cout <<"A: "<< mipMapStarts[i] << std::endl;
+        //std::cout <<"B: "<< mipMapStarts[i + 1] << std::endl;
+        //std::cout << std::endl;
+        
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+        
 
-    glBindTexture(GL_TEXTURE_3D, outputImage3D);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &outputWidth);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_HEIGHT, &outputHeight);
-    glGetTexLevelParameteriv(GL_TEXTURE_3D, 0, GL_TEXTURE_DEPTH, &outputDepth);
-    glBindTexture(GL_TEXTURE_3D, 0);
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
 
-    GLuint workGroupsX = (outputWidth + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (outputHeight + 8 - 1) / 8;
-    GLuint workGroupsZ = (outputDepth + 8 - 1) / 8;
+    }
 
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    // Unbind the images
-    glBindImageTexture(
-        0, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
-
-    glBindImageTexture(
-        1, // Image unit index (matches binding=1)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA8UI // Format
-    );
+    occupancyMap.unbind();
+    glUseProgram(0);
 }
+
 
 void VoxelWorld::assignMaterial(GLuint image3D)
 {
