@@ -131,7 +131,6 @@ void VoxelRendererProgram::run()
         window->update();
         inputManager->update();
 
-        renderer.setResolution(window->size.x, window->size.y);
         if (!inputManager->cursorEnteredThisFrame)
         {
             auto mouseDelta = input->getMouseDelta();
@@ -243,6 +242,8 @@ void VoxelRendererProgram::run()
         }
 
         {
+            renderer.setResolution(window->size.x, window->size.y);
+
             camera.position = cameraPosition;
             worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
             worlds[0].scale = glm::vec3(1, 1, 2);
