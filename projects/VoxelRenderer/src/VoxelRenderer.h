@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Camera.h"
-#include "VoxelWorld.h"
 #include "ShaderFloatBuffer.h"
+#include "VoxelWorld.h"
 #include <vector>
 
 // The voxel renderer needs to be able to render multiple voxel worlds
@@ -19,8 +19,8 @@ private:
     // The z axis corresponds to different rays for the same pixel
 
     // These buffers are used to determine the starting configuration for a ray trace step
-    //GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
-    //GLuint rayDirectionBuffer; //(x, y, z, [unused])
+    // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
+    // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
     ShaderFloatBuffer rayStartBuffer;
     ShaderFloatBuffer rayDirectionBuffer;

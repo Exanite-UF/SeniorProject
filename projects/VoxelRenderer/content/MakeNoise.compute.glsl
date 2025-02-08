@@ -2,14 +2,14 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-//layout(rgba8ui, binding = 0) uniform uimage3D imgOutput;
+// layout(rgba8ui, binding = 0) uniform uimage3D imgOutput;
 
-layout(std430, binding = 0) buffer OccupancyMap{
+layout(std430, binding = 0) buffer OccupancyMap
+{
     uint occupancyMap[];
 };
 
-
-uniform ivec3 resolution;//(xSize, ySize, zSize) size of the texture
+uniform ivec3 resolution; //(xSize, ySize, zSize) size of the texture
 uniform float time;
 uniform bool isRand2;
 uniform float fillAmount;
@@ -34,44 +34,48 @@ float rand2(vec3 x)
     return result / 4;
 }
 
-
-void setByte(ivec3 coord, uint value){
+void setByte(ivec3 coord, uint value)
+{
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z));
-    int bufferIndex = index / 4;//Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
-    int bufferOffset = (index & 3);//Modulus 4 done using a bitmask
+    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
+    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    //occupancyMap[bufferIndex] &= ~(uint(0xff000000) >> bufferOffset);//Create a mask that zeros out the part we want to set
-    if(bufferOffset == 0){
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 3)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
+    // occupancyMap[bufferIndex] &= ~(uint(0xff000000) >> bufferOffset);//Create a mask that zeros out the part we want to set
+    if (bufferOffset == 0)
+    {
+        occupancyMap[bufferIndex] &= (uint(255) << (8 * 3)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
         occupancyMap[bufferIndex] |= value << (8 * 3);
     }
-    if(bufferOffset == 1){
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 2)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
+    if (bufferOffset == 1)
+    {
+        occupancyMap[bufferIndex] &= (uint(255) << (8 * 2)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
         occupancyMap[bufferIndex] |= value << (8 * 2);
     }
-    if(bufferOffset == 2){
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 1)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
+    if (bufferOffset == 2)
+    {
+        occupancyMap[bufferIndex] &= (uint(255) << (8 * 1)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
         occupancyMap[bufferIndex] |= value << (8 * 1);
     }
-    if(bufferOffset == 3){
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 0)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
+    if (bufferOffset == 3)
+    {
+        occupancyMap[bufferIndex] &= (uint(255) << (8 * 0)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
         occupancyMap[bufferIndex] |= value << (8 * 0);
     }
 
-
-    //occupancyMap[index] = value;
-    //occupancyMap[bufferIndex] &= ~(255 << (8 * (3 - bufferOffset)));//Create a mask that zeros out the part we want to set
-    //occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));//or in the value we want
-    //occupancyMap[bufferIndex] = (255 << 8) + 255;
+    // occupancyMap[index] = value;
+    // occupancyMap[bufferIndex] &= ~(255 << (8 * (3 - bufferOffset)));//Create a mask that zeros out the part we want to set
+    // occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));//or in the value we want
+    // occupancyMap[bufferIndex] = (255 << 8) + 255;
 }
 
-uint getByte(ivec3 coord){
+uint getByte(ivec3 coord)
+{
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z));
-    int bufferIndex = index / 4;//Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
-    int bufferOffset = (index & 3);//Modulus 4 done using a bitmask
+    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
+    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    //return occupancyMap[index];
-    return uint(occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));//Mask for the section we want then put it in the least signigicant bits
+    // return occupancyMap[index];
+    return uint(occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset)); // Mask for the section we want then put it in the least signigicant bits
 }
 
 void main()
@@ -134,8 +138,8 @@ void main()
     }
 
     setByte(texelCoord, final);
-    
-    //uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
 
-    //imageStore(imgOutput, texelCoord, uvec4(material, final));
+    // uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
+
+    // imageStore(imgOutput, texelCoord, uvec4(material, final));
 }

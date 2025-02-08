@@ -13,7 +13,6 @@
 #include <tuple>
 #include <unordered_map>
 
-
 #include <chrono>
 #include <iostream>
 
@@ -27,8 +26,8 @@ void VoxelRenderer::remakeTextures()
     isSizingDirty = false;
     // This will delete the texture currently bound to this variable, and set the variable equal to 0
     // If the variable is 0, meaning that no texture is bound, then it will do nothing
-    //glDeleteTextures(1, &rayStartBuffer);
-    //glDeleteTextures(1, &rayDirectionBuffer);
+    // glDeleteTextures(1, &rayStartBuffer);
+    // glDeleteTextures(1, &rayDirectionBuffer);
 
     glDeleteTextures(1, &rayHitPositionBuffer);
     glDeleteTextures(1, &rayHitNormalBuffer);
@@ -38,8 +37,8 @@ void VoxelRenderer::remakeTextures()
     rayStartBuffer.setSize(xSize * ySize * raysPerPixel * 3);
     rayDirectionBuffer.setSize(xSize * ySize * raysPerPixel * 3);
 
-    //rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    //rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    // rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    // rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
 
     rayHitPositionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     rayHitNormalBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
@@ -100,19 +99,17 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
     GLuint workGroupsY = (ySize + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-    
 
     // Ensure compute shader completes
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
 
-    //auto end = std::chrono::high_resolution_clock::now();
-    //std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
 
     rayStartBuffer.unbind();
     rayDirectionBuffer.unbind();
-
 
     // Reset the hit info
     glUseProgram(resetHitInfoProgram);
@@ -147,14 +144,14 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
         GL_R16UI // Format
     );
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
     // Ensure compute shader completes
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    //auto end = std::chrono::high_resolution_clock::now();
-    //std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
 
     glBindImageTexture(
         0, // Image unit index (matches binding=0)
@@ -234,13 +231,13 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 
     glUniform3i(glGetUniformLocation(executeRayTraceProgram, "resolution"), xSize, ySize, raysPerPixel);
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     for (auto& voxelWorld : worlds)
     {
         voxelWorld.bindTextures(2);
         glm::ivec3 voxelSize = voxelWorld.getSize();
-        //std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
-        //std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
+        // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
+        // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
         glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
         glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "numberOfMipMapTextures"), voxelWorld.getNumberOfMipMapTextures());
@@ -250,15 +247,14 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
         glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldOrientation"), 1, glm::value_ptr(voxelWorld.getOrientation()));
         glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.getScale()));
 
-        
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-        
+
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         voxelWorld.unbindTextures();
     }
-    //auto end = std::chrono::high_resolution_clock::now();
-    //std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
 
     // unbind rayStart info
     rayStartBuffer.unbind();
@@ -334,11 +330,10 @@ void VoxelRenderer::display()
 
     glBindVertexArray(GraphicsUtils::getEmptyVertexArray());
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     glDrawArrays(GL_TRIANGLES, 0, 3);
-    //auto end = std::chrono::high_resolution_clock::now();
-    //std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
-
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
 
     glUseProgram(0);
     glBindVertexArray(0);
