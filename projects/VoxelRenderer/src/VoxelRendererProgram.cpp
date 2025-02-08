@@ -15,6 +15,12 @@
 #include "VoxelWorld.h"
 #include "Window.h"
 
+void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+    std::string messageStr(message, length);
+    log(messageStr);
+}
+
 VoxelRendererProgram::VoxelRendererProgram()
 {
     // Ensure preconditions are met
@@ -45,6 +51,9 @@ VoxelRendererProgram::VoxelRendererProgram()
     {
         throw std::runtime_error("Failed to initialize GLEW");
     }
+
+    // Attach debug message callback
+    glDebugMessageCallback(VoxelRendererProgram::onOpenGlDebugMessage, this);
 }
 
 VoxelRendererProgram::~VoxelRendererProgram()
@@ -137,7 +146,6 @@ void VoxelRendererProgram::run()
         window->update();
         inputManager->update();
 
-        renderer.setResolution(window->size.x, window->size.y);
         if (!inputManager->cursorEnteredThisFrame)
         {
             auto mouseDelta = input->getMouseDelta();
@@ -249,6 +257,8 @@ void VoxelRendererProgram::run()
         }
 
         {
+            renderer.setResolution(window->size.x, window->size.y);
+
             camera.position = cameraPosition;
             //worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
             //worlds[0].scale = glm::vec3(1, 1, 2);
