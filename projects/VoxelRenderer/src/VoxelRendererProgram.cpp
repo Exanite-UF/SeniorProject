@@ -15,6 +15,12 @@
 #include "VoxelWorld.h"
 #include "Window.h"
 
+void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+    std::string messageStr(message, length);
+    log(messageStr);
+}
+
 VoxelRendererProgram::VoxelRendererProgram()
 {
     // Ensure preconditions are met
@@ -45,6 +51,9 @@ VoxelRendererProgram::VoxelRendererProgram()
     {
         throw std::runtime_error("Failed to initialize GLEW");
     }
+
+    // Attach debug message callback
+    glDebugMessageCallback(VoxelRendererProgram::onOpenGlDebugMessage, this);
 }
 
 VoxelRendererProgram::~VoxelRendererProgram()
