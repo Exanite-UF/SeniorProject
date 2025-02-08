@@ -52,7 +52,8 @@ VoxelRendererProgram::VoxelRendererProgram()
         throw std::runtime_error("Failed to initialize GLEW");
     }
 
-    glDebugMessageCallback(VoxelRendererProgram::onOpenGlDebugMessage, nullptr);
+    // Attach debug message callback
+    glDebugMessageCallback(VoxelRendererProgram::onOpenGlDebugMessage, this);
 }
 
 VoxelRendererProgram::~VoxelRendererProgram()
