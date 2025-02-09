@@ -328,13 +328,9 @@ void VoxelRenderer::display()
     );
 
     glBindVertexArray(GraphicsUtils::getEmptyVertexArray());
-
-    // auto start = std::chrono::high_resolution_clock::now();
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    // auto end = std::chrono::high_resolution_clock::now();
-    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
-
-    glUseProgram(0);
+    {
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
     glBindVertexArray(0);
 
     glBindImageTexture(
@@ -366,4 +362,6 @@ void VoxelRenderer::display()
         GL_READ_WRITE, // Access qualifier
         GL_R16UI // Format
     );
+
+    glUseProgram(0);
 }
