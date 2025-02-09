@@ -22,8 +22,8 @@ private:
     uint16_t ySize;
     uint16_t zSize;
     ShaderByteBuffer occupancyMap;
-    int numberOfMipMapTextures;
-    std::array<GLuint, 10> mipMapStarts;
+    int mipMapTextureCount;
+    std::array<GLuint, 10> mipMapStartIndices;
     // GLuint occupancyMap; // This texture stores the raw voxel occupancy map, its first mipmap, and the first 3 bits of material data for each voxel
     // GLuint mipMap1; // This texture stores the second and third mip maps, and the second 3 bits of material data for each voxel
     // GLuint mipMap2; // This texture stores the fourth and fifth mip maps, and the final 3 bits of material data for each voxel
@@ -64,6 +64,6 @@ public:
     glm::vec3 getScale() const;
     glm::quat getOrientation() const;
 
-    int getNumberOfMipMapTextures() const;
-    std::array<GLuint, 10> getMipMapStarts() const;
+    int getMipMapTextureCount() const;
+    std::array<GLuint, 10> getMipMapStartIndices() const;
 };

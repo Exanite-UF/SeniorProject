@@ -18,25 +18,25 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     ySize = 512;
     zSize = 512;
 
-    numberOfMipMapTextures = std::floor(std::log2(std::min(std::min(xSize, ySize), zSize) / 2) / 2);
+    mipMapTextureCount = std::floor(std::log2(std::min(std::min(xSize, ySize), zSize) / 2) / 2);
 
     // No more than 9 mip maps can be made from the occupancy map
-    if (numberOfMipMapTextures > 9)
+    if (mipMapTextureCount > 9)
     {
-        numberOfMipMapTextures = 9;
+        mipMapTextureCount = 9;
     }
     // This should be the exact number of bytes that the occupancy map and all its mip maps take up
     std::uint64_t bytesOfOccupancyMap = 0;
-    for (int i = 0; i <= numberOfMipMapTextures; i++)
+    for (int i = 0; i <= mipMapTextureCount; i++)
     {
         std::uint64_t divisor = (1 << (2 * i));
         divisor *= divisor * divisor; // Cube the divisor
-        mipMapStarts[i] = bytesOfOccupancyMap;
+        mipMapStartIndices[i] = bytesOfOccupancyMap;
 
         bytesOfOccupancyMap += xSize * ySize * zSize / 8 / divisor;
     }
 
-    std::cout << numberOfMipMapTextures << std::endl;
+    std::cout << mipMapTextureCount << std::endl;
 
     this->occupancyMap.setSize(bytesOfOccupancyMap);
     // this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
@@ -142,15 +142,15 @@ glm::quat VoxelWorld::getOrientation() const
     return orientation;
 }
 
-int VoxelWorld::getNumberOfMipMapTextures() const
+int VoxelWorld::getMipMapTextureCount() const
 {
-    return numberOfMipMapTextures;
+    return mipMapTextureCount;
 }
 
-std::array<GLuint, 10> VoxelWorld::getMipMapStarts() const
+std::array<GLuint, 10> VoxelWorld::getMipMapStartIndices() const
 {
 
-    return mipMapStarts;
+    return mipMapStartIndices;
 }
 
 void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
@@ -189,7 +189,7 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
     // Bind output texture to image unit 1 (write-only)
     occupancyMap.bind(0);
 
-    for (int i = 0; i < numberOfMipMapTextures; i++)
+    for (int i = 0; i < mipMapTextureCount; i++)
     {
         int xSize = this->xSize / 2 / (1 << (2 * i)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
         int ySize = this->ySize / 2 / (1 << (2 * i));
@@ -202,8 +202,8 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
 
         glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), xSize, ySize, zSize);
 
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStarts[i]);
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStarts[i + 1]);
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);
         // std::cout <<"A: "<< mipMapStarts[i] << std::endl;
         // std::cout <<"B: "<< mipMapStarts[i + 1] << std::endl;
         // std::cout << std::endl;

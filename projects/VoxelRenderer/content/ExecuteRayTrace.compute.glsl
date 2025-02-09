@@ -27,8 +27,8 @@ layout(rgba32f, binding = 6) uniform image3D hitNormal;
 layout(r16ui, binding = 7) uniform uimage3D hitMaterial;
 
 uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture
-uniform uint numberOfMipMapTextures;
-uniform uint mipMapStarts[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
+uniform uint mipMapTextureCount;
+uniform uint mipMapStartIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 voxelWorldPosition;
@@ -38,7 +38,7 @@ uniform vec3 voxelWorldScale; // Size of a voxel
 uint getByte(ivec3 coord, int mipMapTexture)
 {
     ivec3 tempRes = voxelResolution / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
-    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(mipMapStarts[mipMapTexture]);
+    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(mipMapStartIndices[mipMapTexture]);
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
@@ -163,7 +163,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         int count = 0;
         // The <= is correct
-        for (int i = 0; i <= numberOfMipMapTextures; i++)
+        for (int i = 0; i <= mipMapTextureCount; i++)
         {
             ivec3 p2 = (p >> (2 * i)) & 1;
             uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
