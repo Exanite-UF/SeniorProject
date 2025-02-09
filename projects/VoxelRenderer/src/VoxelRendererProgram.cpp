@@ -82,10 +82,6 @@ void VoxelRendererProgram::run()
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
-    // Vertex array
-    GLuint emptyVertexArray;
-    glGenVertexArrays(1, &emptyVertexArray);
-
     // Get shader programs
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
     makeNoiseComputeProgram = shaderManager.getComputeProgram("content/MakeNoise.compute.glsl");
