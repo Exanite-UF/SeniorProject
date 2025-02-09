@@ -218,36 +218,34 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
         GL_R16UI // Format
     );
 
-    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (ySize + 8 - 1) / 8;
-    GLuint workGroupsZ = raysPerPixel;
-
-    glUniform3i(glGetUniformLocation(executeRayTraceProgram, "resolution"), xSize, ySize, raysPerPixel);
-
-    // auto start = std::chrono::high_resolution_clock::now();
-    for (auto& voxelWorld : worlds)
     {
-        voxelWorld.bindTextures(2);
-        glm::ivec3 voxelSize = voxelWorld.getSize();
-        // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
-        // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
+        GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
+        GLuint workGroupsY = (ySize + 8 - 1) / 8;
+        GLuint workGroupsZ = raysPerPixel;
 
-        glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-        glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "numberOfMipMapTextures"), voxelWorld.getNumberOfMipMapTextures());
-        glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStarts"), 10, voxelWorld.getMipMapStarts().data());
+        glUniform3i(glGetUniformLocation(executeRayTraceProgram, "resolution"), xSize, ySize, raysPerPixel);
 
-        glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
-        glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldOrientation"), 1, glm::value_ptr(voxelWorld.getOrientation()));
-        glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.getScale()));
+        for (auto &voxelWorld: worlds) {
+            voxelWorld.bindTextures(2);
+            glm::ivec3 voxelSize = voxelWorld.getSize();
+            // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
+            // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
-        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+            glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
+            glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "numberOfMipMapTextures"), voxelWorld.getNumberOfMipMapTextures());
+            glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStarts"), 10, voxelWorld.getMipMapStarts().data());
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
+            glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldOrientation"), 1, glm::value_ptr(voxelWorld.getOrientation()));
+            glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.getScale()));
 
-        voxelWorld.unbindTextures();
+            glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+            voxelWorld.unbindTextures();
+        }
     }
-    // auto end = std::chrono::high_resolution_clock::now();
-    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
 
     // unbind rayStart info
     rayStartBuffer.unbind();
