@@ -225,7 +225,8 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 
         glUniform3i(glGetUniformLocation(executeRayTraceProgram, "resolution"), xSize, ySize, raysPerPixel);
 
-        for (auto &voxelWorld: worlds) {
+        for (auto& voxelWorld : worlds)
+        {
             voxelWorld.bindTextures(2);
             glm::ivec3 voxelSize = voxelWorld.getSize();
             // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
