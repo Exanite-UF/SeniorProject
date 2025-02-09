@@ -107,7 +107,7 @@ void VoxelRendererProgram::run()
     float mouseSensitivity = 0.002;
 
     // Engine time
-    double totalTime = 0;
+    double totalElapsedTime = 0;
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
 
     // Fps counter
@@ -116,14 +116,14 @@ void VoxelRendererProgram::run()
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
         // Engine time
-        auto now = std::chrono::high_resolution_clock::now();
-        double deltaTime = std::chrono::duration<double>(now - previousTimestamp).count();
-        previousTimestamp = now;
-        frameTime += deltaTime;
-        totalTime += deltaTime;
+        auto currentTimestamp = std::chrono::high_resolution_clock::now();
+        double deltaTime = std::chrono::duration<double>(currentTimestamp - previousTimestamp).count();
+        previousTimestamp = currentTimestamp;
+        totalElapsedTime += deltaTime;
 
         // Fps counter
         frameCounter++;
+        frameTime += deltaTime;
         if (frameCounter % 10 == 0)
         {
             // log(std::to_string(10 / frameTime));
