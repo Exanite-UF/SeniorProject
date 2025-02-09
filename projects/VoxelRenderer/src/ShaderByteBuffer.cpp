@@ -20,7 +20,7 @@ void ShaderByteBuffer::setSize(std::uint64_t size)
 void ShaderByteBuffer::bind(int index)
 {
     bindLocation = index;
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, bufferID);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindLocation, bufferID);
 }
 
 void ShaderByteBuffer::unbind() const
