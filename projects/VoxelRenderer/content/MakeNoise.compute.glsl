@@ -13,6 +13,7 @@ uniform ivec3 resolution; //(xSize, ySize, zSize) size of the texture
 uniform float time;
 uniform bool isRand2;
 uniform float fillAmount;
+uniform uint allowedBufferOffset;
 
 float rand(vec3 x)
 {
@@ -40,32 +41,13 @@ void setByte(ivec3 coord, uint value)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    // occupancyMap[bufferIndex] &= ~(uint(0xff000000) >> bufferOffset);//Create a mask that zeros out the part we want to set
-    if (bufferOffset == 0)
+    if (bufferOffset != allowedBufferOffset)
     {
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 3)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 3);
-    }
-    if (bufferOffset == 1)
-    {
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 2)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 2);
-    }
-    if (bufferOffset == 2)
-    {
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 1)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 1);
-    }
-    if (bufferOffset == 3)
-    {
-        occupancyMap[bufferIndex] &= (uint(255) << (8 * 0)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 0);
+        return;
     }
 
-    // occupancyMap[index] = value;
-    // occupancyMap[bufferIndex] &= ~(255 << (8 * (3 - bufferOffset)));//Create a mask that zeros out the part we want to set
-    // occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));//or in the value we want
-    // occupancyMap[bufferIndex] = (255 << 8) + 255;
+    occupancyMap[bufferIndex] &= (uint(255) << (8 * (3 - bufferOffset))) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
+    occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
 }
 
 uint getByte(ivec3 coord)

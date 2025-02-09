@@ -42,24 +42,7 @@ uint getByte(ivec3 coord, int mipMapTexture)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    if (bufferOffset == 0)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 0)))) >> (8 * (3 - 0));
-    }
-    if (bufferOffset == 1)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 1)))) >> (8 * (3 - 1));
-    }
-    if (bufferOffset == 2)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 2)))) >> (8 * (3 - 2));
-    }
-    if (bufferOffset == 3)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 3)))) >> (8 * (3 - 3));
-    }
-    return 0;
-    // return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));//Mask for the section we want then put it in the least signigicant bits
+    return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));
 }
 
 vec3 qtransform(vec4 q, vec3 v)

@@ -155,31 +155,35 @@ std::array<GLuint, 10> VoxelWorld::getMipMapStartIndices() const
 
 void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
 {
-    glUseProgram(makeNoiseComputeProgram);
+    for (int allowedBufferOffset = 0; allowedBufferOffset < 4; ++allowedBufferOffset)
+    {
+        glUseProgram(makeNoiseComputeProgram);
 
-    // Bind output texture to image unit 1 (write-only)
-    occupancyMap.bind(0);
+        // Bind output texture to image unit 1 (write-only)
+        occupancyMap.bind(0);
 
-    int xSize = this->xSize / 2; // Everything here needs the size of the texture, not the number of voxels
-    int ySize = this->ySize / 2; // Everything here needs the size of the texture, not the number of voxels
-    int zSize = this->zSize / 2; // Everything here needs the size of the texture, not the number of voxels
+        int xSize = this->xSize / 2; // Everything here needs the size of the texture, not the number of voxels
+        int ySize = this->ySize / 2; // Everything here needs the size of the texture, not the number of voxels
+        int zSize = this->zSize / 2; // Everything here needs the size of the texture, not the number of voxels
 
-    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (ySize + 8 - 1) / 8;
-    GLuint workGroupsZ = (zSize + 8 - 1) / 8;
+        GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
+        GLuint workGroupsY = (ySize + 8 - 1) / 8;
+        GLuint workGroupsZ = (zSize + 8 - 1) / 8;
 
-    glUniform3i(glGetUniformLocation(makeNoiseComputeProgram, "resolution"), xSize, ySize, zSize);
-    glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "time"), noiseTime);
-    glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
-    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
+        glUniform3i(glGetUniformLocation(makeNoiseComputeProgram, "resolution"), xSize, ySize, zSize);
+        glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "time"), noiseTime);
+        glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
+        glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
+        glUniform1ui(glGetUniformLocation(makeNoiseComputeProgram, "allowedBufferOffset"), allowedBufferOffset);
 
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
 
-    occupancyMap.unbind();
-    glUseProgram(0);
+        occupancyMap.unbind();
+        glUseProgram(0);
+    }
 }
 
 void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
