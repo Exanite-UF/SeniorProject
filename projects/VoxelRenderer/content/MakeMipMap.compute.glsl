@@ -37,8 +37,7 @@ void setByte(ivec3 coord, uint value)
     }
     if (bufferOffset == 2)
     {
-        occupancyMap[bufferIndex] &= -(uint(255) << (8 * 1)) - 1;
-        ; //(uint(255) << (8 * 1)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
+        occupancyMap[bufferIndex] &= -(uint(255) << (8 * 1)) - 1; //(uint(255) << (8 * 1)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
         occupancyMap[bufferIndex] |= value << (8 * 1);
     }
     if (bufferOffset == 3)
