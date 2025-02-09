@@ -84,30 +84,25 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
 {
     handleDirtySizing();
 
-    glUseProgram(prepareRayTraceFromCameraProgram);
-
-    glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), xSize, ySize, raysPerPixel);
-    glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.getPosition()));
-    glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camOrientation"), 1, glm::value_ptr(camera.getOrientation()));
-    glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
-    glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);
-
-    rayStartBuffer.bind(0);
-    rayDirectionBuffer.bind(1);
-
     GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (ySize + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
 
-    // auto start = std::chrono::high_resolution_clock::now();
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+    glUseProgram(prepareRayTraceFromCameraProgram);
+    rayStartBuffer.bind(0);
+    rayDirectionBuffer.bind(1);
+    {
+        glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), xSize, ySize, raysPerPixel);
+        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.getPosition()));
+        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camOrientation"), 1, glm::value_ptr(camera.getOrientation()));
+        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
+        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);
 
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-    // auto end = std::chrono::high_resolution_clock::now();
-    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
-
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
+    }
     rayStartBuffer.unbind();
     rayDirectionBuffer.unbind();
 
@@ -143,16 +138,12 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
         GL_WRITE_ONLY, // Access qualifier
         GL_R16UI // Format
     );
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-    // auto start = std::chrono::high_resolution_clock::now();
-    glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-    // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    // auto end = std::chrono::high_resolution_clock::now();
-    // std::cout << (1 / std::chrono::duration<double>(end - start).count()) << std::endl;
-
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    }
     glBindImageTexture(
         0, // Image unit index (matches binding=0)
         0, // Texture ID
@@ -182,6 +173,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
         GL_WRITE_ONLY, // Access qualifier
         GL_R16UI // Format
     );
+
+    glUseProgram(0);
 }
 
 void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
