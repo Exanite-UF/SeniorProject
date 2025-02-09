@@ -24,11 +24,11 @@ GLuint VoxelRenderer::displayToWindowProgram;
 void VoxelRenderer::remakeTextures()
 {
     isSizingDirty = false;
+
     // This will delete the texture currently bound to this variable, and set the variable equal to 0
     // If the variable is 0, meaning that no texture is bound, then it will do nothing
     // glDeleteTextures(1, &rayStartBuffer);
     // glDeleteTextures(1, &rayDirectionBuffer);
-
     glDeleteTextures(1, &rayHitPositionBuffer);
     glDeleteTextures(1, &rayHitNormalBuffer);
     glDeleteTextures(1, &rayHitMaterialBuffer);
@@ -47,10 +47,12 @@ void VoxelRenderer::remakeTextures()
 
 void VoxelRenderer::handleDirtySizing()
 {
-    if (isSizingDirty)
+    if (!isSizingDirty)
     {
-        remakeTextures();
+        return;
     }
+
+    remakeTextures();
 }
 
 VoxelRenderer::VoxelRenderer()
@@ -63,21 +65,25 @@ VoxelRenderer::VoxelRenderer()
 
 void VoxelRenderer::setResolution(int x, int y)
 {
-    if (xSize != x || ySize != y)
+    if (xSize == x && ySize == y)
     {
-        isSizingDirty = true;
+        return;
     }
+
     xSize = x;
     ySize = y;
+    isSizingDirty = true;
 }
 
 void VoxelRenderer::setRaysPerPixel(int number)
 {
-    if (raysPerPixel != number)
+    if (raysPerPixel == number)
     {
-        isSizingDirty = true;
+        return;
     }
+
     raysPerPixel = number;
+    isSizingDirty = true;
 }
 
 void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
