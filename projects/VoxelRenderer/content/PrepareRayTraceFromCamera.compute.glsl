@@ -13,7 +13,7 @@ layout(std430, binding = 1) buffer RayDirection
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 camPosition;
-uniform vec4 camOrientation;
+uniform vec4 camRotation;
 uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 uniform vec2 jitter; //([0, 1), [0, 1))
 
@@ -99,9 +99,9 @@ void main()
         return;
     }
 
-    vec3 forward = qtransform(camOrientation, vec3(1, 0, 0));
-    vec3 up = qtransform(camOrientation, vec3(0, 0, 1));
-    vec3 right = qtransform(camOrientation, vec3(0, -1, 0));
+    vec3 forward = qtransform(camRotation, vec3(1, 0, 0));
+    vec3 up = qtransform(camRotation, vec3(0, 0, 1));
+    vec3 right = qtransform(camRotation, vec3(0, -1, 0));
 
     // The random offset allows for temporal accumulation
     vec2 randOffset = vec2(random(vec3(texelCoord) + jitter.x), random(vec3(texelCoord) + jitter.y)); // Create a random offset using the position of the texel and a provided jitter

@@ -137,9 +137,9 @@ glm::vec3 VoxelWorld::getScale() const
     return scale;
 }
 
-glm::quat VoxelWorld::getOrientation() const
+glm::quat VoxelWorld::getRotation() const
 {
-    return orientation;
+    return rotation;
 }
 
 int VoxelWorld::getMipMapTextureCount() const

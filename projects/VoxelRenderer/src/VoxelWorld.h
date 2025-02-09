@@ -45,7 +45,7 @@ private:
 public:
     glm::vec3 position = glm::vec3(0, 0, 0);
     glm::vec3 scale = glm::vec3(1, 1, 1);
-    glm::quat orientation = glm::quat(1, 0, 0, 0);
+    glm::quat rotation = glm::quat(1, 0, 0, 0);
 
     // TODO: Consider having the width, height, and depth assigned by the constructor rather than hard coded.
     VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram); // Creates a voxel world
@@ -62,7 +62,7 @@ public:
 
     glm::vec3 getPosition() const;
     glm::vec3 getScale() const;
-    glm::quat getOrientation() const;
+    glm::quat getRotation() const;
 
     int getMipMapTextureCount() const;
     std::array<GLuint, 10> getMipMapStartIndices() const;

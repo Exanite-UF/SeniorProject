@@ -100,7 +100,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), xSize, ySize, raysPerPixel);
         glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.getPosition()));
-        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camOrientation"), 1, glm::value_ptr(camera.getOrientation()));
+        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.getRotation()));
         glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
         glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);
 
@@ -244,7 +244,7 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
                 glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), 10, voxelWorld.getMipMapStartIndices().data());
 
                 glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
-                glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldOrientation"), 1, glm::value_ptr(voxelWorld.getOrientation()));
+                glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld.getRotation()));
                 glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.getScale()));
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);

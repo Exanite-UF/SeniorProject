@@ -1,8 +1,8 @@
 #include "Camera.h"
 
-glm::quat Camera::getOrientation() const
+glm::quat Camera::getRotation() const
 {
-    return orientation;
+    return rotation;
 }
 
 glm::vec3 Camera::getPosition() const

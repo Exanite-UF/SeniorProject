@@ -260,9 +260,9 @@ void VoxelRendererProgram::run()
             renderer.setResolution(window->size.x, window->size.y);
 
             camera.position = cameraPosition;
-            // worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
+            // worlds[0].rotation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
             // worlds[0].scale = glm::vec3(1, 1, 2);
-            camera.orientation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+            camera.rotation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
 
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(worlds);

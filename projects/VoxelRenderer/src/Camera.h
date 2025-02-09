@@ -11,9 +11,9 @@ class Camera
 {
 public:
     glm::vec3 position;
-    glm::quat orientation;
+    glm::quat rotation;
 
-    glm::quat getOrientation() const;
+    glm::quat getRotation() const;
     glm::vec3 getPosition() const;
     float getHorizontalFov() const;
 

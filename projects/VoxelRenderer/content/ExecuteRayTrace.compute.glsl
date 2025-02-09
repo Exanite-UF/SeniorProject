@@ -32,7 +32,7 @@ uniform uint mipMapStartIndices[10]; // Assume that at most there are 10 possibl
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 voxelWorldPosition;
-uniform vec4 voxelWorldOrientation; // This is a quaternion
+uniform vec4 voxelWorldRotation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
 
 uint getByte(ivec3 coord, int mipMapTexture)
@@ -232,11 +232,11 @@ void main()
     vec3 voxelWorldSize = 2. * voxelResolution * voxelWorldScale;
 
     rayPos -= voxelWorldPosition; // - 0.5 * vec3(voxelWorldSize);
-    rayPos = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), rayPos);
+    rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos);
     rayPos += 0.5 * vec3(voxelWorldSize);
     rayPos /= voxelWorldScale;
 
-    rayDir = qtransform(vec4(-voxelWorldOrientation.xyz, voxelWorldOrientation.w), rayDir);
+    rayDir = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayDir);
     rayDir /= voxelWorldScale;
 
     rayPos += rayDir * 0.001;
@@ -244,9 +244,9 @@ void main()
     RayHit hit = findIntersection(rayPos, rayDir, 1000, currentDepth);
 
     hit.hitLocation *= voxelWorldScale;
-    hit.hitLocation = qtransform(voxelWorldOrientation, hit.hitLocation);
+    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation);
 
-    hit.normal = qtransform(voxelWorldOrientation, hit.normal);
+    hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
     hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
 
