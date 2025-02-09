@@ -2,58 +2,65 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(std430, binding = 0) buffer RayPosition{
+layout(std430, binding = 0) buffer RayPosition
+{
     float rayPosition[];
 };
-layout(std430, binding = 1) buffer RayDirection{
+layout(std430, binding = 1) buffer RayDirection
+{
     float rayDirection[];
 };
 
-layout(std430, binding = 2) buffer OccupancyMap{
+layout(std430, binding = 2) buffer OccupancyMap
+{
     uint occupancyMap[];
 };
 
-//layout(rgba8ui, binding = 0) uniform readonly uimage3D texture1;
-//layout(rgba8ui, binding = 1) uniform readonly uimage3D texture2;
-//layout(rgba8ui, binding = 2) uniform readonly uimage3D texture3;
-//layout(rgba8ui, binding = 3) uniform readonly uimage3D texture4;
-//layout(rgba8ui, binding = 4) uniform readonly uimage3D texture5;
+// layout(rgba8ui, binding = 0) uniform readonly uimage3D texture1;
+// layout(rgba8ui, binding = 1) uniform readonly uimage3D texture2;
+// layout(rgba8ui, binding = 2) uniform readonly uimage3D texture3;
+// layout(rgba8ui, binding = 3) uniform readonly uimage3D texture4;
+// layout(rgba8ui, binding = 4) uniform readonly uimage3D texture5;
 
 layout(rgba32f, binding = 5) uniform image3D hitPosition;
 layout(rgba32f, binding = 6) uniform image3D hitNormal;
 layout(r16ui, binding = 7) uniform uimage3D hitMaterial;
 
-uniform ivec3 voxelResolution;//(xSize, ySize, zSize) size of the texture
+uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture
 uniform uint numberOfMipMapTextures;
-uniform uint mipMapStarts[10];//Assume that at most there are 10 possible mip map textures (This is a massive amount)
+uniform uint mipMapStarts[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
 
-uniform ivec3 resolution;//(xSize, ySize, raysPerPixel)
+uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 voxelWorldPosition;
 uniform vec4 voxelWorldOrientation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
 
-uint getByte(ivec3 coord, int mipMapTexture){
-    ivec3 tempRes = voxelResolution / (1 << (2 * mipMapTexture));//get the resolution of the requested mipmap
+uint getByte(ivec3 coord, int mipMapTexture)
+{
+    ivec3 tempRes = voxelResolution / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
     int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(mipMapStarts[mipMapTexture]);
-    int bufferIndex = index / 4;//Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
-    int bufferOffset = (index & 3);//Modulus 4 done using a bitmask
+    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
+    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    if(bufferOffset == 0){
+    if (bufferOffset == 0)
+    {
         return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 0)))) >> (8 * (3 - 0));
     }
-    if(bufferOffset == 1){
+    if (bufferOffset == 1)
+    {
         return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 1)))) >> (8 * (3 - 1));
     }
-    if(bufferOffset == 2){
+    if (bufferOffset == 2)
+    {
         return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 2)))) >> (8 * (3 - 2));
     }
-    if(bufferOffset == 3){
+    if (bufferOffset == 3)
+    {
         return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 3)))) >> (8 * (3 - 3));
     }
     return 0;
-    //return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));//Mask for the section we want then put it in the least signigicant bits
+    // return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));//Mask for the section we want then put it in the least signigicant bits
 }
-
 
 vec3 qtransform(vec4 q, vec3 v)
 {
@@ -129,8 +136,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
-    
-
     float depth = length(rayDir * voxelWorldScale * distToCube); // Find how far the ray has traveled from the start
 
     // If the start of the voxel volume is behind the currently closest thing, then there is not reason to continue
@@ -138,8 +143,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     {
         return hit;
     }
-
-    
 
     bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
 
@@ -159,27 +162,27 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         }
 
         int count = 0;
-        //The <= is correct
-        for(int i = 0; i <= numberOfMipMapTextures; i++){
+        // The <= is correct
+        for (int i = 0; i <= numberOfMipMapTextures; i++)
+        {
             ivec3 p2 = (p >> (2 * i)) & 1;
             uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
             uint l = getByte((p >> (1 + 2 * i)), i);
             count += int((l & k) == 0) + int(l == 0);
         }
 
-
         if (count <= 0)
         {
-            
+
             // This means that there was a hit
             if (i > 0 && isOutside)
             { // Don't intersect with the first voxel
                 hit.wasHit = true;
-                //uvec3 c1 = uvec3(greaterThan(l1.rgb & k1, uvec3(0))); // uvec3((l1.r & k1) > 0 ?  1 : 0, (l1.g & k1) > 0 ? 1 : 0, (l1.b & k1) > 0 ? 1 : 0);
-                //uvec3 c2 = uvec3(greaterThan(l2.rgb & k2, uvec3(0))); // uvec3(l2.r & k2 > 0, l2.g & k2 > 0, l2.b & k2 > 0);
-                //uvec3 c3 = uvec3(greaterThan(l3.rgb & k3, uvec3(0))); // uvec3(l3.r & k3 > 0, l3.g & k3 > 0, l3.b & k3 > 0);
-                //hit.material = c1.r + (1 << 1) * c1.g + (1 << 2) * c1.b + (1 << 3) * c2.r + (1 << 4) * c2.g + (1 << 5) * c2.b + (1 << 6) * c3.r + (1 << 7) * c3.g + (1 << 8) * c3.b;
-                hit.material = 0;//TODO: Set the material correctly
+                // uvec3 c1 = uvec3(greaterThan(l1.rgb & k1, uvec3(0))); // uvec3((l1.r & k1) > 0 ?  1 : 0, (l1.g & k1) > 0 ? 1 : 0, (l1.b & k1) > 0 ? 1 : 0);
+                // uvec3 c2 = uvec3(greaterThan(l2.rgb & k2, uvec3(0))); // uvec3(l2.r & k2 > 0, l2.g & k2 > 0, l2.b & k2 > 0);
+                // uvec3 c3 = uvec3(greaterThan(l3.rgb & k3, uvec3(0))); // uvec3(l3.r & k3 > 0, l3.g & k3 > 0, l3.b & k3 > 0);
+                // hit.material = c1.r + (1 << 1) * c1.g + (1 << 2) * c1.b + (1 << 3) * c2.r + (1 << 4) * c2.g + (1 << 5) * c2.b + (1 << 6) * c3.r + (1 << 7) * c3.g + (1 << 8) * c3.b;
+                hit.material = 0; // TODO: Set the material correctly
                 break;
             }
         }
@@ -203,13 +206,15 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     return hit;
 }
 
-vec3 getPos(ivec3 coord){
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z));//Stride of 3, axis order is x y z
+vec3 getPos(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
     return vec3(rayPosition[0 + index], rayPosition[1 + index], rayPosition[2 + index]);
 }
 
-vec3 getDir(ivec3 coord){
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z));//Stride of 3, axis order is x y z
+vec3 getDir(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
@@ -217,10 +222,8 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    vec3 rayPos = getPos(texelCoord);//imageLoad(rayPosition, texelCoord).xyz;
-    vec3 rayDir = getDir(texelCoord);//imageLoad(rayDirection, texelCoord).xyz;
-
-    
+    vec3 rayPos = getPos(texelCoord); // imageLoad(rayPosition, texelCoord).xyz;
+    vec3 rayDir = getDir(texelCoord); // imageLoad(rayDirection, texelCoord).xyz;
 
     vec3 rayStart = rayPos;
 
@@ -251,8 +254,8 @@ void main()
     {
         imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit));
         imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist));
-        //imageStore(hitMaterial, texelCoord, uvec4(hit.material));
+        // imageStore(hitMaterial, texelCoord, uvec4(hit.material));
     }
-    
+
     imageStore(hitMaterial, texelCoord, uvec4(hit.iterations));
 }

@@ -2,15 +2,16 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(std430, binding = 0) buffer RayPosition{
+layout(std430, binding = 0) buffer RayPosition
+{
     float rayPosition[];
 };
-layout(std430, binding = 1) buffer RayDirection{
+layout(std430, binding = 1) buffer RayDirection
+{
     float rayDirection[];
 };
 
-
-uniform ivec3 resolution;//(xSize, ySize, raysPerPixel)
+uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 camPosition;
 uniform vec4 camOrientation;
 uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
@@ -59,28 +60,31 @@ float random(vec2 v) { return floatConstruct(hash(floatBitsToUint(v))); }
 float random(vec3 v) { return floatConstruct(hash(floatBitsToUint(v))); }
 float random(vec4 v) { return floatConstruct(hash(floatBitsToUint(v))); }
 
-
-void setPos(ivec3 coord, vec3 value){
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z));//Stride of 3, axis order is x y z
+void setPos(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
     rayPosition[0 + index] = value.x;
     rayPosition[1 + index] = value.y;
     rayPosition[2 + index] = value.z;
 }
 
-void setDir(ivec3 coord, vec3 value){
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z));//Stride of 3, axis order is x y z
+void setDir(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
     rayDirection[0 + index] = value.x;
     rayDirection[1 + index] = value.y;
     rayDirection[2 + index] = value.z;
 }
 
-vec3 getPos(ivec3 coord){
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z));//Stride of 3, axis order is x y z
+vec3 getPos(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
     return vec3(rayPosition[0 + index], rayPosition[1 + index], rayPosition[2 + index]);
 }
 
-vec3 getDir(ivec3 coord){
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z));//Stride of 3, axis order is x y z
+vec3 getDir(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
@@ -109,6 +113,6 @@ void main()
 
     setPos(texelCoord, camPosition);
     setDir(texelCoord, rayDir);
-    //imageStore(rayPosition, texelCoord, vec4(camPosition, shouldTrace));
-    //imageStore(rayDirection, texelCoord, vec4(rayDir, 0.0));
+    // imageStore(rayPosition, texelCoord, vec4(camPosition, shouldTrace));
+    // imageStore(rayDirection, texelCoord, vec4(rayDir, 0.0));
 }

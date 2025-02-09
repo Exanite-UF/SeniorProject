@@ -74,7 +74,7 @@ void VoxelRendererProgram::run()
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
         std::cout << "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << (unsigned long long)size << " bytes." << std::endl;
     }
-    
+
     auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
 
@@ -100,9 +100,9 @@ void VoxelRendererProgram::run()
 
     std::vector<VoxelWorld> worlds;
     worlds.push_back(voxelWorld);
-    //worlds.push_back(voxelWorld);
+    // worlds.push_back(voxelWorld);
 
-    //worlds[1].position = glm::vec3(256, 0, 0);
+    // worlds[1].position = glm::vec3(256, 0, 0);
 
     // Main render loop
     glm::vec3 cameraPosition(0);
@@ -130,7 +130,7 @@ void VoxelRendererProgram::run()
         frameCounter++;
         if (frameCounter % 10 == 0)
         {
-            //log(std::to_string(10 / frameTime));
+            // log(std::to_string(10 / frameTime));
             frameTime = 0;
         }
 
@@ -260,15 +260,13 @@ void VoxelRendererProgram::run()
             renderer.setResolution(window->size.x, window->size.y);
 
             camera.position = cameraPosition;
-            //worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
-            //worlds[0].scale = glm::vec3(1, 1, 2);
+            // worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
+            // worlds[0].scale = glm::vec3(1, 1, 2);
             camera.orientation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
-            
-            
+
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(worlds);
             renderer.display();
-            
         }
 
         {

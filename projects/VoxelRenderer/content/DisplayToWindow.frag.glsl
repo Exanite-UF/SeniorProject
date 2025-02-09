@@ -34,8 +34,8 @@ void main()
 
         vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
         */
-        
-        //This is the workload rendering code
+
+        // This is the workload rendering code
         vec3 colorBase = vec3(material / 100.f);
 
         if (material > 100)
@@ -43,10 +43,9 @@ void main()
             int temp = min(200, int(material));
             colorBase = hueToRGB(0.5 - (material - 100) / 200.f);
         }
-        
 
-        //vec3 colorBase = abs(normal.xyz);
-        color += colorBase;// / falloff;
+        // vec3 colorBase = abs(normal.xyz);
+        color += colorBase; // / falloff;
     }
     color /= size.z;
     fragColor = vec4(color, 1);

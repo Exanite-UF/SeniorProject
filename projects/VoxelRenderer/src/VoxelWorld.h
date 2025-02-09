@@ -2,10 +2,10 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>
-#include <array>
 
 #include "ShaderByteBuffer.h"
 #include "ShaderFloatBuffer.h"
@@ -24,11 +24,11 @@ private:
     ShaderByteBuffer occupancyMap;
     int numberOfMipMapTextures;
     std::array<GLuint, 10> mipMapStarts;
-    //GLuint occupancyMap; // This texture stores the raw voxel occupancy map, its first mipmap, and the first 3 bits of material data for each voxel
-    //GLuint mipMap1; // This texture stores the second and third mip maps, and the second 3 bits of material data for each voxel
-    //GLuint mipMap2; // This texture stores the fourth and fifth mip maps, and the final 3 bits of material data for each voxel
-    //GLuint mipMap3; // This texture stores the sixth and seventh mip maps
-    //GLuint mipMap4; // This texture stores the eighth and ninth mip maps
+    // GLuint occupancyMap; // This texture stores the raw voxel occupancy map, its first mipmap, and the first 3 bits of material data for each voxel
+    // GLuint mipMap1; // This texture stores the second and third mip maps, and the second 3 bits of material data for each voxel
+    // GLuint mipMap2; // This texture stores the fourth and fifth mip maps, and the final 3 bits of material data for each voxel
+    // GLuint mipMap3; // This texture stores the sixth and seventh mip maps
+    // GLuint mipMap4; // This texture stores the eighth and ninth mip maps
 
     double currentNoiseTime; // This variable is used to determine the "seed" used by the random functions in the make noise shader
 
