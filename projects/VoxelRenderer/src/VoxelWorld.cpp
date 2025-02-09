@@ -191,27 +191,33 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
 
     for (int i = 0; i < mipMapTextureCount; i++)
     {
-        int xSize = this->xSize / 2 / (1 << (2 * i)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
-        int ySize = this->ySize / 2 / (1 << (2 * i));
-        int zSize = this->zSize / 2 / (1 << (2 * i));
+        for (int allowedBufferOffset = 0; allowedBufferOffset < 4; ++allowedBufferOffset)
+        {
+            int xSize = this->xSize / 2 / (1 << (2 * i)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
+            int ySize = this->ySize / 2 / (1 << (2 * i));
+            int zSize = this->zSize / 2 / (1 << (2 * i));
 
-        // Work groups needs to be based on the size of the next mipmap
-        GLuint workGroupsX = (xSize / 4 + 8 - 1) / 8; // Ceiling division
-        GLuint workGroupsY = (ySize / 4 + 8 - 1) / 8;
-        GLuint workGroupsZ = (zSize / 4 + 8 - 1) / 8;
+            // Work groups needs to be based on the size of the next mipmap
+            GLuint workGroupsX = (xSize / 4 + 8 - 1) / 8; // Ceiling division
+            GLuint workGroupsY = (ySize / 4 + 8 - 1) / 8;
+            GLuint workGroupsZ = (zSize / 4 + 8 - 1) / 8;
 
-        glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), xSize, ySize, zSize);
+            glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), xSize, ySize, zSize);
 
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);
-        // std::cout <<"A: "<< mipMapStarts[i] << std::endl;
-        // std::cout <<"B: "<< mipMapStarts[i + 1] << std::endl;
-        // std::cout << std::endl;
+            glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);
+            glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);
 
-        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+            glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "allowedBufferOffset"), allowedBufferOffset);
 
-        // Ensure compute shader completes
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
+            // std::cout <<"A: "<< mipMapStarts[i] << std::endl;
+            // std::cout <<"B: "<< mipMapStarts[i + 1] << std::endl;
+            // std::cout << std::endl;
+
+            glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+            // Ensure compute shader completes
+            glMemoryBarrier(~0); // Ensure writes are finished
+        }
     }
 
     occupancyMap.unbind();
