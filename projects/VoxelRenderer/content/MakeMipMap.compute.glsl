@@ -76,50 +76,47 @@ uint getByte(ivec3 coord)
 
 void main()
 {
-
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz); // texel coord in the position in the next mipmap level
 
     ivec3 pos = 4 * texelCoord;
 
-    uint final = 0;
-
-    int k = 1;
-    for (int i = 0; i < 2; i++) // z axis
+    uint resultMask = 0;
+    int bit = 1;
+    for (int zCurr = 0; zCurr < 2; zCurr++) // z axis
     {
-        for (int j = 0; j < 2; j++) // y axis
+        for (int yCurr = 0; yCurr < 2; yCurr++) // y axis
         {
-            for (int l = 0; l < 2; l++) // x axis
+            for (int xCurr = 0; xCurr < 2; xCurr++) // x axis
             {
                 // pos + (l, j, i). Tell us the position of the bitlevel cell that we are in for this mip map.
                 // We need to sample a 2x2x2 set of cells in the previous mip map
                 // If any are occupied then we have an occupied cell
-                ivec3 cellPos = pos + 2 * ivec3(l, j, i);
+                ivec3 cellPos = pos + 2 * ivec3(xCurr, yCurr, zCurr);
 
                 bool isOccupied = false; // This is the result of the occupancy search
-                for (int i2 = 0; i2 < 2 && !isOccupied; i2++)
+                for (int zPrev = 0; zPrev < 2 && !isOccupied; zPrev++)
                 {
-                    for (int j2 = 0; j2 < 2 && !isOccupied; j2++)
+                    for (int yPrev = 0; yPrev < 2 && !isOccupied; yPrev++)
                     {
-                        for (int l2 = 0; l2 < 2 && !isOccupied; l2++)
+                        for (int xPrev = 0; xPrev < 2 && !isOccupied; xPrev++)
                         {
-                            ivec3 subCellPos = cellPos + ivec3(l2, j2, i2); // This is the position of a cell in the previous mip map
+                            ivec3 subCellPos = cellPos + ivec3(xPrev, yPrev, zPrev); // This is the position of a cell in the previous mip map
                             uint value = getByte(subCellPos); // We check to see if that cell is occupied
-                            if (value != 0)
-                            { // If it is then we know that the cell in the currently generated mip map is also full
-                                isOccupied = true;
-                            }
+
+                            // If the previous mipmap's mask is not 0, at least one voxel in the previous mipmap is occupied
+                            isOccupied = value != 0;
                         }
                     }
                 }
 
                 if (isOccupied)
                 {
-                    final |= k;
+                    resultMask |= bit;
                 }
-                k = k << 1;
+                bit = bit << 1;
             }
         }
     }
 
-    setByte(texelCoord, final);
+    setByte(texelCoord, resultMask);
 }
