@@ -24,7 +24,7 @@ void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLui
 VoxelRendererProgram::VoxelRendererProgram()
 {
     // Ensure preconditions are met
-    runStartupTests();
+    runEarlyStartupTests();
     log("Starting Voxel Renderer");
 
     // Init GLFW
@@ -69,11 +69,8 @@ VoxelRendererProgram::~VoxelRendererProgram()
 
 void VoxelRendererProgram::run()
 {
-    {
-        GLint size;
-        glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
-        std::cout << "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << (unsigned long long)size << " bytes." << std::endl;
-    }
+    // Ensure preconditions are met
+    runLateStartupTests();
 
     auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
@@ -306,9 +303,9 @@ void VoxelRendererProgram::assertIsTrue(const bool condition, const std::string&
     }
 }
 
-void VoxelRendererProgram::runStartupTests()
+void VoxelRendererProgram::runEarlyStartupTests()
 {
-    log("Running startup tests");
+    log("Running early startup tests (in constructor)");
 
     {
         // Make sure the content folder exists
@@ -353,5 +350,19 @@ void VoxelRendererProgram::runStartupTests()
         // Listener is unsubscribed, this should not affect the counter
         testEvent.raise(5);
         assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
+    }
+}
+
+void VoxelRendererProgram::runLateStartupTests()
+{
+    log("Running late startup tests (in run())");
+
+    {
+        // Verify shader storage block size is large enough
+        GLint size;
+        glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
+        std::cout << "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << size << " bytes." << std::endl;
+
+        assertIsTrue(size >= INT32_MAX, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
     }
 }
