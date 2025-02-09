@@ -26,9 +26,9 @@ private:
     ShaderFloatBuffer rayDirectionBuffer;
 
     // These buffers are used to store the result of a ray trace step
-    GLuint rayHitPositionBuffer; //(x, y, z, wasHit)
-    GLuint rayHitNormalBuffer; //(x, y, z, depth)
-    GLuint rayHitMaterialBuffer; //(material)
+    GLuint rayHitPositionBuffer = 0; //(x, y, z, wasHit)
+    GLuint rayHitNormalBuffer = 0; //(x, y, z, depth)
+    GLuint rayHitMaterialBuffer = 0; //(material)
 
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
