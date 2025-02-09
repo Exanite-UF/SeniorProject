@@ -234,22 +234,23 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
         for (auto& voxelWorld : worlds)
         {
             voxelWorld.bindTextures(2);
-            glm::ivec3 voxelSize = voxelWorld.getSize();
-            // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
-            // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
+            {
+                glm::ivec3 voxelSize = voxelWorld.getSize();
+                // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
+                // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
-            glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-            glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getMipMapTextureCount());
-            glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), 10, voxelWorld.getMipMapStartIndices().data());
+                glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
+                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getMipMapTextureCount());
+                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), 10, voxelWorld.getMipMapStartIndices().data());
 
-            glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
-            glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldOrientation"), 1, glm::value_ptr(voxelWorld.getOrientation()));
-            glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.getScale()));
+                glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
+                glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldOrientation"), 1, glm::value_ptr(voxelWorld.getOrientation()));
+                glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.getScale()));
 
-            glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+                glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            }
             voxelWorld.unbindTextures();
         }
     }
