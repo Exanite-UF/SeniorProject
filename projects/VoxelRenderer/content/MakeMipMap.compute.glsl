@@ -2,56 +2,91 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(rgba8ui, binding = 0) uniform uimage3D imgInput;
-layout(rgba8ui, binding = 1) uniform uimage3D imgOutput;
+// layout(rgba8ui, binding = 0) uniform uimage3D imgInput;
+// layout(rgba8ui, binding = 1) uniform uimage3D imgOutput;
+
+// The shader is invoked once per byte in the next mipmap level
+
+layout(std430, binding = 0) buffer OccupancyMap
+{
+    uint occupancyMap[];
+};
+
+uniform ivec3 resolution; //(xSize, ySize, zSize) size of the previous mipMap texture
+uniform uint previousStartByte; // The index of the first byte of the previous mipMap level
+uniform uint nextStartByte; // The index of the first byte of the next mipMap level (The one we are making)
+uniform uint allowedBufferOffset;
+
+// Sets a byte in the next mipmap
+void setByte(ivec3 coord, uint value)
+{
+    ivec3 tempRes = resolution / 4; // The next mipmap texture has a size 4 times smaller on each axis
+    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(nextStartByte);
+    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
+    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
+
+    if (bufferOffset != allowedBufferOffset)
+    {
+        return;
+    }
+
+    occupancyMap[bufferIndex] &= -(uint(255) << (8 * (3 - bufferOffset))) - 1;
+    occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
+}
+
+// Reads a byte from the previous mipmap
+uint getByte(ivec3 coord)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)) + int(previousStartByte);
+    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
+    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
+
+    return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));
+}
 
 void main()
 {
-
-    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz); // texel coord in the position in the next mipmap level
 
     ivec3 pos = 4 * texelCoord;
 
-    uint final = 0;
-
-    int k = 1;
-    for (int i = 0; i < 2; i++) // z axis
+    uint resultMask = 0;
+    int bit = 1;
+    for (int zCurr = 0; zCurr < 2; zCurr++) // z axis
     {
-        for (int j = 0; j < 2; j++) // y axis
+        for (int yCurr = 0; yCurr < 2; yCurr++) // y axis
         {
-            for (int l = 0; l < 2; l++) // x axis
+            for (int xCurr = 0; xCurr < 2; xCurr++) // x axis
             {
                 // pos + (l, j, i). Tell us the position of the bitlevel cell that we are in for this mip map.
                 // We need to sample a 2x2x2 set of cells in the previous mip map
                 // If any are occupied then we have an occupied cell
-                ivec3 cellPos = pos + 2 * ivec3(l, j, i);
+                ivec3 cellPos = pos + 2 * ivec3(xCurr, yCurr, zCurr);
 
                 bool isOccupied = false; // This is the result of the occupancy search
-                for (int i2 = 0; i2 < 2 && !isOccupied; i2++)
+                for (int zPrev = 0; zPrev < 2 && !isOccupied; zPrev++)
                 {
-                    for (int j2 = 0; j2 < 2 && !isOccupied; j2++)
+                    for (int yPrev = 0; yPrev < 2 && !isOccupied; yPrev++)
                     {
-                        for (int l2 = 0; l2 < 2 && !isOccupied; l2++)
+                        for (int xPrev = 0; xPrev < 2 && !isOccupied; xPrev++)
                         {
-                            ivec3 subCellPos = cellPos + ivec3(l2, j2, i2); // This is the position of a cell in the previous mip map
-                            uint value = imageLoad(imgInput, subCellPos).a; // We check to see if that cell is occupied
-                            if (value != 0)
-                            { // If it is then we know that the cell in the currently generated mip map is also full
-                                isOccupied = true;
-                            }
+                            ivec3 subCellPos = cellPos + ivec3(xPrev, yPrev, zPrev); // This is the position of a cell in the previous mip map
+                            uint value = getByte(subCellPos); // We check to see if that cell is occupied
+
+                            // If the previous mipmap's mask is not 0, at least one voxel in the previous mipmap is occupied
+                            isOccupied = value != 0;
                         }
                     }
                 }
 
                 if (isOccupied)
                 {
-                    final |= k;
+                    resultMask |= bit;
                 }
-                k = k << 1;
+                bit = bit << 1;
             }
         }
     }
 
-    uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
-    imageStore(imgOutput, texelCoord, uvec4(material, final));
+    setByte(texelCoord, resultMask);
 }

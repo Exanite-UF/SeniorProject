@@ -49,7 +49,12 @@ public:
 
     static void assertIsTrue(bool condition, const std::string& errorMessage);
 
-    static void runStartupTests();
+    // Ran first thing when the class is constructed
+    static void runEarlyStartupTests();
+
+    // Ran first thing when the run() method is called
+    // Use this if things like OpenGL need to have been initialized
+    static void runLateStartupTests();
 
     static void onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 };

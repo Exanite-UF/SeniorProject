@@ -2,10 +2,18 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(rgba8ui, binding = 0) uniform uimage3D imgOutput;
+// layout(rgba8ui, binding = 0) uniform uimage3D imgOutput;
+
+layout(std430, binding = 0) buffer OccupancyMap
+{
+    uint occupancyMap[];
+};
+
+uniform ivec3 resolution; //(xSize, ySize, zSize) size of the texture
 uniform float time;
 uniform bool isRand2;
 uniform float fillAmount;
+uniform uint allowedBufferOffset;
 
 float rand(vec3 x)
 {
@@ -25,6 +33,31 @@ float rand2(vec3 x)
     result += wave(0.0117508870384 * dot(x, vec3(0.2477844726, 0.412264222346, 0.561235509959)) + time);
     result += wave(0.05551583823 * dot(x, vec3(0.280613371903, -0.566017829842, 0.581708656338)) + time);
     return result / 4;
+}
+
+void setByte(ivec3 coord, uint value)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z));
+    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
+    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
+
+    if (bufferOffset != allowedBufferOffset)
+    {
+        return;
+    }
+
+    occupancyMap[bufferIndex] &= (uint(255) << (8 * (3 - bufferOffset))) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
+    occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
+}
+
+uint getByte(ivec3 coord)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z));
+    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
+    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
+
+    // return occupancyMap[index];
+    return uint(occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset)); // Mask for the section we want then put it in the least signigicant bits
 }
 
 void main()
@@ -86,7 +119,9 @@ void main()
         }
     }
 
-    uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
+    setByte(texelCoord, final);
 
-    imageStore(imgOutput, texelCoord, uvec4(material, final));
+    // uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
+
+    // imageStore(imgOutput, texelCoord, uvec4(material, final));
 }
