@@ -15,6 +15,7 @@ layout(std430, binding = 0) buffer OccupancyMap
 uniform ivec3 resolution; //(xSize, ySize, zSize) size of the previous mipMap texture
 uniform uint previousStartByte; // The index of the first byte of the previous mipMap level
 uniform uint nextStartByte; // The index of the first byte of the next mipMap level (The one we are making)
+uniform uint allowedBufferOffset;
 
 // Sets a byte in the next mipmap
 void setByte(ivec3 coord, uint value)
@@ -24,27 +25,13 @@ void setByte(ivec3 coord, uint value)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    // occupancyMap[bufferIndex] &= ~(uint(0xff000000) >> bufferOffset);//Create a mask that zeros out the part we want to set
-    if (bufferOffset == 0)
+    if (bufferOffset != allowedBufferOffset)
     {
-        occupancyMap[bufferIndex] &= -(uint(255) << (8 * 3)) - 1; //(uint(255) << (8 * 3)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 3);
+        return;
     }
-    if (bufferOffset == 1)
-    {
-        occupancyMap[bufferIndex] &= -(uint(255) << (8 * 2)) - 1; //(uint(255) << (8 * 2)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 2);
-    }
-    if (bufferOffset == 2)
-    {
-        occupancyMap[bufferIndex] &= -(uint(255) << (8 * 1)) - 1; //(uint(255) << (8 * 1)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 1);
-    }
-    if (bufferOffset == 3)
-    {
-        occupancyMap[bufferIndex] &= -(uint(255) << (8 * 0)) - 1; //(uint(255) << (8 * 0)) ^ 0xFFFFFFFFu;//Create a mask that zeros out the part we want to set
-        occupancyMap[bufferIndex] |= value << (8 * 0);
-    }
+
+    occupancyMap[bufferIndex] &= -(uint(255) << (8 * (3 - bufferOffset))) - 1;
+    occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
 }
 
 // Reads a byte from the previous mipmap
@@ -54,24 +41,7 @@ uint getByte(ivec3 coord)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    if (bufferOffset == 0)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 0)))) >> (8 * (3 - 0));
-    }
-    if (bufferOffset == 1)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 1)))) >> (8 * (3 - 1));
-    }
-    if (bufferOffset == 2)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 2)))) >> (8 * (3 - 2));
-    }
-    if (bufferOffset == 3)
-    {
-        return (occupancyMap[bufferIndex] & (255 << (8 * (3 - 3)))) >> (8 * (3 - 3));
-    }
-    return 0;
-    // return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));//Mask for the section we want then put it in the least signigicant bits
+    return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));
 }
 
 void main()
