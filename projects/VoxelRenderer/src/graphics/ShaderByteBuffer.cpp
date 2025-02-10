@@ -1,4 +1,4 @@
-#include "ShaderByteBuffer.h"
+#include <src/graphics/ShaderByteBuffer.h>
 
 ShaderByteBuffer::ShaderByteBuffer()
 {

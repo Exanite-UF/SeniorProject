@@ -7,14 +7,14 @@
 #include <iostream>
 #include <string>
 
-#include "VoxelRendererProgram.h"
-#include "graphics/ShaderManager.h"
-#include "rendering/VoxelRenderer.h"
-#include "utilities/BufferedEvent.h"
-#include "utilities/Event.h"
-#include "utilities/TupleHasher.h"
-#include "windowing/Window.h"
-#include "world/VoxelWorld.h"
+#include <src/VoxelRendererProgram.h>
+#include <src/graphics/ShaderManager.h>
+#include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/BufferedEvent.h>
+#include <src/utilities/Event.h>
+#include <src/utilities/TupleHasher.h>
+#include <src/windowing/Window.h>
+#include <src/world/VoxelWorld.h>
 
 void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {

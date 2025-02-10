@@ -7,8 +7,8 @@
 
 #include <string>
 
-#include "input/InputManager.h"
-#include "windowing/Window.h"
+#include <src/input/InputManager.h>
+#include <src/windowing/Window.h>
 
 // WASD Space Shift = movement
 // q = capture mouse

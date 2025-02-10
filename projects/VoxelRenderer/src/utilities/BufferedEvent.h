@@ -4,7 +4,7 @@
 #include <memory>
 #include <queue>
 
-#include "Event.h"
+#include <src/utilities/Event.h>
 
 // Based on http://nercury.github.io/c++/interesting/2016/02/22/weak_ptr-and-event-cleanup.html
 template <typename... TArgs>

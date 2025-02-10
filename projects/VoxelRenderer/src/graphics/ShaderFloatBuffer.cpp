@@ -1,4 +1,4 @@
-#include "ShaderFloatBuffer.h"
+#include <src/graphics/ShaderFloatBuffer.h>
 
 ShaderFloatBuffer::ShaderFloatBuffer()
 {

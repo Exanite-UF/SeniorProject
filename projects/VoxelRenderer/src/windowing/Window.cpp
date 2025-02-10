@@ -1,4 +1,4 @@
-#include "Window.h"
+#include <src/windowing/Window.h>
 
 Window::Window(const std::shared_ptr<InputManager>& inputManager)
 {

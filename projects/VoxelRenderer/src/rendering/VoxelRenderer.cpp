@@ -1,20 +1,21 @@
-#include "VoxelRenderer.h"
-#include "../graphics/GraphicsUtility.h"
-#include "../graphics/ShaderManager.h"
-#include "../utilities/TupleHasher.h"
-#include "../world/VoxelWorld.h"
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
-#include "glm/common.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/mat3x3.hpp"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <cmath>
+#include <glm/common.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/mat3x3.hpp>
+
+#include <chrono>
+#include <iostream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 
-#include <chrono>
-#include <iostream>
+#include <src/graphics/GraphicsUtility.h>
+#include <src/graphics/ShaderManager.h>
+#include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/TupleHasher.h>
+#include <src/world/VoxelWorld.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;

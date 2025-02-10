@@ -1,4 +1,4 @@
-#include "GraphicsUtility.h"
+#include <src/graphics/GraphicsUtility.h>
 
 GLuint GraphicsUtility::emptyVertexArray = 0;
 

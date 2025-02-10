@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../input/InputManager.h"
-#include "GLFW/glfw3.h"
-#include "glm/common.hpp"
+#include <GLFW/glfw3.h>
+#include <glm/common.hpp>
 #include <memory>
 #include <unordered_map>
+
+#include <src/input/InputManager.h>
 
 class Window
 {

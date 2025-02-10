@@ -1,4 +1,4 @@
-#include "VoxelRendererProgram.h"
+#include <src/VoxelRendererProgram.h>
 
 int main()
 {
