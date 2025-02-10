@@ -62,14 +62,12 @@ void main()
         uint uintIndex = gl_WorkGroupID.x * 512 + uintOffset;
 
         uint result = 0;
-        uint bit = 1;
         for (int byteOffset = 0; byteOffset < 4; byteOffset++)
         {
-            // Get voxel index
             // Each uint is 4 bytes, where each byte contains a 2x2x2 group of voxels
             uint byteIndex = uintIndex * 4 + byteOffset;
 
-            // Convert voxel index into a voxel position
+            // Convert byte index into the voxel group's base position
             uint baseX = byteIndex % resolution.x;
             byteIndex /= resolution.x;
             uint baseY = byteIndex % resolution.y;
@@ -78,6 +76,7 @@ void main()
 
             vec3 basePosition = vec3(baseX, baseY, baseZ);
 
+            uint bit = 1;
             for (int offsetZ = 0; offsetZ < 2; offsetZ++)
             {
                 for (int offsetY = 0; offsetY < 2; offsetY++)
@@ -96,7 +95,7 @@ void main()
                         // fillAmount sets the isosurface value
                         if (value > fillAmount && value < fillAmount + 0.01)
                         {
-                            result |= bit;
+                            result |= bit << (8 * (3 - byteOffset));
                         }
 
                         bit = bit << 1;
