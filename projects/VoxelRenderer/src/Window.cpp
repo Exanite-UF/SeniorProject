@@ -1,9 +1,7 @@
 #include "Window.h"
 
-Window::Window(const std::shared_ptr<InputManager>& inputManager)
+Window::Window()
 {
-    this->inputManager = inputManager;
-
     // Configure GLFW and OpenGL
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -47,8 +45,12 @@ void Window::update()
     glfwPollEvents();
     glfwGetWindowSize(glfwWindowHandle, &size.x, &size.y);
 
-    // TODO: call user callback functions
-    // TODO: find a way to only trigger callbacks on the rising and falling edges of inputs. This will probably involve editing the onWindowSize ... etc functions to support calling user specified functions.
+    windowSizeEvent.flush();
+    keyEvent.flush();
+    mouseButtonEvent.flush();
+    cursorPosEvent.flush();
+    scrollEvent.flush();
+    cursorEnterEvent.flush();
 }
 
 GLFWmonitor* Window::getCurrentMonitor(GLFWwindow* window)
@@ -102,7 +104,7 @@ void Window::onWindowSize(GLFWwindow* window, int width, int height)
 
     glViewport(0, 0, width, height); // Adjusts the render target size for the window (ie. the render will resize to take up the full window)
 
-    // TODO: call user specified callbacks
+    self->windowSizeEvent.raise(self, width, height);
 }
 
 void Window::onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -118,10 +120,7 @@ void Window::onKey(GLFWwindow* window, int key, int scancode, int action, int mo
         return;
     }
 
-    // Call the inputManger callback for keyboard presses
-    self->inputManager->onKey(window, key, scancode, action, mods);
-
-    // TODO: call user specified callbacks
+    self->keyEvent.raise(self, key, scancode, action, mods);
 }
 
 void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods)
@@ -137,10 +136,7 @@ void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods)
         return;
     }
 
-    // Call the inputManger callback for mouse clicks
-    self->inputManager->onMouseButton(window, button, action, mods);
-
-    // TODO: call user specified callbacks
+    self->mouseButtonEvent.raise(self, button, action, mods);
 }
 
 void Window::onCursorPos(GLFWwindow* window, double xpos, double ypos)
@@ -156,10 +152,7 @@ void Window::onCursorPos(GLFWwindow* window, double xpos, double ypos)
         return;
     }
 
-    // Call the inputManger callback for mouse movement
-    self->inputManager->onCursorPos(window, xpos, ypos);
-
-    // TODO: call user specified callbacks
+    self->cursorPosEvent.raise(self, xpos, ypos);
 }
 
 void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
@@ -175,8 +168,7 @@ void Window::onScroll(GLFWwindow* window, double xoffset, double yoffset)
         return;
     }
 
-    // Call the inputManger callback for mouse scrolling
-    self->inputManager->onScroll(window, xoffset, yoffset);
+    self->scrollEvent.raise(self, xoffset, yoffset);
 }
 
 void Window::onCursorEnter(GLFWwindow* window, int entered)
@@ -192,7 +184,7 @@ void Window::onCursorEnter(GLFWwindow* window, int entered)
         return;
     }
 
-    self->inputManager->cursorEnteredThisFrame = true;
+    self->cursorEnterEvent.raise(self, entered);
 }
 
 void Window::registerGlfwCallbacks()

@@ -34,8 +34,8 @@ VoxelRendererProgram::VoxelRendererProgram()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    inputManager = std::make_shared<InputManager>();
-    window = std::make_shared<Window>(inputManager);
+    window = std::make_shared<Window>();
+    inputManager = std::make_shared<InputManager>(window);
 
     // Init IMGUI
     IMGUI_CHECKVERSION();
