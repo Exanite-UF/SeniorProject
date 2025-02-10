@@ -18,7 +18,7 @@ target_link_libraries(VoxelRenderer PRIVATE glfw)
 target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 target_link_libraries(VoxelRenderer PRIVATE imgui)
-#target_link_libraries(VoxelRenderer PRIVATE assimp) // TODO: Figure out why this fails to build on Windows
+#target_link_libraries(VoxelRenderer PRIVATE assimp) # TODO: Figure out why this fails to build on Windows
 #target_link_libraries(VoxelRenderer PRIVATE Jolt)
 #target_link_libraries(VoxelRenderer PRIVATE stb)
 
