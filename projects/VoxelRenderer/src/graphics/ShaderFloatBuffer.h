@@ -1,21 +1,21 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 #include <vector>
 
 #include <cstdint>
 
-class ShaderByteBuffer
+class ShaderFloatBuffer
 {
 private:
     int bindLocation;
 
-public:
     GLuint bufferID;
 
-    ShaderByteBuffer();
-    ~ShaderByteBuffer();
+public:
+    ShaderFloatBuffer();
+    ~ShaderFloatBuffer();
 
     void setSize(std::uint64_t size);
 

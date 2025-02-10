@@ -1,8 +1,8 @@
 #pragma once
 
-#include "TupleHasher.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "../utility/TupleHasher.h"
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 #include <string>
 #include <tuple>
 #include <unordered_map>

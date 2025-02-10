@@ -1,7 +1,7 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-#include <glm/vec2.hpp>
+#include "GLFW/glfw3.h"
+#include "glm/vec2.hpp"
 #include <memory>
 #include <unordered_set>
 

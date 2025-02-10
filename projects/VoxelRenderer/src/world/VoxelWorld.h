@@ -1,14 +1,14 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/quaternion.hpp"
+#include "glm/vec3.hpp"
 #include <array>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/vec3.hpp>
 
-#include "ShaderByteBuffer.h"
-#include "ShaderFloatBuffer.h"
+#include "../graphics/ShaderByteBuffer.h"
+#include "../graphics/ShaderFloatBuffer.h"
 
 class VoxelWorld
 {

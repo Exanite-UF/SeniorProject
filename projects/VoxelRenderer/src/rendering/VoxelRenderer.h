@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Camera.h"
-#include "ShaderFloatBuffer.h"
-#include "VoxelWorld.h"
+#include "../graphics/ShaderFloatBuffer.h"
+#include "../world/Camera.h"
+#include "../world/VoxelWorld.h"
 #include <vector>
 
 // The voxel renderer needs to be able to render multiple voxel worlds
