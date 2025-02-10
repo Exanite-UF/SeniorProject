@@ -1,7 +1,7 @@
 #include "VoxelRenderer.h"
-#include "../graphics/GraphicsUtils.h"
+#include "../graphics/GraphicsUtility.h"
 #include "../graphics/ShaderManager.h"
-#include "../utility/TupleHasher.h"
+#include "../utilities/TupleHasher.h"
 #include "../world/VoxelWorld.h"
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -40,9 +40,9 @@ void VoxelRenderer::remakeTextures()
     // rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     // rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
 
-    rayHitPositionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitNormalBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitMaterialBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
+    rayHitPositionBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayHitNormalBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayHitMaterialBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -327,7 +327,7 @@ void VoxelRenderer::display()
         GL_R16UI // Format
     );
 
-    glBindVertexArray(GraphicsUtils::getEmptyVertexArray());
+    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     {
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }

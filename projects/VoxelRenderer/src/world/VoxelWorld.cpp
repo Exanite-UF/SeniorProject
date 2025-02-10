@@ -1,6 +1,6 @@
 #include "VoxelWorld.h"
 
-#include "../graphics/GraphicsUtils.h"
+#include "../graphics/GraphicsUtility.h"
 #include <chrono>
 #include <iostream>
 #include <unistd.h>

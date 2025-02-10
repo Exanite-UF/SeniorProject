@@ -10,9 +10,9 @@
 #include "VoxelRendererProgram.h"
 #include "graphics/ShaderManager.h"
 #include "rendering/VoxelRenderer.h"
-#include "utility/BufferedEvent.h"
-#include "utility/Event.h"
-#include "utility/TupleHasher.h"
+#include "utilities/BufferedEvent.h"
+#include "utilities/Event.h"
+#include "utilities/TupleHasher.h"
 #include "windowing/Window.h"
 #include "world/VoxelWorld.h"
 

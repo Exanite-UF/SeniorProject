@@ -3,7 +3,7 @@
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 
-class GraphicsUtils
+class GraphicsUtility
 {
 public:
     // format and type are from glTexImage3D

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../utility/TupleHasher.h"
+#include "../utilities/TupleHasher.h"
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include <string>
