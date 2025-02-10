@@ -57,48 +57,55 @@ uint getByte(ivec3 coord)
 void main()
 {
     // TODO: Remove this for loop, currently used since I know how this exact implementation works and don't want to change how it works yet
-    for (int i = 0; i < 512; i++)
+    for (int uintOffset = 0; uintOffset < 512; uintOffset++)
     {
-        uint uintIndex = gl_WorkGroupID.x * 512 + i;
+        uint uintIndex = gl_WorkGroupID.x * 512 + uintOffset;
 
         uint result = 0;
-        for (int j = 0; j < 32; j++)
+        uint bit = 1;
+        for (int byteOffset = 0; byteOffset < 4; byteOffset++)
         {
             // Get voxel index
-            uint voxelIndex = uintIndex * 32 + j; // Each uint is 32 bits, containing 32 voxels
+            // Each uint is 4 bytes, where each byte contains a 2x2x2 group of voxels
+            uint byteIndex = uintIndex * 4 + byteOffset;
 
             // Convert voxel index into a voxel position
-            uint x = voxelIndex % resolution.x;
-            voxelIndex /= resolution.x;
+            uint baseX = byteIndex % resolution.x;
+            byteIndex /= resolution.x;
+            uint baseY = byteIndex % resolution.y;
+            byteIndex /= resolution.y;
+            uint baseZ = byteIndex;
 
-            uint y = voxelIndex % resolution.y;
-            voxelIndex /= resolution.y;
+            vec3 basePosition = vec3(baseX, baseY, baseZ);
 
-            uint z = voxelIndex;
-
-            vec3 position = vec3(x, y, z);
-
-            // Generate
-            float value = 0;
-            value = rand2(position);
-            value += rand2(floor(position / 2 + 1));
-            value += rand2(floor(position / 4 + 2));
-            value += rand2(floor(position / 8 + 3));
-            value /= 4;
-
-            // fillAmount sets the density
-            // TODO: Isn't this the isosurface value now?
-            if (value > fillAmount && value < fillAmount + 0.01)
+            for (int offsetZ = 0; offsetZ < 2; offsetZ++)
             {
-                result |= 1 << (32 - j);
+                for (int offsetY = 0; offsetY < 2; offsetY++)
+                {
+                    for (int offsetX = 0; offsetX < 2; offsetX++)
+                    {
+                        vec3 voxelPosition = basePosition + vec3(offsetX, offsetY, offsetZ);
+
+                        float value = 0;
+                        value = rand2(voxelPosition);
+                        value += rand2(floor(voxelPosition / 2 + 1));
+                        value += rand2(floor(voxelPosition / 4 + 2));
+                        value += rand2(floor(voxelPosition / 8 + 3));
+                        value /= 4;
+
+                        // fillAmount sets the isosurface value
+                        if (value > fillAmount && value < fillAmount + 0.01)
+                        {
+                            result |= bit;
+                        }
+
+                        bit = bit << 1;
+                    }
+                }
             }
         }
 
         occupancyMap[uintIndex] = result;
-        // occupancyMap[uintIndex] = uint(gl_WorkGroupID.x);
-
-        // X, then Y, then Z
-        // int index = ((coord.z) * resolution.y + coord.y) * resolution.x + coord.x;
     }
 
     //    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
