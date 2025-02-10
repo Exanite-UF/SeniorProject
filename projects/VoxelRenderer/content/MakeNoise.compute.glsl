@@ -1,6 +1,6 @@
-#version 440 core
+#version 460 core
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 // layout(rgba8ui, binding = 0) uniform uimage3D imgOutput;
 
@@ -9,11 +9,10 @@ layout(std430, binding = 0) buffer OccupancyMap
     uint occupancyMap[];
 };
 
-uniform ivec3 resolution; //(xSize, ySize, zSize) size of the texture
+uniform ivec3 resolution; // Size of the occupancy map in voxels
 uniform float time;
 uniform bool isRand2;
 uniform float fillAmount;
-uniform uint allowedBufferOffset;
 
 float rand(vec3 x)
 {
@@ -41,11 +40,6 @@ void setByte(ivec3 coord, uint value)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    if (bufferOffset != allowedBufferOffset)
-    {
-        return;
-    }
-
     occupancyMap[bufferIndex] &= (uint(255) << (8 * (3 - bufferOffset))) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
     occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
 }
@@ -62,64 +56,108 @@ uint getByte(ivec3 coord)
 
 void main()
 {
-
-    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-
-    vec3 pos = 2 * texelCoord;
-
-    uint final = 0;
-    if (isRand2)
+    // TODO: Remove this for loop, currently used since I know how this exact implementation works and don't want to change how it works yet
+    for (int i = 0; i < 512; i++)
     {
-        int k = 1;
-        for (int i = 0; i < 2; i++) // z axis
+        uint uintIndex = gl_WorkGroupID.x * 512 + i;
+
+        uint result = 0;
+        for (int j = 0; j < 32; j++)
         {
-            for (int j = 0; j < 2; j++) // y axis
+            // Get voxel index
+            uint voxelIndex = uintIndex * 32 + j; // Each uint is 32 bits, containing 32 voxels
+
+            // Convert voxel index into a voxel position
+            uint x = voxelIndex % resolution.x;
+            voxelIndex /= resolution.x;
+
+            uint y = voxelIndex % resolution.y;
+            voxelIndex /= resolution.y;
+
+            uint z = voxelIndex;
+
+            vec3 position = vec3(x, y, z);
+
+            // Generate
+            float value = 0;
+            value = rand2(position);
+            value += rand2(floor(position / 2 + 1));
+            value += rand2(floor(position / 4 + 2));
+            value += rand2(floor(position / 8 + 3));
+            value /= 4;
+
+            // fillAmount sets the density
+            // TODO: Isn't this the isosurface value now?
+            if (value > fillAmount && value < fillAmount + 0.01)
             {
-                for (int l = 0; l < 2; l++) // x axis
-                {
-                    float value = 0;
-                    vec3 temp = pos + vec3(l, j, i);
-                    value = rand2(temp);
-                    value += rand2(floor(temp / 2 + 1));
-                    value += rand2(floor(temp / 4 + 2));
-                    value += rand2(floor(temp / 8 + 3));
-                    value /= 4;
-                    if (value > fillAmount && value < fillAmount + 0.01)
-                    { // This is how you set the density
-                        final |= k;
-                    }
-                    k = k << 1;
-                }
+                result |= 1 << (32 - j);
             }
         }
-    }
-    else
-    {
-        int k = 1;
-        for (int i = 0; i < 2; i++) // z axis
-        {
-            for (int j = 0; j < 2; j++) // y axis
-            {
-                for (int l = 0; l < 2; l++) // x axis
-                {
-                    float value = 0;
-                    vec3 temp = pos + vec3(l, j, i);
-                    value = rand(temp);
-                    value += rand(floor(temp / 2 + 1));
-                    value += rand(floor(temp / 4 + 2));
-                    value += rand(floor(temp / 8 + 3));
-                    value /= 4;
-                    if (value > fillAmount)
-                    { // This is how you set the density
-                        final |= k;
-                    }
-                    k = k << 1;
-                }
-            }
-        }
+
+        occupancyMap[uintIndex] = result;
+        // occupancyMap[uintIndex] = uint(gl_WorkGroupID.x);
+
+        // X, then Y, then Z
+        // int index = ((coord.z) * resolution.y + coord.y) * resolution.x + coord.x;
     }
 
-    setByte(texelCoord, final);
+    //    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
+    //
+    //    vec3 pos = 2 * texelCoord;
+    //
+    //    uint final = 0;
+    //    if (isRand2)
+    //    {
+    //        int k = 1;
+    //        for (int i = 0; i < 2; i++) // z axis
+    //        {
+    //            for (int j = 0; j < 2; j++) // y axis
+    //            {
+    //                for (int l = 0; l < 2; l++) // x axis
+    //                {
+    //                    float value = 0;
+    //                    vec3 temp = pos + vec3(l, j, i);
+    //                    value = rand2(temp);
+    //                    value += rand2(floor(temp / 2 + 1));
+    //                    value += rand2(floor(temp / 4 + 2));
+    //                    value += rand2(floor(temp / 8 + 3));
+    //                    value /= 4;
+    //                    if (value > fillAmount && value < fillAmount + 0.01)
+    //                    { // This is how you set the density
+    //                        final |= k;
+    //                    }
+    //                    k = k << 1;
+    //                }
+    //            }
+    //        }
+    //    }
+    //    else
+    //    {
+    //        int k = 1;
+    //        for (int i = 0; i < 2; i++) // z axis
+    //        {
+    //            for (int j = 0; j < 2; j++) // y axis
+    //            {
+    //                for (int l = 0; l < 2; l++) // x axis
+    //                {
+    //                    float value = 0;
+    //                    vec3 temp = pos + vec3(l, j, i);
+    //                    value = rand(temp);
+    //                    value += rand(floor(temp / 2 + 1));
+    //                    value += rand(floor(temp / 4 + 2));
+    //                    value += rand(floor(temp / 8 + 3));
+    //                    value /= 4;
+    //                    if (value > fillAmount)
+    //                    { // This is how you set the density
+    //                        final |= k;
+    //                    }
+    //                    k = k << 1;
+    //                }
+    //            }
+    //        }
+    //    }
+
+    //    setByte(texelCoord, final);
 
     // uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
 
