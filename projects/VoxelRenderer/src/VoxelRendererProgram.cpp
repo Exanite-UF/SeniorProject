@@ -15,10 +15,16 @@
 #include "VoxelWorld.h"
 #include "Window.h"
 
+void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+    std::string messageStr(message, length);
+    log(messageStr);
+}
+
 VoxelRendererProgram::VoxelRendererProgram()
 {
     // Ensure preconditions are met
-    runStartupTests();
+    runEarlyStartupTests();
     log("Starting Voxel Renderer");
 
     // Init GLFW
@@ -45,6 +51,9 @@ VoxelRendererProgram::VoxelRendererProgram()
     {
         throw std::runtime_error("Failed to initialize GLEW");
     }
+
+    // Attach debug message callback
+    glDebugMessageCallback(VoxelRendererProgram::onOpenGlDebugMessage, this);
 }
 
 VoxelRendererProgram::~VoxelRendererProgram()
@@ -60,16 +69,15 @@ VoxelRendererProgram::~VoxelRendererProgram()
 
 void VoxelRendererProgram::run()
 {
+    // Ensure preconditions are met
+    runLateStartupTests();
+
     auto& shaderManager = ShaderManager::getManager();
     auto& input = inputManager->input;
 
     // Configure OpenGL
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
-
-    // Vertex array
-    GLuint emptyVertexArray;
-    glGenVertexArrays(1, &emptyVertexArray);
 
     // Get shader programs
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
@@ -85,9 +93,9 @@ void VoxelRendererProgram::run()
 
     std::vector<VoxelWorld> worlds;
     worlds.push_back(voxelWorld);
-    worlds.push_back(voxelWorld);
+    // worlds.push_back(voxelWorld);
 
-    worlds[1].position = glm::vec3(256, 0, 0);
+    // worlds[1].position = glm::vec3(256, 0, 0);
 
     // Main render loop
     glm::vec3 cameraPosition(0);
@@ -96,7 +104,7 @@ void VoxelRendererProgram::run()
     float mouseSensitivity = 0.002;
 
     // Engine time
-    double totalTime = 0;
+    double totalElapsedTime = 0;
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
 
     // Fps counter
@@ -105,17 +113,17 @@ void VoxelRendererProgram::run()
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
         // Engine time
-        auto now = std::chrono::high_resolution_clock::now();
-        double deltaTime = std::chrono::duration<double>(now - previousTimestamp).count();
-        previousTimestamp = now;
-        frameTime += deltaTime;
-        totalTime += deltaTime;
+        auto currentTimestamp = std::chrono::high_resolution_clock::now();
+        double deltaTime = std::chrono::duration<double>(currentTimestamp - previousTimestamp).count();
+        previousTimestamp = currentTimestamp;
+        totalElapsedTime += deltaTime;
 
         // Fps counter
         frameCounter++;
+        frameTime += deltaTime;
         if (frameCounter % 10 == 0)
         {
-            log(std::to_string(10 / frameTime));
+            // log(std::to_string(10 / frameTime));
             frameTime = 0;
         }
 
@@ -131,7 +139,6 @@ void VoxelRendererProgram::run()
         window->update();
         inputManager->update();
 
-        renderer.setResolution(window->size.x, window->size.y);
         if (!inputManager->cursorEnteredThisFrame)
         {
             auto mouseDelta = input->getMouseDelta();
@@ -243,10 +250,13 @@ void VoxelRendererProgram::run()
         }
 
         {
+            renderer.setResolution(window->size.x, window->size.y);
+
             camera.position = cameraPosition;
-            worlds[0].orientation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
-            worlds[0].scale = glm::vec3(1, 1, 2);
-            camera.orientation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+            // worlds[0].rotation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
+            // worlds[0].scale = glm::vec3(1, 1, 2);
+            camera.rotation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(worlds);
             renderer.display();
@@ -293,9 +303,9 @@ void VoxelRendererProgram::assertIsTrue(const bool condition, const std::string&
     }
 }
 
-void VoxelRendererProgram::runStartupTests()
+void VoxelRendererProgram::runEarlyStartupTests()
 {
-    log("Running startup tests");
+    log("Running early startup tests (in constructor)");
 
     {
         // Make sure the content folder exists
@@ -340,5 +350,19 @@ void VoxelRendererProgram::runStartupTests()
         // Listener is unsubscribed, this should not affect the counter
         testEvent.raise(5);
         assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
+    }
+}
+
+void VoxelRendererProgram::runLateStartupTests()
+{
+    log("Running late startup tests (in run())");
+
+    {
+        // Verify shader storage block size is large enough
+        GLint size;
+        glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
+        std::cout << "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << size << " bytes." << std::endl;
+
+        assertIsTrue(size >= INT32_MAX, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
     }
 }

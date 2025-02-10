@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Camera.h"
+#include "ShaderFloatBuffer.h"
 #include "VoxelWorld.h"
 #include <vector>
 
@@ -18,13 +19,16 @@ private:
     // The z axis corresponds to different rays for the same pixel
 
     // These buffers are used to determine the starting configuration for a ray trace step
-    GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
-    GLuint rayDirectionBuffer; //(x, y, z, [unused])
+    // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
+    // GLuint rayDirectionBuffer; //(x, y, z, [unused])
+
+    ShaderFloatBuffer rayStartBuffer;
+    ShaderFloatBuffer rayDirectionBuffer;
 
     // These buffers are used to store the result of a ray trace step
-    GLuint rayHitPositionBuffer; //(x, y, z, wasHit)
-    GLuint rayHitNormalBuffer; //(x, y, z, depth)
-    GLuint rayHitMaterialBuffer; //(material)
+    GLuint rayHitPositionBuffer = 0; //(x, y, z, wasHit)
+    GLuint rayHitNormalBuffer = 0; //(x, y, z, depth)
+    GLuint rayHitMaterialBuffer = 0; //(material)
 
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
@@ -52,7 +56,7 @@ public:
 
     void prepareRayTraceFromCamera(const Camera& camera);
 
-    void executeRayTrace(const std::vector<VoxelWorld>& worlds);
+    void executeRayTrace(std::vector<VoxelWorld>& worlds);
 
     void display();
 };
