@@ -32,7 +32,7 @@ void BufferedEvent<TArgs...>::flush()
         std::tuple<TArgs...> arguments = bufferedEvents.front();
         bufferedEvents.pop();
 
-        std::apply([&](auto&&... args)
+        std::apply([&, this](auto&&... args)
             {
                 Event<TArgs...>::raise(std::forward<decltype(args)>(args)...);
             },
