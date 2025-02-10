@@ -7,3 +7,15 @@
 [submodule "external/imgui"]
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "external/image-magick"]
+	path = external/image-magick
+	url = https://github.com/ImageMagick/ImageMagick.git
+[submodule "external/jolt"]
+	path = external/jolt
+	url = https://github.com/jrouwe/JoltPhysics.git
+[submodule "external/assimp"]
+	path = external/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "external/stb"]
+	path = external/stb
+	url = https://github.com/nothings/stb.git
