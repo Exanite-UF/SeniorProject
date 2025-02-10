@@ -19,6 +19,7 @@ target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 target_link_libraries(VoxelRenderer PRIVATE imgui)
 target_link_libraries(VoxelRenderer PRIVATE assimp)
+target_link_libraries(VoxelRenderer PRIVATE Jolt)
 
 # --- Copy content ---
 

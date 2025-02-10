@@ -7,6 +7,15 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # This postfixes a "d" to shared library names in DEBUG mode
 set(CMAKE_DEBUG_POSTFIX d)
 
+# Check if Interprocedural Optimization (IPO) is supported by the compiler
+include(CheckIPOSupported)
+check_ipo_supported(RESULT IS_IPO_SUPPORTED)
+
+# Enable IPO if supported
+if(IS_IPO_SUPPORTED)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
 # Globally disable shared library prefix for Windows
 if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
@@ -46,6 +55,24 @@ target_link_libraries(imgui PRIVATE ${OPENGL_LIBRARY})
 add_subdirectory(./external/assimp)
 
 # Jolt
+set(DOUBLE_PRECISION OFF)
+set(GENERATE_DEBUG_SYMBOLS OFF)
+set(CROSS_PLATFORM_DETERMINISTIC ON)
+set(FLOATING_POINT_EXCEPTIONS_ENABLED OFF)
+set(OBJECT_LAYER_BITS 32)
+set(USE_SSE4_1 ON)
+set(USE_SSE4_2 ON)
+set(USE_AVX ON)
+set(USE_AVX2 ON)
+set(USE_AVX512 OFF)
+set(USE_LZCNT ON)
+set(USE_TZCNT ON)
+set(USE_F16C ON)
+set(USE_FMADD ON)
+
+set(PHYSICS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/jolt")
+message(${PHYSICS_REPO_ROOT})
+include(./external/jolt/Jolt/Jolt.cmake)
 
 # Image Magick
 
