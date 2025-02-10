@@ -42,6 +42,13 @@ target_include_directories(imgui PUBLIC ./external/imgui-v1.91.8/include)
 target_link_libraries(imgui PRIVATE glfw)
 target_link_libraries(imgui PRIVATE ${OPENGL_LIBRARY})
 
+# Assimp
+add_subdirectory(./external/assimp)
+
+# Jolt
+
+# Image Magick
+
 # --- First party ---
 
 add_subdirectory(./projects/VoxelRenderer)
