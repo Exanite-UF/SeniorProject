@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+#include "BufferedEvent.h"
 #include "Event.h"
 #include "ShaderManager.h"
 #include "TupleHasher.h"
@@ -350,6 +351,34 @@ void VoxelRendererProgram::runEarlyStartupTests()
         // Listener is unsubscribed, this should not affect the counter
         testEvent.raise(5);
         assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
+    }
+
+    {
+        // Similar to before, but events are buffered when raised and only sent when sendBufferedEvents is called
+        BufferedEvent<int> testEvent;
+        int counter = 0;
+
+        auto listener = testEvent.subscribe([&](int value)
+            {
+                log("Buffered event was successfully called");
+                counter += value;
+            });
+
+        // Listener is subscribed, but event has not been flushed. This should not affect the counter
+        testEvent.raise(5);
+        assertIsTrue(counter == 0, "Incorrect buffered event implementation: counter should equal 0");
+
+        // Flush events, this should add 5 to the counter
+        testEvent.flush();
+        assertIsTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
+
+        // Unsubscribe from event
+        listener.reset();
+
+        // Listener is unsubscribed, this should not affect the counter
+        testEvent.raise(5);
+        testEvent.flush();
+        assertIsTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
     }
 }
 

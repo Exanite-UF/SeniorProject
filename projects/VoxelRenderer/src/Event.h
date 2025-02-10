@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 
 // Based on http://nercury.github.io/c++/interesting/2016/02/22/weak_ptr-and-event-cleanup.html
 template <typename... TArgs>
@@ -11,9 +12,9 @@ private:
     int recursionCount = 0;
 
 public:
-    std::shared_ptr<std::function<void(TArgs...)>> subscribe(std::function<void(TArgs...)> listener);
+    virtual std::shared_ptr<std::function<void(TArgs...)>> subscribe(std::function<void(TArgs...)> listener);
 
-    void raise(TArgs... args);
+    virtual void raise(TArgs... args);
 };
 
 template <typename... TArgs>
