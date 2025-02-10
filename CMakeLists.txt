@@ -73,20 +73,24 @@ set(USE_FMADD ON)
 set(PHYSICS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/jolt")
 include(./external/jolt/Jolt/Jolt.cmake)
 
-# Image Magick Core
-add_library(magick-core STATIC)
+## Image Magick Core
+#add_library(magick-core STATIC)
+#
+#file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/image-magick/MagickCore/*.c)
+#target_sources(magick-core PRIVATE ${sources})
+#target_include_directories(magick-core PUBLIC ./external/image-magick/MagickCore)
+#
+## Image Magick++
+#add_library(magick++ STATIC)
+#
+#file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/image-magick/Magick++/lib/*.cpp)
+#target_sources(magick++ PRIVATE ${sources})
+#target_include_directories(magick++ PUBLIC ./external/image-magick/Magick++/lib)
+#target_link_libraries(magick++ PRIVATE magick-core)
 
-file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/image-magick/MagickCore/*.c)
-target_sources(magick-core PRIVATE ${sources})
-target_include_directories(magick-core PUBLIC ./external/image-magick/MagickCore)
-
-# Image Magick++
-add_library(magick++ STATIC)
-
-file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/image-magick/Magick++/lib/*.cpp)
-target_sources(magick++ PRIVATE ${sources})
-target_include_directories(magick++ PUBLIC ./external/image-magick/Magick++/lib)
-target_link_libraries(magick++ PRIVATE magick-core)
+# Stb
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE ./external/stb)
 
 # --- First party ---
 

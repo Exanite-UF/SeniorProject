@@ -20,7 +20,7 @@ target_link_libraries(VoxelRenderer PRIVATE glew)
 target_link_libraries(VoxelRenderer PRIVATE imgui)
 target_link_libraries(VoxelRenderer PRIVATE assimp)
 target_link_libraries(VoxelRenderer PRIVATE Jolt)
-target_link_libraries(VoxelRenderer PRIVATE magick++)
+target_link_libraries(VoxelRenderer PRIVATE stb)
 
 # --- Copy content ---
 
