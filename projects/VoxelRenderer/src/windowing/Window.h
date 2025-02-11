@@ -2,10 +2,11 @@
 
 #include <GLFW/glfw3.h>
 #include <glm/common.hpp>
+#include <glm/vec2.hpp>
 #include <memory>
 #include <unordered_map>
 
-#include <src/input/InputManager.h>
+#include <src/utilities/BufferedEvent.h>
 
 class Window
 {
