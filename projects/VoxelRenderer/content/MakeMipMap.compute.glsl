@@ -24,7 +24,6 @@ void setByte(ivec3 coord, uint value)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-
     occupancyMap[bufferIndex] &= ~(uint(255) << (8 * (3 - bufferOffset)));
     occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
 }
@@ -39,7 +38,7 @@ uint getByte(ivec3 coord)
     return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));
 }
 
-//This calculates the value that should be stored in a single byte of the next mip map level
+// This calculates the value that should be stored in a single byte of the next mip map level
 void makeMipMap(ivec3 cellCoord)
 {
     ivec3 texelCoord = cellCoord; // texel coord in the position in the next mipmap level
@@ -91,9 +90,8 @@ void main()
 {
     uint uintIndex = gl_GlobalInvocationID.x;
 
-    uvec3 nextRes = resolution / 4;//This is the resolution of the mipmap being generated
+    uvec3 nextRes = resolution / 4; // This is the resolution of the mipmap being generated
 
-    
     for (int byteOffset = 0; byteOffset < 4; byteOffset++)
     {
         // Each uint is 4 bytes, where each byte contains a 2x2x2 group of voxels
@@ -108,6 +106,6 @@ void main()
 
         ivec3 basePosition = ivec3(baseX, baseY, baseZ);
 
-        makeMipMap(basePosition);//Call the make mip map function for each byte of the uint
+        makeMipMap(basePosition); // Call the make mip map function for each byte of the uint
     }
 }
