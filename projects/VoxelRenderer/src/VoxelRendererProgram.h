@@ -1,14 +1,13 @@
 #pragma once
 
-// Include GLEW before OpenGL and GLFW
 #include <GL/glew.h>
 
 #include <GLFW/glfw3.h>
 
 #include <string>
 
-#include "InputManager.h"
-#include "Window.h"
+#include <src/input/InputManager.h>
+#include <src/windowing/Window.h>
 
 // WASD Space Shift = movement
 // q = capture mouse

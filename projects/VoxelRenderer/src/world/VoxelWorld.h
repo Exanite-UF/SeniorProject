@@ -7,9 +7,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>
 
-#include "ShaderByteBuffer.h"
-#include "ShaderFloatBuffer.h"
-
+#include <src/graphics/ShaderByteBuffer.h>
+#include <src/graphics/ShaderFloatBuffer.h>
 
 class VoxelWorld
 {
@@ -19,17 +18,16 @@ private:
     GLuint makeMipMapComputeProgram;
     GLuint assignMaterialComputeProgram;
 
-    glm::ivec3 size;//Size of the voxel world in voxels
+    glm::ivec3 size; // Size of the voxel world in voxels
 
     ShaderByteBuffer occupancyMap;
     int mipMapTextureCount;
-    std::array<GLuint, 10> mipMapStartIndices;//There can only be 10 mip map textures. This gives 20 mip map levels
+    std::array<GLuint, 10> mipMapStartIndices; // There can only be 10 mip map textures. This gives 20 mip map levels
 
-    ShaderByteBuffer materialMap;//This store the material data
-    std::array<GLuint, 3> materialStartIndices;//There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
+    ShaderByteBuffer materialMap; // This store the material data
+    std::array<GLuint, 3> materialStartIndices; // There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
 
-    static constexpr glm::ivec3 minSize = {32, 32, 32};
-
+    static constexpr glm::ivec3 minSize = { 32, 32, 32 };
 
     // GLuint occupancyMap; // This texture stores the raw voxel occupancy map, its first mipmap, and the first 3 bits of material data for each voxel
     // GLuint mipMap1; // This texture stores the second and third mip maps, and the second 3 bits of material data for each voxel

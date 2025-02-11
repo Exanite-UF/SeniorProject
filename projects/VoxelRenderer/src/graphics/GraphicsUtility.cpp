@@ -1,8 +1,8 @@
-#include "GraphicsUtils.h"
+#include <src/graphics/GraphicsUtility.h>
 
-GLuint GraphicsUtils::emptyVertexArray = 0;
+GLuint GraphicsUtility::emptyVertexArray = 0;
 
-GLuint GraphicsUtils::create3DImage(int width, int height, int depth, GLenum internalFormat, GLenum format, GLenum type)
+GLuint GraphicsUtility::create3DImage(int width, int height, int depth, GLenum internalFormat, GLenum format, GLenum type)
 {
     GLuint img;
     glGenTextures(1, &img);
@@ -19,7 +19,7 @@ GLuint GraphicsUtils::create3DImage(int width, int height, int depth, GLenum int
     return img;
 }
 
-GLuint GraphicsUtils::getEmptyVertexArray()
+GLuint GraphicsUtility::getEmptyVertexArray()
 {
     if (emptyVertexArray == 0)
     {

@@ -54,8 +54,8 @@ uint getByte(ivec3 coord)
     return uint(occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset); // Mask for the section we want then put it in the least signigicant bits
 }
 
-
-void makeNoise(ivec3 cellCoord){
+void makeNoise(ivec3 cellCoord)
+{
     ivec3 texelCoord = cellCoord;
 
     vec3 pos = 2 * texelCoord;
@@ -133,7 +133,6 @@ void main()
 
         ivec3 basePosition = ivec3(baseX, baseY, baseZ);
 
-        makeNoise(basePosition);//Call the make noise function for each byte of the uint
+        makeNoise(basePosition); // Call the make noise function for each byte of the uint
     }
-
 }

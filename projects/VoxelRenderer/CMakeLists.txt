@@ -12,12 +12,16 @@ set_target_properties(VoxelRenderer
 
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./src/*.cpp)
 target_sources(VoxelRenderer PRIVATE ${sources})
+target_include_directories(VoxelRenderer PRIVATE .)
 
 target_link_libraries(VoxelRenderer PRIVATE ${OPENGL_LIBRARY})
 target_link_libraries(VoxelRenderer PRIVATE glfw)
 target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 target_link_libraries(VoxelRenderer PRIVATE imgui)
+#target_link_libraries(VoxelRenderer PRIVATE assimp) # TODO: Figure out why this fails to build on Windows
+#target_link_libraries(VoxelRenderer PRIVATE Jolt)
+#target_link_libraries(VoxelRenderer PRIVATE stb)
 
 # --- Copy content ---
 

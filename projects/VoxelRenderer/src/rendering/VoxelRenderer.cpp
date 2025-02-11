@@ -1,20 +1,21 @@
-#include "VoxelRenderer.h"
-#include "GraphicsUtils.h"
-#include "ShaderManager.h"
-#include "TupleHasher.h"
-#include "VoxelWorld.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat3x3.hpp>
+
+#include <chrono>
+#include <iostream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 
-#include <chrono>
-#include <iostream>
+#include <src/graphics/GraphicsUtility.h>
+#include <src/graphics/ShaderManager.h>
+#include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/TupleHasher.h>
+#include <src/world/VoxelWorld.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;
@@ -40,9 +41,9 @@ void VoxelRenderer::remakeTextures()
     // rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     // rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
 
-    rayHitPositionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitNormalBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitMaterialBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
+    rayHitPositionBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayHitNormalBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+    rayHitMaterialBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -244,8 +245,6 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
                 glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), 10, voxelWorld.getMipMapStartIndices().data());
                 glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "materialStartIndices"), 3, voxelWorld.getMaterialStartIndices().data());
 
-
-
                 glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.getPosition()));
                 glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld.getRotation()));
                 glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.getScale()));
@@ -330,7 +329,7 @@ void VoxelRenderer::display()
         GL_R16UI // Format
     );
 
-    glBindVertexArray(GraphicsUtils::getEmptyVertexArray());
+    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     {
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }

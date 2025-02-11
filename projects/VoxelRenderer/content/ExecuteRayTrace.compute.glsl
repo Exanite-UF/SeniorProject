@@ -41,7 +41,7 @@ uniform vec3 voxelWorldPosition;
 uniform vec4 voxelWorldRotation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
 
-//coord is a cell coord
+// coord is a cell coord
 uint getByte(ivec3 coord, int mipMapTexture)
 {
     ivec3 tempRes = voxelResolution / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
@@ -52,34 +52,34 @@ uint getByte(ivec3 coord, int mipMapTexture)
     return (occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset);
 }
 
-//Coord is a voxel coord
+// Coord is a voxel coord
 uint getMaterial(ivec3 coord)
 {
     uint result = 0;
     uint counter = 0;
-    for(int level = 0; level < 3; level++){
+    for (int level = 0; level < 3; level++)
+    {
         ivec3 tempCoord = coord / (1 << (2 * level));
         ivec3 cellCoord = tempCoord / 2;
 
-        ivec3 p2 = tempCoord & 1;//Modulus 2 the voxel coordinate using a bitmask
-        uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2);//make the bitmask that corresponds to the correct bit in the byte that we want
+        ivec3 p2 = tempCoord & 1; // Modulus 2 the voxel coordinate using a bitmask
+        uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // make the bitmask that corresponds to the correct bit in the byte that we want
 
         ivec3 tempRes = voxelResolution / (1 << (2 * level)); // get the resolution of the requested level
-        int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z);// + int(materialStartIndices[level]);
+        int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z); // + int(materialStartIndices[level]);
 
-        //4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
+        // 4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
 
-        //These grab the 4 bits we want from the uint
+        // These grab the 4 bits we want from the uint
         uint temp = materialMap[index];
         result |= int((temp & (k << 0)) != 0) << counter;
         result |= int((temp & (k << 8)) != 0) << (counter + 1);
         result |= int((temp & (k << 16)) != 0) << (counter + 2);
         result |= int((temp & (k << 24)) != 0) << (counter + 3);
 
-
         counter += 4;
     }
-    
+
     return result;
 }
 
@@ -193,7 +193,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
             count += int((l & k) == 0) + int(l == 0);
         }
 
-
         if (count <= 0)
         {
 
@@ -278,10 +277,10 @@ void main()
 
     if (hit.wasHit && hit.dist < currentDepth)
     {
-        imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit));//Record the world space position of the hit surface
-        imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist));//Record the world space normal direction of the hit surface
+        imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
+        imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist)); // Record the world space normal direction of the hit surface
         imageStore(hitMaterial, texelCoord, uvec4(hit.material));
     }
 
-    //imageStore(hitMaterial, texelCoord, uvec4(hit.iterations));//Record the number of iterations into the material texture
+    // imageStore(hitMaterial, texelCoord, uvec4(hit.iterations));//Record the number of iterations into the material texture
 }

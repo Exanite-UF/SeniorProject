@@ -1,4 +1,4 @@
-#include "InputManager.h"
+#include <src/input/InputManager.h>
 
 bool InputState::isKeyHeld(const int key) const
 {
@@ -55,9 +55,35 @@ bool Input::isButtonReleased(const int button) const
     return !current.isButtonHeld(button) && previous.isButtonHeld(button);
 }
 
-InputManager::InputManager()
+InputManager::InputManager(std::shared_ptr<Window> window)
 {
+    this->window = window;
     input = std::make_unique<Input>();
+
+    window->keyEvent.subscribePermanently([&](auto&&... args)
+        {
+            onKey(args...);
+        });
+
+    window->mouseButtonEvent.subscribePermanently([&](auto&&... args)
+        {
+            onMouseButton(args...);
+        });
+
+    window->cursorPosEvent.subscribePermanently([&](auto&&... args)
+        {
+            onCursorPos(args...);
+        });
+
+    window->scrollEvent.subscribePermanently([&](auto&&... args)
+        {
+            onScroll(args...);
+        });
+
+    window->cursorEnterEvent.subscribePermanently([&](auto&&... args)
+        {
+            onCursorEnter(args...);
+        });
 }
 
 void InputManager::update()
@@ -68,7 +94,7 @@ void InputManager::update()
     next.mouseScroll = glm::vec2(0);
 }
 
-void InputManager::onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
+void InputManager::onKey(Window* window, int key, int scancode, int action, int mods)
 {
     if (action == GLFW_PRESS)
     {
@@ -81,7 +107,7 @@ void InputManager::onKey(GLFWwindow* window, int key, int scancode, int action, 
     }
 }
 
-void InputManager::onMouseButton(GLFWwindow* window, int button, int action, int mods)
+void InputManager::onMouseButton(Window* window, int button, int action, int mods)
 {
     if (action == GLFW_PRESS)
     {
@@ -94,14 +120,19 @@ void InputManager::onMouseButton(GLFWwindow* window, int button, int action, int
     }
 }
 
-void InputManager::onCursorPos(GLFWwindow* window, double xpos, double ypos)
+void InputManager::onCursorPos(Window* window, double xpos, double ypos)
 {
     next.mousePosition.x = xpos;
     next.mousePosition.y = ypos;
 }
 
-void InputManager::onScroll(GLFWwindow* window, double xoffset, double yoffset)
+void InputManager::onScroll(Window* window, double xoffset, double yoffset)
 {
     next.mouseScroll.x = xoffset;
     next.mouseScroll.y = yoffset;
+}
+
+void InputManager::onCursorEnter(Window* window, int entered)
+{
+    cursorEnteredThisFrame = true;
 }

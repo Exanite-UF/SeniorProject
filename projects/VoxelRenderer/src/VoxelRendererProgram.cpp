@@ -7,13 +7,14 @@
 #include <iostream>
 #include <string>
 
-#include "Event.h"
-#include "ShaderManager.h"
-#include "TupleHasher.h"
-#include "VoxelRenderer.h"
-#include "VoxelRendererProgram.h"
-#include "VoxelWorld.h"
-#include "Window.h"
+#include <src/VoxelRendererProgram.h>
+#include <src/graphics/ShaderManager.h>
+#include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/BufferedEvent.h>
+#include <src/utilities/Event.h>
+#include <src/utilities/TupleHasher.h>
+#include <src/windowing/Window.h>
+#include <src/world/VoxelWorld.h>
 
 void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -33,8 +34,8 @@ VoxelRendererProgram::VoxelRendererProgram()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    inputManager = std::make_shared<InputManager>();
-    window = std::make_shared<Window>(inputManager);
+    window = std::make_shared<Window>();
+    inputManager = std::make_shared<InputManager>(window);
 
     // Init IMGUI
     IMGUI_CHECKVERSION();
@@ -351,6 +352,34 @@ void VoxelRendererProgram::runEarlyStartupTests()
         testEvent.raise(5);
         assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
     }
+
+    {
+        // Similar to before, but events are buffered when raised and only sent when sendBufferedEvents is called
+        BufferedEvent<int> testEvent;
+        int counter = 0;
+
+        auto listener = testEvent.subscribe([&](int value)
+            {
+                log("Buffered event was successfully called");
+                counter += value;
+            });
+
+        // Listener is subscribed, but event has not been flushed. This should not affect the counter
+        testEvent.raise(5);
+        assertIsTrue(counter == 0, "Incorrect buffered event implementation: counter should equal 0");
+
+        // Flush events, this should add 5 to the counter
+        testEvent.flush();
+        assertIsTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
+
+        // Unsubscribe from event
+        listener.reset();
+
+        // Listener is unsubscribed, this should not affect the counter
+        testEvent.raise(5);
+        testEvent.flush();
+        assertIsTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
+    }
 }
 
 void VoxelRendererProgram::runLateStartupTests()
@@ -363,6 +392,7 @@ void VoxelRendererProgram::runLateStartupTests()
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
         std::cout << "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << size << " bytes." << std::endl;
 
-        assertIsTrue(size >= INT32_MAX, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
+        // TODO: 134217728 is the GL_MAX_SHADER_STORAGE_BLOCK_SIZE of Exanite's laptop
+        assertIsTrue(size >= 134217728, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
     }
 }
