@@ -161,6 +161,9 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
             if (i > 0 && isOutside)
             { // Don't intersect with the first voxel
                 hit.wasHit = true;
+                // TODO: Reimplement Materials to use a buffer instead of an image
+                // At the moment materials are not being store at all
+
                 // uvec3 c1 = uvec3(greaterThan(l1.rgb & k1, uvec3(0))); // uvec3((l1.r & k1) > 0 ?  1 : 0, (l1.g & k1) > 0 ? 1 : 0, (l1.b & k1) > 0 ? 1 : 0);
                 // uvec3 c2 = uvec3(greaterThan(l2.rgb & k2, uvec3(0))); // uvec3(l2.r & k2 > 0, l2.g & k2 > 0, l2.b & k2 > 0);
                 // uvec3 c3 = uvec3(greaterThan(l3.rgb & k3, uvec3(0))); // uvec3(l3.r & k3 > 0, l3.g & k3 > 0, l3.b & k3 > 0);
@@ -235,10 +238,10 @@ void main()
 
     if (hit.wasHit && hit.dist < currentDepth)
     {
-        imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit));
-        imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist));
-        // imageStore(hitMaterial, texelCoord, uvec4(hit.material));
+        imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit));//Record the world space position of the hit surface
+        imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist));//Record the world space normal direction of the hit surface
+        //imageStore(hitMaterial, texelCoord, uvec4(hit.material));
     }
 
-    imageStore(hitMaterial, texelCoord, uvec4(hit.iterations));
+    imageStore(hitMaterial, texelCoord, uvec4(hit.iterations));//Record the number of iterations into the material texture
 }

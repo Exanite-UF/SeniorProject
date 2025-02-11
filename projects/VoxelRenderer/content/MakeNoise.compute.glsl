@@ -133,7 +133,7 @@ void main()
 
         ivec3 basePosition = ivec3(baseX, baseY, baseZ);
 
-        makeNoise(basePosition);
+        makeNoise(basePosition);//Call the make noise function for each byte of the uint
     }
 
 }

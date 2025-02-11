@@ -182,7 +182,6 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
 {
     glUseProgram(makeMipMapComputeProgram);
 
-    // Bind output texture to image unit 1 (write-only)
     occupancyMap.bind(0);
 
     for (int i = 0; i < mipMapTextureCount; i++)
@@ -192,57 +191,19 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
         int sizeY = this->size.y / 2 / (1 << (2 * i));
         int sizeZ = this->size.z / 2 / (1 << (2 * i));
 
-        int occupancyMapUintCount = (sizeX * sizeY * sizeZ) / 64 / 4;//Number of bytes / 4 to get number of uints
-        int workgroupSize = 32; // Each workgroup handles 32 uints
+        int occupancyMapUintCount = ((sizeX * sizeY * sizeZ) / 64) / 4;//Number of bytes in next mip map / 4 to get number of uints
+        int workgroupSize = 32; // Each workgroup handles 32 uints (a multiple of 32 is optimal) //TODO: find best workgroup size for performance
         GLuint workGroupCount = (occupancyMapUintCount + workgroupSize - 1) / workgroupSize;
 
-        glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ);
-
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);
-
-        //glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "allowedBufferOffset"), allowedBufferOffset);
-
-        // std::cout <<"A: "<< mipMapStarts[i] << std::endl;
-        // std::cout <<"B: "<< mipMapStarts[i + 1] << std::endl;
-        // std::cout << std::endl;
+        glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ);//Pass in the resolution of the previous mip map texture
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);//Pass in the starting byte location of the previous mip map texture
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);//Pass in the starting byte location of the next mip map texture.
 
         glDispatchCompute(workGroupCount, 1, 1);
 
         // Ensure compute shader completes
         glMemoryBarrier(GL_ALL_BARRIER_BITS); // Ensure writes are finished
 
-        /*
-        for (int allowedBufferOffset = 0; allowedBufferOffset < 4; ++allowedBufferOffset)
-        {
-            // TODO: Use ivec3 here
-            int sizeX = this->size.x / 2 / (1 << (2 * i)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
-            int sizeY = this->size.y / 2 / (1 << (2 * i));
-            int sizeZ = this->size.z / 2 / (1 << (2 * i));
-
-            // TODO: Use ivec3 here
-            // Work groups needs to be based on the size of the next mipmap
-            GLuint workGroupsX = (sizeX / 4 + 8 - 1) / 8; // Ceiling division
-            GLuint workGroupsY = (sizeY / 4 + 8 - 1) / 8;
-            GLuint workGroupsZ = (sizeZ / 4 + 8 - 1) / 8;
-
-            glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ);
-
-            glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);
-            glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);
-
-            glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "allowedBufferOffset"), allowedBufferOffset);
-
-            // std::cout <<"A: "<< mipMapStarts[i] << std::endl;
-            // std::cout <<"B: "<< mipMapStarts[i + 1] << std::endl;
-            // std::cout << std::endl;
-
-            glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-            // Ensure compute shader completes
-            glMemoryBarrier(~0); // Ensure writes are finished
-        }
-            */
     }
 
     occupancyMap.unbind();
