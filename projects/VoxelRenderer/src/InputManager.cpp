@@ -60,30 +60,30 @@ InputManager::InputManager(std::shared_ptr<Window> window)
     this->window = window;
     input = std::make_unique<Input>();
 
-    eventSubscriptions.push_back(window->keyEvent.subscribe([&](auto&&... args)
+    window->keyEvent.subscribePermanently([&](auto&&... args)
         {
             onKey(args...);
-        }));
+        });
 
-    eventSubscriptions.push_back(window->mouseButtonEvent.subscribe([&](auto&&... args)
+    window->mouseButtonEvent.subscribePermanently([&](auto&&... args)
         {
             onMouseButton(args...);
-        }));
+        });
 
-    eventSubscriptions.push_back(window->cursorPosEvent.subscribe([&](auto&&... args)
+    window->cursorPosEvent.subscribePermanently([&](auto&&... args)
         {
             onCursorPos(args...);
-        }));
+        });
 
-    eventSubscriptions.push_back(window->scrollEvent.subscribe([&](auto&&... args)
+    window->scrollEvent.subscribePermanently([&](auto&&... args)
         {
             onScroll(args...);
-        }));
+        });
 
-    eventSubscriptions.push_back(window->cursorEnterEvent.subscribe([&](auto&&... args)
+    window->cursorEnterEvent.subscribePermanently([&](auto&&... args)
         {
             onCursorEnter(args...);
-        }));
+        });
 }
 
 void InputManager::update()
