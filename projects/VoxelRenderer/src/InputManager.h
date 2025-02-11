@@ -5,6 +5,8 @@
 #include <memory>
 #include <unordered_set>
 
+#include "Window.h"
+
 // Stores a snapshot of the input state
 struct InputState
 {
@@ -45,17 +47,21 @@ private:
     // Accumulates changes to the input state, so that it always has the most recent changes to the input.
     // These most recent inputs are then recorded in the Input object every update.
     InputState next {};
+    std::shared_ptr<Window> window;
+
+    std::vector<std::shared_ptr<void>> eventSubscriptions;
 
 public:
     std::unique_ptr<Input> input;
     bool cursorEnteredThisFrame = true;
 
-    InputManager();
+    explicit InputManager(std::shared_ptr<Window> window);
 
     void update();
 
-    void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);
-    void onMouseButton(GLFWwindow* window, int button, int action, int mods);
-    void onCursorPos(GLFWwindow* window, double xpos, double ypos);
-    void onScroll(GLFWwindow* window, double xoffset, double yoffset);
+    void onKey(Window* window, int key, int scancode, int action, int mods);
+    void onMouseButton(Window* window, int button, int action, int mods);
+    void onCursorPos(Window* window, double xpos, double ypos);
+    void onScroll(Window* window, double xoffset, double yoffset);
+    void onCursorEnter(Window* window, int entered);
 };
