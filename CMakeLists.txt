@@ -51,27 +51,27 @@ target_include_directories(imgui PUBLIC ./external/imgui-v1.91.8/include)
 target_link_libraries(imgui PRIVATE glfw)
 target_link_libraries(imgui PRIVATE ${OPENGL_LIBRARY})
 
-# Assimp
-add_subdirectory(./external/assimp)
+## Assimp
+#add_subdirectory(./external/assimp)
 
-# Jolt
-set(DOUBLE_PRECISION OFF)
-set(GENERATE_DEBUG_SYMBOLS OFF)
-set(CROSS_PLATFORM_DETERMINISTIC ON)
-set(FLOATING_POINT_EXCEPTIONS_ENABLED OFF)
-set(OBJECT_LAYER_BITS 32)
-set(USE_SSE4_1 ON)
-set(USE_SSE4_2 ON)
-set(USE_AVX ON)
-set(USE_AVX2 ON)
-set(USE_AVX512 OFF)
-set(USE_LZCNT ON)
-set(USE_TZCNT ON)
-set(USE_F16C ON)
-set(USE_FMADD ON)
-
-set(PHYSICS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/jolt")
-include(./external/jolt/Jolt/Jolt.cmake)
+## Jolt
+#set(DOUBLE_PRECISION OFF)
+#set(GENERATE_DEBUG_SYMBOLS OFF)
+#set(CROSS_PLATFORM_DETERMINISTIC ON)
+#set(FLOATING_POINT_EXCEPTIONS_ENABLED OFF)
+#set(OBJECT_LAYER_BITS 32)
+#set(USE_SSE4_1 ON)
+#set(USE_SSE4_2 ON)
+#set(USE_AVX ON)
+#set(USE_AVX2 ON)
+#set(USE_AVX512 OFF)
+#set(USE_LZCNT ON)
+#set(USE_TZCNT ON)
+#set(USE_F16C ON)
+#set(USE_FMADD ON)
+#
+#set(PHYSICS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/jolt")
+#include(./external/jolt/Jolt/Jolt.cmake)
 
 ## Image Magick Core
 #add_library(magick-core STATIC)
@@ -88,9 +88,9 @@ include(./external/jolt/Jolt/Jolt.cmake)
 #target_include_directories(magick++ PUBLIC ./external/image-magick/Magick++/lib)
 #target_link_libraries(magick++ PRIVATE magick-core)
 
-# Stb
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ./external/stb)
+## Stb
+#add_library(stb INTERFACE)
+#target_include_directories(stb INTERFACE ./external/stb)
 
 # --- First party ---
 
