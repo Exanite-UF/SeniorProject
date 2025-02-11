@@ -238,10 +238,10 @@ void main()
 
     if (hit.wasHit && hit.dist < currentDepth)
     {
-        imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit));//Record the world space position of the hit surface
-        imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist));//Record the world space normal direction of the hit surface
-        //imageStore(hitMaterial, texelCoord, uvec4(hit.material));
+        imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
+        imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist)); // Record the world space normal direction of the hit surface
+        // imageStore(hitMaterial, texelCoord, uvec4(hit.material));
     }
 
-    imageStore(hitMaterial, texelCoord, uvec4(hit.iterations));//Record the number of iterations into the material texture
+    imageStore(hitMaterial, texelCoord, uvec4(hit.iterations)); // Record the number of iterations into the material texture
 }
