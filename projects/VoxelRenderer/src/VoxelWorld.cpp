@@ -3,7 +3,6 @@
 #include "GraphicsUtils.h"
 #include <chrono>
 #include <iostream>
-#include <unistd.h>
 
 VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
 {
