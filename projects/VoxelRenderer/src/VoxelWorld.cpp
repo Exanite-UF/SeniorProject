@@ -15,7 +15,7 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     // Make and fill the buffers
     size = { 1024, 1024, 1024 };
 
-    mipMapTextureCount = std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 2) / 2);//This is what the name says it is
+    mipMapTextureCount = std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 2) / 2); // This is what the name says it is
 
     // No more than 9 mip maps can be made from the occupancy map
     if (mipMapTextureCount > 9)
@@ -158,7 +158,7 @@ void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, boo
     occupancyMap.bind(0);
 
     int occupancyMapVoxelCount = size.x * size.y * size.z;
-    int occupancyMapUintCount = occupancyMapVoxelCount / 32;// This is two divisions: by 8 and by 4
+    int occupancyMapUintCount = occupancyMapVoxelCount / 32; // This is two divisions: by 8 and by 4
 
     int workgroupSize = 32; // Each workgroup handles 32 uints
     int workgroupCountX = (occupancyMapUintCount + workgroupSize - 1) / workgroupSize; // Ceiling division;
@@ -190,19 +190,18 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
         int sizeY = this->size.y / 2 / (1 << (2 * i));
         int sizeZ = this->size.z / 2 / (1 << (2 * i));
 
-        int occupancyMapUintCount = ((sizeX * sizeY * sizeZ) / 64) / 4;//Number of bytes in next mip map / 4 to get number of uints
+        int occupancyMapUintCount = ((sizeX * sizeY * sizeZ) / 64) / 4; // Number of bytes in next mip map / 4 to get number of uints
         int workgroupSize = 32; // Each workgroup handles 32 uints (a multiple of 32 is optimal) //TODO: find best workgroup size for performance
         GLuint workGroupCount = (occupancyMapUintCount + workgroupSize - 1) / workgroupSize;
 
-        glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ);//Pass in the resolution of the previous mip map texture
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);//Pass in the starting byte location of the previous mip map texture
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);//Pass in the starting byte location of the next mip map texture.
+        glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]); // Pass in the starting byte location of the previous mip map texture
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]); // Pass in the starting byte location of the next mip map texture.
 
         glDispatchCompute(workGroupCount, 1, 1);
 
         // Ensure compute shader completes
         glMemoryBarrier(GL_ALL_BARRIER_BITS); // Ensure writes are finished
-
     }
 
     occupancyMap.unbind();
