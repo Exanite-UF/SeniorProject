@@ -22,7 +22,13 @@ private:
 
     ShaderByteBuffer occupancyMap;
     int mipMapTextureCount;
-    std::array<GLuint, 10> mipMapStartIndices;
+    std::array<GLuint, 10> mipMapStartIndices;//There can only be 10 mip map textures. This gives 20 mip map levels
+    
+    ShaderByteBuffer materialMap;
+    std::array<GLuint, 3> materialStartIndices;
+
+
+
     // GLuint occupancyMap; // This texture stores the raw voxel occupancy map, its first mipmap, and the first 3 bits of material data for each voxel
     // GLuint mipMap1; // This texture stores the second and third mip maps, and the second 3 bits of material data for each voxel
     // GLuint mipMap2; // This texture stores the fourth and fifth mip maps, and the final 3 bits of material data for each voxel
@@ -40,6 +46,8 @@ private:
     void assignMaterial(GLuint image3D); // This runs the assign material shader
 
     glm::ivec3 getTextureSize() const; // TODO: implement
+
+    void setSize(glm::ivec3 size);
 
 public:
     glm::vec3 position = glm::vec3(0, 0, 0);

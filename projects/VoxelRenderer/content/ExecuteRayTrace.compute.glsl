@@ -227,7 +227,7 @@ void main()
 
     rayPos += rayDir * 0.001;
 
-    RayHit hit = findIntersection(rayPos, rayDir, 1000, currentDepth);
+    RayHit hit = findIntersection(rayPos, rayDir, 200, currentDepth);
 
     hit.hitLocation *= voxelWorldScale;
     hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation);

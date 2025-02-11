@@ -14,35 +14,13 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     this->currentNoiseTime = 0;
 
     // Make and fill the buffers
-    size = { 1024, 1024, 1024 };
-
-    mipMapTextureCount = std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 2) / 2);//This is what the name says it is
-
-    // No more than 9 mip maps can be made from the occupancy map
-    if (mipMapTextureCount > 9)
-    {
-        mipMapTextureCount = 9;
-    }
-    // This should be the exact number of bytes that the occupancy map and all its mip maps take up
-    std::uint64_t bytesOfOccupancyMap = 0;
-    for (int i = 0; i <= mipMapTextureCount; i++)
-    {
-        std::uint64_t divisor = (1 << (2 * i));
-        divisor *= divisor * divisor; // Cube the divisor
-        mipMapStartIndices[i] = bytesOfOccupancyMap;
-
-        bytesOfOccupancyMap += size.x * size.y * size.z / 8 / divisor;
-    }
-
-    std::cout << mipMapTextureCount << std::endl;
-
-    this->occupancyMap.setSize(bytesOfOccupancyMap);
+    setSize({512, 512, 512});
     // this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap1 = GraphicsUtils::create3DImage(width / 8, height / 8, depth / 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap2 = GraphicsUtils::create3DImage(width / 32, height / 32, depth / 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap3 = GraphicsUtils::create3DImage(width / 128, height / 128, depth / 128, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap4 = GraphicsUtils::create3DImage(width / 512, height / 512, depth / 512, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-
+    std::cout << mipMapTextureCount << std::endl;
     generateFromNoise(0, true, 0.6);
 
     // assignMaterial(occupancyMap);
@@ -191,10 +169,12 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
         int sizeY = this->size.y / 2 / (1 << (2 * i));
         int sizeZ = this->size.z / 2 / (1 << (2 * i));
 
+        
         int occupancyMapUintCount = ((sizeX * sizeY * sizeZ) / 64) / 4;//Number of bytes in next mip map / 4 to get number of uints
         int workgroupSize = 32; // Each workgroup handles 32 uints (a multiple of 32 is optimal) //TODO: find best workgroup size for performance
         GLuint workGroupCount = (occupancyMapUintCount + workgroupSize - 1) / workgroupSize;
 
+        
         glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ);//Pass in the resolution of the previous mip map texture
         glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), mipMapStartIndices[i]);//Pass in the starting byte location of the previous mip map texture
         glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), mipMapStartIndices[i + 1]);//Pass in the starting byte location of the next mip map texture.
@@ -251,4 +231,30 @@ void VoxelWorld::assignMaterial(GLuint image3D)
         GL_READ_WRITE, // Access qualifier
         GL_RGBA8UI // Format
     );
+}
+
+void VoxelWorld::setSize(glm::ivec3 size)
+{
+    this->size = size;
+
+    mipMapTextureCount = std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 4/*This is a 4 and not a 2, because the mip map generation will break if the top level mip map has side length 1. This prevents that from occuring.*/) / 2);//This is what the name says it is
+
+    // No more than 9 mip maps can be made from the occupancy map
+    if (mipMapTextureCount > 9)
+    {
+        mipMapTextureCount = 9;
+    }
+    // This should be the exact number of bytes that the occupancy map and all its mip maps take up
+    std::uint64_t bytesOfOccupancyMap = 0;
+    for (int i = 0; i <= mipMapTextureCount; i++)
+    {
+        std::uint64_t divisor = (1 << (2 * i));
+        divisor *= divisor * divisor; // Cube the divisor
+        mipMapStartIndices[i] = bytesOfOccupancyMap;
+        std::cout << "X" << (size.x / 2 / (1 << (2 * i))) << std::endl;
+        bytesOfOccupancyMap += size.x * size.y * size.z / 8 / divisor;
+    }
+
+
+    this->occupancyMap.setSize(bytesOfOccupancyMap);
 }

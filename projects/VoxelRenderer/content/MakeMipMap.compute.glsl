@@ -92,7 +92,6 @@ void main()
     uint uintIndex = gl_GlobalInvocationID.x;
 
     uvec3 nextRes = resolution / 4;//This is the resolution of the mipmap being generated
-
     
     for (int byteOffset = 0; byteOffset < 4; byteOffset++)
     {
