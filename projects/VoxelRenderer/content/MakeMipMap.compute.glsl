@@ -1,6 +1,6 @@
 #version 440 core
 
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 // layout(rgba8ui, binding = 0) uniform uimage3D imgInput;
 // layout(rgba8ui, binding = 1) uniform uimage3D imgOutput;
