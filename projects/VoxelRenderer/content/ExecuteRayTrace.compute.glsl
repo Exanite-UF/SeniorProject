@@ -176,7 +176,8 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         t += vec3(lessThanEqual(t, vec3(0))) * aRayDir; // Numerical stability correction
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
-        if (i > 1 && (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0)))))
+        bool isOutsideVolume = (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0))));
+        if ((i > 1) && isOutsideVolume)
         {
             // No voxel was hit
             break;
@@ -192,11 +193,12 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
             count += int((l & k) == 0) + int(l == 0);
         }
 
+
         if (count <= 0)
         {
 
             // This means that there was a hit
-            if (i > 0 && isOutside)
+            if (i > 0 && isOutside && !isOutsideVolume)
             { // Don't intersect with the first voxel
                 hit.wasHit = true;
                 // TODO: Reimplement Materials to use a buffer instead of an image

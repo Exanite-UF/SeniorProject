@@ -14,7 +14,7 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     this->currentNoiseTime = 0;
 
     // Make and fill the buffers
-    setSize({1024, 1024, 1024});
+    setSize({512, 512, 512});
     // this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap1 = GraphicsUtils::create3DImage(width / 8, height / 8, depth / 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
     // this->mipMap2 = GraphicsUtils::create3DImage(width / 32, height / 32, depth / 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);

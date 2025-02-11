@@ -123,7 +123,7 @@ void VoxelRendererProgram::run()
         frameTime += deltaTime;
         if (frameCounter % 10 == 0)
         {
-            //log(std::to_string(10 / frameTime));
+            log(std::to_string(10 / frameTime));
             frameTime = 0;
         }
 
