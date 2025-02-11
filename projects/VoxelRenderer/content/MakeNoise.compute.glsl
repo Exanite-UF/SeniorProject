@@ -1,6 +1,6 @@
 #version 460 core
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 // layout(rgba8ui, binding = 0) uniform uimage3D imgOutput;
 
@@ -54,118 +54,86 @@ uint getByte(ivec3 coord)
     return uint(occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset)); // Mask for the section we want then put it in the least signigicant bits
 }
 
-void main()
-{
-    // TODO: Remove this for loop, currently used since I know how this exact implementation works and don't want to change how it works yet
-    for (int uintOffset = 0; uintOffset < 512; uintOffset++)
+
+void makeNoise(ivec3 cellCoord){
+    ivec3 texelCoord = cellCoord;
+
+    vec3 pos = 2 * texelCoord;
+
+    uint final = 0;
+    if (isRand2)
     {
-        uint uintIndex = gl_WorkGroupID.x * 512 + uintOffset;
-
-        uint result = 0;
-        for (int byteOffset = 0; byteOffset < 4; byteOffset++)
+        int k = 1;
+        for (int i = 0; i < 2; i++) // z axis
         {
-            // Each uint is 4 bytes, where each byte contains a 2x2x2 group of voxels
-            uint byteIndex = uintIndex * 4 + byteOffset;
-
-            // Convert byte index into the voxel group's base position
-            uint baseX = byteIndex % resolution.x;
-            byteIndex /= resolution.x;
-            uint baseY = byteIndex % resolution.y;
-            byteIndex /= resolution.y;
-            uint baseZ = byteIndex;
-
-            vec3 basePosition = vec3(baseX, baseY, baseZ);
-
-            uint bit = 1;
-            for (int offsetZ = 0; offsetZ < 2; offsetZ++)
+            for (int j = 0; j < 2; j++) // y axis
             {
-                for (int offsetY = 0; offsetY < 2; offsetY++)
+                for (int l = 0; l < 2; l++) // x axis
                 {
-                    for (int offsetX = 0; offsetX < 2; offsetX++)
-                    {
-                        vec3 voxelPosition = basePosition + vec3(offsetX, offsetY, offsetZ);
-
-                        float value = 0;
-                        value = rand2(voxelPosition);
-                        value += rand2(floor(voxelPosition / 2 + 1));
-                        value += rand2(floor(voxelPosition / 4 + 2));
-                        value += rand2(floor(voxelPosition / 8 + 3));
-                        value /= 4;
-
-                        // fillAmount sets the isosurface value
-                        if (value > fillAmount && value < fillAmount + 0.01)
-                        {
-                            result |= bit << (8 * (3 - byteOffset));
-                        }
-
-                        bit = bit << 1;
+                    float value = 0;
+                    vec3 temp = pos + vec3(l, j, i);
+                    value = rand2(temp);
+                    value += rand2(floor(temp / 2 + 1));
+                    value += rand2(floor(temp / 4 + 2));
+                    value += rand2(floor(temp / 8 + 3));
+                    value /= 4;
+                    if (value > fillAmount && value < fillAmount + 0.01)
+                    { // This is how you set the density
+                        final |= k;
                     }
+                    k = k << 1;
                 }
             }
         }
-
-        occupancyMap[uintIndex] = result;
+    }
+    else
+    {
+        int k = 1;
+        for (int i = 0; i < 2; i++) // z axis
+        {
+            for (int j = 0; j < 2; j++) // y axis
+            {
+                for (int l = 0; l < 2; l++) // x axis
+                {
+                    float value = 0;
+                    vec3 temp = pos + vec3(l, j, i);
+                    value = rand(temp);
+                    value += rand(floor(temp / 2 + 1));
+                    value += rand(floor(temp / 4 + 2));
+                    value += rand(floor(temp / 8 + 3));
+                    value /= 4;
+                    if (value > fillAmount)
+                    { // This is how you set the density
+                        final |= k;
+                    }
+                    k = k << 1;
+                }
+            }
+        }
     }
 
-    //    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-    //
-    //    vec3 pos = 2 * texelCoord;
-    //
-    //    uint final = 0;
-    //    if (isRand2)
-    //    {
-    //        int k = 1;
-    //        for (int i = 0; i < 2; i++) // z axis
-    //        {
-    //            for (int j = 0; j < 2; j++) // y axis
-    //            {
-    //                for (int l = 0; l < 2; l++) // x axis
-    //                {
-    //                    float value = 0;
-    //                    vec3 temp = pos + vec3(l, j, i);
-    //                    value = rand2(temp);
-    //                    value += rand2(floor(temp / 2 + 1));
-    //                    value += rand2(floor(temp / 4 + 2));
-    //                    value += rand2(floor(temp / 8 + 3));
-    //                    value /= 4;
-    //                    if (value > fillAmount && value < fillAmount + 0.01)
-    //                    { // This is how you set the density
-    //                        final |= k;
-    //                    }
-    //                    k = k << 1;
-    //                }
-    //            }
-    //        }
-    //    }
-    //    else
-    //    {
-    //        int k = 1;
-    //        for (int i = 0; i < 2; i++) // z axis
-    //        {
-    //            for (int j = 0; j < 2; j++) // y axis
-    //            {
-    //                for (int l = 0; l < 2; l++) // x axis
-    //                {
-    //                    float value = 0;
-    //                    vec3 temp = pos + vec3(l, j, i);
-    //                    value = rand(temp);
-    //                    value += rand(floor(temp / 2 + 1));
-    //                    value += rand(floor(temp / 4 + 2));
-    //                    value += rand(floor(temp / 8 + 3));
-    //                    value /= 4;
-    //                    if (value > fillAmount)
-    //                    { // This is how you set the density
-    //                        final |= k;
-    //                    }
-    //                    k = k << 1;
-    //                }
-    //            }
-    //        }
-    //    }
+    setByte(texelCoord, final);
+}
 
-    //    setByte(texelCoord, final);
+void main()
+{
+    uint uintIndex = gl_GlobalInvocationID.x;
 
-    // uvec3 material = imageLoad(imgOutput, texelCoord).rgb;
+    for (int byteOffset = 0; byteOffset < 4; byteOffset++)
+    {
+        // Each uint is 4 bytes, where each byte contains a 2x2x2 group of voxels
+        uint byteIndex = uintIndex * 4 + byteOffset;
 
-    // imageStore(imgOutput, texelCoord, uvec4(material, final));
+        // Convert byte index into the voxel group's base position
+        uint baseX = byteIndex % resolution.x;
+        byteIndex /= resolution.x;
+        uint baseY = byteIndex % resolution.y;
+        byteIndex /= resolution.y;
+        uint baseZ = byteIndex;
+
+        ivec3 basePosition = ivec3(baseX, baseY, baseZ);
+
+        makeNoise(basePosition);
+    }
+
 }
