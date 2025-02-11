@@ -49,8 +49,6 @@ private:
     InputState next {};
     std::shared_ptr<Window> window;
 
-    std::vector<std::shared_ptr<void>> eventSubscriptions;
-
 public:
     std::unique_ptr<Input> input;
     bool cursorEnteredThisFrame = true;
