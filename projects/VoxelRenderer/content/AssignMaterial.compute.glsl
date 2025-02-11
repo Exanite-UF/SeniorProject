@@ -2,7 +2,27 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(rgba8ui, binding = 0) uniform uimage3D img;
+layout(std430, binding = 0) buffer MaterialMap
+{
+    uint materialMap[];
+};
+
+uniform ivec3 resolution; //(xSize, ySize, zSize) size of the texture being set (Not the number of voxels, it is the number of cells)
+uniform uint materialStartIndex;
+
+void setByte(ivec3 coord, uint value, uint byteNumber)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)) + int(materialStartIndex);
+    
+    int bufferIndex = index;//4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
+    int bufferOffset = int(byteNumber);
+
+
+    materialMap[bufferIndex] &= ~(uint(255) << (8 * bufferOffset));
+    materialMap[bufferIndex] |= value << (8 * bufferOffset);
+}
+
+
 
 void main()
 {
@@ -36,5 +56,8 @@ void main()
         }
     }
 
-    imageStore(img, texelCoord, uvec4(material, imageLoad(img, texelCoord).a));
+    setByte(texelCoord, material.r, 0);
+    setByte(texelCoord, material.g, 1);
+    setByte(texelCoord, material.b, 2);
+    setByte(texelCoord, 0, 3);
 }

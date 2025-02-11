@@ -25,8 +25,8 @@ void setByte(ivec3 coord, uint value)
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
 
-    occupancyMap[bufferIndex] &= ~(uint(255) << (8 * (3 - bufferOffset)));
-    occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
+    occupancyMap[bufferIndex] &= ~(uint(255) << (8 * bufferOffset));
+    occupancyMap[bufferIndex] |= value << (8 * bufferOffset);
 }
 
 // Reads a byte from the previous mipmap
@@ -36,7 +36,7 @@ uint getByte(ivec3 coord)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));
+    return (occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset);
 }
 
 //This calculates the value that should be stored in a single byte of the next mip map level
