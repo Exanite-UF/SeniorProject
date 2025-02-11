@@ -1,6 +1,6 @@
 #version 440 core
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 // layout(rgba8ui, binding = 0) uniform uimage3D imgInput;
 // layout(rgba8ui, binding = 1) uniform uimage3D imgOutput;
@@ -15,7 +15,6 @@ layout(std430, binding = 0) buffer OccupancyMap
 uniform ivec3 resolution; //(xSize, ySize, zSize) size of the previous mipMap texture
 uniform uint previousStartByte; // The index of the first byte of the previous mipMap level
 uniform uint nextStartByte; // The index of the first byte of the next mipMap level (The one we are making)
-uniform uint allowedBufferOffset;
 
 // Sets a byte in the next mipmap
 void setByte(ivec3 coord, uint value)
@@ -25,12 +24,8 @@ void setByte(ivec3 coord, uint value)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    if (bufferOffset != allowedBufferOffset)
-    {
-        return;
-    }
 
-    occupancyMap[bufferIndex] &= -(uint(255) << (8 * (3 - bufferOffset))) - 1;
+    occupancyMap[bufferIndex] &= ~(uint(255) << (8 * (3 - bufferOffset)));
     occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
 }
 
@@ -44,9 +39,10 @@ uint getByte(ivec3 coord)
     return (occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset));
 }
 
-void main()
+//This calculates the value that should be stored in a single byte of the next mip map level
+void makeMipMap(ivec3 cellCoord)
 {
-    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz); // texel coord in the position in the next mipmap level
+    ivec3 texelCoord = cellCoord; // texel coord in the position in the next mipmap level
 
     ivec3 pos = 4 * texelCoord;
 
@@ -89,4 +85,29 @@ void main()
     }
 
     setByte(texelCoord, resultMask);
+}
+
+void main()
+{
+    uint uintIndex = gl_GlobalInvocationID.x;
+
+    uvec3 nextRes = resolution / 4;//This is the resolution of the mipmap being generated
+
+    
+    for (int byteOffset = 0; byteOffset < 4; byteOffset++)
+    {
+        // Each uint is 4 bytes, where each byte contains a 2x2x2 group of voxels
+        uint byteIndex = uintIndex * 4 + byteOffset;
+
+        // Convert byte index into the voxel group's base position
+        uint baseX = byteIndex % nextRes.x;
+        byteIndex /= nextRes.x;
+        uint baseY = byteIndex % nextRes.y;
+        byteIndex /= nextRes.y;
+        uint baseZ = byteIndex;
+
+        ivec3 basePosition = ivec3(baseX, baseY, baseZ);
+
+        makeMipMap(basePosition);//Call the make mip map function for each byte of the uint
+    }
 }
