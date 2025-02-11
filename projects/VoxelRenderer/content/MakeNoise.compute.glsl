@@ -40,8 +40,8 @@ void setByte(ivec3 coord, uint value)
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
-    occupancyMap[bufferIndex] &= (uint(255) << (8 * (3 - bufferOffset))) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
-    occupancyMap[bufferIndex] |= value << (8 * (3 - bufferOffset));
+    occupancyMap[bufferIndex] &= (uint(255) << (8 * bufferOffset)) ^ 0xFFFFFFFFu; // Create a mask that zeros out the part we want to set
+    occupancyMap[bufferIndex] |= value << (8 * bufferOffset);
 }
 
 uint getByte(ivec3 coord)
@@ -51,7 +51,7 @@ uint getByte(ivec3 coord)
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
     // return occupancyMap[index];
-    return uint(occupancyMap[bufferIndex] & (255 << (8 * (3 - bufferOffset)))) >> (8 * (3 - bufferOffset)); // Mask for the section we want then put it in the least signigicant bits
+    return uint(occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset); // Mask for the section we want then put it in the least signigicant bits
 }
 
 void makeNoise(ivec3 cellCoord)

@@ -27,15 +27,14 @@ void main()
         uint material = imageLoad(hitMaterial, ivec3(gl_FragCoord.xy, i)).r;
         float falloff = (normal.w * 0.01 + 1) * (normal.w * 0.01 + 1);
 
-        /*
-        //This is the pseudo material rendering code
-        uint r = (material & 1) + ((material & 8) >> 2) + ((material & 64) >> 4);
-        uint g = ((material & (1 << 1)) >> 1) + ((material & (8 << 1)) >> 3) + ((material & (64 << 1)) >> 5);
-        uint b = ((material & (1 << 2)) >> 2) + ((material & (8 << 2)) >> 4) + ((material & (64 << 2)) >> 6);
+        // This is the pseudo material rendering code
+        uint r = (material & 1) + ((material & 16) >> 3) + ((material & 256) >> 6);
+        uint g = ((material & (1 << 1)) >> 1) + ((material & (16 << 1)) >> 4) + ((material & (256 << 1)) >> 7);
+        uint b = ((material & (1 << 2)) >> 2) + ((material & (16 << 2)) >> 5) + ((material & (256 << 2)) >> 8);
 
         vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
-        */
 
+        /*
         // This is the workload rendering code
         vec3 colorBase = vec3(material / 100.f);
 
@@ -44,9 +43,10 @@ void main()
             int temp = min(200, int(material));
             colorBase = hueToRGB(0.5 - (material - 100) / 200.f);
         }
+        */
 
         // vec3 colorBase = abs(normal.xyz);
-        color += colorBase; // / falloff;
+        color += colorBase / falloff;
     }
     color /= size.z;
     fragColor = vec4(color, 1);
