@@ -179,6 +179,11 @@ void VoxelWorld::assignMaterial(ShaderByteBuffer& materialMap, int level)
 
 void VoxelWorld::setSize(glm::ivec3 size)
 {
+    if(size.x < minSize.x || size.y < minSize.y || size.z < minSize.z){
+        std::cout << "The minimum size of a voxel world along an axis is 32." << std::endl;
+        throw "The minimum size of a voxel world along an axis is 32.";//TODO: Throw something better
+    }
+
     this->size = size;
 
     mipMapTextureCount = std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 4/*This is a 4 and not a 2, because the mip map generation will break if the top level mip map has side length 1. This prevents that from occuring.*/) / 2);//This is what the name says it is
