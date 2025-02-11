@@ -35,12 +35,8 @@ void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmo
     makeMipMaps(occupancyMap);
 
     assignMaterial(materialMap, 0);
-    // assignMaterial(materialMap, 1);
-    // assignMaterial(materialMap, 2);
-    //  makeMipMap(occupancyMap, mipMap1);
-    //  makeMipMap(mipMap1, mipMap2);
-    //  makeMipMap(mipMap2, mipMap3);
-    //  makeMipMap(mipMap3, mipMap4);
+    assignMaterial(materialMap, 1);
+    assignMaterial(materialMap, 2);
 }
 
 void VoxelWorld::bindTextures(int occupancyMap, int materialMap)
