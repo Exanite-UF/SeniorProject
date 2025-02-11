@@ -14,7 +14,10 @@ private:
     std::queue<std::tuple<TArgs...>> bufferedEvents;
 
 public:
+    // Raise an event, causing it to be added to the internal event buffer. To notify subscribers, call the flush() method.
     void raise(TArgs... args) override;
+
+    // Raises all buffered events, causing subscribers to be notified.
     void flush();
 };
 
