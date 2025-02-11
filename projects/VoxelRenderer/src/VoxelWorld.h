@@ -18,9 +18,8 @@ private:
     GLuint makeMipMapComputeProgram;
     GLuint assignMaterialComputeProgram;
 
-    uint16_t xSize;
-    uint16_t ySize;
-    uint16_t zSize;
+    glm::ivec3 size;//Size of the voxel world in voxels
+
     ShaderByteBuffer occupancyMap;
     int mipMapTextureCount;
     std::array<GLuint, 10> mipMapStartIndices;

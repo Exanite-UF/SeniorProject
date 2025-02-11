@@ -28,6 +28,7 @@ void main()
         float falloff = (normal.w * 0.01 + 1) * (normal.w * 0.01 + 1);
 
         /*
+        //This is the pseudo material rendering code
         uint r = (material & 1) + ((material & 8) >> 2) + ((material & 64) >> 4);
         uint g = ((material & (1 << 1)) >> 1) + ((material & (8 << 1)) >> 3) + ((material & (64 << 1)) >> 5);
         uint b = ((material & (1 << 2)) >> 2) + ((material & (8 << 2)) >> 4) + ((material & (64 << 2)) >> 6);
