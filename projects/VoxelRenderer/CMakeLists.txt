@@ -12,6 +12,7 @@ set_target_properties(VoxelRenderer
 
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./src/*.cpp)
 target_sources(VoxelRenderer PRIVATE ${sources})
+target_include_directories(VoxelRenderer PRIVATE .)
 
 target_link_libraries(VoxelRenderer PRIVATE ${OPENGL_LIBRARY})
 target_link_libraries(VoxelRenderer PRIVATE glfw)

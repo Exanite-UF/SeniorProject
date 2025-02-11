@@ -1,5 +1,6 @@
-#include "Window.h"
 #include <stdexcept>
+
+#include <src/windowing/Window.h>
 
 Window::Window()
 {

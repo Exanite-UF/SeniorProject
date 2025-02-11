@@ -1,8 +1,7 @@
-#include "VoxelWorld.h"
-
-#include "GraphicsUtils.h"
-#include <chrono>
 #include <iostream>
+#include <src/graphics/GraphicsUtility.h>
+
+#include <src/world/VoxelWorld.h>
 
 VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
 {

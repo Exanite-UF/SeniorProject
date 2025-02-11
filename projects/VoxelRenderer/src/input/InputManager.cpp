@@ -1,4 +1,4 @@
-#include "InputManager.h"
+#include <src/input/InputManager.h>
 
 bool InputState::isKeyHeld(const int key) const
 {

@@ -1,5 +1,5 @@
-#include "ShaderManager.h"
 #include <fstream>
+#include <src/graphics/ShaderManager.h>
 #include <sstream>
 #include <stdexcept>
 #include <string>

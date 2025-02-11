@@ -3,7 +3,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "VoxelRendererProgram.h"
+#include <src/VoxelRendererProgram.h>
 
 int main()
 {

@@ -6,7 +6,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "BufferedEvent.h"
+#include <src/utilities/BufferedEvent.h>
 
 class Window
 {

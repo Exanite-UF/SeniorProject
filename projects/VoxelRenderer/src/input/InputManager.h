@@ -5,7 +5,7 @@
 #include <memory>
 #include <unordered_set>
 
-#include "Window.h"
+#include <src/windowing/Window.h>
 
 // Stores a snapshot of the input state
 struct InputState

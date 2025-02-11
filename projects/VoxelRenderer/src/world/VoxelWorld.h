@@ -7,8 +7,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>
 
-#include "ShaderByteBuffer.h"
-#include "ShaderFloatBuffer.h"
+#include <src/graphics/ShaderByteBuffer.h>
+#include <src/graphics/ShaderFloatBuffer.h>
 
 class VoxelWorld
 {

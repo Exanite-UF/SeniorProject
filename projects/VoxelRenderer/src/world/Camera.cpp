@@ -1,4 +1,4 @@
-#include "Camera.h"
+#include <src/world/Camera.h>
 
 glm::quat Camera::getRotation() const
 {
