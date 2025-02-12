@@ -35,12 +35,8 @@ void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmo
     makeMipMaps(occupancyMap);
 
     assignMaterial(materialMap, 0);
-    // assignMaterial(materialMap, 1);
-    // assignMaterial(materialMap, 2);
-    //  makeMipMap(occupancyMap, mipMap1);
-    //  makeMipMap(mipMap1, mipMap2);
-    //  makeMipMap(mipMap2, mipMap3);
-    //  makeMipMap(mipMap3, mipMap4);
+    assignMaterial(materialMap, 1);
+    assignMaterial(materialMap, 2);
 }
 
 void VoxelWorld::bindTextures(int occupancyMap, int materialMap)
@@ -101,7 +97,7 @@ void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, boo
     int occupancyMapVoxelCount = size.x * size.y * size.z;
     int occupancyMapUintCount = occupancyMapVoxelCount / 32; // This is two divisions: by 8 and by 4
 
-    int workgroupSize = 32; // Each workgroup handles 32 uints
+    int workgroupSize = 256; // Each workgroup handles 256 uints
     int workgroupCountX = (occupancyMapUintCount + workgroupSize - 1) / workgroupSize; // Ceiling division;
 
     glUniform3i(glGetUniformLocation(makeNoiseComputeProgram, "resolution"), size.x / 2, size.y / 2, size.z / 2);
@@ -132,7 +128,7 @@ void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
         int sizeZ = this->size.z / 2 / (1 << (2 * i));
 
         int occupancyMapUintCount = ((sizeX * sizeY * sizeZ) / 64) / 4; // Number of bytes in next mip map / 4 to get number of uints
-        int workgroupSize = 32; // Each workgroup handles 32 uints (a multiple of 32 is optimal) //TODO: find best workgroup size for performance
+        int workgroupSize = 256; // Each workgroup handles 256 uints (a multiple of 32 is optimal) //TODO: find best workgroup size for performance
         GLuint workGroupCount = (occupancyMapUintCount + workgroupSize - 1) / workgroupSize;
 
         glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
