@@ -111,6 +111,9 @@ void VoxelRendererProgram::run()
     // Fps counter
     int frameCounter = 0;
     double frameTime = 0;
+
+    //IMGUI Menu
+    bool showMenuGUI = false;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
         // Engine time
@@ -250,6 +253,12 @@ void VoxelRendererProgram::run()
             moveSpeed += input->getMouseScroll().y;
         }
 
+        // F3 Debug Menu
+        if (input->isKeyPressed(GLFW_KEY_F3))
+        {
+            showMenuGUI = !showMenuGUI;
+        }
+
         {
             renderer.setResolution(window->size.x, window->size.y);
 
@@ -266,11 +275,16 @@ void VoxelRendererProgram::run()
         {
             std::string str = "Hello";
             float f;
-            ImGui::Text("Hello, world %d", 123);
-            if (ImGui::Button("Save"))
-                ;
-            ImGui::InputText("string", &str);
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+            if (showMenuGUI)
+            {
+                ImGui::Begin("test", &showMenuGUI);
+                    ImGui::Text("Hello, world %d", 123);
+                    if (ImGui::Button("Save"))
+                        ;
+                    ImGui::InputText("string", &str);
+                    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+                ImGui::End();
+            }
         }
 
         ImGui::Render();
