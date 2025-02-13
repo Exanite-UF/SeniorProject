@@ -50,6 +50,8 @@ GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum shad
     auto data = string.data();
     // We now have the shader file contents
 
+    // TODO: Add shader preprocessor (also modify the error message to mention that the shader has been preprocessed and that the error's line numbers cannot be trusted)
+
     // Create and compile a new shader using the shader file contents
     GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, &data, nullptr);
