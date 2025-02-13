@@ -3,10 +3,28 @@
 #include <imgui/imgui_impl_opengl3.h>
 #include <imgui/imgui_stdlib.h>
 
+#include <Jolt/Jolt.h>
+
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/RegisterTypes.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include <filesystem>
 #include <iostream>
 #include <string>
 
+#include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include <src/VoxelRendererProgram.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
@@ -411,5 +429,21 @@ void VoxelRendererProgram::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
         log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+    }
+
+    {
+        JPH::RegisterDefaultAllocator();
+        JPH::Factory::sInstance = new JPH::Factory();
+        JPH::RegisterTypes();
+
+        Assimp::Importer importer {};
+        const aiScene* scene = importer.ReadFile("content/Cube.fbx", 0);
+        importer.FreeScene();
+
+        // TODO: Probably remove later
+        // Ensure assimp, jolt, and stb work
+        int width, height, channels;
+        auto image = stbi_load("content/Coconut.png", &width, &height, &channels, 0);
+        assertIsTrue(image != nullptr, "Failed to load Coconut.png");
     }
 }
