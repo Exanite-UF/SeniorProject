@@ -18,12 +18,17 @@ private:
     GLuint makeMipMapComputeProgram;
     GLuint assignMaterialComputeProgram;
 
-    uint16_t xSize;
-    uint16_t ySize;
-    uint16_t zSize;
+    glm::ivec3 size; // Size of the voxel world in voxels
+
     ShaderByteBuffer occupancyMap;
     int mipMapTextureCount;
-    std::array<GLuint, 10> mipMapStartIndices;
+    std::array<GLuint, 10> mipMapStartIndices; // There can only be 10 mip map textures. This gives 20 mip map levels
+
+    ShaderByteBuffer materialMap; // This store the material data
+    std::array<GLuint, 3> materialStartIndices; // There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
+
+    static constexpr glm::ivec3 minSize = { 32, 32, 32 };
+
     // GLuint occupancyMap; // This texture stores the raw voxel occupancy map, its first mipmap, and the first 3 bits of material data for each voxel
     // GLuint mipMap1; // This texture stores the second and third mip maps, and the second 3 bits of material data for each voxel
     // GLuint mipMap2; // This texture stores the fourth and fifth mip maps, and the final 3 bits of material data for each voxel
@@ -38,9 +43,11 @@ private:
     // TODO: Consider making these static functions, since they do not use the internal state of the class
     void makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
     void makeMipMaps(ShaderByteBuffer& occupancyMap); // This runs the make mip map shader
-    void assignMaterial(GLuint image3D); // This runs the assign material shader
+    void assignMaterial(ShaderByteBuffer& materialMap, int level); // This runs the assign material shader
 
     glm::ivec3 getTextureSize() const; // TODO: implement
+
+    void setSize(glm::ivec3 size);
 
 public:
     glm::vec3 position = glm::vec3(0, 0, 0);
@@ -55,7 +62,7 @@ public:
 
     // TODO: Consider renaming
     // generateFromNoise also needs to bind textures. So calling this and then generateFromNoise will result in some of the textures that this functions binds being unbound
-    void bindTextures(int occupancyMap = 0);
+    void bindTextures(int occupancyMap = 0, int materialMap = 1);
     void unbindTextures() const;
 
     glm::ivec3 getSize() const; // TODO: implement
@@ -66,4 +73,5 @@ public:
 
     int getMipMapTextureCount() const;
     std::array<GLuint, 10> getMipMapStartIndices() const;
+    std::array<GLuint, 3> getMaterialStartIndices() const;
 };
