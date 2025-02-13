@@ -2,12 +2,12 @@
 
 glm::quat Camera::getRotation() const
 {
-    return rotation;
+    return transform.rotation;
 }
 
 glm::vec3 Camera::getPosition() const
 {
-    return position;
+    return transform.position;
 }
 
 float Camera::getHorizontalFov() const

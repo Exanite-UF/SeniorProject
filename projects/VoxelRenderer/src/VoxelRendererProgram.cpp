@@ -14,6 +14,7 @@
 #include <src/utilities/Event.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
+#include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 
 void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
@@ -86,17 +87,17 @@ void VoxelRendererProgram::run()
     makeMipMapComputeProgram = shaderManager.getComputeProgram("content/MakeMipMap.compute.glsl");
     assignMaterialComputeProgram = shaderManager.getComputeProgram("content/AssignMaterial.compute.glsl");
 
-    // Voxel rendering
-    VoxelWorld voxelWorld(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    // Create the scene
+    Scene scene {};
+
+    VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    // worlds.at(1).transform.position = glm::vec3(256, 0, 0);
+
+    Camera& camera = scene.camera;
+
+    // Create the renderer
     VoxelRenderer renderer;
-    Camera camera;
     renderer.setRaysPerPixel(1);
-
-    std::vector<VoxelWorld> worlds;
-    worlds.push_back(voxelWorld);
-    // worlds.push_back(voxelWorld);
-
-    // worlds[1].position = glm::vec3(256, 0, 0);
 
     // Main render loop
     glm::vec3 cameraPosition(0);
@@ -253,13 +254,13 @@ void VoxelRendererProgram::run()
         {
             renderer.setResolution(window->size.x, window->size.y);
 
-            camera.position = cameraPosition;
+            camera.transform.position = cameraPosition;
             // worlds[0].rotation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
             // worlds[0].scale = glm::vec3(1, 1, 2);
-            camera.rotation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+            camera.transform.rotation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
 
             renderer.prepareRayTraceFromCamera(camera);
-            renderer.executeRayTrace(worlds);
+            renderer.executeRayTrace(scene.worlds);
             renderer.display();
         }
 
