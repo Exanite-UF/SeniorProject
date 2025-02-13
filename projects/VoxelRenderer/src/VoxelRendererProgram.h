@@ -4,6 +4,11 @@
 
 #include <GLFW/glfw3.h>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+#include <imgui/imgui_stdlib.h>
+
 #include <string>
 
 #include <src/input/InputManager.h>
@@ -26,6 +31,7 @@ public:
     bool isRand2 = true; // Noise type toggle
     float fillAmount = 0.6;
     bool remakeNoise = false;
+    ImVec2 ioDisplaySize = ImVec2(0, 0);
 
     double noiseTime = 0;
 

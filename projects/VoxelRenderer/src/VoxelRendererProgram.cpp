@@ -1,8 +1,3 @@
-#include <imgui/imgui.h>
-#include <imgui/imgui_impl_glfw.h>
-#include <imgui/imgui_impl_opengl3.h>
-#include <imgui/imgui_stdlib.h>
-
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -41,6 +36,7 @@ VoxelRendererProgram::VoxelRendererProgram()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    ioDisplaySize = ImVec2(io.DisplaySize.x * 2.0f, io.DisplaySize.y * 2.0f);
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
     ImGui_ImplGlfw_InitForOpenGL(window->glfwWindowHandle, true);
@@ -114,6 +110,8 @@ void VoxelRendererProgram::run()
 
     //IMGUI Menu
     bool showMenuGUI = false;
+    ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                                      ImGuiWindowFlags_NoCollapse |  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
         // Engine time
@@ -277,7 +275,10 @@ void VoxelRendererProgram::run()
             float f;
             if (showMenuGUI)
             {
-                ImGui::Begin("test", &showMenuGUI);
+                ImGuiIO& io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
+                ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f)); // Set Menu size to 40% of screen
+                ImGui::Begin("Menu", nullptr, guiWindowFlags);
                     ImGui::Text("Hello, world %d", 123);
                     if (ImGui::Button("Save"))
                         ;
