@@ -66,10 +66,6 @@ public:
 
     glm::ivec3 getSize() const; // TODO: implement
 
-    glm::vec3 getPosition() const;
-    glm::vec3 getScale() const;
-    glm::quat getRotation() const;
-
     int getMipMapTextureCount() const;
     std::array<GLuint, 10> getMipMapStartIndices() const;
     std::array<GLuint, 3> getMaterialStartIndices() const;

@@ -15,8 +15,6 @@ class Camera
 public:
     Transform transform;
 
-    glm::quat getRotation() const;
-    glm::vec3 getPosition() const;
     float getHorizontalFov() const;
 
     // TODO: Do we still want to use these?
