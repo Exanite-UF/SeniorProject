@@ -58,17 +58,17 @@ glm::ivec3 VoxelWorld::getSize() const
 
 glm::vec3 VoxelWorld::getPosition() const
 {
-    return position;
+    return transform.position;
 }
 
 glm::vec3 VoxelWorld::getScale() const
 {
-    return scale;
+    return transform.scale;
 }
 
 glm::quat VoxelWorld::getRotation() const
 {
-    return rotation;
+    return transform.rotation;
 }
 
 int VoxelWorld::getMipMapTextureCount() const
