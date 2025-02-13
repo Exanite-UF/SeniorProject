@@ -17,6 +17,7 @@ git submodule update --init --recursive
 - /external - Contains 3rd party libraries, usually as submodules
 - /projects - Contains 1st party projects
   - /VoxelRenderer - The main VoxelRenderer project
+    - /assets - Source assets that are yet to be exported.
     - /content - Assets ready to be used by the game. Copied into the build output folder by CMake.
     - /src - Source code
       - /graphics - General-purpose OpenGL abstractions and other utilities. See /rendering for the rendering code.
