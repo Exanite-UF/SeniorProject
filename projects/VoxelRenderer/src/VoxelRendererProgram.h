@@ -31,7 +31,6 @@ public:
     bool isRand2 = true; // Noise type toggle
     float fillAmount = 0.6;
     bool remakeNoise = false;
-    ImVec2 ioDisplaySize = ImVec2(0, 0);
 
     double noiseTime = 0;
 

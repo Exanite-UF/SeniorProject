@@ -36,7 +36,6 @@ VoxelRendererProgram::VoxelRendererProgram()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    ioDisplaySize = ImVec2(io.DisplaySize.x * 2.0f, io.DisplaySize.y * 2.0f);
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
     ImGui_ImplGlfw_InitForOpenGL(window->glfwWindowHandle, true);
@@ -107,6 +106,7 @@ void VoxelRendererProgram::run()
     // Fps counter
     int frameCounter = 0;
     double frameTime = 0;
+    float currentFPS = 0;
 
     //IMGUI Menu
     bool showMenuGUI = false;
@@ -123,9 +123,10 @@ void VoxelRendererProgram::run()
         // Fps counter
         frameCounter++;
         frameTime += deltaTime;
-        if (frameCounter % 10 == 0)
+        if (frameCounter % 100 == 0)
         {
-            log(std::to_string(10 / frameTime));
+            currentFPS = 100 / frameTime;
+            log(std::to_string(currentFPS));
             frameTime = 0;
         }
 
@@ -275,16 +276,32 @@ void VoxelRendererProgram::run()
             float f;
             if (showMenuGUI)
             {
+                ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGuiIO& io = ImGui::GetIO();
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
-                ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f)); // Set Menu size to 40% of screen
+                ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x * 0.4f, io.DisplaySize.y * 0.4f)); // Set Menu size to 40% of screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
-                    ImGui::Text("Hello, world %d", 123);
-                    if (ImGui::Button("Save"))
-                        ;
-                    ImGui::InputText("string", &str);
-                    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+                    ImGui::Text("Voxel Rendering Project\n");
+                    ImGui::Text("Controls:");
+                    ImGui::Text("\tW - Forward");
+                    ImGui::Text("\tS - Backward");
+                    ImGui::Text("\tA - Left");
+                    ImGui::Text("\tD - Right");
+                    ImGui::Text("\tEsc - Close Application");
+                    ImGui::Text("\tE - Iterate Noise Over Time");
+                    ImGui::Text("\tF - Toggle Fullscreen");
+                    ImGui::Text("\tQ - Toggle Mouse Input");
+                    ImGui::Text("\tT - Change Noise Type");
+                    ImGui::Text("\tMouse Scroll - Change Move Speed");
+                    ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
+                    ImGui::Text("\nFPS: %.2f", currentFPS);
+
+                    //if (ImGui::Button("Save"))
+                    //    ;
+                    //ImGui::InputText("string", &str);
+                    //ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
                 ImGui::End();
+                ImGui::PopStyleColor();
             }
         }
 
