@@ -295,6 +295,10 @@ void VoxelRendererProgram::run()
                     ImGui::Text("\tMouse Scroll - Change Move Speed");
                     ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
                     ImGui::Text("\nFPS: %.2f", currentFPS);
+                    ImGui::Text("\nCamera Position");
+                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+                    ImGui::Text("\nCamera Look Direction");
+                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
 
                     //if (ImGui::Button("Save"))
                     //    ;
