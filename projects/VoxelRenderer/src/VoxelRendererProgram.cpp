@@ -134,6 +134,7 @@ void VoxelRendererProgram::run()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update IMGUI
+        ImGuiIO& io = ImGui::GetIO();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -277,11 +278,11 @@ void VoxelRendererProgram::run()
             if (showMenuGUI)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
-                ImGuiIO& io = ImGui::GetIO();
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
-                ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x * 0.4f, io.DisplaySize.y * 0.4f)); // Set Menu size to 40% of screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
+                    ImGui::SetWindowFontScale(1.5f);
                     ImGui::Text("Voxel Rendering Project\n");
+                    ImGui::SetWindowFontScale(1.0f);
                     ImGui::Text("Controls:");
                     ImGui::Text("\tW - Forward");
                     ImGui::Text("\tS - Backward");
