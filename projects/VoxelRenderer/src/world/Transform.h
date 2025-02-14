@@ -7,8 +7,7 @@ struct Transform
 {
     // TODO: Not sure if we want these to be public or private
     glm::vec3 position = glm::vec3(0, 0, 0);
-    glm::quat rotation = glm::quat(1, 0, 0, 0); // TODO: Isn't the identity quaternion (0, 0, 0, 1). GLM has a built in function that returns this exact value
-    // glm::quat rotation = glm::identity<glm::quat>();
+    glm::quat rotation = glm::quat(1, 0, 0, 0);
     glm::vec3 scale = glm::vec3(1, 1, 1);
 
     [[nodiscard]] glm::vec3 getPosition() const;
