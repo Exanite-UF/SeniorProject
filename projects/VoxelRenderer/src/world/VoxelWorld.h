@@ -9,6 +9,7 @@
 
 #include <src/graphics/ShaderByteBuffer.h>
 #include <src/graphics/ShaderFloatBuffer.h>
+#include <src/world/Transform.h>
 
 class VoxelWorld
 {
@@ -50,9 +51,7 @@ private:
     void setSize(glm::ivec3 size);
 
 public:
-    glm::vec3 position = glm::vec3(0, 0, 0);
-    glm::vec3 scale = glm::vec3(1, 1, 1);
-    glm::quat rotation = glm::quat(1, 0, 0, 0);
+    Transform transform;
 
     // TODO: Consider having the width, height, and depth assigned by the constructor rather than hard coded.
     VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram); // Creates a voxel world
@@ -66,10 +65,6 @@ public:
     void unbindTextures() const;
 
     glm::ivec3 getSize() const; // TODO: implement
-
-    glm::vec3 getPosition() const;
-    glm::vec3 getScale() const;
-    glm::quat getRotation() const;
 
     int getMipMapTextureCount() const;
     std::array<GLuint, 10> getMipMapStartIndices() const;
