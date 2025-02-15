@@ -148,7 +148,6 @@ void VoxelWorld::setSize(glm::ivec3 size)
 {
     if (size.x < minSize.x || size.y < minSize.y || size.z < minSize.z)
     {
-        std::cout << "The minimum size of a voxel world along an axis is 32." << std::endl;
         throw std::runtime_error("The minimum size of a voxel world along an axis is 32.");
     }
 
