@@ -243,7 +243,7 @@ vec4 randomHemisphereDirectionGGX(vec3 normal, vec2 rand, float roughness) {
     // Now we can compute the final direction
     vec3 direction = cos(phi) * sinTheta * tangent + sin(phi) * sinTheta * bitangent + cosTheta * normal;
 
-    return vec4(direction, microfacetDistribution(dot(normalize(normal + direction), normal), roughness));
+    return vec4(direction, 1.0 / microfacetDistribution(dot(normalize(normal + direction), normal), roughness));
 }
 
 
@@ -347,12 +347,12 @@ void main()
     voxelMaterial.roughness = rmTexture.r;
     voxelMaterial.metallic = rmTexture.g;
 
-    vec3 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed) voxelMaterial.roughness);//Get the next direction to sample in
+    vec4 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed) voxelMaterial.roughness);//Get the next direction to sample in
 
     //Calculate the BRDF
 
-    //Usually we would divide by the sampling distribution, but in this case the sampling distribution is equal to the microfacet distribution that is used inside this function, so they end up cancelling out
-    vec3 brdfValue = brdf(normal, direction, nextDirection, voxelMaterial); // / microfacetDistribution(dot(normalize(view + list), normal), roughness);
+    //Usually we would divide by the sampling distribution (I already calculated the reciprocal), but in this case the sampling distribution is equal to the microfacet distribution that is used inside this function, so they end up cancelling out
+    vec3 brdfValue = brdf(normal, direction, nextDirection, voxelMaterial); // * nextDirection.w;//nextDirection.w store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
 
 
     //Light falloff is a consequence of the integral in the rendering equation.
