@@ -16,7 +16,7 @@
 // t = change between types of noise
 // scroll = change move speed
 // CTRL + scroll = change noise fill
-class VoxelRendererProgram
+class Program
 {
 public:
     std::shared_ptr<Window> window;
@@ -34,11 +34,11 @@ public:
     GLuint makeMipMapComputeProgram;
     GLuint assignMaterialComputeProgram;
 
-    VoxelRendererProgram();
-    VoxelRendererProgram(const VoxelRendererProgram&) = delete;
-    VoxelRendererProgram& operator=(const VoxelRendererProgram&) = delete;
+    Program();
+    Program(const Program&) = delete;
+    Program& operator=(const Program&) = delete;
 
-    ~VoxelRendererProgram();
+    ~Program();
 
     void run();
 

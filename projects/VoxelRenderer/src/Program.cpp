@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 
-#include <src/VoxelRendererProgram.h>
+#include <src/Program.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/BufferedEvent.h>
@@ -17,13 +17,13 @@
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 
-void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     std::string messageStr(message, length);
     log(messageStr);
 }
 
-VoxelRendererProgram::VoxelRendererProgram()
+Program::Program()
 {
     // Ensure preconditions are met
     runEarlyStartupTests();
@@ -55,10 +55,10 @@ VoxelRendererProgram::VoxelRendererProgram()
     }
 
     // Attach debug message callback
-    glDebugMessageCallback(VoxelRendererProgram::onOpenGlDebugMessage, this);
+    glDebugMessageCallback(Program::onOpenGlDebugMessage, this);
 }
 
-VoxelRendererProgram::~VoxelRendererProgram()
+Program::~Program()
 {
     // Shutdown IMGUI
     ImGui_ImplOpenGL3_Shutdown();
@@ -69,7 +69,7 @@ VoxelRendererProgram::~VoxelRendererProgram()
     glfwTerminate();
 }
 
-void VoxelRendererProgram::run()
+void Program::run()
 {
     // Ensure preconditions are met
     runLateStartupTests();
@@ -281,13 +281,13 @@ void VoxelRendererProgram::run()
     }
 }
 
-void VoxelRendererProgram::log(const std::string& value)
+void Program::log(const std::string& value)
 {
     std::cout << value + "\n"
               << std::flush;
 }
 
-void VoxelRendererProgram::checkForContentFolder()
+void Program::checkForContentFolder()
 {
     if (!std::filesystem::is_directory("content"))
     {
@@ -297,7 +297,7 @@ void VoxelRendererProgram::checkForContentFolder()
     log("Found content folder");
 }
 
-void VoxelRendererProgram::assertIsTrue(const bool condition, const std::string& errorMessage)
+void Program::assertIsTrue(const bool condition, const std::string& errorMessage)
 {
     if (!condition)
     {
@@ -305,7 +305,7 @@ void VoxelRendererProgram::assertIsTrue(const bool condition, const std::string&
     }
 }
 
-void VoxelRendererProgram::runEarlyStartupTests()
+void Program::runEarlyStartupTests()
 {
     log("Running early startup tests (in constructor)");
 
@@ -383,7 +383,7 @@ void VoxelRendererProgram::runEarlyStartupTests()
     }
 }
 
-void VoxelRendererProgram::runLateStartupTests()
+void Program::runLateStartupTests()
 {
     log("Running late startup tests (in run())");
 

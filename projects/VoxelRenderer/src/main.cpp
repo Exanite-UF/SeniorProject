@@ -3,11 +3,11 @@
 
 #include <GLFW/glfw3.h>
 
-#include <src/VoxelRendererProgram.h>
+#include <src/Program.h>
 
 int main()
 {
-    VoxelRendererProgram program;
+    Program program;
     program.run();
 
     return 0;
