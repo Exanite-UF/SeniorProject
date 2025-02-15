@@ -28,8 +28,6 @@ private:
     void generateOccupancyUsingNoise(GraphicsBuffer<uint8_t>& occupancyMap, double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
 
     GLuint makeMipMapComputeProgram = 0;
-    void updateMipMaps(GraphicsBuffer<uint8_t>& occupancyMap); // This runs the make mip map shader
-
     GLuint assignMaterialComputeProgram = 0; // TODO: Consider moving assignMaterial to a world generator class
     void assignMaterial(GraphicsBuffer<uint8_t>& materialMap, int level); // This runs the assign material shader
 
@@ -49,6 +47,8 @@ public:
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getMaterialMap();
     [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> getMaterialStartIndices() const;
+
+    void updateMipMaps(); // This runs the make mip map shader
 
     // isRand2 = Noise type toggle
     // TODO: Yes, this is a really long name. No, I do not like it, but I'm not sure what else to call it.
