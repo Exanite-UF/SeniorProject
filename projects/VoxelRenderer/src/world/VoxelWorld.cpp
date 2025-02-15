@@ -46,6 +46,11 @@ glm::ivec3 VoxelWorld::getSize() const
     return size;
 }
 
+const GraphicsBuffer<uint8_t>& VoxelWorld::getOccupancyMap()
+{
+    return occupancyMap;
+}
+
 int VoxelWorld::getMipMapTextureCount() const
 {
     return mipMapTextureCount;
@@ -55,6 +60,11 @@ std::array<GLuint, 10> VoxelWorld::getMipMapStartIndices() const
 {
 
     return mipMapStartIndices;
+}
+
+const GraphicsBuffer<uint8_t>& VoxelWorld::getMaterialMap()
+{
+    return materialMap;
 }
 
 std::array<GLuint, 3> VoxelWorld::getMaterialStartIndices() const

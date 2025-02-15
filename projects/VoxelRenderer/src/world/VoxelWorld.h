@@ -44,6 +44,15 @@ public:
     // Creates a voxel world
     VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram);
 
+    [[nodiscard]] glm::ivec3 getSize() const;
+
+    [[nodiscard]] const GraphicsBuffer<uint8_t>& getOccupancyMap();
+    [[nodiscard]] int getMipMapTextureCount() const;
+    [[nodiscard]] std::array<GLuint, 10> getMipMapStartIndices() const;
+
+    [[nodiscard]] const GraphicsBuffer<uint8_t>& getMaterialMap();
+    [[nodiscard]] std::array<GLuint, 3> getMaterialStartIndices() const;
+
     // isRand2 = Noise type toggle
     // TODO: Yes, this is a really long name. No, I do not like it, but I'm not sure what else to call it.
     void generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount);
@@ -51,10 +60,4 @@ public:
     // generateFromNoise also needs to bind textures. So calling this and then generateOccupancyAndMipMapsAndMaterials will result in some of the textures that this functions binds being unbound
     void bindBuffers(int occupancyMapIndex = 0, int materialMapIndex = 1);
     void unbindBuffers() const;
-
-    [[nodiscard]] glm::ivec3 getSize() const;
-
-    [[nodiscard]] int getMipMapTextureCount() const;
-    [[nodiscard]] std::array<GLuint, 10> getMipMapStartIndices() const;
-    [[nodiscard]] std::array<GLuint, 3> getMaterialStartIndices() const;
 };
