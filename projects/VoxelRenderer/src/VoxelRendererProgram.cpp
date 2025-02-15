@@ -108,10 +108,9 @@ void VoxelRendererProgram::run()
     double frameTime = 0;
     float currentFPS = 0;
 
-    //IMGUI Menu
+    // IMGUI Menu
     bool showMenuGUI = false;
-    ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                                      ImGuiWindowFlags_NoCollapse |  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
         // Engine time
@@ -280,32 +279,32 @@ void VoxelRendererProgram::run()
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
-                    ImGui::SetWindowFontScale(1.5f);
-                    ImGui::Text("Voxel Rendering Project\n");
-                    ImGui::SetWindowFontScale(1.0f);
-                    ImGui::Text("Controls:");
-                    ImGui::Text("\tW - Forward");
-                    ImGui::Text("\tS - Backward");
-                    ImGui::Text("\tA - Left");
-                    ImGui::Text("\tD - Right");
-                    ImGui::Text("\tEsc - Close Application");
-                    ImGui::Text("\tE - Iterate Noise Over Time");
-                    ImGui::Text("\tF - Toggle Fullscreen");
-                    ImGui::Text("\tQ - Toggle Mouse Input");
-                    ImGui::Text("\tT - Change Noise Type");
-                    ImGui::Text("\tMouse Scroll - Change Move Speed");
-                    ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
-                    ImGui::Text("\nCamera Position");
-                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-                    ImGui::Text("\nCamera Look Direction");
-                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
-                    ImGui::Text("\nFPS: %.2f", currentFPS);
-                    ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
+                ImGui::SetWindowFontScale(1.5f);
+                ImGui::Text("Voxel Rendering Project\n");
+                ImGui::SetWindowFontScale(1.0f);
+                ImGui::Text("Controls:");
+                ImGui::Text("\tW - Forward");
+                ImGui::Text("\tS - Backward");
+                ImGui::Text("\tA - Left");
+                ImGui::Text("\tD - Right");
+                ImGui::Text("\tEsc - Close Application");
+                ImGui::Text("\tE - Iterate Noise Over Time");
+                ImGui::Text("\tF - Toggle Fullscreen");
+                ImGui::Text("\tQ - Toggle Mouse Input");
+                ImGui::Text("\tT - Change Noise Type");
+                ImGui::Text("\tMouse Scroll - Change Move Speed");
+                ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
+                ImGui::Text("\nCamera Position");
+                ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+                ImGui::Text("\nCamera Look Direction");
+                ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
+                ImGui::Text("\nFPS: %.2f", currentFPS);
+                ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
 
-                    //if (ImGui::Button("Save"))
-                    //    ;
-                    //ImGui::InputText("string", &str);
-                    //ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+                // if (ImGui::Button("Save"))
+                //     ;
+                // ImGui::InputText("string", &str);
+                // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
