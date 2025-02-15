@@ -1,16 +1,34 @@
 #include "Transform.h"
 
-glm::vec3 Transform::getPosition() const
+const glm::vec3& Transform::getLocalPosition() const
 {
     return position;
 }
 
-glm::quat Transform::getRotation() const
+const glm::quat& Transform::getLocalRotation() const
 {
     return rotation;
 }
 
-glm::vec3 Transform::getScale() const
+const glm::vec3& Transform::getLocalScale() const
+{
+    return scale;
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+glm::vec3 Transform::getGlobalPosition() const
+{
+    return position;
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+glm::quat Transform::getGlobalRotation() const
+{
+    return rotation;
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+glm::vec3 Transform::getGlobalScale() const
 {
     return scale;
 }
@@ -46,6 +64,48 @@ void Transform::setLocalScale(const glm::vec3& value)
 }
 
 void Transform::multiplyLocalScale(const glm::vec3& value)
+{
+    scale *= value;
+    // TODO: Propagate transform changes to children or mark self as dirty
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+void Transform::setGlobalPosition(const glm::vec3& value)
+{
+    position = value;
+    // TODO: Propagate transform changes to children or mark self as dirty
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+void Transform::addGlobalPosition(const glm::vec3& value)
+{
+    position += value;
+    // TODO: Propagate transform changes to children or mark self as dirty
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+void Transform::setGlobalRotation(const glm::quat& value)
+{
+    rotation = value;
+    // TODO: Propagate transform changes to children or mark self as dirty
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+void Transform::addGlobalRotation(const glm::quat& value)
+{
+    rotation = value * rotation;
+    // TODO: Propagate transform changes to children or mark self as dirty
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+void Transform::setGlobalScale(const glm::vec3& value)
+{
+    scale = value;
+    // TODO: Propagate transform changes to children or mark self as dirty
+}
+
+// TODO: This currently does the same as the local version. Needs a proper implementation.
+void Transform::multiplyGlobalScale(const glm::vec3& value)
 {
     scale *= value;
     // TODO: Propagate transform changes to children or mark self as dirty
