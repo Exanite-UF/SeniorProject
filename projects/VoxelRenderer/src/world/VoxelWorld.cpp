@@ -1,4 +1,3 @@
-#include <chrono>
 #include <iostream>
 
 #include <src/graphics/GraphicsUtility.h>
@@ -12,43 +11,34 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
 
     this->currentNoiseTime = 0;
 
-    // Make and fill the buffers
+    // Initialize world size and contents
     setSize({ 512, 512, 512 });
-    // this->occupancyMap = GraphicsUtils::create3DImage(width / 2, height / 2, depth / 2, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    // this->mipMap1 = GraphicsUtils::create3DImage(width / 8, height / 8, depth / 8, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    // this->mipMap2 = GraphicsUtils::create3DImage(width / 32, height / 32, depth / 32, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    // this->mipMap3 = GraphicsUtils::create3DImage(width / 128, height / 128, depth / 128, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-    // this->mipMap4 = GraphicsUtils::create3DImage(width / 512, height / 512, depth / 512, GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE);
-
-    generateFromNoise(0, true, 0.6);
-
-    // assignMaterial(occupancyMap);
-    // assignMaterial(mipMap1);
-    // assignMaterial(mipMap2);
+    generateOccupancyAndMipMapsAndMaterials(0, true, 0.6);
 }
 
-void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmount) // bool isRand2, float fillAmount
+void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount)
 {
-    this->currentNoiseTime += deltaTime;
-
-    makeNoise(occupancyMap, currentNoiseTime, true, 0.6);
-    makeMipMaps(occupancyMap);
+    generateOccupancyUsingNoise(occupancyMap, currentNoiseTime, true, 0.6);
+    updateMipMaps(occupancyMap);
 
     assignMaterial(materialMap, 0);
     assignMaterial(materialMap, 1);
     assignMaterial(materialMap, 2);
+
+    // Updating noise after generating makes the initial generation independent to framerate
+    this->currentNoiseTime += deltaTime;
 }
 
-void VoxelWorld::bindTextures(int occupancyMap, int materialMap)
+void VoxelWorld::bindBuffers(int occupancyMapIndex, int materialMapIndex)
 {
-    this->occupancyMap.bind(occupancyMap);
-    this->materialMap.bind(materialMap);
+    occupancyMap.bind(occupancyMapIndex);
+    materialMap.bind(materialMapIndex);
 }
 
-void VoxelWorld::unbindTextures() const
+void VoxelWorld::unbindBuffers() const
 {
-    this->occupancyMap.unbind();
-    this->materialMap.unbind();
+    occupancyMap.unbind();
+    materialMap.unbind();
 }
 
 glm::ivec3 VoxelWorld::getSize() const
@@ -72,7 +62,7 @@ std::array<GLuint, 3> VoxelWorld::getMaterialStartIndices() const
     return materialStartIndices;
 }
 
-void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateOccupancyUsingNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
 {
     glUseProgram(makeNoiseComputeProgram);
 
@@ -99,7 +89,7 @@ void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, boo
     glUseProgram(0);
 }
 
-void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
+void VoxelWorld::updateMipMaps(ShaderByteBuffer& occupancyMap)
 {
     glUseProgram(makeMipMapComputeProgram);
 
@@ -136,7 +126,7 @@ void VoxelWorld::assignMaterial(ShaderByteBuffer& materialMap, int level)
 
     this->materialMap.bind(0);
 
-    int sizeX = this->size.x / 2 / (1 << (2 * level)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
+    int sizeX = this->size.x / 2 / (1 << (2 * level)); // TODO: Is this correct? -> This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
     int sizeY = this->size.y / 2 / (1 << (2 * level));
     int sizeZ = this->size.z / 2 / (1 << (2 * level));
 
@@ -159,7 +149,7 @@ void VoxelWorld::setSize(glm::ivec3 size)
     if (size.x < minSize.x || size.y < minSize.y || size.z < minSize.z)
     {
         std::cout << "The minimum size of a voxel world along an axis is 32." << std::endl;
-        throw "The minimum size of a voxel world along an axis is 32."; // TODO: Throw something better
+        throw std::runtime_error("The minimum size of a voxel world along an axis is 32.");
     }
 
     this->size = size;

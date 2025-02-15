@@ -234,7 +234,7 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 
         for (auto& voxelWorld : worlds)
         {
-            voxelWorld.bindTextures(2, 3);
+            voxelWorld.bindBuffers(2, 3);
             {
                 glm::ivec3 voxelSize = voxelWorld.getSize();
                 // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
@@ -253,7 +253,7 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
             }
-            voxelWorld.unbindTextures();
+            voxelWorld.unbindBuffers();
         }
     }
 

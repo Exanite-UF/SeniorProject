@@ -189,13 +189,13 @@ void VoxelRendererProgram::run()
 
         if (input->isKeyHeld(GLFW_KEY_E))
         {
-            voxelWorld.generateFromNoise(deltaTime, isRand2, fillAmount);
+            voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
         }
 
         if (remakeNoise)
         {
             // The noise time should not be incremented here
-            voxelWorld.generateFromNoise(0, isRand2, fillAmount);
+            voxelWorld.generateOccupancyAndMipMapsAndMaterials(0, isRand2, fillAmount);
             remakeNoise = false;
         }
 
