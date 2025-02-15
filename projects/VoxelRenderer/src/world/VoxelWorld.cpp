@@ -56,7 +56,7 @@ int VoxelWorld::getMipMapTextureCount() const
     return mipMapTextureCount;
 }
 
-std::array<GLuint, 10> VoxelWorld::getMipMapStartIndices() const
+std::array<GLuint, Constants::VoxelWorld::maxOccupancyMapLayerCount> VoxelWorld::getMipMapStartIndices() const
 {
 
     return mipMapStartIndices;
@@ -67,7 +67,7 @@ const GraphicsBuffer<uint8_t>& VoxelWorld::getMaterialMap()
     return materialMap;
 }
 
-std::array<GLuint, 3> VoxelWorld::getMaterialStartIndices() const
+std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> VoxelWorld::getMaterialStartIndices() const
 {
     return materialStartIndices;
 }
@@ -156,6 +156,7 @@ void VoxelWorld::assignMaterial(GraphicsBuffer<uint8_t>& materialMap, int level)
 
 void VoxelWorld::setSize(glm::ivec3 size)
 {
+    constexpr auto minSize = Constants::VoxelWorld::minSize;
     if (size.x < minSize.x || size.y < minSize.y || size.z < minSize.z)
     {
         throw std::runtime_error("The minimum size of a voxel world along an axis is 32.");
@@ -166,10 +167,11 @@ void VoxelWorld::setSize(glm::ivec3 size)
     mipMapTextureCount = std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 4 /*This is a 4 and not a 2, because the mip map generation will break if the top level mip map has side length 1. This prevents that from occuring.*/) / 2); // This is what the name says it is
 
     // No more than 9 mip maps can be made from the occupancy map
-    if (mipMapTextureCount > 9)
+    if (mipMapTextureCount > Constants::VoxelWorld::maxOccupancyMapLayerCount - 1)
     {
-        mipMapTextureCount = 9;
+        mipMapTextureCount = Constants::VoxelWorld::maxOccupancyMapLayerCount - 1;
     }
+
     // This should be the exact number of bytes that the occupancy map and all its mip maps take up
     std::uint64_t bytesOfOccupancyMap = 0;
     for (int i = 0; i <= mipMapTextureCount; i++)
