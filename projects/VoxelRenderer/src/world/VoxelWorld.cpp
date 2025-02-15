@@ -13,31 +13,32 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
 
     // Initialize world size and contents
     setSize({ 512, 512, 512 });
-    generateFromNoise(0, true, 0.6);
+    generateOccupancyAndMipMapsAndMaterials(0, true, 0.6);
 }
 
-void VoxelWorld::generateFromNoise(double deltaTime, bool isRand2, float fillAmount) // bool isRand2, float fillAmount
+void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount)
 {
-    this->currentNoiseTime += deltaTime;
-
-    makeNoise(occupancyMap, currentNoiseTime, true, 0.6);
-    makeMipMaps(occupancyMap);
+    generateOccupancyUsingNoise(occupancyMap, currentNoiseTime, true, 0.6);
+    updateMipMaps(occupancyMap);
 
     assignMaterial(materialMap, 0);
     assignMaterial(materialMap, 1);
     assignMaterial(materialMap, 2);
+
+    // Updating noise after generating makes the initial generation independent to framerate
+    this->currentNoiseTime += deltaTime;
 }
 
-void VoxelWorld::bindBuffers(int occupancyMap, int materialMap)
+void VoxelWorld::bindBuffers(int occupancyMapIndex, int materialMapIndex)
 {
-    this->occupancyMap.bind(occupancyMap);
-    this->materialMap.bind(materialMap);
+    occupancyMap.bind(occupancyMapIndex);
+    materialMap.bind(materialMapIndex);
 }
 
 void VoxelWorld::unbindBuffers() const
 {
-    this->occupancyMap.unbind();
-    this->materialMap.unbind();
+    occupancyMap.unbind();
+    materialMap.unbind();
 }
 
 glm::ivec3 VoxelWorld::getSize() const
@@ -61,7 +62,7 @@ std::array<GLuint, 3> VoxelWorld::getMaterialStartIndices() const
     return materialStartIndices;
 }
 
-void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateOccupancyUsingNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
 {
     glUseProgram(makeNoiseComputeProgram);
 
@@ -88,7 +89,7 @@ void VoxelWorld::makeNoise(ShaderByteBuffer& occupancyMap, double noiseTime, boo
     glUseProgram(0);
 }
 
-void VoxelWorld::makeMipMaps(ShaderByteBuffer& occupancyMap)
+void VoxelWorld::updateMipMaps(ShaderByteBuffer& occupancyMap)
 {
     glUseProgram(makeMipMapComputeProgram);
 
