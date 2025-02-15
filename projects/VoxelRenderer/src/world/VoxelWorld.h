@@ -17,8 +17,7 @@ private:
     glm::ivec3 size; // Size of the voxel world in voxels
 
     GraphicsBuffer<uint8_t> occupancyMap;
-    int mipMapTextureCount;
-    std::array<GLuint, Constants::VoxelWorld::maxOccupancyMapLayerCount> mipMapStartIndices; // There can only be 10 mip map textures. This gives 20 mip map levels
+    std::vector<GLuint> occupancyStartIndices; // The max size of this vector is defined by Constants::VoxelWorld::maxOccupancyMapLayerCount
 
     GraphicsBuffer<uint8_t> materialMap; // This store the material data
     std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> materialStartIndices; // There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
@@ -46,8 +45,7 @@ public:
     [[nodiscard]] glm::ivec3 getSize() const;
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getOccupancyMap();
-    [[nodiscard]] int getMipMapTextureCount() const;
-    [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::maxOccupancyMapLayerCount> getMipMapStartIndices() const;
+    [[nodiscard]] std::vector<GLuint> getOccupancyStartIndices() const;
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getMaterialMap();
     [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> getMaterialStartIndices() const;
