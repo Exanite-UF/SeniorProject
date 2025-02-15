@@ -46,8 +46,6 @@ private:
     void makeMipMaps(ShaderByteBuffer& occupancyMap); // This runs the make mip map shader
     void assignMaterial(ShaderByteBuffer& materialMap, int level); // This runs the assign material shader
 
-    glm::ivec3 getTextureSize() const; // TODO: implement
-
     void setSize(glm::ivec3 size);
 
 public:
@@ -61,12 +59,12 @@ public:
 
     // TODO: Consider renaming
     // generateFromNoise also needs to bind textures. So calling this and then generateFromNoise will result in some of the textures that this functions binds being unbound
-    void bindTextures(int occupancyMap = 0, int materialMap = 1);
-    void unbindTextures() const;
+    void bindBuffers(int occupancyMap = 0, int materialMap = 1);
+    void unbindBuffers() const;
 
-    glm::ivec3 getSize() const; // TODO: implement
+    [[nodiscard]] glm::ivec3 getSize() const;
 
-    int getMipMapTextureCount() const;
-    std::array<GLuint, 10> getMipMapStartIndices() const;
-    std::array<GLuint, 3> getMaterialStartIndices() const;
+    [[nodiscard]] int getMipMapTextureCount() const;
+    [[nodiscard]] std::array<GLuint, 10> getMipMapStartIndices() const;
+    [[nodiscard]] std::array<GLuint, 3> getMaterialStartIndices() const;
 };
