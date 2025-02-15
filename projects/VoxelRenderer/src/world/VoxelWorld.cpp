@@ -18,12 +18,12 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
 
 void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount)
 {
-    generateOccupancyUsingNoise(occupancyMap, currentNoiseTime, true, 0.6);
-    updateMipMaps(occupancyMap);
+    generateOccupancyUsingNoise(currentNoiseTime, true, 0.6);
+    updateMipMaps();
 
-    assignMaterial(materialMap, 0);
-    assignMaterial(materialMap, 1);
-    assignMaterial(materialMap, 2);
+    assignMaterial(0);
+    assignMaterial(1);
+    assignMaterial(2);
 
     // Updating noise after generating makes the initial generation independent to framerate
     this->currentNoiseTime += deltaTime;
@@ -66,7 +66,7 @@ std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> VoxelWorld::get
     return materialStartIndices;
 }
 
-void VoxelWorld::generateOccupancyUsingNoise(GraphicsBuffer<uint8_t>& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateOccupancyUsingNoise(double noiseTime, bool isRand2, float fillAmount)
 {
     glUseProgram(makeNoiseComputeProgram);
 
@@ -93,7 +93,7 @@ void VoxelWorld::generateOccupancyUsingNoise(GraphicsBuffer<uint8_t>& occupancyM
     glUseProgram(0);
 }
 
-void VoxelWorld::updateMipMaps(GraphicsBuffer<uint8_t>& occupancyMap)
+void VoxelWorld::updateMipMaps()
 {
     glUseProgram(makeMipMapComputeProgram);
 
@@ -124,7 +124,7 @@ void VoxelWorld::updateMipMaps(GraphicsBuffer<uint8_t>& occupancyMap)
     glUseProgram(0);
 }
 
-void VoxelWorld::assignMaterial(GraphicsBuffer<uint8_t>& materialMap, int level)
+void VoxelWorld::assignMaterial(int level)
 {
     glUseProgram(assignMaterialComputeProgram);
 

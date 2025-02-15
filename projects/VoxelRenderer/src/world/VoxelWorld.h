@@ -24,12 +24,11 @@ private:
 
     double currentNoiseTime = 0; // This variable is used to determine the "seed" used by the random functions in the make noise shader
     GLuint makeNoiseComputeProgram = 0; // TODO: Consider moving makeNoise to a world generator class
-
-    void generateOccupancyUsingNoise(GraphicsBuffer<uint8_t>& occupancyMap, double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
-
     GLuint makeMipMapComputeProgram = 0;
     GLuint assignMaterialComputeProgram = 0; // TODO: Consider moving assignMaterial to a world generator class
-    void assignMaterial(GraphicsBuffer<uint8_t>& materialMap, int level); // This runs the assign material shader
+
+    void generateOccupancyUsingNoise(double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
+    void assignMaterial(int level); // This runs the assign material shader
 
     void setSize(glm::ivec3 size);
 
