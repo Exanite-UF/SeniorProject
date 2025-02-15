@@ -21,7 +21,7 @@ private:
 
     // Loads and compiles a shader file into a shader module
     // Output is cached
-    GLuint getShaderModule(const std::string& shaderPath, GLenum shaderType);
+    GLuint getShaderModule(const std::string_view& shaderPath, GLenum shaderType);
 
     static ShaderManager* instance;
     ShaderManager();
@@ -34,11 +34,11 @@ public:
 
     // Loads, compiles, and links vertex and fragment shaders into a graphics program
     // Output is cached
-    GLuint getGraphicsProgram(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+    GLuint getGraphicsProgram(const std::string_view& vertexShaderPath, const std::string_view& fragmentShaderPath);
 
     // Loads, compiles, and links a compute shader into a compute program
     // Output is cached
-    GLuint getComputeProgram(const std::string& computeShaderPath);
+    GLuint getComputeProgram(const std::string_view& computeShaderPath);
 
     static ShaderManager& getManager();
 };
