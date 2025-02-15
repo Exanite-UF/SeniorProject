@@ -62,7 +62,7 @@ std::array<GLuint, 3> VoxelWorld::getMaterialStartIndices() const
     return materialStartIndices;
 }
 
-void VoxelWorld::generateOccupancyUsingNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateOccupancyUsingNoise(GraphicsBuffer<uint8_t>& occupancyMap, double noiseTime, bool isRand2, float fillAmount)
 {
     glUseProgram(makeNoiseComputeProgram);
 
@@ -89,7 +89,7 @@ void VoxelWorld::generateOccupancyUsingNoise(ShaderByteBuffer& occupancyMap, dou
     glUseProgram(0);
 }
 
-void VoxelWorld::updateMipMaps(ShaderByteBuffer& occupancyMap)
+void VoxelWorld::updateMipMaps(GraphicsBuffer<uint8_t>& occupancyMap)
 {
     glUseProgram(makeMipMapComputeProgram);
 
@@ -120,7 +120,7 @@ void VoxelWorld::updateMipMaps(ShaderByteBuffer& occupancyMap)
     glUseProgram(0);
 }
 
-void VoxelWorld::assignMaterial(ShaderByteBuffer& materialMap, int level)
+void VoxelWorld::assignMaterial(GraphicsBuffer<uint8_t>& materialMap, int level)
 {
     glUseProgram(assignMaterialComputeProgram);
 
@@ -170,7 +170,7 @@ void VoxelWorld::setSize(glm::ivec3 size)
         bytesOfOccupancyMap += size.x * size.y * size.z / 8 / divisor;
     }
 
-    this->occupancyMap.setSize(bytesOfOccupancyMap);
+    this->occupancyMap.resize(bytesOfOccupancyMap);
 
     std::uint64_t bytesOfMaterialMap = 0;
     for (int i = 0; i < 3; i++)
@@ -181,5 +181,5 @@ void VoxelWorld::setSize(glm::ivec3 size)
         bytesOfMaterialMap += 4 * size.x * size.y * size.z / 8 / divisor;
     }
 
-    this->materialMap.setSize(bytesOfMaterialMap);
+    this->materialMap.resize(bytesOfMaterialMap);
 }

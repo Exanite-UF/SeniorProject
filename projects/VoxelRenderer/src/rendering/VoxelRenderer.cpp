@@ -36,8 +36,8 @@ void VoxelRenderer::remakeTextures()
     glDeleteTextures(1, &rayHitMaterialBuffer);
 
     // Create a new texture
-    rayStartBuffer.setSize(xSize * ySize * raysPerPixel * 3);
-    rayDirectionBuffer.setSize(xSize * ySize * raysPerPixel * 3);
+    rayStartBuffer.resize(xSize * ySize * raysPerPixel * 3);
+    rayDirectionBuffer.resize(xSize * ySize * raysPerPixel * 3);
 
     // rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     // rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);

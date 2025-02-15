@@ -7,8 +7,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>
 
-#include <src/graphics/ShaderByteBuffer.h>
-#include <src/graphics/ShaderFloatBuffer.h>
+#include <src/graphics/GraphicsBuffer.h>
 #include <src/world/Transform.h>
 
 class VoxelWorld
@@ -18,23 +17,23 @@ private:
 
     glm::ivec3 size; // Size of the voxel world in voxels
 
-    ShaderByteBuffer occupancyMap;
+    GraphicsBuffer<uint8_t> occupancyMap;
     int mipMapTextureCount;
     std::array<GLuint, 10> mipMapStartIndices; // There can only be 10 mip map textures. This gives 20 mip map levels
 
-    ShaderByteBuffer materialMap; // This store the material data
+    GraphicsBuffer<uint8_t> materialMap; // This store the material data
     std::array<GLuint, 3> materialStartIndices; // There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
 
     double currentNoiseTime = 0; // This variable is used to determine the "seed" used by the random functions in the make noise shader
     GLuint makeNoiseComputeProgram = 0; // TODO: Consider moving makeNoise to a world generator class
 
-    void generateOccupancyUsingNoise(ShaderByteBuffer& occupancyMap, double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
+    void generateOccupancyUsingNoise(GraphicsBuffer<uint8_t>& occupancyMap, double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
 
     GLuint makeMipMapComputeProgram = 0;
-    void updateMipMaps(ShaderByteBuffer& occupancyMap); // This runs the make mip map shader
+    void updateMipMaps(GraphicsBuffer<uint8_t>& occupancyMap); // This runs the make mip map shader
 
     GLuint assignMaterialComputeProgram = 0; // TODO: Consider moving assignMaterial to a world generator class
-    void assignMaterial(ShaderByteBuffer& materialMap, int level); // This runs the assign material shader
+    void assignMaterial(GraphicsBuffer<uint8_t>& materialMap, int level); // This runs the assign material shader
 
     void setSize(glm::ivec3 size);
 
