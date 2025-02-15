@@ -270,12 +270,14 @@ float geometricBlocking(float dotOfViewAndNormal, float dotOfLightAndNormal, flo
 //light is the direction we are going
 //These names come from standard terminology for the subject
 vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial){
-    vec3 halfway = normalize(incoming + outgoing);//This is used by several things
+    vec3 halfway = normalize(view + list);//This is used by several things
 
     vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo;//This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
 
 
-    float microfacetComponent = microfacetDistribution(dot(halfway, normal), roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+    //Since the microfacet distribution is equal to the sampling distribution, this factors cancels out with the division by the sampling distribution
+    //GGX has a specific sampling distribution to use, and it is equal to the microfacet distribution
+    float microfacetComponent = 1;//microfacetDistribution(dot(halfway, normal), roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
 
     vec3 fresnelComponent = fresnel(dot(view, halfway), baseReflectivity);//This component simulates the fresnel effect (only metallic materials have this)
 
@@ -347,8 +349,12 @@ void main()
 
     vec3 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed) voxelMaterial.roughness);//Get the next direction to sample in
 
-    //Calculat the BRDF
-    vec3 brdfValue = brdf(normal, direction, nextDirection, voxelMaterial);
+    //Calculate the BRDF
+
+    //Usually we would divide by the sampling distribution, but in this case the sampling distribution is equal to the microfacet distribution that is used inside this function, so they end up cancelling out
+    vec3 brdfValue = brdf(normal, direction, nextDirection, voxelMaterial); // / microfacetDistribution(dot(normalize(view + list), normal), roughness);
+
+
     //Light falloff is a consequence of the integral in the rendering equation.
     //Point sources of light don't exist.
     //They would have infinite radiance since their solid angle is 0. Any amount of light coming from 0 steradians and 0 projected area, will be infinite.
