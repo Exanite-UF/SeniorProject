@@ -27,9 +27,28 @@ layout(std430, binding = 2) buffer HitMaterial
     uint hitMaterial[];
 };
 
-layout(std430, binding = 3) buffer PriorAttenuation
+layout(std430, binding = 3) buffer HitVoxelPosition
 {
-    uint priorAttenuation[];
+    float hitVoxelPosition[];
+};
+
+layout(std430, binding = 4) buffer PriorAttenuation
+{
+    float priorAttenuation[];
+};
+
+layout(std430, binding = 5) buffer RayPosition
+{
+    float rayPosition[];
+};
+layout(std430, binding = 6) buffer RayDirection
+{
+    float rayDirection[];
+};
+
+layout(std430, binding = 7) buffer AccumulatedLight
+{
+    float accumulatedLight[];
 };
 
 //At the moment every material is fully defined using a texture
@@ -57,9 +76,95 @@ uniform RMTextures
   sampler2D rmTextures[512];
 };
 
+uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+
 uniform uint materialMap[4096];//This maps from the material index from the ray cast to the index of an actual material
 uniform vec2 sizes[512];//The scaling of each material tells us how large a pixel is in terms of voxels (0.5 means that two pixels have then same length as 1 voxel)
 uniform float random;//This is used to make non-deterministic randomness
+
+
+
+//Buffer access and set
+
+vec4 getHitPosition(ivec3 coord){
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+
+    return hitPosition[index];
+}
+
+vec4 getHitNormal(ivec3 coord){
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+
+    return hitNormal[index];
+}
+
+uint getHitMaterial(ivec3 coord){
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+
+    return hitMaterial[index];
+}
+
+vec3 getHitVoxelPosition(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y 
+    
+    return vec3(hitVoxelPosition[0 + index], hitVoxelPosition[1 + index], hitVoxelPosition[2 + index]);
+}
+
+
+vec3 getPriorAttenuation(ivec3 coord){
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
+
+    return vec3(priorAttenuation[index + 0], priorAttenuation[index + 1], priorAttenuation[index + 2]);
+}
+
+vec3 getDirection(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y 
+    
+    return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
+}
+
+
+
+vec3 setAttenuation(ivec3 coord, vec3 value){
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
+
+    priorAttenuation[0 + index] = value.x;
+    priorAttenuation[1 + index] = value.y;
+    priorAttenuation[2 + index] = value.z;
+}
+
+void setPosition(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    rayPosition[0 + index] = value.x;
+    rayPosition[1 + index] = value.y;
+    rayPosition[2 + index] = value.z;
+}
+
+void setDirection(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    rayDirection[0 + index] = value.x;
+    rayDirection[1 + index] = value.y;
+    rayDirection[2 + index] = value.z;
+}
+
+void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    accumulatedLight[0 + index] += deltaValue.x;
+    accumulatedLight[1 + index] += deltaValue.y;
+    accumulatedLight[2 + index] += deltaValue.z;
+}
+
+
+
+
+
+
+
 
 float hash(float seed) {
     return fract(sin((seed + random) * 12345.6789) * 43758.5453123);
@@ -110,11 +215,38 @@ vec4 randomHemisphereDirectionUniform(vec3 normal, vec2 rand) {
     return vec4(tangent * x + bitangent * y + normal * z, 6.28318530718);
 }
 
+
+
+//This is the GGX distribution
 float microfacetDistribution(float dotOfNormalAndHalfway, float roughness){
-    float rough2 = roughness * roughness;
+    float rough2 = roughness * roughness * roughness * roughness;
     float temp = dotOfNormalAndHalfway * dotOfNormalAndHalfway * (rough2 - 1) + 1;
     return rough2 / (3.1415926589 * temp * temp);
 }
+
+//This is the GGX 
+//It returns a direction, and a multiplier that needs to be applied to the final light intensity (It corrects for the sampling distribution. It is the reciprocal of the PDF of the distribution)
+vec4 randomHemisphereDirectionGGX(vec3 normal, vec2 rand, float roughness) {
+    // Random azimuthal angle (in [0, 2*pi])
+    float phi = 2.0 * 3.14159 * rand.x;
+
+    // Compute polar angle (in [0, pi])
+    float cosTheta = sqrt((1.0 - rand.y) / (1.0 + (roughness * roughness - 1.0) * rand.y));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    // Convert from local (z-up) space to world space
+    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);//Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
+    vec3 tangent = normalize(cross(temp, normal));//Get a vector perpecdicular to the previous two
+    vec3 bitangent = cross(normal, tangent);//Get a second vector that is perpendicular to the previous 2
+    //We now have three vectors: the normal direction, perpedicular to the normal, and other perpendicular to the normal
+
+    // Now we can compute the final direction
+    vec3 direction = cos(phi) * sinTheta * tangent + sin(phi) * sinTheta * bitangent + cosTheta * normal;
+
+    return vec4(direction, microfacetDistribution(dot(normalize(normal + direction), normal), roughness));
+}
+
+
 
 //For metals baseReflectivity is the metallicAlbedo
 //For non-metals, it is a completely different property (I'm going to go with 1)
@@ -123,10 +255,13 @@ vec3 fresnel(float dotOfViewAndHalfway, vec3 baseReflectivity){
     return baseReflectivity + (1 - baseReflectivity) * pow(1 - dotOfViewAndHalfway, 5);//Schlick’s approximation
 }
 
+//This is also based on GGX
 float geometricBlocking(float dotOfViewAndNormal, float dotOfLightAndNormal, float roughness){
     float something = (roughness + 1) * (roughness + 1) / 8;//I don't know what this represents (its usually called k)
-    float factor1 = dotOfViewAndNormal / (dotOfViewAndNormal * (1 - something) + something);
-    float factor2 = dotOfLightAndNormal / (dotOfLightAndNormal * (1 - something) + something);
+    //something can also be roughness / 2
+    //But that is a worse approximation of the underlying function
+    float factor1 = max(dotOfViewAndNormal, 0) / (dotOfViewAndNormal * (1 - something) + something);
+    float factor2 = max(dotOfLightAndNormal, 0) / (dotOfLightAndNormal * (1 - something) + something);
 
     return factor1 * factor2;
 }
@@ -135,12 +270,19 @@ float geometricBlocking(float dotOfViewAndNormal, float dotOfLightAndNormal, flo
 //light is the direction we are going
 //These names come from standard terminology for the subject
 vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial){
-    vec3 halfway = normalize(incoming + outgoing);
+    vec3 halfway = normalize(incoming + outgoing);//This is used by several things
 
-    vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo;
-    float microfacetComponent = microfacetDistribution(dot(halfway, normal), roughness);
-    vec3 fresnelComponent = fresnel(dot(view, halfway), baseReflectivity);
-    float geometricComponent = geometricBlocking(dot(view, normal), dot(light, normal), voxelMaterial.roughness);
+    vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo;//This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
+
+
+    float microfacetComponent = microfacetDistribution(dot(halfway, normal), roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+
+    vec3 fresnelComponent = fresnel(dot(view, halfway), baseReflectivity);//This component simulates the fresnel effect (only metallic materials have this)
+
+    //This approximates how much light is blocked by microfacets, when looking from different directions
+    float dotOfViewAndNormal = dot(view, normal);
+    float dotOfLightAndNormal = dot(light, normal);
+    float geometricComponent = geometricBlocking(dotOfViewAndNormal, dotOfLightAndNormal, voxelMaterial.roughness);//Like how a mountain blocks the light in a valley
 
     //The effect of the metallicAlbedo is performed in the fresenl component
     //A non metallic material is assumed to not be affected by the fresnel effect
@@ -151,7 +293,7 @@ vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial){
     //We add the metallic value to the albedo to prevent darkening. (this is a multiplier, so not doing this would just make metals black)
     vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
 
-    return microfacetComponent * fresnelComponent * geometricComponent * albedo;
+    return microfacetComponent * fresnelComponent * geometricComponent * albedo / (4 * dotOfViewAndNormal * dotOfLightAndNormal);
 }
 
 
@@ -161,26 +303,40 @@ void main()
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
     float seed = texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
-    //int material = materialMap[hitMaterial[/*material index*/]]//Get the material index of the hit, and map it to an actual material
+    int material = materialMap[hitMaterial[getHitMaterial(texelCoord)]]//Get the material index of the hit, and map it to an actual material
 
-    /*
-    The position on the plane of the intersection in voxel space, is needed
-      So if the xy plane is perpendicular to the hitNormal, then we need the x and y coordinates of the hit location in voxel space
-      This would be most efficiently done in the ExecuteRayTrace shader, by storing that result
-      This value is needed to calulate the uv of the material textures
-      I will call this hitUV
-    */
-    
-    vec3 attentuation;//This is the accumulated attenuation
+    //Load the hit position
+    vec4 temp = getHitPosition(texelCoord);
+    bool wasHit = temp.w != 0;
+    vec3 position = temp.xyz;
 
-    float dist;//Distance that the ray cast covered
-    vec3 normal;//The normal direction of the hit
-    vec3 direction;//The direction the ray cast was in
+    //Load the hit normal
+    temp = getHitNormal(texelCoord);
+    float dist = temp.w;//Distance that the ray cast covered
+    vec3 normal = temp.xyz;//The normal direction of the hit
 
 
-    //vec2 hitUV = /*Not implemented*/
-    vec2 uv = hitUV * sizes[material]
+    vec3 attentuation = getPriorAttenuation(texelCoord);//This is the accumulated attenuation
+    vec3 direction = getDirection(texelCoord);//The direction the ray cast was in
 
+    //Find the uv coordinate for the texture
+    //It is based on the hit location in voxel space
+    vec3 voxelPosition = getHitVoxelPosition(texelCoord);
+    vec2 hitUV;
+    if(abs(normal.x) > 0){
+        //yz
+        hitUV = voxelPosition.yz;
+    }else if(abs(normal.y) > 0){
+        //xz
+        hitUV = voxelPosition.xz;
+    }else if(abs(normal.z) > 0){
+        //xy
+        hitUV = voxelPosition.xy;
+    }
+    vec2 uv = hitUV * sizes[material];//We need to set the material textures to SL_REPEAT mode (this is the default).
+
+
+    //Format the voxel material into a struct
     MaterialProperties voxelMaterial;
     voxelMaterial.emission = texture(sampler2d(emissions[material]), uv).xyz;
     voxelMaterial.albedo = texture(sampler2d(albedos[material]), uv).xyz;
@@ -188,10 +344,10 @@ void main()
     vec4 rmTexture = texture(sampler2d(rmTextures[material]), uv);
     voxelMaterial.roughness = rmTexture.r;
     voxelMaterial.metallic = rmTexture.g;
-    //Lambertian gets divided by pi
 
-    vec3 nextDirection = randomHemisphereDirection(randomVec2(seed));//Get the next direction to sample in
+    vec3 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed) voxelMaterial.roughness);//Get the next direction to sample in
 
+    //Calculat the BRDF
     vec3 brdfValue = brdf(normal, direction, nextDirection, voxelMaterial);
     //Light falloff is a consequence of the integral in the rendering equation.
     //Point sources of light don't exist.
@@ -207,6 +363,11 @@ void main()
     //  steradians * r^2 is the surface are of a spherical arc of a given steradians
 
     vec3 receivedLight = voxelMaterial.emission * attentuation;
-    vec3 nextAttenuation = brdfValue;
 
+
+    //Set the output buffers
+    setPosition(texelCoord, position);//Set where the ray should start from next
+    setDirection(texelCoord, nextDirection);//Set the direction the ray should start from next
+    setAttenuation(texelCoord, attentuation * brdfValue);//The attenuation for the next bounce is the current attenuation times the brdf
+    changeLightAccumulation(texelCoord, receivedLight);//Accumulate the light the has reached the camera
 }
