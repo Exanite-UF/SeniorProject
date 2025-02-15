@@ -26,20 +26,20 @@ ShaderManager::~ShaderManager()
     }
 }
 
-GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum shaderType)
+GLuint ShaderManager::getShaderModule(const std::string_view& shaderPath, GLenum shaderType)
 {
     // Use cached shader module if available
-    auto cacheKey = std::make_tuple(shaderPath, shaderType);
+    auto cacheKey = std::make_tuple(std::string(shaderPath), shaderType);
     if (shaderModules.contains(cacheKey))
     {
         return shaderModules[cacheKey];
     }
 
     // Load the shader file
-    std::ifstream file(shaderPath);
+    std::ifstream file((std::string(shaderPath)));
     if (!file.is_open())
     {
-        throw std::runtime_error("Failed to open file: " + shaderPath);
+        throw std::runtime_error("Failed to open file: " + std::string(shaderPath));
     }
 
     // Read the shader file contents
@@ -71,7 +71,7 @@ GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum shad
 
         glGetShaderInfoLog(shader, message.size(), nullptr, message.data());
 
-        throw std::runtime_error("Failed to compile shader (" + shaderPath + "): " + message);
+        throw std::runtime_error("Failed to compile shader (" + std::string(shaderPath) + "): " + message);
     }
 
     // Insert shader module into cache
@@ -81,10 +81,10 @@ GLuint ShaderManager::getShaderModule(const std::string& shaderPath, GLenum shad
     return shader;
 }
 
-GLuint ShaderManager::getGraphicsProgram(const std::string& vertexShaderPath, const std::string& fragmentShaderPath)
+GLuint ShaderManager::getGraphicsProgram(const std::string_view& vertexShaderPath, const std::string_view& fragmentShaderPath)
 {
     // Use cached program if available
-    auto cacheKey = std::make_tuple(vertexShaderPath, fragmentShaderPath);
+    auto cacheKey = std::make_tuple(std::string(vertexShaderPath), std::string(fragmentShaderPath));
     if (graphicsPrograms.contains(cacheKey))
     {
         return graphicsPrograms[cacheKey];
@@ -128,10 +128,10 @@ GLuint ShaderManager::getGraphicsProgram(const std::string& vertexShaderPath, co
     return program;
 }
 
-GLuint ShaderManager::getComputeProgram(const std::string& computeShaderPath)
+GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPath)
 {
     // Use cached program if available
-    auto cacheKey = computeShaderPath;
+    auto cacheKey = std::string(computeShaderPath);
     if (computePrograms.contains(cacheKey))
     {
         return computePrograms[cacheKey];
