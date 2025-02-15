@@ -91,11 +91,13 @@ void Program::run()
 
     // Create the scene
     Scene scene {};
+    Camera& camera = scene.camera;
 
     VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // worlds.at(1).transform.position = glm::vec3(256, 0, 0);
 
-    Camera& camera = scene.camera;
+    VoxelWorldData data {};
+    data.copyFrom(voxelWorld);
 
     // Create the renderer
     VoxelRenderer renderer;
@@ -194,10 +196,14 @@ void Program::run()
             voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
         }
 
-        if (input->isKeyHeld(GLFW_KEY_F5))
+        if (input->isKeyPressed(GLFW_KEY_F5))
         {
-            VoxelWorldData data {};
             data.copyFrom(voxelWorld);
+        }
+
+        if (input->isKeyPressed(GLFW_KEY_F9))
+        {
+            data.writeTo(voxelWorld);
         }
 
         if (remakeNoise)
