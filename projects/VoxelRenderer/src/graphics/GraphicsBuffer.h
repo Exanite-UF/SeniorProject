@@ -17,13 +17,19 @@ private:
     // TODO: Consider removing this and the associated bind/unbind methods
     int bindLocation;
 
+    uint64_t elementCount = 0;
+
 public:
     GLuint bufferId;
 
     GraphicsBuffer();
+    explicit GraphicsBuffer(uint64_t elementCount);
     ~GraphicsBuffer();
 
-    void resize(std::uint64_t size);
+    uint64_t getByteCount();
+    uint64_t getElementCount();
+
+    void resize(std::uint64_t elementCount);
 
     // Binds to a specific location
     void bind(int location);
@@ -37,7 +43,14 @@ public:
 template <typename T>
 GraphicsBuffer<T>::GraphicsBuffer()
 {
-    glGenBuffers(1, &bufferId); // Create the buffer
+    glGenBuffers(1, &bufferId);
+}
+
+template <typename T>
+GraphicsBuffer<T>::GraphicsBuffer(uint64_t elementCount)
+{
+    glGenBuffers(1, &bufferId);
+    resize(elementCount);
 }
 
 template <typename T>
@@ -47,10 +60,24 @@ GraphicsBuffer<T>::~GraphicsBuffer()
 }
 
 template <typename T>
-void GraphicsBuffer<T>::resize(std::uint64_t size)
+uint64_t GraphicsBuffer<T>::getByteCount()
 {
+    return elementCount * sizeof(T);
+}
+
+template <typename T>
+uint64_t GraphicsBuffer<T>::getElementCount()
+{
+    return elementCount;
+}
+
+template <typename T>
+void GraphicsBuffer<T>::resize(uint64_t elementCount)
+{
+    this->elementCount = elementCount;
+
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId); // Bind the buffer so we can set the data
-    glBufferData(GL_SHADER_STORAGE_BUFFER, size * sizeof(T), nullptr, GL_DYNAMIC_COPY); // Set the data
+    glBufferData(GL_SHADER_STORAGE_BUFFER, elementCount * sizeof(T), nullptr, GL_DYNAMIC_COPY); // Set the data
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind the buffer
 }
 
