@@ -5,8 +5,11 @@
 class VoxelWorldData
 {
 private:
+    glm::ivec3 size;
+    std::vector<GLuint> occupancyStartIndices;
+
     std::vector<uint8_t> data;
 
 public:
-    void copyFrom(const VoxelWorld& world);
+    void copyFrom(VoxelWorld& world);
 };

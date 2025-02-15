@@ -53,7 +53,6 @@ const GraphicsBuffer<uint8_t>& VoxelWorld::getOccupancyMap()
 
 std::vector<GLuint> VoxelWorld::getOccupancyStartIndices() const
 {
-
     return occupancyStartIndices;
 }
 

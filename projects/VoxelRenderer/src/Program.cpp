@@ -17,6 +17,7 @@
 #include <src/windowing/Window.h>
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
+#include <src/world/VoxelWorldData.h>
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -191,6 +192,12 @@ void Program::run()
         if (input->isKeyHeld(GLFW_KEY_E))
         {
             voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
+        }
+
+        if (input->isKeyHeld(GLFW_KEY_F5))
+        {
+            VoxelWorldData data {};
+            data.copyFrom(voxelWorld);
         }
 
         if (remakeNoise)
