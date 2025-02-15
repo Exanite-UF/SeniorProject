@@ -61,7 +61,7 @@ VoxelRenderer::VoxelRenderer()
     prepareRayTraceFromCameraProgram = ShaderManager::getManager().getComputeProgram("content/PrepareRayTraceFromCamera.compute.glsl");
     executeRayTraceProgram = ShaderManager::getManager().getComputeProgram("content/ExecuteRayTrace.compute.glsl");
     resetHitInfoProgram = ShaderManager::getManager().getComputeProgram("content/ResetHitInfo.compute.glsl");
-    displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/DisplayToWindow.frag.glsl");
+    displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/DisplayToWindow.fragment.glsl");
 }
 
 void VoxelRenderer::setResolution(int x, int y)

@@ -6,7 +6,7 @@ class Content
 {
 public:
     constexpr static std::string_view assignMaterialComputeShader = "content/AssignMaterial.compute.glsl";
-    constexpr static std::string_view displayToWindowFragmentShader = "content/DisplayToWindow.frag.glsl";
+    constexpr static std::string_view displayToWindowFragmentShader = "content/DisplayToWindow.fragment.glsl";
     constexpr static std::string_view executeRayTraceComputeShader = "content/ExecuteRayTrace.compute.glsl";
     constexpr static std::string_view makeMipMapComputeShader = "content/MakeMipMap.compute.glsl";
     constexpr static std::string_view makeNoiseComputeShader = "content/MakeNoise.compute.glsl";
