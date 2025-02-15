@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+#include <src/Content.h>
 #include <src/VoxelRendererProgram.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
@@ -82,10 +83,10 @@ void VoxelRendererProgram::run()
     glClearColor(0, 0, 0, 0);
 
     // Get shader programs
-    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
-    makeNoiseComputeProgram = shaderManager.getComputeProgram("content/MakeNoise.compute.glsl");
-    makeMipMapComputeProgram = shaderManager.getComputeProgram("content/MakeMipMap.compute.glsl");
-    assignMaterialComputeProgram = shaderManager.getComputeProgram("content/AssignMaterial.compute.glsl");
+    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
+    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
+    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
+    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
 
     // Create the scene
     Scene scene {};

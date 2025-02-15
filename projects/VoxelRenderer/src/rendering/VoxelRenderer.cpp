@@ -11,6 +11,7 @@
 #include <tuple>
 #include <unordered_map>
 
+#include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
@@ -58,10 +59,10 @@ void VoxelRenderer::handleDirtySizing()
 
 VoxelRenderer::VoxelRenderer()
 {
-    prepareRayTraceFromCameraProgram = ShaderManager::getManager().getComputeProgram("content/PrepareRayTraceFromCamera.compute.glsl");
-    executeRayTraceProgram = ShaderManager::getManager().getComputeProgram("content/ExecuteRayTrace.compute.glsl");
-    resetHitInfoProgram = ShaderManager::getManager().getComputeProgram("content/ResetHitInfo.compute.glsl");
-    displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/DisplayToWindow.fragment.glsl");
+    prepareRayTraceFromCameraProgram = ShaderManager::getManager().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
+    executeRayTraceProgram = ShaderManager::getManager().getComputeProgram(Content::executeRayTraceComputeShader);
+    resetHitInfoProgram = ShaderManager::getManager().getComputeProgram(Content::resetHitInfoComputeShader);
+    displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
 }
 
 void VoxelRenderer::setResolution(int x, int y)
