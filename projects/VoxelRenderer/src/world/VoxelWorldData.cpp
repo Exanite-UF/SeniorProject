@@ -27,3 +27,8 @@ void VoxelWorldData::writeTo(VoxelWorld& world)
 
     world.updateMipMaps();
 }
+
+void VoxelWorldData::clearOccupancy()
+{
+    data.clear();
+}

@@ -13,4 +13,6 @@ private:
 public:
     void copyFrom(VoxelWorld& world);
     void writeTo(VoxelWorld& world);
+
+    void clearOccupancy();
 };
