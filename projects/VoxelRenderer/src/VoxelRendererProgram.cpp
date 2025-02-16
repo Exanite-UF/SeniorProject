@@ -108,10 +108,9 @@ void VoxelRendererProgram::run()
     double frameTime = 0;
     float currentFPS = 0;
 
-    //IMGUI Menu
+    // IMGUI Menu
     bool showMenuGUI = false;
-    ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                                      ImGuiWindowFlags_NoCollapse |  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
         // Engine time
@@ -303,10 +302,10 @@ void VoxelRendererProgram::run()
                     ImGui::Text("\nFPS: %.2f", currentFPS);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
 
-                    //if (ImGui::Button("Save"))
-                    //    ;
-                    //ImGui::InputText("string", &str);
-                    //ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+                    // if (ImGui::Button("Save"))
+                    //     ;
+                    // ImGui::InputText("string", &str);
+                    // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
                 }
                 ImGui::End();
                 ImGui::PopStyleColor();
