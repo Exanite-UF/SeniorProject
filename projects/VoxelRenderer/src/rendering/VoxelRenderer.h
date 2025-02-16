@@ -31,8 +31,8 @@ private:
     GraphicsBuffer<uint32_t> rayHitMaterialBuffer;//(material)
     GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer;//(x, y, z)
 
-    GraphicsBuffer<glm::vec3> attentuationBuffer;
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer;
+    GraphicsBuffer<glm::vec3> attentuationBuffer;//(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer;//(r, g, b)
 
 
 
