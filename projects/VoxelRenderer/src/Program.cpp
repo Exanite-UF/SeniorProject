@@ -208,6 +208,21 @@ void Program::run()
             data.copyFrom(voxelWorld);
         }
 
+        if (input->isKeyPressed(GLFW_KEY_F8))
+        {
+            data.clearOccupancy();
+
+            for (int x = 0; x < data.getSize().x; ++x)
+            {
+                for (int y = 0; y < data.getSize().y; ++y)
+                {
+                    data.setVoxelOccupancy({ x, y, x }, true);
+                }
+            }
+
+            data.writeTo(voxelWorld);
+        }
+
         if (input->isKeyPressed(GLFW_KEY_F9))
         {
             data.writeTo(voxelWorld);
@@ -377,6 +392,11 @@ void Program::runEarlyStartupTests()
     {
         // This allows us to safely use nullptr instead of NULL
         assertIsTrue(NULL == nullptr, "Unsupported compiler: NULL must equal nullptr");
+    }
+
+    {
+        // This allows us to safely use uint32_t instead of GLuint
+        assertIsTrue(sizeof(GLuint) == sizeof(uint32_t), "Unsupported compiler: sizeof(GLuint) must equal sizeof(uint32_t)");
     }
 
     {
