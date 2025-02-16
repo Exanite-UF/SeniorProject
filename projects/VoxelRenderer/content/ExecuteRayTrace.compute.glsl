@@ -40,8 +40,6 @@ layout(std430, binding = 7) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
-
-
 void setHitPosition(ivec3 coord, vec4 value)
 {
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
@@ -67,8 +65,6 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 1] = value.y;
     hitVoxelPosition[index + 2] = value.z;
 }
-
-
 
 uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture (not the size of the voxel world)
 uniform uint mipMapTextureCount;
@@ -295,32 +291,31 @@ void main()
 
     vec3 voxelWorldSize = 2. * voxelResolution;
 
-    //Transform the ray position to voxel space
-    rayPos -= voxelWorldPosition;//Find position relative to the voxel world
-    rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos);//Inverse rotations lets us rotate from world space to voxel space
-    rayPos /= voxelWorldScale;//Undo the scale now that we are aligned with voxel space
-    rayPos += 0.5 * vec3(voxelWorldSize);//This moves the origin of the voxel world to its center
-    
+    // Transform the ray position to voxel space
+    rayPos -= voxelWorldPosition; // Find position relative to the voxel world
+    rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos); // Inverse rotations lets us rotate from world space to voxel space
+    rayPos /= voxelWorldScale; // Undo the scale now that we are aligned with voxel space
+    rayPos += 0.5 * vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
 
-    //Transform the ray direction to voxel space
+    // Transform the ray direction to voxel space
     rayDir = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayDir);
     rayDir /= voxelWorldScale;
 
-    //Increment the ray forward slightly for numerical stability (This is corrected for in the intersection code)
+    // Increment the ray forward slightly for numerical stability (This is corrected for in the intersection code)
     rayPos += rayDir * 0.001;
 
-    //Find the intersection point of the ray cast
+    // Find the intersection point of the ray cast
     RayHit hit = findIntersection(rayPos, rayDir, 200, currentDepth);
 
-    vec3 voxelPosition = hit.hitLocation;//Store the position of the intersection in voxel space
+    vec3 voxelPosition = hit.hitLocation; // Store the position of the intersection in voxel space
 
-    //Transform the hit location to world space
-    hit.hitLocation -= 0.5 * vec3(voxelWorldSize);//This moves the origin of the voxel world to its center
-    hit.hitLocation *= voxelWorldScale;//Apply the scale of the voxel world
-    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation);//Rotate back into world space
-    hit.hitLocation += voxelWorldPosition;//Apply the voxel world position
+    // Transform the hit location to world space
+    hit.hitLocation -= 0.5 * vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
+    hit.hitLocation *= voxelWorldScale; // Apply the scale of the voxel world
+    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
+    hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
 
-    //Transform the hit normal from 
+    // Transform the hit normal from
     hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
@@ -330,7 +325,7 @@ void main()
     {
         setHitPosition(texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
         setHitNormal(texelCoord, vec4(hit.normal, hit.dist)) // Record the world space normal direction of the hit surface
-        setHitMaterial(texelCoord, hit.material);
+            setHitMaterial(texelCoord, hit.material);
         setHitVoxelPosition(texelCoord, voxelPosition);
     }
 
