@@ -280,6 +280,7 @@ void VoxelRendererProgram::run()
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
+                {
                     ImGui::SetWindowFontScale(1.5f);
                     ImGui::Text("Voxel Rendering Project\n");
                     ImGui::SetWindowFontScale(1.0f);
@@ -306,6 +307,7 @@ void VoxelRendererProgram::run()
                     //    ;
                     //ImGui::InputText("string", &str);
                     //ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+                }
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
