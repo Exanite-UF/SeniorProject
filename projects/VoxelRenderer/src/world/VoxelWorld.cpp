@@ -52,7 +52,7 @@ const GraphicsBuffer<uint8_t>& VoxelWorld::getOccupancyMap()
     return occupancyMap;
 }
 
-std::vector<GLuint> VoxelWorld::getOccupancyIndices() const
+std::vector<GLuint> VoxelWorld::getOccupancyMapIndices() const
 {
     return occupancyMapIndices;
 }
@@ -62,7 +62,7 @@ const GraphicsBuffer<uint8_t>& VoxelWorld::getMaterialMap()
     return materialMap;
 }
 
-std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> VoxelWorld::getMaterialIndices() const
+std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> VoxelWorld::getMaterialMapIndices() const
 {
     return materialMapIndices;
 }
@@ -151,17 +151,12 @@ void VoxelWorld::assignMaterial(int level)
 
 void VoxelWorld::setSize(glm::ivec3 size)
 {
-    constexpr auto minSize = Constants::VoxelWorld::minSize;
-    if (size.x < minSize.x || size.y < minSize.y || size.z < minSize.z)
-    {
-        throw std::runtime_error("The minimum size of a voxel world along an axis is 32.");
-    }
-
+    // The size is validated by VoxelWorldUtility below
     this->size = size;
 
-    occupancyMapIndices = VoxelWorldUtility::calculateOccupancyMapIndices(size);
+    occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
 
-    materialMapIndices = VoxelWorldUtility::calculateMaterialMapIndices(size);
+    materialMapIndices = VoxelWorldUtility::getMaterialMapIndices(size);
     this->materialMap.setSize(materialMapIndices[materialMapIndices.size() - 1]);
 }

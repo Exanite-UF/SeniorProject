@@ -1,12 +1,19 @@
 #include <cmath>
 #include <cstdint>
 #include <glm/vec3.hpp>
+#include <stdexcept>
 
 #include "VoxelWorldUtility.h"
 #include <src/world/VoxelWorld.h>
 
-std::vector<uint32_t> VoxelWorldUtility::calculateOccupancyMapIndices(glm::ivec3 size)
+std::vector<uint32_t> VoxelWorldUtility::getOccupancyMapIndices(glm::ivec3 size)
 {
+    constexpr auto minSizePerAxis = Constants::VoxelWorld::minSizePerAxis;
+    if (size.x < minSizePerAxis || size.y < minSizePerAxis || size.z < minSizePerAxis)
+    {
+        throw std::runtime_error("The minimum size of a voxel world along an axis is " + std::to_string(minSizePerAxis));
+    }
+
     uint8_t layerCount = 1 + std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 4 /*This is a 4 and not a 2, because the mip map generation will break if the top level mip map has side length 1. This prevents that from occuring.*/) / 2); // This is what the name says it is
     layerCount = glm::min(layerCount, Constants::VoxelWorld::maxOccupancyMapLayerCount); // Limit the max number of mip maps
 
@@ -27,7 +34,7 @@ std::vector<uint32_t> VoxelWorldUtility::calculateOccupancyMapIndices(glm::ivec3
     return indices;
 }
 
-std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> VoxelWorldUtility::calculateMaterialMapIndices(glm::ivec3 size)
+std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> VoxelWorldUtility::getMaterialMapIndices(glm::ivec3 size)
 {
     std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> indices;
 

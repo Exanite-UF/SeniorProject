@@ -10,7 +10,7 @@ public:
     class VoxelWorld
     {
     public:
-        static constexpr glm::ivec3 minSize = { 32, 32, 32 };
+        static constexpr uint32_t minSizePerAxis = 32;
         static constexpr uint8_t maxOccupancyMapLayerCount = 10; // 1 base layer + 9 mipmap layers
         static constexpr uint8_t materialMapLayerCount = 3;
     };

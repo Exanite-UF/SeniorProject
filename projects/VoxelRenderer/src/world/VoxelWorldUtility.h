@@ -16,7 +16,7 @@ public:
     // The total layers is result.size() - 1
     //
     // The max size of the returned vector is Constants::VoxelWorld::maxOccupancyMapLayerCount + 1
-    static std::vector<uint32_t> calculateOccupancyMapIndices(glm::ivec3 size);
+    static std::vector<uint32_t> getOccupancyMapIndices(glm::ivec3 size);
 
     // First value will always be 0
     // Last value will be the size of the material map in bytes
@@ -25,5 +25,5 @@ public:
     // The total layers is result.size() - 1
     //
     // The exact size of the returned array is Constants::VoxelWorld::materialMapLayerCount + 1
-    static std::array<uint32_t, Constants::VoxelWorld::materialMapLayerCount + 1> calculateMaterialMapIndices(glm::ivec3 size);
+    static std::array<uint32_t, Constants::VoxelWorld::materialMapLayerCount + 1> getMaterialMapIndices(glm::ivec3 size);
 };

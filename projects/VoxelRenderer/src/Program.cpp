@@ -211,6 +211,7 @@ void Program::run()
         if (input->isKeyPressed(GLFW_KEY_F9))
         {
             data.writeTo(voxelWorld);
+            data.clearOccupancy();
         }
 
         if (remakeNoise)

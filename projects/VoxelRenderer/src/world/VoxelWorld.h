@@ -42,10 +42,10 @@ public:
     [[nodiscard]] glm::ivec3 getSize() const;
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getOccupancyMap();
-    [[nodiscard]] std::vector<GLuint> getOccupancyIndices() const;
+    [[nodiscard]] std::vector<GLuint> getOccupancyMapIndices() const;
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getMaterialMap();
-    [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> getMaterialIndices() const;
+    [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> getMaterialMapIndices() const;
 
     void updateMipMaps(); // This runs the make mip map shader
 
