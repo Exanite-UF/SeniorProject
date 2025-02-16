@@ -31,20 +31,16 @@ void VoxelRenderer::remakeTextures()
     // If the variable is 0, meaning that no texture is bound, then it will do nothing
     // glDeleteTextures(1, &rayStartBuffer);
     // glDeleteTextures(1, &rayDirectionBuffer);
-    glDeleteTextures(1, &rayHitPositionBuffer);
-    glDeleteTextures(1, &rayHitNormalBuffer);
-    glDeleteTextures(1, &rayHitMaterialBuffer);
+    uint64_t size = xSize * ySize * raysPerPixel;
+
+    rayHitPositionBuffer.resize(size);
+    rayHitNormalBuffer.resize(size);
+    rayHitMaterialBuffer.resize(size);
+    rayHitVoxelPositionBuffer.resize(size);
 
     // Create a new texture
-    rayStartBuffer.resize(xSize * ySize * raysPerPixel * 3);
-    rayDirectionBuffer.resize(xSize * ySize * raysPerPixel * 3);
-
-    // rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    // rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-
-    rayHitPositionBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitNormalBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitMaterialBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
+    rayStartBuffer.resize(size);
+    rayDirectionBuffer.resize(size);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -117,70 +113,24 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
     // Reset the hit info
     glUseProgram(resetHitInfoProgram);
 
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        rayHitPositionBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    rayHitPositionBuffer.bind(0);
+    rayHitNormalBuffer.bind(1);
+    rayHitMaterialBuffer.bind(2);
+    rayHitVoxelPositionBuffer.bind(3);
 
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        rayHitNormalBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    glUniform3i(glGetUniformLocation(resetHitInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
 
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        rayHitMaterialBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_R16UI // Format
-    );
     {
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
         // Ensure compute shader completes
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
 
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_R16UI // Format
-    );
+    rayHitPositionBuffer.unbind();
+    rayHitNormalBuffer.unbind();
+    rayHitMaterialBuffer.unbind();
+    rayHitVoxelPositionBuffer.unbind();
 
     glUseProgram(0);
 }
@@ -195,36 +145,10 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     rayStartBuffer.bind(0);
     rayDirectionBuffer.bind(1);
 
-    // bind hit info
-    glBindImageTexture(
-        5, // Image unit index (matches binding=0)
-        rayHitPositionBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        6, // Image unit index (matches binding=0)
-        rayHitNormalBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        7, // Image unit index (matches binding=0)
-        rayHitMaterialBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    rayHitPositionBuffer.bind(4);
+    rayHitNormalBuffer.bind(5);
+    rayHitMaterialBuffer.bind(6);
+    rayHitVoxelPositionBuffer.bind(7);
 
     {
         GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
@@ -262,36 +186,10 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     rayStartBuffer.unbind();
     rayDirectionBuffer.unbind();
 
-    // unbind hit info
-    glBindImageTexture(
-        5, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        6, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        7, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    rayHitPositionBuffer.unbind();
+    rayHitNormalBuffer.unbind();
+    rayHitMaterialBuffer.unbind();
+    rayHitVoxelPositionBuffer.unbind();
 
     glUseProgram(0);
 }
@@ -300,35 +198,13 @@ void VoxelRenderer::display()
 {
     glUseProgram(displayToWindowProgram);
 
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        rayHitPositionBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
 
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        rayHitNormalBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    rayHitPositionBuffer.bind(0);
+    rayHitNormalBuffer.bind(1);
+    rayHitMaterialBuffer.bind(2);
+    rayHitVoxelPositionBuffer.bind(3);
 
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        rayHitMaterialBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), xSize, ySize, raysPerPixel);
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     {
@@ -336,35 +212,10 @@ void VoxelRenderer::display()
     }
     glBindVertexArray(0);
 
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    rayHitPositionBuffer.unbind();
+    rayHitNormalBuffer.unbind();
+    rayHitMaterialBuffer.unbind();
+    rayHitVoxelPositionBuffer.unbind();
 
     glUseProgram(0);
 }

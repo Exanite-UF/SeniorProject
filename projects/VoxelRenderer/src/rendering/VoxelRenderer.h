@@ -22,13 +22,13 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
-    GraphicsBuffer<float> rayStartBuffer;
-    GraphicsBuffer<float> rayDirectionBuffer;
+    GraphicsBuffer<glm::vec3> rayStartBuffer;
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer;
 
     // These buffers are used to store the result of a ray trace step
     GraphicsBuffer<glm::vec4> rayHitPositionBuffer;//(x, y, z, wasHit)
     GraphicsBuffer<glm::vec4> rayHitNormalBuffer;//(x, y, z, depth)
-    GraphicsBuffer<uint8_t> rayHitMaterialBuffer;//(material)
+    GraphicsBuffer<uint32_t> rayHitMaterialBuffer;//(material)
     GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer;//(x, y, z)
 
     // These are compute shaders that are used to render

@@ -21,6 +21,7 @@ layout(std430, binding = 3) buffer MaterialMap
     uint materialMap[];
 };
 
+
 layout(std430, binding = 4) buffer HitPosition
 {
     vec4 hitPosition[];
@@ -42,6 +43,21 @@ layout(std430, binding = 7) buffer HitVoxelPosition
 
 
 
+
+
+
+
+uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture (not the size of the voxel world)
+uniform uint mipMapTextureCount;
+uniform uint mipMapStartIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
+uniform uint materialStartIndices[3];
+
+uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+uniform vec3 voxelWorldPosition;
+uniform vec4 voxelWorldRotation; // This is a quaternion
+uniform vec3 voxelWorldScale; // Size of a voxel
+
+
 void setHitPosition(ivec3 coord, vec4 value)
 {
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
@@ -52,6 +68,12 @@ void setHitNormal(ivec3 coord, vec4 value)
 {
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
     hitNormal[index] = value;
+}
+
+vec4 getHitNormal(ivec3 coord){
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+
+    return hitNormal[index];
 }
 
 void setHitMaterial(ivec3 coord, uint value)
@@ -68,17 +90,6 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 2] = value.z;
 }
 
-
-
-uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture (not the size of the voxel world)
-uniform uint mipMapTextureCount;
-uniform uint mipMapStartIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
-uniform uint materialStartIndices[3];
-
-uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
-uniform vec3 voxelWorldPosition;
-uniform vec4 voxelWorldRotation; // This is a quaternion
-uniform vec3 voxelWorldScale; // Size of a voxel
 
 // coord is a cell coord
 uint getByte(ivec3 coord, int mipMapTexture)
@@ -291,7 +302,7 @@ void main()
 
     vec3 rayStart = rayPos;
 
-    float currentDepth = imageLoad(hitNormal, texelCoord).w;
+    float currentDepth = getHitNormal(texelCoord).w;//imageLoad(hitNormal, texelCoord).w;
 
     vec3 voxelWorldSize = 2. * voxelResolution;
 
@@ -329,7 +340,7 @@ void main()
     if (hit.wasHit && hit.dist < currentDepth)
     {
         setHitPosition(texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
-        setHitNormal(texelCoord, vec4(hit.normal, hit.dist)) // Record the world space normal direction of the hit surface
+        setHitNormal(texelCoord, vec4(hit.normal, hit.dist)); // Record the world space normal direction of the hit surface
         setHitMaterial(texelCoord, hit.material);
         setHitVoxelPosition(texelCoord, voxelPosition);
     }
