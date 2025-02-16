@@ -29,7 +29,7 @@ public:
     uint64_t getByteCount();
     uint64_t getElementCount();
 
-    void resize(std::uint64_t elementCount);
+    void setSize(std::uint64_t elementCount);
 
     // Binds to a specific location
     void bind(int location);
@@ -50,7 +50,7 @@ template <typename T>
 GraphicsBuffer<T>::GraphicsBuffer(uint64_t elementCount)
 {
     glGenBuffers(1, &bufferId);
-    resize(elementCount);
+    setSize(elementCount);
 }
 
 template <typename T>
@@ -72,7 +72,7 @@ uint64_t GraphicsBuffer<T>::getElementCount()
 }
 
 template <typename T>
-void GraphicsBuffer<T>::resize(uint64_t elementCount)
+void GraphicsBuffer<T>::setSize(std::uint64_t elementCount)
 {
     this->elementCount = elementCount;
 

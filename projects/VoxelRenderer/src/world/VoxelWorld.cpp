@@ -173,7 +173,7 @@ void VoxelWorld::setSize(glm::ivec3 size)
         occupancyMapByteCount += size.x * size.y * size.z / 8 / divisor;
     }
 
-    this->occupancyMap.resize(occupancyMapByteCount);
+    this->occupancyMap.setSize(occupancyMapByteCount);
 
     std::uint64_t bytesOfMaterialMap = 0;
     for (int i = 0; i < 3; i++)
@@ -184,5 +184,5 @@ void VoxelWorld::setSize(glm::ivec3 size)
         bytesOfMaterialMap += 4 * size.x * size.y * size.z / 8 / divisor;
     }
 
-    this->materialMap.resize(bytesOfMaterialMap);
+    this->materialMap.setSize(bytesOfMaterialMap);
 }
