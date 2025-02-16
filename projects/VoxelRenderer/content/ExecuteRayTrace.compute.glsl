@@ -293,10 +293,10 @@ void main()
 
     float currentDepth = imageLoad(hitNormal, texelCoord).w;
 
-    vec3 voxelWorldSize = 2. * voxelResolution * voxelWorldScale;
+    vec3 voxelWorldSize = 2. * voxelResolution;
 
     //Transform the ray position to voxel space
-    rayPos -= voxelWorldPosition; // - 0.5 * vec3(voxelWorldSize);
+    rayPos -= voxelWorldPosition;//Find position relative to the voxel world
     rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos);//Inverse rotations lets us rotate from world space to voxel space
     rayPos /= voxelWorldScale;//Undo the scale now that we are aligned with voxel space
     rayPos += 0.5 * vec3(voxelWorldSize);//This moves the origin of the voxel world to its center
@@ -318,6 +318,7 @@ void main()
     hit.hitLocation -= 0.5 * vec3(voxelWorldSize);//This moves the origin of the voxel world to its center
     hit.hitLocation *= voxelWorldScale;//Apply the scale of the voxel world
     hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation);//Rotate back into world space
+    hit.hitLocation += voxelWorldPosition;//Apply the voxel world position
 
     //Transform the hit normal from 
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
