@@ -49,12 +49,12 @@ struct MaterialData
 class Material
 {
 public:
-    glm::vec3 color;
+    glm::vec3 color = glm::vec3(1, 1, 1);
 
-    glm::vec2 uvOffset; // Offset in UV coordinates. 0.5 is half the texture.
+    glm::vec2 uvOffset = glm::vec2(0, 0); // Offset in UV coordinates. 0.5 is half the texture.
     glm::vec2 uvSize = glm::vec2(1, 1); // (1, 1) is the size of 1 voxel.
 
-    GLuint textureId;
+    GLuint textureId = 0;
 
     // TODO: Conversion to MaterialData struct (the GPU representation). This should be done by whatever manages the texture array, etc, since it requires more knowledge than what is known by a single material.
 };
