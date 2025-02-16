@@ -2,22 +2,24 @@
 #include <iostream>
 #include <string>
 
-#include <src/VoxelRendererProgram.h>
+#include <src/Content.h>
+#include <src/Program.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
+#include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 
-void VoxelRendererProgram::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     std::string messageStr(message, length);
     log(messageStr);
 }
 
-VoxelRendererProgram::VoxelRendererProgram()
+Program::Program()
 {
     // Ensure preconditions are met
     runEarlyStartupTests();
@@ -49,10 +51,10 @@ VoxelRendererProgram::VoxelRendererProgram()
     }
 
     // Attach debug message callback
-    glDebugMessageCallback(VoxelRendererProgram::onOpenGlDebugMessage, this);
+    glDebugMessageCallback(Program::onOpenGlDebugMessage, this);
 }
 
-VoxelRendererProgram::~VoxelRendererProgram()
+Program::~Program()
 {
     // Shutdown IMGUI
     ImGui_ImplOpenGL3_Shutdown();
@@ -63,7 +65,7 @@ VoxelRendererProgram::~VoxelRendererProgram()
     glfwTerminate();
 }
 
-void VoxelRendererProgram::run()
+void Program::run()
 {
     // Ensure preconditions are met
     runLateStartupTests();
@@ -76,22 +78,22 @@ void VoxelRendererProgram::run()
     glClearColor(0, 0, 0, 0);
 
     // Get shader programs
-    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram("content/ScreenTri.vertex.glsl", "content/Raymarcher.fragment.glsl");
-    makeNoiseComputeProgram = shaderManager.getComputeProgram("content/MakeNoise.compute.glsl");
-    makeMipMapComputeProgram = shaderManager.getComputeProgram("content/MakeMipMap.compute.glsl");
-    assignMaterialComputeProgram = shaderManager.getComputeProgram("content/AssignMaterial.compute.glsl");
+    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
+    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
+    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
+    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
 
-    // Voxel rendering
-    VoxelWorld voxelWorld(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    // Create the scene
+    Scene scene {};
+
+    VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    // worlds.at(1).transform.position = glm::vec3(256, 0, 0);
+
+    Camera& camera = scene.camera;
+
+    // Create the renderer
     VoxelRenderer renderer;
-    Camera camera;
     renderer.setRaysPerPixel(1);
-
-    std::vector<VoxelWorld> worlds;
-    worlds.push_back(voxelWorld);
-    // worlds.push_back(voxelWorld);
-
-    // worlds[1].position = glm::vec3(256, 0, 0);
 
     // Main render loop
     glm::vec3 cameraPosition(0);
@@ -190,13 +192,13 @@ void VoxelRendererProgram::run()
 
         if (input->isKeyHeld(GLFW_KEY_E))
         {
-            voxelWorld.generateFromNoise(deltaTime, isRand2, fillAmount);
+            voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
         }
 
         if (remakeNoise)
         {
             // The noise time should not be incremented here
-            voxelWorld.generateFromNoise(0, isRand2, fillAmount);
+            voxelWorld.generateOccupancyAndMipMapsAndMaterials(0, isRand2, fillAmount);
             remakeNoise = false;
         }
 
@@ -261,13 +263,13 @@ void VoxelRendererProgram::run()
         {
             renderer.setResolution(window->size.x, window->size.y);
 
-            camera.position = cameraPosition;
+            camera.transform.setGlobalPosition(cameraPosition);
             // worlds[0].rotation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
             // worlds[0].scale = glm::vec3(1, 1, 2);
-            camera.rotation = glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)); // glm::quatLookAt(glm::vec3(camDirection[0], camDirection[1], camDirection[2]), glm::vec3(1, 0, 0));
+            camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
 
             renderer.prepareRayTraceFromCamera(camera);
-            renderer.executeRayTrace(worlds);
+            renderer.executeRayTrace(scene.worlds);
             renderer.display();
         }
 
@@ -319,13 +321,13 @@ void VoxelRendererProgram::run()
     }
 }
 
-void VoxelRendererProgram::log(const std::string& value)
+void Program::log(const std::string& value)
 {
     std::cout << value + "\n"
               << std::flush;
 }
 
-void VoxelRendererProgram::checkForContentFolder()
+void Program::checkForContentFolder()
 {
     if (!std::filesystem::is_directory("content"))
     {
@@ -335,7 +337,7 @@ void VoxelRendererProgram::checkForContentFolder()
     log("Found content folder");
 }
 
-void VoxelRendererProgram::assertIsTrue(const bool condition, const std::string& errorMessage)
+void Program::assertIsTrue(const bool condition, const std::string& errorMessage)
 {
     if (!condition)
     {
@@ -343,7 +345,7 @@ void VoxelRendererProgram::assertIsTrue(const bool condition, const std::string&
     }
 }
 
-void VoxelRendererProgram::runEarlyStartupTests()
+void Program::runEarlyStartupTests()
 {
     log("Running early startup tests (in constructor)");
 
@@ -421,7 +423,7 @@ void VoxelRendererProgram::runEarlyStartupTests()
     }
 }
 
-void VoxelRendererProgram::runLateStartupTests()
+void Program::runLateStartupTests()
 {
     log("Running late startup tests (in run())");
 
