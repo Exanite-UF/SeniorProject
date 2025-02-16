@@ -273,6 +273,7 @@ void main()
     hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation);
     hit.hitLocation += voxelWorldPosition;
 
+    hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
     hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
