@@ -17,6 +17,7 @@
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/world/VoxelWorld.h>
+#include "VoxelRenderer.h"
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;
@@ -86,7 +87,7 @@ void VoxelRenderer::setRaysPerPixel(int number)
 
 void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
 {
-    handleDirtySizing();
+    handleDirtySizing();//Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
     GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (ySize + 8 - 1) / 8;
@@ -100,7 +101,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
         glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
         glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
         glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
-        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);
+        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);//A little bit of randomness for temporal accumulation
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -137,7 +138,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
 
 void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 {
-    handleDirtySizing();
+    //handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
 
     glUseProgram(executeRayTraceProgram);
 
@@ -190,6 +191,41 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     rayHitNormalBuffer.unbind();
     rayHitMaterialBuffer.unbind();
     rayHitVoxelPositionBuffer.unbind();
+
+    glUseProgram(0);
+}
+
+void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array<float, 1024>& materialTextureSizes)
+{
+    //handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
+    glUseProgram(BRDFProgram);
+
+    //These will not be modified
+    rayHitPositionBuffer.bind(0);
+    rayHitNormalBuffer.bind(1);
+    rayHitMaterialBuffer.bind(2);
+    rayHitVoxelPositionBuffer.bind(3);
+
+    //These will be modified
+    rayStartBuffer.bind(4);
+    rayDirectionBuffer.bind(5);
+
+    attentuationBuffer.bind(6);
+    accumulatedLightBuffer.bind(7);
+    //6 is the prior attenuation
+    //7 is the accumulated light
+    {
+        glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
+        glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f);//A little bit of randomness for temporal accumulation
+        glUniform1uiv(glGetUniformLocation(BRDFProgram, "materialMap"), 4096, materialMap.data());
+        glUniform2fv(glGetUniformLocation(BRDFProgram, "sizes"), 512, materialTextureSizes.data());
+
+
+
+    }
+    
+
+
 
     glUseProgram(0);
 }

@@ -32,19 +32,20 @@ layout(std430, binding = 3) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
-layout(std430, binding = 4) buffer PriorAttenuation
+layout(std430, binding = 1) buffer RayPosition
+{
+    float rayPosition[];
+};
+layout(std430, binding = 5) buffer RayDirection
+{
+    float rayDirection[];
+};
+
+layout(std430, binding = 6) buffer PriorAttenuation
 {
     float priorAttenuation[];
 };
 
-layout(std430, binding = 5) buffer RayPosition
-{
-    float rayPosition[];
-};
-layout(std430, binding = 6) buffer RayDirection
-{
-    float rayDirection[];
-};
 
 layout(std430, binding = 7) buffer AccumulatedLight
 {
@@ -79,7 +80,7 @@ uniform RMTextures
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
 uniform uint materialMap[4096];//This maps from the material index from the ray cast to the index of an actual material
-uniform vec2 sizes[512];//The scaling of each material tells us how large a pixel is in terms of voxels (0.5 means that two pixels have then same length as 1 voxel)
+uniform vec2 sizes[512];//The scaling of each material tells us what percent of a texture each voxel is when measured linearly.
 uniform float random;//This is used to make non-deterministic randomness
 
 
@@ -305,7 +306,7 @@ void main()
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
     float seed = texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
-    int material = materialMap[hitMaterial[getHitMaterial(texelCoord)]]//Get the material index of the hit, and map it to an actual material
+    int material = materialMap[hitMaterial[getHitMaterial(texelCoord)]];//Get the material index of the hit, and map it to an actual material
 
     //Load the hit position
     vec4 temp = getHitPosition(texelCoord);

@@ -31,11 +31,17 @@ private:
     GraphicsBuffer<uint32_t> rayHitMaterialBuffer;//(material)
     GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer;//(x, y, z)
 
+    GraphicsBuffer<glm::vec3> attentuationBuffer;
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer;
+
+
+
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
     static GLuint executeRayTraceProgram;
     static GLuint resetHitInfoProgram;
     static GLuint displayToWindowProgram;
+    static GLuint BRDFProgram;
 
     int xSize = 0;
     int ySize = 0;
@@ -58,6 +64,10 @@ public:
     void prepareRayTraceFromCamera(const Camera& camera);
 
     void executeRayTrace(std::vector<VoxelWorld>& worlds);
+
+    //materialMap: This maps from material index to material id (What is stored in the material result to an actual material)
+    //materialTextureSizes: This stores the size of voxel in each material texture (it is 512 vec2 values)
+    void accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array<float, 1024>& materialTextureSizes);
 
     void display();
 };

@@ -80,7 +80,24 @@ void main()
         uint g = ((material & (1 << 1)) >> 1) + ((material & (16 << 1)) >> 4) + ((material & (256 << 1)) >> 7);
         uint b = ((material & (1 << 2)) >> 2) + ((material & (16 << 2)) >> 5) + ((material & (256 << 2)) >> 8);
 
-        vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
+        //vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
+        vec3 voxelPosition = getHitVoxelPosition(texelCoord);
+        vec2 hitUV;
+        if(abs(normal.x) > 0){
+            //yz
+            hitUV = voxelPosition.yz;
+        }else if(abs(normal.y) > 0){
+            //xz
+            hitUV = voxelPosition.xz;
+        }else if(abs(normal.z) > 0){
+            //xy
+            hitUV = voxelPosition.xy;
+        }
+
+        hitUV *= 0.1;
+        hitUV = mod(hitUV, 1);
+
+        vec3 colorBase = vec3(hitUV, 0);
 
         /*
         // This is the workload rendering code
