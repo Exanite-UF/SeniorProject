@@ -62,9 +62,9 @@ const GraphicsBuffer<uint8_t>& VoxelWorld::getMaterialMap()
     return materialMap;
 }
 
-std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> VoxelWorld::getMaterialStartIndices() const
+std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> VoxelWorld::getMaterialIndices() const
 {
-    return materialStartIndices;
+    return materialMapIndices;
 }
 
 void VoxelWorld::generateOccupancyUsingNoise(double noiseTime, bool isRand2, float fillAmount)
@@ -131,7 +131,7 @@ void VoxelWorld::assignMaterial(int level)
 
     this->materialMap.bind(0);
 
-    int sizeX = this->size.x / 2 / (1 << (2 * level)); // TODO: Is this correct? -> This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
+    int sizeX = this->size.x / 2 / (1 << (2 * level)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
     int sizeY = this->size.y / 2 / (1 << (2 * level));
     int sizeZ = this->size.z / 2 / (1 << (2 * level));
 
@@ -140,7 +140,7 @@ void VoxelWorld::assignMaterial(int level)
     GLuint workGroupsZ = (sizeZ + 8 - 1) / 8;
 
     glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "resolution"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
-    glUniform1ui(glGetUniformLocation(assignMaterialComputeProgram, "materialStartIndex"), materialStartIndices[level]); // Pass in the resolution of the previous mip map texture
+    glUniform1ui(glGetUniformLocation(assignMaterialComputeProgram, "materialStartIndex"), materialMapIndices[level]); // Pass in the resolution of the previous mip map texture
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -162,14 +162,6 @@ void VoxelWorld::setSize(glm::ivec3 size)
     occupancyMapIndices = VoxelWorldUtility::calculateOccupancyMapIndices(size);
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
 
-    std::uint64_t bytesOfMaterialMap = 0;
-    for (int i = 0; i < 3; i++)
-    {
-        std::uint64_t divisor = (1 << (2 * i));
-        divisor = divisor * divisor * divisor; // Cube the divisor
-        materialStartIndices[i] = bytesOfMaterialMap;
-        bytesOfMaterialMap += 4 * size.x * size.y * size.z / 8 / divisor;
-    }
-
-    this->materialMap.setSize(bytesOfMaterialMap);
+    materialMapIndices = VoxelWorldUtility::calculateMaterialMapIndices(size);
+    this->materialMap.setSize(materialMapIndices[materialMapIndices.size() - 1]);
 }
