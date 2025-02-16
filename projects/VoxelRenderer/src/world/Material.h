@@ -1,5 +1,11 @@
 #pragma once
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+
 // Materials are a property of voxels, however, they are also used heavily by the VoxelWorld and VoxelRenderer
 // This means we need to account for how they are used before deciding how they should be stored
 
@@ -28,3 +34,27 @@
 // Our material buffers store material IDs (which then map to material indexes), but on disk, we can alternatively store the material indexes directly.
 // This way, the exact material stored is not dependent on the material map and the material map can change between program executions.
 // However, this increases complexity, and direct storage of mipmapped material IDs to disk should be implemented first.
+
+// TODO: Probably move this to the rendering folder
+struct MaterialData
+{
+    glm::vec3 color;
+
+    glm::vec2 uvOffset;
+    glm::vec2 uvSize = glm::vec2(1, 1);
+
+    uint16_t textureIndex;
+};
+
+class Material
+{
+public:
+    glm::vec3 color;
+
+    glm::vec2 uvOffset; // Offset in UV coordinates. 0.5 is half the texture.
+    glm::vec2 uvSize = glm::vec2(1, 1); // (1, 1) is the size of 1 voxel.
+
+    GLuint textureId;
+
+    // TODO: Conversion to MaterialData struct (the GPU representation). This should be done by whatever manages the texture array, etc, since it requires more knowledge than what is known by a single material.
+};
