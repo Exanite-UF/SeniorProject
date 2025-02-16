@@ -1,5 +1,8 @@
 #pragma once
 
-class TransformComponent
+#include <src/gameobjects/Component.h>
+
+class TransformComponent : public Component
 {
+    // Copy from the Transform class
 };
