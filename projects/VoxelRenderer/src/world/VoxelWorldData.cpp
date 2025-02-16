@@ -30,7 +30,7 @@ void VoxelWorldData::writeTo(VoxelWorld& world)
 
 void VoxelWorldData::clearOccupancy()
 {
-    data.clear();
+    std::fill(data.begin(), data.end(), 0);
 }
 
 const glm::ivec3& VoxelWorldData::getSize()
