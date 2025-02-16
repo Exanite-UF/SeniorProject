@@ -12,9 +12,15 @@
 #include <src/windowing/Window.h>
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
+#include <src/world/VoxelWorldData.h>
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
+    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+    {
+        return;
+    }
+
     std::string messageStr(message, length);
     log(messageStr);
 }
@@ -85,11 +91,13 @@ void Program::run()
 
     // Create the scene
     Scene scene {};
+    Camera& camera = scene.camera;
 
     VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // worlds.at(1).transform.position = glm::vec3(256, 0, 0);
 
-    Camera& camera = scene.camera;
+    VoxelWorldData data {};
+    data.copyFrom(voxelWorld);
 
     // Create the renderer
     VoxelRenderer renderer;
@@ -193,6 +201,16 @@ void Program::run()
         if (input->isKeyHeld(GLFW_KEY_E))
         {
             voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
+        }
+
+        if (input->isKeyPressed(GLFW_KEY_F5))
+        {
+            data.copyFrom(voxelWorld);
+        }
+
+        if (input->isKeyPressed(GLFW_KEY_F9))
+        {
+            data.writeTo(voxelWorld);
         }
 
         if (remakeNoise)
