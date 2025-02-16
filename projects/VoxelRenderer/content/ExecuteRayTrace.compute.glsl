@@ -254,8 +254,8 @@ void main()
 
     float currentDepth = imageLoad(hitNormal, texelCoord).w;
 
-    vec3 voxelWorldSize = 2. * voxelResolution;//The size of the voxel world in voxels
-    
+    vec3 voxelWorldSize = 2. * voxelResolution; // The size of the voxel world in voxels
+
     rayPos -= voxelWorldPosition; // - 0.5 * vec3(voxelWorldSize);
     rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos);
     rayPos /= voxelWorldScale;
