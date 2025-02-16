@@ -14,6 +14,8 @@ public:
     [[nodiscard]] const glm::ivec3& getSize();
     void setSize(glm::ivec3 size);
 
+    void setVoxelOccupancy(glm::ivec3 position, bool isOccupied);
+
     void copyFrom(VoxelWorld& world);
     void writeTo(VoxelWorld& world);
 
