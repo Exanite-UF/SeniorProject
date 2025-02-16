@@ -17,7 +17,7 @@ private:
     glm::ivec3 size; // Size of the voxel world in voxels
 
     GraphicsBuffer<uint8_t> occupancyMap;
-    std::vector<GLuint> occupancyStartIndices; // The start indices of the occupancy map in bytes. The max size of this vector is defined by Constants::VoxelWorld::maxOccupancyMapLayerCount
+    std::vector<GLuint> occupancyMapIndices; // The start indices of the occupancy map in bytes. The max size of this vector is defined by Constants::VoxelWorld::maxOccupancyMapLayerCount
 
     GraphicsBuffer<uint8_t> materialMap; // This store the material data
     std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> materialStartIndices; // There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
@@ -42,7 +42,7 @@ public:
     [[nodiscard]] glm::ivec3 getSize() const;
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getOccupancyMap();
-    [[nodiscard]] std::vector<GLuint> getOccupancyStartIndices() const;
+    [[nodiscard]] std::vector<GLuint> getOccupancyIndices() const;
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getMaterialMap();
     [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount> getMaterialStartIndices() const;

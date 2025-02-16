@@ -380,6 +380,11 @@ void Program::runEarlyStartupTests()
     }
 
     {
+        // This allows us to safely use uint32_t instead of GLuint
+        assertIsTrue(sizeof(GLuint) == sizeof(uint32_t), "Unsupported compiler: sizeof(GLuint) must equal sizeof(uint32_t)");
+    }
+
+    {
         // A tuple can be used as a key in a map
         // Must make sure to provide the TupleHasher template argument
         auto key = std::make_tuple("hello", 1);

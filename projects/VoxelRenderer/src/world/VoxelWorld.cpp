@@ -2,6 +2,7 @@
 
 #include <src/graphics/GraphicsUtility.h>
 #include <src/world/VoxelWorld.h>
+#include <src/world/VoxelWorldUtility.h>
 
 VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
 {
@@ -51,9 +52,9 @@ const GraphicsBuffer<uint8_t>& VoxelWorld::getOccupancyMap()
     return occupancyMap;
 }
 
-std::vector<GLuint> VoxelWorld::getOccupancyStartIndices() const
+std::vector<GLuint> VoxelWorld::getOccupancyIndices() const
 {
-    return occupancyStartIndices;
+    return occupancyMapIndices;
 }
 
 const GraphicsBuffer<uint8_t>& VoxelWorld::getMaterialMap()
@@ -99,7 +100,7 @@ void VoxelWorld::updateMipMaps()
 
     occupancyMap.bind(0);
 
-    for (int i = 0; i < occupancyStartIndices.size(); i++)
+    for (int i = 0; i < occupancyMapIndices.size(); i++)
     {
         // TODO: Use ivec3 here
         int sizeX = this->size.x / 2 / (1 << (2 * i)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
@@ -111,8 +112,8 @@ void VoxelWorld::updateMipMaps()
         GLuint workGroupCount = (occupancyMapUintCount + workgroupSize - 1) / workgroupSize;
 
         glUniform3i(glGetUniformLocation(makeMipMapComputeProgram, "resolution"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), occupancyStartIndices[i]); // Pass in the starting byte location of the previous mip map texture
-        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), occupancyStartIndices[i + 1]); // Pass in the starting byte location of the next mip map texture.
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "previousStartByte"), occupancyMapIndices[i]); // Pass in the starting byte location of the previous mip map texture
+        glUniform1ui(glGetUniformLocation(makeMipMapComputeProgram, "nextStartByte"), occupancyMapIndices[i + 1]); // Pass in the starting byte location of the next mip map texture.
 
         glDispatchCompute(workGroupCount, 1, 1);
 
@@ -158,28 +159,14 @@ void VoxelWorld::setSize(glm::ivec3 size)
 
     this->size = size;
 
-    uint8_t layerCount = 1 + std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 4 /*This is a 4 and not a 2, because the mip map generation will break if the top level mip map has side length 1. This prevents that from occuring.*/) / 2); // This is what the name says it is
-    layerCount = glm::min(layerCount, Constants::VoxelWorld::maxOccupancyMapLayerCount); // Limit the max number of mip maps
-
-    occupancyStartIndices.resize(layerCount);
-
-    // This should be the exact number of bytes that the occupancy map and all its mip maps take up
-    std::uint64_t occupancyMapByteCount = 0;
-    for (int i = 0; i < layerCount; i++)
-    {
-        std::uint64_t divisor = (1 << (2 * i));
-        divisor *= divisor * divisor; // Cube the divisor
-        occupancyStartIndices[i] = occupancyMapByteCount;
-        occupancyMapByteCount += size.x * size.y * size.z / 8 / divisor;
-    }
-
-    this->occupancyMap.setSize(occupancyMapByteCount);
+    occupancyMapIndices = VoxelWorldUtility::calculateOccupancyMapIndices(size);
+    this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
 
     std::uint64_t bytesOfMaterialMap = 0;
     for (int i = 0; i < 3; i++)
     {
         std::uint64_t divisor = (1 << (2 * i));
-        divisor *= divisor * divisor; // Cube the divisor
+        divisor = divisor * divisor * divisor; // Cube the divisor
         materialStartIndices[i] = bytesOfMaterialMap;
         bytesOfMaterialMap += 4 * size.x * size.y * size.z / 8 / divisor;
     }

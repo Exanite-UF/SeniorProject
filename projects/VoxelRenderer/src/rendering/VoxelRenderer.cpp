@@ -242,8 +242,8 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
                 // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
                 glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getOccupancyStartIndices().size() - 1);
-                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), voxelWorld.getOccupancyStartIndices().size(), voxelWorld.getOccupancyStartIndices().data());
+                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getOccupancyIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), voxelWorld.getOccupancyIndices().size(), voxelWorld.getOccupancyIndices().data());
                 glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "materialStartIndices"), voxelWorld.getMaterialStartIndices().size(), voxelWorld.getMaterialStartIndices().data());
 
                 glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.transform.getGlobalPosition()));

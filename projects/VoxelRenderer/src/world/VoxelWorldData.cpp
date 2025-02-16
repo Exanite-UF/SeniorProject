@@ -5,7 +5,7 @@
 void VoxelWorldData::copyFrom(VoxelWorld& world)
 {
     size = world.getSize();
-    occupancyStartIndices = world.getOccupancyStartIndices();
+    occupancyStartIndices = world.getOccupancyIndices();
 
     data.resize(occupancyStartIndices.at(1));
 
@@ -31,4 +31,13 @@ void VoxelWorldData::writeTo(VoxelWorld& world)
 void VoxelWorldData::clearOccupancy()
 {
     data.clear();
+}
+
+const glm::ivec3& VoxelWorldData::getSize()
+{
+    return size;
+}
+
+void VoxelWorldData::setSize(glm::ivec3 size)
+{
 }
