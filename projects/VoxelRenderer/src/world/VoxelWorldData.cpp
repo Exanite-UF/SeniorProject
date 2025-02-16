@@ -50,14 +50,15 @@ void VoxelWorldData::setSize(glm::ivec3 size)
 void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
 {
     auto cellPosition = position / 2;
+    auto halfSize = size / 2;
 
     // Calculate byte index of cell
-    auto cellIndex = cellPosition.x + size.x * (cellPosition.y + size.y * cellPosition.z);
+    auto cellIndex = cellPosition.x + halfSize.x * (cellPosition.y + halfSize.y * cellPosition.z);
 
     // Calculate which bit to set
-    auto oddX = cellPosition.x % 2;
-    auto oddY = cellPosition.y % 2;
-    auto oddZ = cellPosition.z % 2;
+    auto oddX = position.x % 2;
+    auto oddY = position.y % 2;
+    auto oddZ = position.z % 2;
     auto bit = 1 << (1 * oddX + 2 * oddY + 4 * oddZ);
 
     if (isOccupied)
