@@ -3,6 +3,20 @@
 #include <imgui/imgui_impl_opengl3.h>
 #include <imgui/imgui_stdlib.h>
 
+#include <Jolt/Jolt.h>
+
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/RegisterTypes.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -507,7 +521,15 @@ void Program::runLateStartupTests()
 
     {
         // TODO: Probably remove later
-        // Ensure stb works
+        // Ensure assimp, jolt, and stb work
+        JPH::RegisterDefaultAllocator();
+        JPH::Factory::sInstance = new JPH::Factory();
+        JPH::RegisterTypes();
+
+        Assimp::Importer importer {};
+        const aiScene* scene = importer.ReadFile("content/Cube.fbx", 0);
+        importer.FreeScene();
+
         int width, height, channels;
         auto image = stbi_load("content/Coconut.png", &width, &height, &channels, 0);
         assertIsTrue(image != nullptr, "Failed to load Coconut.png");
