@@ -122,6 +122,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
     rayHitNormalBuffer.bind(1);
     rayHitMaterialBuffer.bind(2);
     rayHitVoxelPositionBuffer.bind(3);
+    attentuationBuffer.bind(4);
+    accumulatedLightBuffer.bind(5);
 
     glUniform3i(glGetUniformLocation(resetHitInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
 
@@ -136,6 +138,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
     rayHitNormalBuffer.unbind();
     rayHitMaterialBuffer.unbind();
     rayHitVoxelPositionBuffer.unbind();
+    attentuationBuffer.unbind();
+    accumulatedLightBuffer.unbind();
 
     glUseProgram(0);
 }

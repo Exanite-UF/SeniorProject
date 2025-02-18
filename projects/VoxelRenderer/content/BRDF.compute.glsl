@@ -11,8 +11,6 @@ struct MaterialProperties{
 }
 
 
-
-
 layout(std430, binding = 0) buffer HitPosition
 {
     vec4 hitPosition[];
