@@ -34,17 +34,17 @@ void VoxelRenderer::remakeTextures()
     // glDeleteTextures(1, &rayDirectionBuffer);
     uint64_t size = xSize * ySize * raysPerPixel;
 
-    rayHitPositionBuffer.resize(size);
-    rayHitNormalBuffer.resize(size);
-    rayHitMaterialBuffer.resize(size);
-    rayHitVoxelPositionBuffer.resize(size);
+    rayHitPositionBuffer.setSize(size);
+    rayHitNormalBuffer.setSize(size);
+    rayHitMaterialBuffer.setSize(size);
+    rayHitVoxelPositionBuffer.setSize(size);
 
     // Create a new texture
-    rayStartBuffer.resize(size);
-    rayDirectionBuffer.resize(size);
+    rayStartBuffer.setSize(size);
+    rayDirectionBuffer.setSize(size);
 
-    attentuationBuffer.resize(size);
-    accumulatedLightBuffer.resize(size);
+    attentuationBuffer.setSize(size);
+    accumulatedLightBuffer.setSize(size);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -175,9 +175,9 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
                 // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
                 glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getMipMapTextureCount());
-                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), 10, voxelWorld.getMipMapStartIndices().data());
-                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "materialStartIndices"), 3, voxelWorld.getMaterialStartIndices().data());
+                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), voxelWorld.getOccupancyMapIndices().size() - 1, voxelWorld.getOccupancyMapIndices().data());
+                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "materialStartIndices"), voxelWorld.getMaterialMapIndices().size() - 1, voxelWorld.getMaterialMapIndices().data());
 
                 glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.transform.getGlobalPosition()));
                 glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld.transform.getGlobalRotation()));
