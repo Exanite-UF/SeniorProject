@@ -13,8 +13,8 @@ MaterialManager::~MaterialManager()
 
 void MaterialManager::writeToGpu()
 {
-    materialMapBuffer.write(materialMap);
-    materialDataBuffer.write(materialData);
+    materialMapBuffer.readFrom(materialMap);
+    materialDataBuffer.readFrom(materialData);
 }
 
 GraphicsBuffer<uint32_t>& MaterialManager::getMaterialMapBuffer()

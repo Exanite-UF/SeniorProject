@@ -33,7 +33,8 @@ public:
 
     void setSize(std::uint64_t elementCount);
 
-    void write(std::span<T> data, uint32_t elementOffset = 0);
+    void readFrom(std::span<const T> data, uint32_t elementOffset = 0);
+    void writeTo(std::span<T> data, uint32_t elementOffset);
 
     // Binds to a specific location
     void bind(int location);
@@ -85,15 +86,28 @@ void GraphicsBuffer<T>::setSize(std::uint64_t elementCount)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind the buffer
 }
 template <typename T>
-void GraphicsBuffer<T>::write(std::span<T> data, uint32_t elementOffset)
+void GraphicsBuffer<T>::readFrom(std::span<const T> data, uint32_t elementOffset)
 {
-    if (data.size() > elementCount)
+    if (data.size() + elementOffset > elementCount)
     {
-        throw std::runtime_error("data.size() is greater than GraphicsBuffer.elementCount");
+        throw std::runtime_error("data.size() + elementOffset is greater than GraphicsBuffer.elementCount");
     }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId); // Bind the buffer so we can set the data
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, elementOffset * sizeof(T), data.size() * sizeof(T), static_cast<void*>(data.data())); // Set the data
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, elementOffset * sizeof(T), data.size() * sizeof(T), static_cast<void*>(const_cast<T*>(data.data()))); // Set the data
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind the buffer
+}
+
+template <typename T>
+void GraphicsBuffer<T>::writeTo(std::span<T> data, uint32_t elementOffset)
+{
+    if (data.size() + elementOffset > elementCount)
+    {
+        throw std::runtime_error("data.size() + elementOffset is greater than GraphicsBuffer.elementCount");
+    }
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId); // Bind the buffer so we can get the data
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, elementOffset * sizeof(T), data.size() * sizeof(T), static_cast<void*>(data.data())); // Get the data
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind the buffer
 }
 
