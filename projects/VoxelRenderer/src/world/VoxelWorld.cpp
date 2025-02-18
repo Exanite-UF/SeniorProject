@@ -100,7 +100,7 @@ void VoxelWorld::updateMipMaps()
 
     occupancyMap.bind(0);
 
-    for (int i = 0; i < occupancyMapIndices.size(); i++)
+    for (int i = 0; i < occupancyMapIndices.size() - 1; i++)
     {
         // TODO: Use ivec3 here
         int sizeX = this->size.x / 2 / (1 << (2 * i)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
