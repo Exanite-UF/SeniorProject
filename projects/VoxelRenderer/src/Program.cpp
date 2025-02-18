@@ -262,6 +262,7 @@ void Program::run()
 
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(scene.worlds);
+            //renderer.accumulateLight();//TODO: call this
             renderer.display();
         }
 
