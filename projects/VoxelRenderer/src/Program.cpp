@@ -10,6 +10,7 @@
 #include <src/utilities/Event.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
@@ -99,6 +100,9 @@ void Program::run()
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
 
+    // Create the material manager
+    MaterialManager materialManager {};
+
     // Create the renderer
     VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
@@ -106,7 +110,7 @@ void Program::run()
     // Main render loop
     glm::vec3 cameraPosition(0);
     glm::vec2 cameraRotation(0);
-    float moveSpeed = 0;
+    float moveSpeedExponent = 50;
     float mouseSensitivity = 0.002;
 
     // Engine time
@@ -176,32 +180,32 @@ void Program::run()
 
         if (input->isKeyHeld(GLFW_KEY_A))
         {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
         }
 
         if (input->isKeyHeld(GLFW_KEY_D))
         {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
         }
 
         if (input->isKeyHeld(GLFW_KEY_W))
         {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
         }
 
         if (input->isKeyHeld(GLFW_KEY_S))
         {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
         }
 
         if (input->isKeyHeld(GLFW_KEY_SPACE))
         {
-            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
+            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
         }
 
         if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
         {
-            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
+            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
         }
 
         if (input->isKeyHeld(GLFW_KEY_E))
@@ -290,7 +294,7 @@ void Program::run()
         }
         else
         {
-            moveSpeed += input->getMouseScroll().y;
+            moveSpeedExponent += input->getMouseScroll().y;
         }
 
         // F3 Debug Menu
@@ -315,8 +319,6 @@ void Program::run()
         }
 
         {
-            std::string str = "Hello";
-            float f;
             if (showMenuGUI)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
@@ -344,11 +346,6 @@ void Program::run()
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
                     ImGui::Text("\nFPS: %.2f", currentFPS);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
-
-                    // if (ImGui::Button("Save"))
-                    //     ;
-                    // ImGui::InputText("string", &str);
-                    // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
                 }
                 ImGui::End();
                 ImGui::PopStyleColor();
