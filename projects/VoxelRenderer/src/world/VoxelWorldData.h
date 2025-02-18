@@ -6,9 +6,9 @@ class VoxelWorldData
 {
 private:
     glm::ivec3 size;
-    std::vector<uint32_t> occupancyMapIndices;
 
-    std::vector<uint8_t> data;
+    std::vector<uint8_t> occupancyMap;
+    std::vector<uint32_t> occupancyMapIndices;
 
 public:
     [[nodiscard]] const glm::ivec3& getSize();

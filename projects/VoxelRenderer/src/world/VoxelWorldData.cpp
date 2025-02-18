@@ -8,10 +8,10 @@ void VoxelWorldData::copyFrom(VoxelWorld& world)
     size = world.getSize();
     occupancyMapIndices = world.getOccupancyMapIndices();
 
-    data.resize(occupancyMapIndices.at(1));
+    occupancyMap.resize(occupancyMapIndices.at(1));
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), data.data());
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -23,7 +23,7 @@ void VoxelWorldData::writeTo(VoxelWorld& world)
     }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), data.data());
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     world.updateMipMaps();
@@ -31,7 +31,7 @@ void VoxelWorldData::writeTo(VoxelWorld& world)
 
 void VoxelWorldData::clearOccupancy()
 {
-    std::fill(data.begin(), data.end(), 0);
+    std::fill(occupancyMap.begin(), occupancyMap.end(), 0);
 }
 
 const glm::ivec3& VoxelWorldData::getSize()
@@ -44,7 +44,7 @@ void VoxelWorldData::setSize(glm::ivec3 size)
     this->size = size;
     occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
 
-    data.resize(occupancyMapIndices.at(1));
+    occupancyMap.resize(occupancyMapIndices.at(1));
 }
 
 void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
@@ -63,10 +63,10 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
 
     if (isOccupied)
     {
-        data[cellIndex] |= bit;
+        occupancyMap[cellIndex] |= bit;
     }
     else
     {
-        data[cellIndex] &= ~bit;
+        occupancyMap[cellIndex] &= ~bit;
     }
 }
