@@ -19,25 +19,24 @@ layout(std430, binding = 3) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
-
-
-
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
-
-vec4 getHitPosition(ivec3 coord){
+vec4 getHitPosition(ivec3 coord)
+{
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
 
     return hitPosition[index];
 }
 
-vec4 getHitNormal(ivec3 coord){
+vec4 getHitNormal(ivec3 coord)
+{
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
 
     return hitNormal[index];
 }
 
-uint getHitMaterial(ivec3 coord){
+uint getHitMaterial(ivec3 coord)
+{
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
 
     return hitMaterial[index];
@@ -45,8 +44,8 @@ uint getHitMaterial(ivec3 coord){
 
 vec3 getHitVoxelPosition(ivec3 coord)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y 
-    
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
+
     return vec3(hitVoxelPosition[0 + index], hitVoxelPosition[1 + index], hitVoxelPosition[2 + index]);
 }
 
@@ -63,15 +62,15 @@ vec3 hueToRGB(float hue)
 
 void main()
 {
-    ivec3 size = resolution;//imageSize(hitPosition);
+    ivec3 size = resolution; // imageSize(hitPosition);
 
     vec3 color = vec3(0);
     for (int i = 0; i < size.z; i++)
     {
         ivec3 texelCoord = ivec3(gl_FragCoord.xy, i);
-        vec4 pos = getHitPosition(texelCoord);//imageLoad(hitPosition, ivec3(gl_FragCoord.xy, i));
-        vec4 normal = getHitNormal(texelCoord);//imageLoad(hitNormal, ivec3(gl_FragCoord.xy, i));
-        uint material = getHitMaterial(texelCoord);//imageLoad(hitMaterial, ivec3(gl_FragCoord.xy, i)).r;
+        vec4 pos = getHitPosition(texelCoord); // imageLoad(hitPosition, ivec3(gl_FragCoord.xy, i));
+        vec4 normal = getHitNormal(texelCoord); // imageLoad(hitNormal, ivec3(gl_FragCoord.xy, i));
+        uint material = getHitMaterial(texelCoord); // imageLoad(hitMaterial, ivec3(gl_FragCoord.xy, i)).r;
         vec3 voxelPos = getHitVoxelPosition(texelCoord);
         float falloff = (normal.w * 0.01 + 1) * (normal.w * 0.01 + 1);
 
@@ -80,17 +79,22 @@ void main()
         uint g = ((material & (1 << 1)) >> 1) + ((material & (16 << 1)) >> 4) + ((material & (256 << 1)) >> 7);
         uint b = ((material & (1 << 2)) >> 2) + ((material & (16 << 2)) >> 5) + ((material & (256 << 2)) >> 8);
 
-        //vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
+        // vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
         vec3 voxelPosition = getHitVoxelPosition(texelCoord);
         vec2 hitUV;
-        if(abs(normal.x) > 0){
-            //yz
+        if (abs(normal.x) > 0)
+        {
+            // yz
             hitUV = voxelPosition.yz;
-        }else if(abs(normal.y) > 0){
-            //xz
+        }
+        else if (abs(normal.y) > 0)
+        {
+            // xz
             hitUV = voxelPosition.xz;
-        }else if(abs(normal.z) > 0){
-            //xy
+        }
+        else if (abs(normal.z) > 0)
+        {
+            // xy
             hitUV = voxelPosition.xy;
         }
 

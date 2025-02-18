@@ -1,9 +1,9 @@
 #pragma once
 
+#include "src/graphics/GraphicsBuffer.h"
 #include <src/world/Camera.h>
 #include <src/world/VoxelWorld.h>
 #include <vector>
-#include "src/graphics/GraphicsBuffer.h"
 
 // The voxel renderer needs to be able to render multiple voxel worlds
 class VoxelRenderer
@@ -26,17 +26,15 @@ private:
     GraphicsBuffer<glm::vec3> rayDirectionBuffer;
 
     // These buffers are used to store the result of a ray trace step
-    GraphicsBuffer<glm::vec4> rayHitPositionBuffer;//(x, y, z, wasHit)
-    GraphicsBuffer<glm::vec4> rayHitNormalBuffer;//(x, y, z, depth)
-    GraphicsBuffer<uint32_t> rayHitMaterialBuffer;//(material)
-    GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer;//(x, y, z)
+    GraphicsBuffer<glm::vec4> rayHitPositionBuffer; //(x, y, z, wasHit)
+    GraphicsBuffer<glm::vec4> rayHitNormalBuffer; //(x, y, z, depth)
+    GraphicsBuffer<uint32_t> rayHitMaterialBuffer; //(material)
+    GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer; //(x, y, z)
 
-    GraphicsBuffer<glm::vec3> attentuationBuffer;//(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer;//(r, g, b)
+    GraphicsBuffer<glm::vec3> attentuationBuffer; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer; //(r, g, b)
 
-    GLuint materialTexturesBuffer;//This buffer will store the structs of material textures
-
-
+    GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
@@ -67,9 +65,9 @@ public:
 
     void executeRayTrace(std::vector<VoxelWorld>& worlds);
 
-    //materialMap: This maps from material index to material id (What is stored in the material result to an actual material)
-    //materialTextureSizes: This stores the size of voxel in each material texture (it is 512 vec2 values)
-    void accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array</*TODO: Some struct, Look at BRDF.compute for the required struct MaterialTextureSet*/, 512>& materialTextures);//Some struct must be 48 byte large
+    // materialMap: This maps from material index to material id (What is stored in the material result to an actual material)
+    // materialTextureSizes: This stores the size of voxel in each material texture (it is 512 vec2 values)
+    void accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array</*TODO: Some struct, Look at BRDF.compute for the required struct MaterialTextureSet*/, 512>& materialTextures); // Some struct must be 48 byte large
 
     void display();
 };

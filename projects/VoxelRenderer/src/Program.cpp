@@ -256,13 +256,13 @@ void Program::run()
             renderer.setResolution(window->size.x, window->size.y);
 
             camera.transform.setGlobalPosition(cameraPosition);
-            //scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)totalElapsedTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f))));
-            //scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
+            // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)totalElapsedTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f))));
+            // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
             camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
 
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(scene.worlds);
-            //renderer.accumulateLight();//TODO: call this
+            // renderer.accumulateLight();//TODO: call this
             renderer.display();
         }
 

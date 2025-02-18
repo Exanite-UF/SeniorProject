@@ -26,12 +26,10 @@ layout(std430, binding = 4) buffer PriorAttenuation
     float priorAttenuation[];
 };
 
-
 layout(std430, binding = 5) buffer AccumulatedLight
 {
     float accumulatedLight[];
 };
-
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
@@ -61,7 +59,8 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 2] = value.z;
 }
 
-vec3 setAttenuation(ivec3 coord, vec3 value){
+vec3 setAttenuation(ivec3 coord, vec3 value)
+{
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
 
     priorAttenuation[0 + index] = value.x;
@@ -77,9 +76,9 @@ void setLightAccumulation(ivec3 coord, vec3 value)
     accumulatedLight[2 + index] = value.z;
 }
 
-//layout(rgba32f, binding = 0) uniform writeonly image3D hitPosition;
-//layout(rgba32f, binding = 1) uniform writeonly image3D hitNormal;
-//layout(r16ui, binding = 2) uniform writeonly uimage3D hitMaterial;
+// layout(rgba32f, binding = 0) uniform writeonly image3D hitPosition;
+// layout(rgba32f, binding = 1) uniform writeonly image3D hitNormal;
+// layout(r16ui, binding = 2) uniform writeonly uimage3D hitMaterial;
 
 void main()
 {
@@ -91,7 +90,7 @@ void main()
     setHitVoxelPosition(texelCoord, vec3(0));
     setAttenuation(texelCoord, vec3(0));
     setLightAccumulation(texelCoord, vec3(0));
-    //imageStore(hitPosition, texelCoord, vec4(0));
-    //imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
-    //imageStore(hitMaterial, texelCoord, uvec4(0));
+    // imageStore(hitPosition, texelCoord, vec4(0));
+    // imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
+    // imageStore(hitMaterial, texelCoord, uvec4(0));
 }
