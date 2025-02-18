@@ -110,7 +110,7 @@ void Program::run()
     // Main render loop
     glm::vec3 cameraPosition(0);
     glm::vec2 cameraRotation(0);
-    float moveSpeed = 0;
+    float moveSpeedExponent = 50;
     float mouseSensitivity = 0.002;
 
     // Engine time
@@ -180,32 +180,32 @@ void Program::run()
 
         if (input->isKeyHeld(GLFW_KEY_A))
         {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
         }
 
         if (input->isKeyHeld(GLFW_KEY_D))
         {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
         }
 
         if (input->isKeyHeld(GLFW_KEY_W))
         {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
         }
 
         if (input->isKeyHeld(GLFW_KEY_S))
         {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
         }
 
         if (input->isKeyHeld(GLFW_KEY_SPACE))
         {
-            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
+            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
         }
 
         if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
         {
-            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
+            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
         }
 
         if (input->isKeyHeld(GLFW_KEY_E))
@@ -294,7 +294,7 @@ void Program::run()
         }
         else
         {
-            moveSpeed += input->getMouseScroll().y;
+            moveSpeedExponent += input->getMouseScroll().y;
         }
 
         // F3 Debug Menu
