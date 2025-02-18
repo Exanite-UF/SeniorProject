@@ -61,7 +61,7 @@ struct MaterialTextureSet{
     sampler2D albedo;
     sampler2D metallicAlbedo;
     sampler2D rmTexture;//Roughness and Metallic
-    vec2 size;//The scaling of each material tells us what percent of a texture each voxel is when measured linearly.//2 * float
+    vec2 size;//The scaling of each material tells us what percent of a texture each voxel is when measured linearly.//This is 2 floats (and it is packed dense)
 }
 
 //Each entry is 48 bytes long (There are 8 bytes of padding)

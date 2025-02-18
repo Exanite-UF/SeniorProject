@@ -210,18 +210,21 @@ void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMa
     //These will be modified
     rayStartBuffer.bind(4);
     rayDirectionBuffer.bind(5);
-
     attentuationBuffer.bind(6);
     accumulatedLightBuffer.bind(7);
-    //6 is the prior attenuation
-    //7 is the accumulated light
+
     {
+        GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
+        GLuint workGroupsY = (ySize + 8 - 1) / 8;
+        GLuint workGroupsZ = raysPerPixel;
+
         glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
         glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f);//A little bit of randomness for temporal accumulation
         glUniform1uiv(glGetUniformLocation(BRDFProgram, "materialMap"), 4096, materialMap.data());
 
         
         //Set the material data
+        //TODO
         glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
         glBufferData(GL_UNIFORM_BUFFER, 48/*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW/*This can probably be changed to GL_STATIC_DRAW*/);//Actually sets the material data
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -229,15 +232,22 @@ void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMa
         // bind light buffer to location 1
         glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
 
-        //glUniform2fv(glGetUniformLocation(BRDFProgram, "sizes"), 512, materialTextureSizes.data());
 
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);//Shouldn't this be a different barrier
 
     }
     
 
-
+    rayHitPositionBuffer.unbind();
+    rayHitNormalBuffer.unbind();
+    rayHitMaterialBuffer.unbind();
+    rayHitVoxelPositionBuffer.unbind();
+    rayStartBuffer.unbind();
+    rayDirectionBuffer.unbind();
+    attentuationBuffer.unbind();
+    accumulatedLightBuffer.unbind();
 
     glUseProgram(0);
 }
