@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <vector>
 
 #include <src/Constants.h>
@@ -10,11 +11,11 @@
 class MaterialManager : public NonCopyable
 {
 private:
-    std::vector<uint32_t> materialMap;
-    std::vector<Material> materials;
+    std::array<uint32_t, Constants::VoxelWorld::materialMapCount> materialMap;
+    std::array<Material, Constants::VoxelWorld::materialCount> materials;
 
     // Stores the GPU encoded material data
-    std::vector<MaterialData> materialData;
+    std::array<MaterialData, Constants::VoxelWorld::materialCount> materialData;
 
     GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialMapCount);
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);

@@ -10,6 +10,7 @@
 #include <src/utilities/Event.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
@@ -98,6 +99,9 @@ void Program::run()
 
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
+
+    // Create the material manager
+    MaterialManager materialManager {};
 
     // Create the renderer
     VoxelRenderer renderer;
