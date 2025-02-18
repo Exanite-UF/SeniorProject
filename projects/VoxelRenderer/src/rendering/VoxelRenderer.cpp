@@ -233,7 +233,7 @@ void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMa
         //Set the material data
         //TODO
         glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
-        glBufferData(GL_UNIFORM_BUFFER, 48/*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW/*This can probably be changed to GL_STATIC_DRAW*/);//Actually sets the material data
+        glBufferData(GL_UNIFORM_BUFFER, 48 * materialTextures.size()/*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW/*This can probably be changed to GL_STATIC_DRAW*/);//Actually sets the material data
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // bind light buffer to location 1
