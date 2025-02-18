@@ -42,6 +42,9 @@ void VoxelRenderer::remakeTextures()
     // Create a new texture
     rayStartBuffer.resize(size);
     rayDirectionBuffer.resize(size);
+
+    attentuationBuffer.resize(size);
+    accumulatedLightBuffer.resize(size);
 }
 
 void VoxelRenderer::handleDirtySizing()
