@@ -13,5 +13,8 @@ public:
         static constexpr uint32_t minSizePerAxis = 32;
         static constexpr uint8_t maxOccupancyMapLayerCount = 10; // 1 base layer + 9 mipmap layers
         static constexpr uint8_t materialMapLayerCount = 3;
+
+        static constexpr uint32_t materialMapCount = 4096;
+        static constexpr uint32_t materialCount = 512;
     };
 };

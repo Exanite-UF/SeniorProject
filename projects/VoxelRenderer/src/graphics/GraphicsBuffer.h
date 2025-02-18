@@ -5,6 +5,8 @@
 #include <vector>
 
 #include <cstdint>
+#include <span>
+#include <stdexcept>
 
 // A templated buffer class.
 //
@@ -26,10 +28,12 @@ public:
     explicit GraphicsBuffer(uint64_t elementCount);
     ~GraphicsBuffer();
 
-    uint64_t getByteCount();
-    uint64_t getElementCount();
+    uint64_t getByteCount() const;
+    uint64_t getElementCount() const;
 
     void setSize(std::uint64_t elementCount);
+
+    void write(std::span<T> data, uint32_t elementOffset = 0);
 
     // Binds to a specific location
     void bind(int location);
@@ -60,13 +64,13 @@ GraphicsBuffer<T>::~GraphicsBuffer()
 }
 
 template <typename T>
-uint64_t GraphicsBuffer<T>::getByteCount()
+uint64_t GraphicsBuffer<T>::getByteCount() const
 {
     return elementCount * sizeof(T);
 }
 
 template <typename T>
-uint64_t GraphicsBuffer<T>::getElementCount()
+uint64_t GraphicsBuffer<T>::getElementCount() const
 {
     return elementCount;
 }
@@ -78,6 +82,18 @@ void GraphicsBuffer<T>::setSize(std::uint64_t elementCount)
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId); // Bind the buffer so we can set the data
     glBufferData(GL_SHADER_STORAGE_BUFFER, elementCount * sizeof(T), nullptr, GL_DYNAMIC_COPY); // Set the data
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind the buffer
+}
+template <typename T>
+void GraphicsBuffer<T>::write(std::span<T> data, uint32_t elementOffset)
+{
+    if (data.size() > elementCount)
+    {
+        throw std::runtime_error("data.size() is greater than GraphicsBuffer.elementCount");
+    }
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId); // Bind the buffer so we can set the data
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, elementOffset * sizeof(T), data.size() * sizeof(T), static_cast<void*>(data.data())); // Set the data
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind the buffer
 }
 

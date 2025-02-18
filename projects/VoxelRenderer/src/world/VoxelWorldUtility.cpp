@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <glm/vec3.hpp>
 #include <stdexcept>
+#include <string>
 
 #include "VoxelWorldUtility.h"
 #include <src/world/VoxelWorld.h>
