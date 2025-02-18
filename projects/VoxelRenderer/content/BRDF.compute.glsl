@@ -55,32 +55,22 @@ layout(std430, binding = 7) buffer AccumulatedLight
 //At the moment every material is fully defined using a texture
 //As such 512 textures are sent in for each material property
 
+struct MaterialTextureSet{
+    sampler2D emission;
+    sampler2D albedo;
+    sampler2D metallicAlbedo;
+    sampler2D rmTexture;//Roughness and Metallic
+    vec2 size;//The scaling of each material tells us what percent of a texture each voxel is when measured linearly.
+}
+
+uniform MaterialTextureSet materialTextures[512];
+
+
 //This is the data used to find the bindless textures
-uniform Emissions
-{
-  sampler2D emissions[512];
-};
-
-uniform Albedos
-{
-  sampler2D albedos[512];
-};
-
-uniform MetallicAlbedos
-{
-  sampler2D metallicAlbedos[512];
-};
-
-//Roughness and Metallic
-uniform RMTextures
-{
-  sampler2D rmTextures[512];
-};
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
 uniform uint materialMap[4096];//This maps from the material index from the ray cast to the index of an actual material
-uniform vec2 sizes[512];//The scaling of each material tells us what percent of a texture each voxel is when measured linearly.
 uniform float random;//This is used to make non-deterministic randomness
 
 
@@ -340,11 +330,12 @@ void main()
 
 
     //Format the voxel material into a struct
+    //Load the correct material values from the array of material textures
     MaterialProperties voxelMaterial;
-    voxelMaterial.emission = texture(sampler2d(emissions[material]), uv).xyz;
-    voxelMaterial.albedo = texture(sampler2d(albedos[material]), uv).xyz;
-    voxelMaterial.metallicAlbedo = texture(sampler2d(albedos[material]), uv).xyz;
-    vec4 rmTexture = texture(sampler2d(rmTextures[material]), uv);
+    voxelMaterial.emission = texture(sampler2d(materialTextures[material].emission), uv).xyz;
+    voxelMaterial.albedo = texture(sampler2d(materialTextures[material].albedo), uv).xyz;
+    voxelMaterial.metallicAlbedo = texture(sampler2d(materialTextures[material].metallicAlbedo), uv).xyz;
+    vec4 rmTexture = texture(sampler2d(materialTextures[material].rmTexture), uv);
     voxelMaterial.roughness = rmTexture.r;
     voxelMaterial.metallic = rmTexture.g;
 
