@@ -21,7 +21,6 @@ void setByte(ivec3 coord, uint value, uint byteNumber)
     materialMap[bufferIndex] |= value << (8 * bufferOffset);
 }
 
-
 /*
 void setMaterial(ivec3 coord, uint value)
 {

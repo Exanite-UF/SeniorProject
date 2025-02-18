@@ -11,13 +11,13 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "VoxelRenderer.h"
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/world/VoxelWorld.h>
-#include "VoxelRenderer.h"
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;
@@ -63,7 +63,7 @@ VoxelRenderer::VoxelRenderer()
     executeRayTraceProgram = ShaderManager::getManager().getComputeProgram(Content::executeRayTraceComputeShader);
     resetHitInfoProgram = ShaderManager::getManager().getComputeProgram(Content::resetHitInfoComputeShader);
     displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
-    glGenBuffers(1, &materialTexturesBuffer);//Generate the buffer that will store the material textures
+    glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
 
 void VoxelRenderer::setResolution(int x, int y)
@@ -91,7 +91,7 @@ void VoxelRenderer::setRaysPerPixel(int number)
 
 void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
 {
-    handleDirtySizing();//Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
+    handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
     GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (ySize + 8 - 1) / 8;
@@ -105,7 +105,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
         glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
         glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
         glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
-        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);//A little bit of randomness for temporal accumulation
+        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f); // A little bit of randomness for temporal accumulation
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -146,7 +146,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
 
 void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 {
-    //handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
+    // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
 
     glUseProgram(executeRayTraceProgram);
 
@@ -205,16 +205,16 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 
 void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array</*Some struct*/, 512>& materialTextures)
 {
-    //handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
+    // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(BRDFProgram);
 
-    //These will not be modified
+    // These will not be modified
     rayHitPositionBuffer.bind(0);
     rayHitNormalBuffer.bind(1);
     rayHitMaterialBuffer.bind(2);
     rayHitVoxelPositionBuffer.bind(3);
 
-    //These will be modified
+    // These will be modified
     rayStartBuffer.bind(4);
     rayDirectionBuffer.bind(5);
     attentuationBuffer.bind(6);
@@ -226,26 +226,22 @@ void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMa
         GLuint workGroupsZ = raysPerPixel;
 
         glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
-        glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f);//A little bit of randomness for temporal accumulation
+        glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f); // A little bit of randomness for temporal accumulation
         glUniform1uiv(glGetUniformLocation(BRDFProgram, "materialMap"), 4096, materialMap.data());
 
-        
-        //Set the material data
-        //TODO
+        // Set the material data
+        // TODO
         glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
-        glBufferData(GL_UNIFORM_BUFFER, 48 * materialTextures.size()/*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW/*This can probably be changed to GL_STATIC_DRAW*/);//Actually sets the material data
+        glBufferData(GL_UNIFORM_BUFFER, 48 * materialTextures.size() /*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW /*This can probably be changed to GL_STATIC_DRAW*/); // Actually sets the material data
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // bind light buffer to location 1
         glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
 
-
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);//Shouldn't this be a different barrier
-
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT); // Shouldn't this be a different barrier
     }
-    
 
     rayHitPositionBuffer.unbind();
     rayHitNormalBuffer.unbind();
@@ -262,7 +258,6 @@ void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMa
 void VoxelRenderer::display()
 {
     glUseProgram(displayToWindowProgram);
-
 
     rayHitPositionBuffer.bind(0);
     rayHitNormalBuffer.bind(1);

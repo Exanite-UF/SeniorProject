@@ -21,7 +21,6 @@ layout(std430, binding = 3) buffer MaterialMap
     uint materialMap[];
 };
 
-
 layout(std430, binding = 4) buffer HitPosition
 {
     vec4 hitPosition[];
@@ -41,12 +40,6 @@ layout(std430, binding = 7) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
-
-
-
-
-
-
 uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture (not the size of the voxel world)
 uniform uint mipMapTextureCount;
 uniform uint mipMapStartIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
@@ -56,7 +49,6 @@ uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 voxelWorldPosition;
 uniform vec4 voxelWorldRotation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
-
 
 void setHitPosition(ivec3 coord, vec4 value)
 {
@@ -70,7 +62,8 @@ void setHitNormal(ivec3 coord, vec4 value)
     hitNormal[index] = value;
 }
 
-vec4 getHitNormal(ivec3 coord){
+vec4 getHitNormal(ivec3 coord)
+{
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
 
     return hitNormal[index];
@@ -89,7 +82,6 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 1] = value.y;
     hitVoxelPosition[index + 2] = value.z;
 }
-
 
 // coord is a cell coord
 uint getByte(ivec3 coord, int mipMapTexture)
@@ -302,36 +294,35 @@ void main()
 
     vec3 rayStart = rayPos;
 
-    float currentDepth = getHitNormal(texelCoord).w;//imageLoad(hitNormal, texelCoord).w;
+    float currentDepth = getHitNormal(texelCoord).w; // imageLoad(hitNormal, texelCoord).w;
 
     vec3 voxelWorldSize = 2. * voxelResolution;
 
-    //Transform the ray position to voxel space
-    rayPos -= voxelWorldPosition;//Find position relative to the voxel world
-    rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos);//Inverse rotations lets us rotate from world space to voxel space
-    rayPos /= voxelWorldScale;//Undo the scale now that we are aligned with voxel space
-    rayPos += 0.5 * vec3(voxelWorldSize);//This moves the origin of the voxel world to its center
-    
+    // Transform the ray position to voxel space
+    rayPos -= voxelWorldPosition; // Find position relative to the voxel world
+    rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos); // Inverse rotations lets us rotate from world space to voxel space
+    rayPos /= voxelWorldScale; // Undo the scale now that we are aligned with voxel space
+    rayPos += 0.5 * vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
 
-    //Transform the ray direction to voxel space
+    // Transform the ray direction to voxel space
     rayDir = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayDir);
     rayDir /= voxelWorldScale;
 
-    //Increment the ray forward slightly for numerical stability (This is corrected for in the intersection code)
+    // Increment the ray forward slightly for numerical stability (This is corrected for in the intersection code)
     rayPos += rayDir * 0.001;
 
-    //Find the intersection point of the ray cast
+    // Find the intersection point of the ray cast
     RayHit hit = findIntersection(rayPos, rayDir, 200, currentDepth);
 
-    vec3 voxelPosition = hit.hitLocation;//Store the position of the intersection in voxel space
+    vec3 voxelPosition = hit.hitLocation; // Store the position of the intersection in voxel space
 
-    //Transform the hit location to world space
-    hit.hitLocation -= 0.5 * vec3(voxelWorldSize);//This moves the origin of the voxel world to its center
-    hit.hitLocation *= voxelWorldScale;//Apply the scale of the voxel world
-    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation);//Rotate back into world space
-    hit.hitLocation += voxelWorldPosition;//Apply the voxel world position
+    // Transform the hit location to world space
+    hit.hitLocation -= 0.5 * vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
+    hit.hitLocation *= voxelWorldScale; // Apply the scale of the voxel world
+    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
+    hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
 
-    //Transform the hit normal from 
+    // Transform the hit normal from
     hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
