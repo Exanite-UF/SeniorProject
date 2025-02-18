@@ -114,9 +114,10 @@ void Program::run()
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
 
     // Fps counter
-    int frameCounter = 0;
-    double frameTime = 0;
+    float fpsCycleTimer = 0;
+    int framesThisCycle = 0;
     float currentFPS = 0;
+    float averagedDeltaTime = 0;
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -130,13 +131,18 @@ void Program::run()
         totalElapsedTime += deltaTime;
 
         // Fps counter
-        frameCounter++;
-        frameTime += deltaTime;
-        if (frameCounter % 100 == 0)
+        fpsCycleTimer += deltaTime;
+        framesThisCycle++;
+        if (fpsCycleTimer > 1)
         {
-            currentFPS = 100 / frameTime;
-            log(std::to_string(currentFPS));
-            frameTime = 0;
+            currentFPS = framesThisCycle / fpsCycleTimer;
+            averagedDeltaTime = fpsCycleTimer / framesThisCycle;
+
+            auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
+            log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)");
+
+            fpsCycleTimer = 0;
+            framesThisCycle = 0;
         }
 
         // Clear screen
