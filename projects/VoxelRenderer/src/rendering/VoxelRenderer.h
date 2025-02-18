@@ -34,6 +34,8 @@ private:
     GraphicsBuffer<glm::vec3> attentuationBuffer;//(r, g, b)
     GraphicsBuffer<glm::vec3> accumulatedLightBuffer;//(r, g, b)
 
+    GLuint materialTexturesBuffer;//This buffer will store the structs of material textures
+
 
 
     // These are compute shaders that are used to render
@@ -67,7 +69,7 @@ public:
 
     //materialMap: This maps from material index to material id (What is stored in the material result to an actual material)
     //materialTextureSizes: This stores the size of voxel in each material texture (it is 512 vec2 values)
-    void accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array<float, 1024>& materialTextureSizes);
+    void accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array</*Some struct*/, 512>& materialTextures);//Some struct must be 48 byte large
 
     void display();
 };

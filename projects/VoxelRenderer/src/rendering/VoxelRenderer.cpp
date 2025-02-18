@@ -60,6 +60,7 @@ VoxelRenderer::VoxelRenderer()
     executeRayTraceProgram = ShaderManager::getManager().getComputeProgram(Content::executeRayTraceComputeShader);
     resetHitInfoProgram = ShaderManager::getManager().getComputeProgram(Content::resetHitInfoComputeShader);
     displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
+    glGenBuffers(1, &materialTexturesBuffer);//Generate the buffer that will store the material textures
 }
 
 void VoxelRenderer::setResolution(int x, int y)
@@ -195,7 +196,7 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     glUseProgram(0);
 }
 
-void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array<float, 1024>& materialTextureSizes)
+void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array</*Some struct*/, 512>& materialTextures)
 {
     //handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(BRDFProgram);
@@ -218,7 +219,18 @@ void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMa
         glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
         glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f);//A little bit of randomness for temporal accumulation
         glUniform1uiv(glGetUniformLocation(BRDFProgram, "materialMap"), 4096, materialMap.data());
-        glUniform2fv(glGetUniformLocation(BRDFProgram, "sizes"), 512, materialTextureSizes.data());
+
+        
+        //Set the material data
+        glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
+        glBufferData(GL_UNIFORM_BUFFER, 48/*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW/*This can probably be changed to GL_STATIC_DRAW*/);//Actually sets the material data
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        // bind light buffer to location 1
+        glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
+
+        //glUniform2fv(glGetUniformLocation(BRDFProgram, "sizes"), 512, materialTextureSizes.data());
+
 
 
 

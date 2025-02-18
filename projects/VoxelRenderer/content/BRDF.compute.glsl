@@ -32,7 +32,7 @@ layout(std430, binding = 3) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
-layout(std430, binding = 1) buffer RayPosition
+layout(std430, binding = 4) buffer RayPosition
 {
     float rayPosition[];
 };
@@ -55,15 +55,17 @@ layout(std430, binding = 7) buffer AccumulatedLight
 //At the moment every material is fully defined using a texture
 //As such 512 textures are sent in for each material property
 
+//This struct is 40 bytes long (The data is tightly packed)
 struct MaterialTextureSet{
-    sampler2D emission;
+    sampler2D emission;//uint64_t
     sampler2D albedo;
     sampler2D metallicAlbedo;
     sampler2D rmTexture;//Roughness and Metallic
-    vec2 size;//The scaling of each material tells us what percent of a texture each voxel is when measured linearly.
+    vec2 size;//The scaling of each material tells us what percent of a texture each voxel is when measured linearly.//2 * float
 }
 
-uniform MaterialTextureSet materialTextures[512];
+//Each entry is 48 bytes long (There are 8 bytes of padding)
+uniform (std140) MaterialTextureSet materialTextures[512];
 
 
 //This is the data used to find the bindless textures
