@@ -319,8 +319,6 @@ void Program::run()
         }
 
         {
-            std::string str = "Hello";
-            float f;
             if (showMenuGUI)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
@@ -348,11 +346,6 @@ void Program::run()
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
                     ImGui::Text("\nFPS: %.2f", currentFPS);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
-
-                    // if (ImGui::Button("Save"))
-                    //     ;
-                    // ImGui::InputText("string", &str);
-                    // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
                 }
                 ImGui::End();
                 ImGui::PopStyleColor();
