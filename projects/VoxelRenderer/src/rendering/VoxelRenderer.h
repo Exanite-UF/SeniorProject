@@ -1,6 +1,5 @@
 #pragma once
 
-#include <src/graphics/ShaderFloatBuffer.h>
 #include <src/world/Camera.h>
 #include <src/world/VoxelWorld.h>
 #include <vector>
@@ -22,8 +21,8 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
-    ShaderFloatBuffer rayStartBuffer;
-    ShaderFloatBuffer rayDirectionBuffer;
+    GraphicsBuffer<float> rayStartBuffer;
+    GraphicsBuffer<float> rayDirectionBuffer;
 
     // These buffers are used to store the result of a ray trace step
     GLuint rayHitPositionBuffer = 0; //(x, y, z, wasHit)
