@@ -19,16 +19,30 @@ GameObject::~GameObject()
 template <typename T, typename... Args>
 T* GameObject::addComponent(Args&&... args)
 {
-    return 0;
+    T* component = new T(std::forward<Args>(args)...);
+    component->gameObject = this;
+    components.push_back(component);
+    //component->onCreate();
+    return component;
 }
 
 template <typename T>
 T* GameObject::getComponent()
 {
-    return 0;
+    for (Component* component : components)
+    {
+        // attempting to cast component to type T
+        T* castedComponent = dynamic_cast<T*>(component);
+        if (castedComponent != nullptr)
+        {
+            return castedComponent;
+        }
+    }
+
+    return nullptr;
 }
 
 void GameObject::destroy()
 {
-
+    
 }
