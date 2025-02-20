@@ -1,7 +1,7 @@
 #pragma once
 
-#include <src/gameobjects/Component.h>
 #include <glm/glm.hpp>
+#include <src/gameobjects/Component.h>
 
 class TransformComponent : public Component
 {
@@ -21,7 +21,7 @@ public:
     glm::vec3 scale;
 
     TransformComponent(GameObject* gameObject);
-    
+
     void onUpdate() override;
     void onCreate() override;
     void onDestroy() override;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <src/utilities/NonCopyable.h>
 #include <src/gameobjects/GameObject.h>
+#include <src/utilities/NonCopyable.h>
 
 class Component : public NonCopyable
 {
