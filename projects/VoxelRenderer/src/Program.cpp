@@ -3,6 +3,25 @@
 #include <imgui/imgui_impl_opengl3.h>
 #include <imgui/imgui_stdlib.h>
 
+#include <Jolt/Jolt.h>
+
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/RegisterTypes.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "graphics/TextureManager.h"
+
+#include <stb_image.h>
+
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -82,18 +101,26 @@ void Program::run()
     // Ensure preconditions are met
     runLateStartupTests();
 
-    auto& shaderManager = ShaderManager::getManager();
+    auto& shaderManager = ShaderManager::getInstance();
+    auto& textureManager = TextureManager::getInstance();
+    auto& materialManager = MaterialManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
-    // Get shader programs
+    // Load shader programs
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
     assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
+
+    // Load textures
+    // TODO: Remove OR save to Program class, similarly to the shaders above. These are used to make sure the texture loading is working
+    auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
+    auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
+    auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
     // Create the scene
     Scene scene {};
@@ -104,9 +131,6 @@ void Program::run()
 
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
-
-    // Create the material manager
-    MaterialManager materialManager {};
 
     // Create the renderer
     VoxelRenderer renderer;
@@ -501,5 +525,17 @@ void Program::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
         log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+    }
+
+    {
+        // TODO: Probably remove later
+        // Ensure assimp and jolt work
+        JPH::RegisterDefaultAllocator();
+        JPH::Factory::sInstance = new JPH::Factory();
+        JPH::RegisterTypes();
+
+        Assimp::Importer importer {};
+        const aiScene* scene = importer.ReadFile("content/Cube.fbx", 0);
+        importer.FreeScene();
     }
 }
