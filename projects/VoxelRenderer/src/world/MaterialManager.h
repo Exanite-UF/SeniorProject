@@ -20,12 +20,16 @@ private:
     GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialMapCount);
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
 
-public:
+    static MaterialManager* instance;
+
     MaterialManager();
     ~MaterialManager();
 
+public:
     void writeToGpu();
 
     GraphicsBuffer<uint32_t>& getMaterialMapBuffer();
     GraphicsBuffer<MaterialData>& getMaterialDataBuffer();
+
+    static MaterialManager& getInstance();
 };

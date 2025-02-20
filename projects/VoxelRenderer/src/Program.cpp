@@ -18,6 +18,8 @@
 #include <assimp/scene.h>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include "graphics/TextureManager.h"
+
 #include <stb_image.h>
 
 #include <filesystem>
@@ -99,18 +101,26 @@ void Program::run()
     // Ensure preconditions are met
     runLateStartupTests();
 
-    auto& shaderManager = ShaderManager::getManager();
+    auto& shaderManager = ShaderManager::getInstance();
+    auto& textureManager = TextureManager::getInstance();
+    auto& materialManager = MaterialManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
-    // Get shader programs
+    // Load shader programs
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
     assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
+
+    // Load textures
+    // TODO: Remove OR save to Program class, similarly to the shaders above. These are used to make sure the texture loading is working
+    auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
+    auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
+    auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
     // Create the scene
     Scene scene {};
@@ -121,9 +131,6 @@ void Program::run()
 
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
-
-    // Create the material manager
-    MaterialManager materialManager {};
 
     // Create the renderer
     VoxelRenderer renderer;
