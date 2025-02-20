@@ -18,6 +18,8 @@ private:
     std::unordered_map<std::tuple<std::string_view, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string_view, GLenum>>> textures;
 
     static GLenum getOpenGlFormat(TextureType type);
+    static int getFormatChannelCount(GLenum format);
+
     std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type, GLenum format);
 
 public:

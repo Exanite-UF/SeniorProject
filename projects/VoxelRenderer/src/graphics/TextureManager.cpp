@@ -21,6 +21,23 @@ GLenum TextureManager::getOpenGlFormat(TextureType type)
     throw std::runtime_error("Unsupported texture type: " + type);
 }
 
+int TextureManager::getFormatChannelCount(GLenum format)
+{
+    switch (format)
+    {
+        case GL_SRGB8:
+            return 3;
+        case GL_SRGB8_ALPHA8:
+            return 4;
+        case GL_RGB8:
+            return 3;
+        default:
+            break;
+    }
+
+    throw std::runtime_error("Unsupported texture format: " + format);
+}
+
 std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type, GLenum format)
 {
     // Use cached texture if available
@@ -31,12 +48,24 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
     }
 
     // Load texture data
-    int width, height, channels;
-    auto textureData = stbi_load(path.data(), &width, &height, &channels, 3);
-    Program::assertIsTrue(textureData != nullptr, "Failed to load texture: " + std::string(path));
+    int width, height, rawChannelCount;
+    auto rawTextureData = stbi_load(path.data(), &width, &height, &rawChannelCount, 3);
+    Program::assertIsTrue(rawTextureData != nullptr, "Failed to load texture: " + std::string(path));
 
     try
     {
+        // Rewrite data to have required number of channels
+        auto requiredChannelCount = getFormatChannelCount(format);
+        auto* textureData = new uint8_t[width * height * requiredChannelCount];
+
+        for (int entryI = 0; entryI < width * height; entryI++)
+        {
+            for (int channelI = 0; channelI < requiredChannelCount; channelI++)
+            {
+                textureData[entryI * requiredChannelCount + channelI] = rawTextureData[entryI * rawChannelCount + channelI];
+            }
+        }
+
         // Create OpenGL texture
         GLuint textureId;
         glGenTextures(1, &textureId);
@@ -63,7 +92,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
     }
     catch (...)
     {
-        stbi_image_free(textureData);
+        stbi_image_free(rawTextureData);
 
         throw;
     }
