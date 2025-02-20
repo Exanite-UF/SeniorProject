@@ -1,8 +1,8 @@
 #pragma once
 
-#include <src/utilities/NonCopyable.h>
 #include <src/gameobjects/Component.h>
 #include <src/gameobjects/TransformComponent.h>
+#include <src/utilities/NonCopyable.h>
 #include <vector>
 
 class GameObject : public NonCopyable
@@ -21,8 +21,6 @@ public:
 
     // Calls destroy on all the components in the list
     void destroy();
-
-
 
     // components.at(0) should be the built-in TransformComponent || constructor
 

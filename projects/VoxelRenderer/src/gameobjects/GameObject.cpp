@@ -22,7 +22,7 @@ T* GameObject::addComponent(Args&&... args)
     T* component = new T(std::forward<Args>(args)...);
     component->gameObject = this;
     components.push_back(component);
-    //component->onCreate();
+    // component->onCreate();
     return component;
 }
 
@@ -44,5 +44,4 @@ T* GameObject::getComponent()
 
 void GameObject::destroy()
 {
-    
 }
