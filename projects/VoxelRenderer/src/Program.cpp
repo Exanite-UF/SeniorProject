@@ -117,6 +117,8 @@ void Program::run()
     // Create the texture manager
     TextureManager textureManager {};
     auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
+    auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
+    auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
     // Create the material manager
     MaterialManager materialManager {};
