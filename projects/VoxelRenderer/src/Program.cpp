@@ -18,6 +18,8 @@
 #include <assimp/scene.h>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include "graphics/TextureManager.h"
+
 #include <stb_image.h>
 
 #include <filesystem>
@@ -99,7 +101,7 @@ void Program::run()
     // Ensure preconditions are met
     runLateStartupTests();
 
-    auto& shaderManager = ShaderManager::getManager();
+    auto& shaderManager = ShaderManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
@@ -112,6 +114,13 @@ void Program::run()
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
     assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
 
+    // Create the texture manager
+    TextureManager textureManager {};
+    auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
+
+    // Create the material manager
+    MaterialManager materialManager {};
+
     // Create the scene
     Scene scene {};
     Camera& camera = scene.camera;
@@ -121,9 +130,6 @@ void Program::run()
 
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
-
-    // Create the material manager
-    MaterialManager materialManager {};
 
     // Create the renderer
     VoxelRenderer renderer;

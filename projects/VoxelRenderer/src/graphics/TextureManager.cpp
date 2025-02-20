@@ -2,8 +2,26 @@
 
 #include <src/Program.h>
 #include <stb_image.h>
+#include <stdexcept>
 
-std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLenum format)
+GLenum TextureManager::getOpenGlFormat(TextureType type)
+{
+    switch (type)
+    {
+        case ColorOnly:
+            return GL_SRGB8;
+        case ColorAlpha:
+            return GL_SRGB8_ALPHA8;
+        case Normal:
+            return GL_RGB8;
+        default:
+            break;
+    }
+
+    throw std::runtime_error("Unsupported texture type: " + type);
+}
+
+std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type, GLenum format)
 {
     int width, height, channels;
     auto textureData = stbi_load(path.data(), &width, &height, &channels, 0);
@@ -21,12 +39,12 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLen
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, textureData);
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        return std::make_shared<Texture>(textureId);
+        return std::make_shared<Texture>(textureId, type);
     }
     catch (...)
     {
@@ -36,12 +54,12 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLen
     }
 }
 
-std::shared_ptr<Texture> TextureManager::loadColorTexture(std::string_view path)
+std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type)
 {
-    return loadTexture(path, GL_RGBA);
+    return loadTexture(path, type, getOpenGlFormat(type));
 }
 
-std::shared_ptr<Texture> TextureManager::loadRawTexture(std::string_view path)
+std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLenum format)
 {
-    return loadTexture(path, GL_RGBA);
+    return loadTexture(path, Unknown, format);
 }

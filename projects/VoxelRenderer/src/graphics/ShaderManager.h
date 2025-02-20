@@ -40,5 +40,5 @@ public:
     // Output is cached
     GLuint getComputeProgram(const std::string_view& computeShaderPath);
 
-    static ShaderManager& getManager();
+    static ShaderManager& getInstance();
 };

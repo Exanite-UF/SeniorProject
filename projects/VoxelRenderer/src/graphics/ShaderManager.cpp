@@ -172,7 +172,7 @@ GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPat
     return program;
 }
 
-ShaderManager& ShaderManager::getManager()
+ShaderManager& ShaderManager::getInstance()
 {
     if (instance == nullptr)
     {

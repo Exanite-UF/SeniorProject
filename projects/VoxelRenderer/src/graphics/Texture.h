@@ -1,3 +1,7 @@
+#pragma once
+
+#include "TextureType.h"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -9,9 +13,13 @@ private:
     GLuint textureId;
     GLuint64 bindlessHandle;
 
+    TextureType type;
+
 public:
-    explicit Texture(GLuint textureId);
+    explicit Texture(GLuint textureId, TextureType type);
 
     GLuint getTextureId();
     uint64_t getBindlessHandle();
+
+    TextureType getType();
 };
