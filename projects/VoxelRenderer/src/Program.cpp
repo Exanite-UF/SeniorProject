@@ -103,6 +103,7 @@ void Program::run()
 
     auto& shaderManager = ShaderManager::getInstance();
     auto& textureManager = TextureManager::getInstance();
+    auto& materialManager = MaterialManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
@@ -120,9 +121,6 @@ void Program::run()
     auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
     auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
     auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
-
-    // Create the material manager
-    MaterialManager materialManager {};
 
     // Create the scene
     Scene scene {};

@@ -6,6 +6,16 @@
 
 ShaderManager* ShaderManager::instance = nullptr;
 
+ShaderManager& ShaderManager::getInstance()
+{
+    if (instance == nullptr)
+    {
+        instance = new ShaderManager();
+    }
+
+    return *instance;
+}
+
 ShaderManager::ShaderManager() = default;
 
 ShaderManager::~ShaderManager()
@@ -170,14 +180,4 @@ GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPat
     computePrograms[cacheKey] = program;
 
     return program;
-}
-
-ShaderManager& ShaderManager::getInstance()
-{
-    if (instance == nullptr)
-    {
-        instance = new ShaderManager();
-    }
-
-    return *instance;
 }

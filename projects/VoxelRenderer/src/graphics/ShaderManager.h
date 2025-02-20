@@ -28,10 +28,9 @@ private:
 
     static ShaderManager* instance;
     ShaderManager();
-
-public:
     ~ShaderManager();
 
+public:
     // Loads, compiles, and links vertex and fragment shaders into a graphics program
     // Output is cached
     GLuint getGraphicsProgram(const std::string_view& vertexShaderPath, const std::string_view& fragmentShaderPath);

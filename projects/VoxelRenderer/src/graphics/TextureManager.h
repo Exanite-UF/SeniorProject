@@ -11,7 +11,7 @@
 #include <src/graphics/TextureType.h>
 #include <src/utilities/TupleHasher.h>
 
-class TextureManager
+class TextureManager : public NonCopyable
 {
 private:
     // (path, format) -> texture
@@ -24,6 +24,7 @@ private:
 
     static TextureManager* instance;
     TextureManager();
+    ~TextureManager();
 
 public:
     // Loads a texture using a texture type preset

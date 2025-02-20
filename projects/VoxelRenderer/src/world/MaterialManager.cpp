@@ -3,6 +3,18 @@
 #include <array>
 #include <span>
 
+MaterialManager* MaterialManager::instance = nullptr;
+
+MaterialManager& MaterialManager::getInstance()
+{
+    if (instance == nullptr)
+    {
+        instance = new MaterialManager();
+    }
+
+    return *instance;
+}
+
 MaterialManager::MaterialManager()
 {
     for (size_t i = 0; i < materials.size(); i++)
