@@ -1,3 +1,27 @@
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+#include <imgui/imgui_stdlib.h>
+
+#include <Jolt/Jolt.h>
+
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/RegisterTypes.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "graphics/TextureManager.h"
+
+#include <stb_image.h>
+
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -10,6 +34,7 @@
 #include <src/utilities/Event.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
@@ -76,18 +101,26 @@ void Program::run()
     // Ensure preconditions are met
     runLateStartupTests();
 
-    auto& shaderManager = ShaderManager::getManager();
+    auto& shaderManager = ShaderManager::getInstance();
+    auto& textureManager = TextureManager::getInstance();
+    auto& materialManager = MaterialManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
-    // Get shader programs
+    // Load shader programs
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
     assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
+
+    // Load textures
+    // TODO: Remove OR save to Program class, similarly to the shaders above. These are used to make sure the texture loading is working
+    auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
+    auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
+    auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
     // Create the scene
     Scene scene {};
@@ -106,7 +139,7 @@ void Program::run()
     // Main render loop
     glm::vec3 cameraPosition(0);
     glm::vec2 cameraRotation(0);
-    float moveSpeed = 0;
+    float moveSpeedExponent = 50;
     float mouseSensitivity = 0.002;
 
     // Engine time
@@ -114,9 +147,10 @@ void Program::run()
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
 
     // Fps counter
-    int frameCounter = 0;
-    double frameTime = 0;
+    float fpsCycleTimer = 0;
+    int framesThisCycle = 0;
     float currentFPS = 0;
+    float averagedDeltaTime = 0;
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -130,13 +164,18 @@ void Program::run()
         totalElapsedTime += deltaTime;
 
         // Fps counter
-        frameCounter++;
-        frameTime += deltaTime;
-        if (frameCounter % 100 == 0)
+        fpsCycleTimer += deltaTime;
+        framesThisCycle++;
+        if (fpsCycleTimer > 1)
         {
-            currentFPS = 100 / frameTime;
-            log(std::to_string(currentFPS));
-            frameTime = 0;
+            currentFPS = framesThisCycle / fpsCycleTimer;
+            averagedDeltaTime = fpsCycleTimer / framesThisCycle;
+
+            auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
+            log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)");
+
+            fpsCycleTimer = 0;
+            framesThisCycle = 0;
         }
 
         // Clear screen
@@ -170,32 +209,32 @@ void Program::run()
 
         if (input->isKeyHeld(GLFW_KEY_A))
         {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
         }
 
         if (input->isKeyHeld(GLFW_KEY_D))
         {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * right;
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
         }
 
         if (input->isKeyHeld(GLFW_KEY_W))
         {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
+            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
         }
 
         if (input->isKeyHeld(GLFW_KEY_S))
         {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1)) * forward;
+            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
         }
 
         if (input->isKeyHeld(GLFW_KEY_SPACE))
         {
-            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
+            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
         }
 
         if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
         {
-            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeed * 0.1));
+            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
         }
 
         if (input->isKeyHeld(GLFW_KEY_E))
@@ -206,6 +245,21 @@ void Program::run()
         if (input->isKeyPressed(GLFW_KEY_F5))
         {
             data.copyFrom(voxelWorld);
+        }
+
+        if (input->isKeyPressed(GLFW_KEY_F8))
+        {
+            data.clearOccupancy();
+
+            for (int x = 0; x < data.getSize().x; ++x)
+            {
+                for (int y = 0; y < data.getSize().y; ++y)
+                {
+                    data.setVoxelOccupancy({ x, y, x }, true);
+                }
+            }
+
+            data.writeTo(voxelWorld);
         }
 
         if (input->isKeyPressed(GLFW_KEY_F9))
@@ -269,7 +323,7 @@ void Program::run()
         }
         else
         {
-            moveSpeed += input->getMouseScroll().y;
+            moveSpeedExponent += input->getMouseScroll().y;
         }
 
         // F3 Debug Menu
@@ -282,9 +336,11 @@ void Program::run()
             renderer.setResolution(window->size.x, window->size.y);
 
             camera.transform.setGlobalPosition(cameraPosition);
-            // worlds[0].rotation = glm::angleAxis((float)totalTime, glm::normalize(glm::vec3(-1.f, 0.5f, 1.f)));
-            // worlds[0].scale = glm::vec3(1, 1, 2);
             camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
+
+            // Scales and rotates the world. For testing purposes.
+            // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)totalElapsedTime, glm::normalize(glm::vec3(-1.f, 0, 0))));
+            // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
 
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(scene.worlds);
@@ -292,8 +348,6 @@ void Program::run()
         }
 
         {
-            std::string str = "Hello";
-            float f;
             if (showMenuGUI)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
@@ -321,11 +375,6 @@ void Program::run()
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
                     ImGui::Text("\nFPS: %.2f", currentFPS);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
-
-                    // if (ImGui::Button("Save"))
-                    //     ;
-                    // ImGui::InputText("string", &str);
-                    // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
                 }
                 ImGui::End();
                 ImGui::PopStyleColor();
@@ -375,6 +424,11 @@ void Program::runEarlyStartupTests()
     {
         // This allows us to safely use nullptr instead of NULL
         assertIsTrue(NULL == nullptr, "Unsupported compiler: NULL must equal nullptr");
+    }
+
+    {
+        // This allows us to safely use uint32_t instead of GLuint
+        assertIsTrue(sizeof(GLuint) == sizeof(uint32_t), "Unsupported compiler: sizeof(GLuint) must equal sizeof(uint32_t)");
     }
 
     {
@@ -470,5 +524,17 @@ void Program::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
         log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+    }
+
+    {
+        // TODO: Probably remove later
+        // Ensure assimp and jolt work
+        JPH::RegisterDefaultAllocator();
+        JPH::Factory::sInstance = new JPH::Factory();
+        JPH::RegisterTypes();
+
+        Assimp::Importer importer {};
+        const aiScene* scene = importer.ReadFile("content/Cube.fbx", 0);
+        importer.FreeScene();
     }
 }

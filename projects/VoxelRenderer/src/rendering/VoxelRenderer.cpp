@@ -36,8 +36,8 @@ void VoxelRenderer::remakeTextures()
     glDeleteTextures(1, &rayHitMaterialBuffer);
 
     // Create a new texture
-    rayStartBuffer.resize(xSize * ySize * raysPerPixel * 3);
-    rayDirectionBuffer.resize(xSize * ySize * raysPerPixel * 3);
+    rayStartBuffer.setSize(xSize * ySize * raysPerPixel * 3);
+    rayDirectionBuffer.setSize(xSize * ySize * raysPerPixel * 3);
 
     // rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     // rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
@@ -59,10 +59,10 @@ void VoxelRenderer::handleDirtySizing()
 
 VoxelRenderer::VoxelRenderer()
 {
-    prepareRayTraceFromCameraProgram = ShaderManager::getManager().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
-    executeRayTraceProgram = ShaderManager::getManager().getComputeProgram(Content::executeRayTraceComputeShader);
-    resetHitInfoProgram = ShaderManager::getManager().getComputeProgram(Content::resetHitInfoComputeShader);
-    displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
+    prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
+    executeRayTraceProgram = ShaderManager::getInstance().getComputeProgram(Content::executeRayTraceComputeShader);
+    resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
+    displayToWindowProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
 }
 
 void VoxelRenderer::setResolution(int x, int y)
@@ -242,9 +242,9 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
                 // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
                 glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getOccupancyStartIndices().size() - 1);
-                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), voxelWorld.getOccupancyStartIndices().size(), voxelWorld.getOccupancyStartIndices().data());
-                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "materialStartIndices"), voxelWorld.getMaterialStartIndices().size(), voxelWorld.getMaterialStartIndices().data());
+                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), voxelWorld.getOccupancyMapIndices().size() - 1, voxelWorld.getOccupancyMapIndices().data());
+                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "materialStartIndices"), voxelWorld.getMaterialMapIndices().size() - 1, voxelWorld.getMaterialMapIndices().data());
 
                 glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.transform.getGlobalPosition()));
                 glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld.transform.getGlobalRotation()));
