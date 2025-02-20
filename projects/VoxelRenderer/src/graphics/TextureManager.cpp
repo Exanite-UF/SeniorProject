@@ -56,7 +56,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
     {
         // Rewrite data to have required number of channels
         auto requiredChannelCount = getFormatChannelCount(format);
-        auto* textureData = new uint8_t[width * height * requiredChannelCount];
+        std::vector<uint8_t> textureData(width * height * requiredChannelCount);
 
         for (int entryI = 0; entryI < width * height; entryI++)
         {
@@ -77,7 +77,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, textureData);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, textureData.data());
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
