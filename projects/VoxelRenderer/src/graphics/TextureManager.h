@@ -17,7 +17,7 @@ private:
     // (path, format) -> texture
     std::unordered_map<std::tuple<std::string_view, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string_view, GLenum>>> textures;
 
-    GLenum getOpenGlFormat(TextureType type);
+    static GLenum getOpenGlFormat(TextureType type);
     std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type, GLenum format);
 
 public:

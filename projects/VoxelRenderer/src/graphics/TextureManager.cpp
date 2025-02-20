@@ -23,12 +23,21 @@ GLenum TextureManager::getOpenGlFormat(TextureType type)
 
 std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type, GLenum format)
 {
+    // Use cached texture if available
+    auto cacheKey = std::make_tuple(std::string(path), format);
+    if (textures.contains(cacheKey))
+    {
+        return textures[cacheKey];
+    }
+
+    // Load texture data
     int width, height, channels;
-    auto textureData = stbi_load(path.data(), &width, &height, &channels, 0);
+    auto textureData = stbi_load(path.data(), &width, &height, &channels, 3);
     Program::assertIsTrue(textureData != nullptr, "Failed to load texture: " + std::string(path));
 
     try
     {
+        // Create OpenGL texture
         GLuint textureId;
         glGenTextures(1, &textureId);
 
@@ -44,7 +53,13 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        return std::make_shared<Texture>(textureId, type);
+        // Wrap OpenGL handle with the Texture class
+        auto texture = std::make_shared<Texture>(textureId, type);
+
+        // Insert texture into cache
+        textures[cacheKey] = texture;
+
+        return texture;
     }
     catch (...)
     {
