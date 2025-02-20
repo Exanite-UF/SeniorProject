@@ -1,6 +1,7 @@
 #pragma once
 
 #include <src/utilities/NonCopyable.h>
+#include <src/gameobjects/GameObject.h>
 
 class Component : public NonCopyable
 {
@@ -8,14 +9,18 @@ class Component : public NonCopyable
     // GameObject*, I think we want to use a raw pointer to avoid the circular reference counter issue.
     // Also, it makes sense that the GameObjects owns the lifecycle of the Components it has.
 
-    // void destroy();
+public:
+    GameObject* gameObject;
+    Component(GameObject* parent);
+    ~Component();
+
+    void destroy();
+
+    virtual void onUpdate() = 0;
 
     // Might not need:
-    // virtual void onCreate(); - Similar to constructor, but we call these on the next update
-    // virtual void onDestroy(); - Similar to destructor, but called right before
-
-    // Definitely need:
-    // virtual void onUpdate();
+    virtual void onCreate() = 0;
+    virtual void onDestroy() = 0;
 
     // Paired calls:
     // constructor + destructor
