@@ -2,12 +2,15 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <src/utilities/TupleHasher.h>
+
 #include <string>
 #include <tuple>
 #include <unordered_map>
 
-class ShaderManager
+#include <src/utilities/NonCopyable.h>
+#include <src/utilities/TupleHasher.h>
+
+class ShaderManager : public NonCopyable
 {
 private:
     // (shaderPath, shaderType) -> (shaderModule)
@@ -27,9 +30,6 @@ private:
     ShaderManager();
 
 public:
-    ShaderManager(const ShaderManager&) = delete;
-    ShaderManager& operator=(const ShaderManager&) = delete;
-
     ~ShaderManager();
 
     // Loads, compiles, and links vertex and fragment shaders into a graphics program

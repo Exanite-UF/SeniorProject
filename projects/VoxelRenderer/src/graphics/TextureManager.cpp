@@ -95,3 +95,13 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLen
 {
     return loadTexture(path, Unknown, format);
 }
+
+TextureManager& TextureManager::getInstance()
+{
+    if (instance == nullptr)
+    {
+        instance = new TextureManager();
+    }
+
+    return *instance;
+}

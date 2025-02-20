@@ -102,20 +102,21 @@ void Program::run()
     runLateStartupTests();
 
     auto& shaderManager = ShaderManager::getInstance();
+    auto& textureManager = TextureManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
 
-    // Get shader programs
+    // Load shader programs
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
     assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
 
-    // Create the texture manager
-    TextureManager textureManager {};
+    // Load textures
+    // TODO: Remove OR save to Program class, similarly to the shaders above. These are used to make sure the texture loading is working
     auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
     auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
     auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);

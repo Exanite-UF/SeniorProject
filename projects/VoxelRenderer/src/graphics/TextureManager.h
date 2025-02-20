@@ -22,10 +22,15 @@ private:
 
     std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type, GLenum format);
 
+    static TextureManager* instance;
+    TextureManager();
+
 public:
     // Loads a texture using a texture type preset
     std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type);
 
     // Loads a texture with the specified format and colorspace
     std::shared_ptr<Texture> loadTexture(std::string_view path, GLenum format);
+
+    static TextureManager& getInstance();
 };
