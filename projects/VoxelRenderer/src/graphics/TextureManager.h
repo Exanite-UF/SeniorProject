@@ -2,13 +2,36 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <string>
 
-class TextureManager
+#include <memory>
+#include <string>
+#include <unordered_map>
+
+#include <src/graphics/Texture.h>
+#include <src/graphics/TextureType.h>
+#include <src/utilities/TupleHasher.h>
+
+class TextureManager : public NonCopyable
 {
+private:
+    // (path, format) -> texture
+    std::unordered_map<std::tuple<std::string_view, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string_view, GLenum>>> textures;
+
+    static GLenum getOpenGlFormat(TextureType type);
+    static int getFormatChannelCount(GLenum format);
+
+    std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type, GLenum format);
+
+    static TextureManager* instance;
+    TextureManager();
+    ~TextureManager();
+
 public:
-    // TODO: Figure out which of these are actually needed before implementing
-    GLuint loadColorTexture(std::string_view path);
-    GLuint loadNormalTexture(std::string_view path);
-    // TODO: Other formats? Emission is probably color, specular/metallicity/etc are probably packed as a color texture
+    // Loads a texture using a texture type preset
+    std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type);
+
+    // Loads a texture with the specified format and colorspace
+    std::shared_ptr<Texture> loadTexture(std::string_view path, GLenum format);
+
+    static TextureManager& getInstance();
 };
