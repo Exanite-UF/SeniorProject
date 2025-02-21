@@ -19,7 +19,7 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
 
 void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount)
 {
-    generateOccupancyUsingNoise(currentNoiseTime, true, 0.6);
+    generateOccupancyUsingNoise(currentNoiseTime, isRand2, 0.6);
     updateMipMaps();
 
     assignMaterial(0);
