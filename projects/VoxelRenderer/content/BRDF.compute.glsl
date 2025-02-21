@@ -13,6 +13,9 @@ struct MaterialProperties
     float padding2;
     float roughness;
     float metallic;
+
+    float padding3;
+    float padding4;
 } voxelMaterial;
 
 layout(std430, binding = 0) buffer HitPosition
