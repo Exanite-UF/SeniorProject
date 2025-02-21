@@ -6,8 +6,11 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 struct MaterialProperties
 {
     vec3 emission;
+    float padding0;
     vec3 albedo;
+    float padding1;
     vec3 metallicAlbedo;
+    float padding2;
     float roughness;
     float metallic;
 } voxelMaterial;
@@ -380,6 +383,13 @@ void main()
     // Set the output buffers
     setPosition(texelCoord, position); // Set where the ray should start from next
     setDirection(texelCoord, nextDirection.xyz); // Set the direction the ray should start from next
-    setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
-    changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
+    if(wasHit){
+        setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
+        changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
+    }else{
+        //Nothing was hit
+        setAttenuation(texelCoord, vec3(0));//No more light can come
+        changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
+    }
+    
 }

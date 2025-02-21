@@ -129,7 +129,7 @@ void main()
         */
 
         // vec3 colorBase = abs(normal.xyz);
-        color += colorBase / falloff;
+        color += colorBase;// / falloff;
     }
     color /= size.z;
     fragColor = vec4(color, 1);

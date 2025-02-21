@@ -132,8 +132,6 @@ void Program::run()
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
 
-    // Create the material manager
-    MaterialManager materialManager {};
 
     // Create the renderer
     VoxelRenderer renderer;
@@ -346,7 +344,7 @@ void Program::run()
             // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(scene.worlds);
-            renderer.accumulateLight(materialManager);
+            renderer.accumulateLight(MaterialManager::getInstance());
             // renderer.accumulateLight();//TODO: call this
             renderer.display();
         }

@@ -89,7 +89,7 @@ void main()
     setHitMaterial(texelCoord, 0);
     setHitVoxelPosition(texelCoord, vec3(0));
 
-    setAttenuation(texelCoord, vec3(0));
+    setAttenuation(texelCoord, vec3(1));
     setLightAccumulation(texelCoord, vec3(0));
     
     // imageStore(hitPosition, texelCoord, vec4(0));
