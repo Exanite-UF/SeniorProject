@@ -2,6 +2,7 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
+//Padded to 32 bytes long
 struct MaterialProperties
 {
     vec3 emission;
@@ -9,7 +10,7 @@ struct MaterialProperties
     vec3 metallicAlbedo;
     float roughness;
     float metallic;
-}
+} voxelMaterial;
 
 layout(std430, binding = 0) buffer HitPosition
 {
@@ -34,6 +35,7 @@ layout(std430, binding = 4) buffer RayPosition
 {
     float rayPosition[];
 };
+
 layout(std430, binding = 5) buffer RayDirection
 {
     float rayDirection[];
@@ -53,23 +55,35 @@ layout(std430, binding = 7) buffer AccumulatedLight
 // As such 512 textures are sent in for each material property
 
 // This struct is 40 bytes long (The data is tightly packed)
-struct MaterialTextureSet
-{
-    sampler2D emission; // uint64_t
-    sampler2D albedo;
-    sampler2D metallicAlbedo;
-    sampler2D rmTexture; // Roughness and Metallic
-    vec2 size; // The scaling of each material tells us what percent of a texture each voxel is when measured linearly.//This is 2 floats (and it is packed dense)
-}
+//struct MaterialTextureSet
+//{
+//    sampler2D emission; // uint64_t
+//    sampler2D albedo;
+//    sampler2D metallicAlbedo;
+//    sampler2D rmTexture; // Roughness and Metallic
+//    vec2 size; // The scaling of each material tells us what percent of a texture each voxel is when measured linearly.//This is 2 floats (and it is packed dense)
+//};
 
+layout(std430, binding = 8) buffer MaterialMap{
+    uint materialMap[]; // This maps from the material index from the ray cast to the index of an actual material
+};
+// Each entry is 32 bytes long (There are 12 bytes of padding)
+layout(std430, binding = 9) buffer MaterialBases{
+    MaterialProperties materialBases[];//This is the base colors of the materials
+};
 // Each entry is 48 bytes long (There are 8 bytes of padding)
-uniform(std140) MaterialTextureSet materialTextures[512];
+//layout(std430, binding = 10) buffer MaterialTextures{
+//    MaterialTextureSet materialTextures[];// This is the data used to find the bindless textures
+//};
 
-// This is the data used to find the bindless textures
+uniform uint materialMapSize;
+uniform uint materialCount;
+
+
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
-uniform uint materialMap[4096]; // This maps from the material index from the ray cast to the index of an actual material
+
 uniform float random; // This is used to make non-deterministic randomness
 
 // Buffer access and set
@@ -116,7 +130,7 @@ vec3 getDirection(ivec3 coord)
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
-vec3 setAttenuation(ivec3 coord, vec3 value)
+void setAttenuation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
 
@@ -258,7 +272,7 @@ float geometricBlocking(float dotOfViewAndNormal, float dotOfLightAndNormal, flo
 // These names come from standard terminology for the subject
 vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 {
-    vec3 halfway = normalize(view + list); // This is used by several things
+    vec3 halfway = normalize(view + light); // This is used by several things
 
     vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
 
@@ -290,7 +304,7 @@ void main()
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
     float seed = texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
-    int material = materialMap[hitMaterial[getHitMaterial(texelCoord)]]; // Get the material index of the hit, and map it to an actual material
+    uint materialID = materialMap[getHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
 
     // Load the hit position
     vec4 temp = getHitPosition(texelCoord);
@@ -324,24 +338,29 @@ void main()
         // xy
         hitUV = voxelPosition.xy;
     }
-    vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
+    //vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
 
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
-    MaterialProperties voxelMaterial;
-    voxelMaterial.emission = texture(sampler2d(materialTextures[material].emission), uv).xyz;
-    voxelMaterial.albedo = texture(sampler2d(materialTextures[material].albedo), uv).xyz;
-    voxelMaterial.metallicAlbedo = texture(sampler2d(materialTextures[material].metallicAlbedo), uv).xyz;
-    vec4 rmTexture = texture(sampler2d(materialTextures[material].rmTexture), uv);
-    voxelMaterial.roughness = rmTexture.r;
-    voxelMaterial.metallic = rmTexture.g;
+    voxelMaterial = materialBases[materialID];//This is the base value of the material
 
-    vec4 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed) voxelMaterial.roughness); // Get the next direction to sample in
+    //Multiply in the texture values
+    /*
+    voxelMaterial.emission *= texture(sampler2d(materialTextures[materialID].emission), uv).xyz;
+    voxelMaterial.albedo *= texture(sampler2d(materialTextures[materialID].albedo), uv).xyz;
+    voxelMaterial.metallicAlbedo *= texture(sampler2d(materialTextures[materialID].metallicAlbedo), uv).xyz;
+    vec4 rmTexture = texture(sampler2d(materialTextures[materialID].rmTexture), uv);
+    voxelMaterial.roughness *= rmTexture.r;
+    voxelMaterial.metallic *= rmTexture.g;
+    */
+
+
+    vec4 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
 
     // Calculate the BRDF
 
     // Usually we would divide by the sampling distribution (I already calculated the reciprocal), but in this case the sampling distribution is equal to the microfacet distribution that is used inside this function, so they end up cancelling out
-    vec3 brdfValue = brdf(normal, direction, nextDirection, voxelMaterial); // * nextDirection.w;//nextDirection.w store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
+    vec3 brdfValue = brdf(normal, direction, nextDirection.xyz, voxelMaterial); // * nextDirection.w;//nextDirection.w store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
 
     // Light falloff is a consequence of the integral in the rendering equation.
     // Point sources of light don't exist.
@@ -360,7 +379,7 @@ void main()
 
     // Set the output buffers
     setPosition(texelCoord, position); // Set where the ray should start from next
-    setDirection(texelCoord, nextDirection); // Set the direction the ray should start from next
+    setDirection(texelCoord, nextDirection.xyz); // Set the direction the ray should start from next
     setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
     changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
 }

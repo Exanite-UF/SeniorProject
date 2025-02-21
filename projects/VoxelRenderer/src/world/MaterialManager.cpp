@@ -9,6 +9,7 @@ MaterialManager::MaterialManager()
     {
         auto material = Material();
         // TODO: Set placeholder material properties
+        material.emission = glm::vec3(255, 0, 0);
 
         materials[i] = material;
     }

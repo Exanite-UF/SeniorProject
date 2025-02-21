@@ -3,7 +3,9 @@
 #include "src/graphics/GraphicsBuffer.h"
 #include <src/world/Camera.h>
 #include <src/world/VoxelWorld.h>
+#include <src/world/MaterialManager.h>
 #include <vector>
+
 
 // The voxel renderer needs to be able to render multiple voxel worlds
 class VoxelRenderer
@@ -67,7 +69,7 @@ public:
 
     // materialMap: This maps from material index to material id (What is stored in the material result to an actual material)
     // materialTextureSizes: This stores the size of voxel in each material texture (it is 512 vec2 values)
-    void accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array</*TODO: Some struct, Look at BRDF.compute for the required struct MaterialTextureSet*/, 512>& materialTextures); // Some struct must be 48 byte large
+    void accumulateLight(MaterialManager& materialManager);
 
     void display();
 };

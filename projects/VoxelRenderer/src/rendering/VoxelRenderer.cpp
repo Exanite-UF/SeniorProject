@@ -18,11 +18,14 @@
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/world/VoxelWorld.h>
+#include <src/world/MaterialManager.h>
+#include <src/world/Material.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
 GLuint VoxelRenderer::displayToWindowProgram;
+GLuint VoxelRenderer::BRDFProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -63,6 +66,7 @@ VoxelRenderer::VoxelRenderer()
     executeRayTraceProgram = ShaderManager::getManager().getComputeProgram(Content::executeRayTraceComputeShader);
     resetHitInfoProgram = ShaderManager::getManager().getComputeProgram(Content::resetHitInfoComputeShader);
     displayToWindowProgram = ShaderManager::getManager().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
+    BRDFProgram = ShaderManager::getManager().getComputeProgram(Content::brdfComputeShader);
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
 
@@ -203,7 +207,7 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     glUseProgram(0);
 }
 
-void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMap, const std::array</*Some struct*/, 512>& materialTextures)
+void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(BRDFProgram);
@@ -227,20 +231,34 @@ void VoxelRenderer::accumulateLight(const std::array<uint32_t, 4096>& materialMa
 
         glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
         glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f); // A little bit of randomness for temporal accumulation
-        glUniform1uiv(glGetUniformLocation(BRDFProgram, "materialMap"), 4096, materialMap.data());
+        
+        std::cout << "hi" << std::endl;
+        glUniform1ui(glGetUniformLocation(BRDFProgram, "materialMapSize"), Constants::VoxelWorld::materialMapCount);
+        glUniform1ui(glGetUniformLocation(BRDFProgram, "materialCount"), Constants::VoxelWorld::materialCount);
+        
+
 
         // Set the material data
+        std::cout << "JHI 1" << std::endl;
+        materialManager.getMaterialMapBuffer().bind(8);//This is a mapping from the material index to the material id
+        materialManager.getMaterialDataBuffer().bind(9);//This binds the base data for each material
+        std::cout << "JHI 2" << std::endl;
+        //bind the bindless textures to 10
+
         // TODO
-        glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
-        glBufferData(GL_UNIFORM_BUFFER, 48 * materialTextures.size() /*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW /*This can probably be changed to GL_STATIC_DRAW*/); // Actually sets the material data
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        //glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
+        //glBufferData(GL_UNIFORM_BUFFER, 48 * materialTextures.size() /*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW /*This can probably be changed to GL_STATIC_DRAW*/); // Actually sets the material data
+        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // bind light buffer to location 1
-        glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
-
+        //glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT); // Shouldn't this be a different barrier
+
+
+        materialManager.getMaterialMapBuffer().unbind();//This is a mapping from the material index to the material id
+        materialManager.getMaterialDataBuffer().unbind();//This binds the base data for each material
     }
 
     rayHitPositionBuffer.unbind();
@@ -263,6 +281,7 @@ void VoxelRenderer::display()
     rayHitNormalBuffer.bind(1);
     rayHitMaterialBuffer.bind(2);
     rayHitVoxelPositionBuffer.bind(3);
+    accumulatedLightBuffer.bind(4);
 
     glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), xSize, ySize, raysPerPixel);
 
@@ -276,6 +295,6 @@ void VoxelRenderer::display()
     rayHitNormalBuffer.unbind();
     rayHitMaterialBuffer.unbind();
     rayHitVoxelPositionBuffer.unbind();
-
+    accumulatedLightBuffer.unbind();
     glUseProgram(0);
 }

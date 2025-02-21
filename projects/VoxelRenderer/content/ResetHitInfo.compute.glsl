@@ -59,7 +59,7 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 2] = value.z;
 }
 
-vec3 setAttenuation(ivec3 coord, vec3 value)
+void setAttenuation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
 
@@ -88,8 +88,10 @@ void main()
     setHitNormal(texelCoord, vec4(0, 0, 0, 1.0 / 0.0));
     setHitMaterial(texelCoord, 0);
     setHitVoxelPosition(texelCoord, vec3(0));
+
     setAttenuation(texelCoord, vec3(0));
     setLightAccumulation(texelCoord, vec3(0));
+    
     // imageStore(hitPosition, texelCoord, vec4(0));
     // imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
     // imageStore(hitMaterial, texelCoord, uvec4(0));

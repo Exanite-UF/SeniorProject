@@ -19,6 +19,11 @@ layout(std430, binding = 3) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
+layout(std430, binding = 4) buffer AccumulatedLight
+{
+    float accumulatedLight[];
+};
+
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
 vec4 getHitPosition(ivec3 coord)
@@ -49,6 +54,13 @@ vec3 getHitVoxelPosition(ivec3 coord)
     return vec3(hitVoxelPosition[0 + index], hitVoxelPosition[1 + index], hitVoxelPosition[2 + index]);
 }
 
+vec3 getLight(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
+
+    return vec3(accumulatedLight[0 + index], accumulatedLight[1 + index], accumulatedLight[2 + index]);
+}
+
 out vec4 fragColor;
 
 vec3 hueToRGB(float hue)
@@ -73,6 +85,8 @@ void main()
         uint material = getHitMaterial(texelCoord); // imageLoad(hitMaterial, ivec3(gl_FragCoord.xy, i)).r;
         vec3 voxelPos = getHitVoxelPosition(texelCoord);
         float falloff = (normal.w * 0.01 + 1) * (normal.w * 0.01 + 1);
+
+        vec3 light = getLight(texelCoord);
 
         // This is the pseudo material rendering code
         uint r = (material & 1) + ((material & 16) >> 3) + ((material & 256) >> 6);
@@ -101,7 +115,7 @@ void main()
         hitUV *= 0.1;
         hitUV = mod(hitUV, 1);
 
-        vec3 colorBase = vec3(hitUV, 0);
+        vec3 colorBase = light;//vec3(hitUV, 0);
 
         /*
         // This is the workload rendering code

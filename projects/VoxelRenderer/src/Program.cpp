@@ -103,11 +103,8 @@ void Program::run()
     // worlds.at(1).transform.position = glm::vec3(256, 0, 0);
 
     VoxelWorldData data {};
-    data.copyFrom(voxelWorld);
-
     // Create the material manager
     MaterialManager materialManager {};
-
     // Create the renderer
     VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
@@ -317,9 +314,9 @@ void Program::run()
             // Scales and rotates the world. For testing purposes.
             // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)totalElapsedTime, glm::normalize(glm::vec3(-1.f, 0, 0))));
             // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
-
             renderer.prepareRayTraceFromCamera(camera);
             renderer.executeRayTrace(scene.worlds);
+            renderer.accumulateLight(materialManager);
             // renderer.accumulateLight();//TODO: call this
             renderer.display();
         }

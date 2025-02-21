@@ -39,13 +39,14 @@
 struct MaterialData
 {
     glm::vec3 emission;
-    float padding0;
     glm::vec3 albedo;
-    float padding1;
     glm::vec3 metallicAlbedo;
     float roughness;
     float metallic;
 
+    float padding0;
+    float padding1;
+    float padding2;
     // glm::vec3 color;
     //
     // glm::vec2 uvOffset;

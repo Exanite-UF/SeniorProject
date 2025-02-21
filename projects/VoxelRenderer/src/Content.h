@@ -14,4 +14,5 @@ public:
     constexpr static std::string_view raymarcherFragmentShader = "content/Raymarcher.fragment.glsl";
     constexpr static std::string_view resetHitInfoComputeShader = "content/ResetHitInfo.compute.glsl";
     constexpr static std::string_view screenTriVertexShader = "content/ScreenTri.vertex.glsl";
+    constexpr static std::string_view brdfComputeShader = "content/BRDF.compute.glsl";
 };
