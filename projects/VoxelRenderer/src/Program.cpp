@@ -38,6 +38,7 @@
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
+#include <src/PerlinNoise.hpp>
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -251,11 +252,24 @@ void Program::run()
         {
             data.clearOccupancy();
 
+            float baseHeight = 100;
+            float octaves = 3;
+            float persistence = 0.5;
+            
+            float seed = 0;
+            siv::BasicPerlinNoise<float> perlinNoise(seed);
+
             for (int x = 0; x < data.getSize().x; ++x)
             {
                 for (int y = 0; y < data.getSize().y; ++y)
                 {
-                    data.setVoxelOccupancy({ x, y, x }, true);
+                    float noise = perlinNoise.octave2D_01(x/512.0f, y/512.0f, octaves, persistence);
+                    float height = noise * data.getSize().z;
+
+                    for(int z = 0; z < height; ++z)
+                    {
+                        data.setVoxelOccupancy({ x, y, z }, true);
+                    }
                 }
             }
 
