@@ -153,7 +153,7 @@ void Program::run()
     float currentFPS = 0;
     float averagedDeltaTime = 0;
 
-    bool isSingleRender = true;
+    bool isSingleRender = false;
     bool isFirstRender = true;
 
     // IMGUI Menu
