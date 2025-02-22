@@ -17,9 +17,9 @@
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/TupleHasher.h>
-#include <src/world/VoxelWorld.h>
-#include <src/world/MaterialManager.h>
 #include <src/world/Material.h>
+#include <src/world/MaterialManager.h>
+#include <src/world/VoxelWorld.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;
@@ -113,7 +113,6 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
         glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
         glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
         glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 100000) / 100000.f, (rand() % 100000) / 100000.f); // A little bit of randomness for temporal accumulation
-        
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -272,34 +271,31 @@ void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
 
         glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
         glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 100000) / 100000.f); // A little bit of randomness for temporal accumulation
-        
-        //std::cout << "hi" << std::endl;
+
+        // std::cout << "hi" << std::endl;
         glUniform1ui(glGetUniformLocation(BRDFProgram, "materialMapSize"), Constants::VoxelWorld::materialMapCount);
         glUniform1ui(glGetUniformLocation(BRDFProgram, "materialCount"), Constants::VoxelWorld::materialCount);
-        
-
 
         // Set the material data
-        //std::cout << "JHI 1" << std::endl;
-        materialManager.getMaterialMapBuffer().bind(8);//This is a mapping from the material index to the material id
-        materialManager.getMaterialDataBuffer().bind(9);//This binds the base data for each material
-        //std::cout << "JHI 2" << std::endl;
-        //bind the bindless textures to 10
+        // std::cout << "JHI 1" << std::endl;
+        materialManager.getMaterialMapBuffer().bind(8); // This is a mapping from the material index to the material id
+        materialManager.getMaterialDataBuffer().bind(9); // This binds the base data for each material
+        // std::cout << "JHI 2" << std::endl;
+        // bind the bindless textures to 10
 
         // TODO
-        //glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
-        //glBufferData(GL_UNIFORM_BUFFER, 48 * materialTextures.size() /*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW /*This can probably be changed to GL_STATIC_DRAW*/); // Actually sets the material data
-        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        // glBindBuffer(GL_UNIFORM_BUFFER, materialTexturesBuffer);
+        // glBufferData(GL_UNIFORM_BUFFER, 48 * materialTextures.size() /*Each struct in the buffer must be 48 bytes long*/, materialTextures.data(), GL_DYNAMIC_DRAW /*This can probably be changed to GL_STATIC_DRAW*/); // Actually sets the material data
+        // glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // bind light buffer to location 1
-        //glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
+        // glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Shouldn't this be a different barrier
 
-
-        materialManager.getMaterialMapBuffer().unbind();//This is a mapping from the material index to the material id
-        materialManager.getMaterialDataBuffer().unbind();//This binds the base data for each material
+        materialManager.getMaterialMapBuffer().unbind(); // This is a mapping from the material index to the material id
+        materialManager.getMaterialDataBuffer().unbind(); // This binds the base data for each material
     }
 
     rayHitPositionBuffer.unbind();

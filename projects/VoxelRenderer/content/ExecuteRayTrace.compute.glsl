@@ -40,7 +40,8 @@ layout(std430, binding = 7) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
-layout(std430, binding = 8) buffer HitMisc{
+layout(std430, binding = 8) buffer HitMisc
+{
     float hitMisc[];
 };
 
@@ -76,22 +77,26 @@ vec3 getHitNormal(ivec3 coord)
     return vec3(hitNormal[0 + index], hitNormal[1 + index], hitNormal[2 + index]);
 }
 
-float getHitWasHit(ivec3 coord){
+float getHitWasHit(ivec3 coord)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     return hitMisc[index + 0];
 }
 
-float getHitDist(ivec3 coord){
+float getHitDist(ivec3 coord)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     return hitMisc[index + 1];
 }
 
-void setHitWasHit(ivec3 coord, bool value){
+void setHitWasHit(ivec3 coord, bool value)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     hitMisc[index + 0] = (value) ? 1.0 : 0.0;
 }
 
-void setHitDist(ivec3 coord, float value){
+void setHitDist(ivec3 coord, float value)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     hitMisc[index + 1] = value;
 }
@@ -206,7 +211,8 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     hit.material = 0;
     hit.wasHit = false;
 
-    if(currentDepth <= 0){
+    if (currentDepth <= 0)
+    {
         return hit;
     }
 
@@ -358,7 +364,8 @@ void main()
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
     hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
-    if(!hit.wasHit){
+    if (!hit.wasHit)
+    {
         hit.dist = 1.0 / 0.0;
     }
 

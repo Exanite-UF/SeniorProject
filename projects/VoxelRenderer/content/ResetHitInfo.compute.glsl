@@ -21,7 +21,8 @@ layout(std430, binding = 3) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
-layout(std430, binding = 4) buffer HitMisc{
+layout(std430, binding = 4) buffer HitMisc
+{
     float hitMisc[];
 };
 
@@ -57,12 +58,14 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 2] = value.z;
 }
 
-void setHitWasHit(ivec3 coord, bool value){
+void setHitWasHit(ivec3 coord, bool value)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     hitMisc[index + 0] = (value) ? 1.0 : 0.0;
 }
 
-void setHitDist(ivec3 coord, float value){
+void setHitDist(ivec3 coord, float value)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     hitMisc[index + 1] = value;
 }
@@ -80,9 +83,8 @@ void main()
     setHitMaterial(texelCoord, 0);
     setHitVoxelPosition(texelCoord, vec3(0));
     setHitWasHit(texelCoord, false);
-    setHitDist(texelCoord, 1.0/0.0);
+    setHitDist(texelCoord, 1.0 / 0.0);
 
-    
     // imageStore(hitPosition, texelCoord, vec4(0));
     // imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
     // imageStore(hitMaterial, texelCoord, uvec4(0));

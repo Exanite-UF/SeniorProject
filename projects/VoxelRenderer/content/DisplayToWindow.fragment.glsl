@@ -31,7 +31,6 @@ layout(std430, binding = 4) buffer AccumulatedLight
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
-
 vec3 getHitPosition(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
@@ -58,13 +57,14 @@ vec3 getHitVoxelPosition(ivec3 coord)
     return vec3(hitVoxelPosition[0 + index], hitVoxelPosition[1 + index], hitVoxelPosition[2 + index]);
 }
 
-
-bool getHitWasHit(ivec3 coord){
+bool getHitWasHit(ivec3 coord)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     return hitMisc[index + 0] > 0;
 }
 
-float getHitDist(ivec3 coord){
+float getHitDist(ivec3 coord)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     return hitMisc[index + 1];
 }

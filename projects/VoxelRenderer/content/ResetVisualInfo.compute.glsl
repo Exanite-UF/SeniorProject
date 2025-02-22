@@ -23,8 +23,6 @@ void setAttenuation(ivec3 coord, vec3 value)
     priorAttenuation[2 + index] = value.z;
 }
 
-
-
 void setLightAccumulation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
@@ -41,7 +39,6 @@ void multiplyLightAccumulation(ivec3 coord, vec3 value)
     accumulatedLight[2 + index] *= value.z;
 }
 
-
 // layout(rgba32f, binding = 0) uniform writeonly image3D hitPosition;
 // layout(rgba32f, binding = 1) uniform writeonly image3D hitNormal;
 // layout(r16ui, binding = 2) uniform writeonly uimage3D hitMaterial;
@@ -52,8 +49,7 @@ void main()
 
     setAttenuation(texelCoord, vec3(1));
     setLightAccumulation(texelCoord, vec3(0));
-    
-    
+
     // imageStore(hitPosition, texelCoord, vec4(0));
     // imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
     // imageStore(hitMaterial, texelCoord, uvec4(0));
