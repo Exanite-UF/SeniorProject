@@ -271,8 +271,8 @@ void Program::run()
                 for (int y = 0; y < data.getSize().y; ++y)
                 {
                     float noise = perlinNoise.octave2D_01(((float)x)/data.getSize().x, ((float)y)/data.getSize().y, octaves, persistence);
-                    int maxOffset = data.getSize().z - baseHeight;
-                    float height = baseHeight + (noise * maxOffset);
+                    int offset =  (int) (baseHeight + (noise * data.getSize().z));
+                    int height = glm::min(data.getSize().z, offset);
 
                     for(int z = 0; z < height; ++z)
                     {
