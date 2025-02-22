@@ -170,7 +170,7 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
             voxelWorld.unbindBuffers();
         }
@@ -210,7 +210,7 @@ void VoxelRenderer::resetHitInfo()
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
         // Ensure compute shader completes
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     rayHitPositionBuffer.unbind();
@@ -238,7 +238,7 @@ void VoxelRenderer::resetVisualInfo()
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
         // Ensure compute shader completes
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     attentuationBuffer.unbind();
@@ -295,7 +295,7 @@ void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
         //glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformLocation(BRDFProgram, "materialTextures"), materialTexturesBuffer);
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT); // Shouldn't this be a different barrier
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Shouldn't this be a different barrier
 
 
         materialManager.getMaterialMapBuffer().unbind();//This is a mapping from the material index to the material id

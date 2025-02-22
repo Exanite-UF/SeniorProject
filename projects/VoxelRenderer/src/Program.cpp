@@ -363,7 +363,7 @@ void Program::run()
             // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)totalElapsedTime, glm::normalize(glm::vec3(-1.f, 0, 0))));
             // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
             renderer.prepareRayTraceFromCamera(camera);
-            for(int i = 0; i <= 1; i++){
+            for(int i = 0; i <= 0; i++){
                 renderer.executeRayTrace(scene.worlds);
                 renderer.accumulateLight(MaterialManager::getInstance());
             }
