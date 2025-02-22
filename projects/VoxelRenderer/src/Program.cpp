@@ -153,6 +153,9 @@ void Program::run()
     float currentFPS = 0;
     float averagedDeltaTime = 0;
 
+    bool isSingleRender = true;
+    bool isFirstRender = true;
+
     // IMGUI Menu
     bool showMenuGUI = false;
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -333,7 +336,7 @@ void Program::run()
             showMenuGUI = !showMenuGUI;
         }
 
-        {
+        if(!isSingleRender || isFirstRender){
             renderer.setResolution(window->size.x, window->size.y);
 
             camera.transform.setGlobalPosition(cameraPosition);
@@ -343,10 +346,14 @@ void Program::run()
             // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)totalElapsedTime, glm::normalize(glm::vec3(-1.f, 0, 0))));
             // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
             renderer.prepareRayTraceFromCamera(camera);
-            renderer.executeRayTrace(scene.worlds);
-            renderer.accumulateLight(MaterialManager::getInstance());
+            for(int i = 0; i < 3; i++){
+                renderer.executeRayTrace(scene.worlds);
+                renderer.accumulateLight(MaterialManager::getInstance());
+            }
+            
             // renderer.accumulateLight();//TODO: call this
             renderer.display();
+            isFirstRender = false;
         }
 
         {

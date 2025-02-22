@@ -232,17 +232,17 @@ void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
         glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
         glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f); // A little bit of randomness for temporal accumulation
         
-        std::cout << "hi" << std::endl;
+        //std::cout << "hi" << std::endl;
         glUniform1ui(glGetUniformLocation(BRDFProgram, "materialMapSize"), Constants::VoxelWorld::materialMapCount);
         glUniform1ui(glGetUniformLocation(BRDFProgram, "materialCount"), Constants::VoxelWorld::materialCount);
         
 
 
         // Set the material data
-        std::cout << "JHI 1" << std::endl;
+        //std::cout << "JHI 1" << std::endl;
         materialManager.getMaterialMapBuffer().bind(8);//This is a mapping from the material index to the material id
         materialManager.getMaterialDataBuffer().bind(9);//This binds the base data for each material
-        std::cout << "JHI 2" << std::endl;
+        //std::cout << "JHI 2" << std::endl;
         //bind the bindless textures to 10
 
         // TODO

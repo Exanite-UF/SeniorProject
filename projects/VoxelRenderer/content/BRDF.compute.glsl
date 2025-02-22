@@ -129,6 +129,33 @@ vec3 getPriorAttenuation(ivec3 coord)
     return vec3(priorAttenuation[index + 0], priorAttenuation[index + 1], priorAttenuation[index + 2]);
 }
 
+void setHitPosition(ivec3 coord, vec4 value)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitPosition[index] = value;
+}
+
+void setHitNormal(ivec3 coord, vec4 value)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitNormal[index] = value;
+}
+
+void setHitMaterial(ivec3 coord, uint value)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitMaterial[index] = value;
+}
+
+void setHitVoxelPosition(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitVoxelPosition[index + 0] = value.x;
+    hitVoxelPosition[index + 1] = value.y;
+    hitVoxelPosition[index + 2] = value.z;
+}
+
+
 vec3 getDirection(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
@@ -153,6 +180,13 @@ void setPosition(ivec3 coord, vec3 value)
     rayPosition[2 + index] = value.z;
 }
 
+void clearZBuffer(ivec3 coord)
+{
+     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+
+    hitNormal[index].w = 1.0 / 0.0;
+}
+
 void setDirection(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
@@ -171,7 +205,7 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 
 float hash(float seed)
 {
-    return fract(sin((seed + random) * 12345.6789) * 43758.5453123);
+    return fract(sin((seed) * 12345.6789) * 43758.5453123);
 }
 
 vec2 randomVec2(float seed)
@@ -284,14 +318,14 @@ vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 
     // Since the microfacet distribution is equal to the sampling distribution, this factors cancels out with the division by the sampling distribution
     // GGX has a specific sampling distribution to use, and it is equal to the microfacet distribution
-    float microfacetComponent = 1; // microfacetDistribution(dot(halfway, normal), roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+    float microfacetComponent = 1;//microfacetDistribution(dot(halfway, normal), voxelMaterial.roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
 
-    vec3 fresnelComponent = fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+    vec3 fresnelComponent = vec3(1);//fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
 
     // This approximates how much light is blocked by microfacets, when looking from different directions
     float dotOfViewAndNormal = dot(view, normal);
     float dotOfLightAndNormal = dot(light, normal);
-    float geometricComponent = geometricBlocking(dotOfViewAndNormal, dotOfLightAndNormal, voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
+    float geometricComponent = geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
 
     // The effect of the metallicAlbedo is performed in the fresenl component
     // A non metallic material is assumed to not be affected by the fresnel effect
@@ -302,13 +336,13 @@ vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
     // We add the metallic value to the albedo to prevent darkening. (this is a multiplier, so not doing this would just make metals black)
     vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
 
-    return microfacetComponent * fresnelComponent * geometricComponent * albedo / (4 * dotOfViewAndNormal * dotOfLightAndNormal);
+    return microfacetComponent * fresnelComponent * geometricComponent * albedo / abs(4 * dotOfViewAndNormal * dotOfLightAndNormal);
 }
 
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-    float seed = texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
+    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z;//texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
     uint materialID = materialMap[getHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
 
@@ -323,7 +357,7 @@ void main()
     vec3 normal = temp.xyz; // The normal direction of the hit
 
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
-    vec3 direction = getDirection(texelCoord); // The direction the ray cast was in
+    vec3 direction = normalize(getDirection(texelCoord)); // The direction the ray cast was in
 
     // Find the uv coordinate for the texture
     // It is based on the hit location in voxel space
@@ -361,13 +395,21 @@ void main()
     */
 
 
+    //vec4 nextDirection = randomHemisphereDirectionUniform(normal, randomVec2(seed));//randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
     vec4 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
 
     // Calculate the BRDF
 
     // Usually we would divide by the sampling distribution (I already calculated the reciprocal), but in this case the sampling distribution is equal to the microfacet distribution that is used inside this function, so they end up cancelling out
-    vec3 brdfValue = brdf(normal, direction, nextDirection.xyz, voxelMaterial); // * nextDirection.w;//nextDirection.w store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
-
+    
+    //This is how the brdf is usually calculated
+    //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
+    
+    //This works for GGX because of how the sampling distribution and BRDF are made
+    //Note that the microfacet distribution is being ignored in the BRDF calculation to prevent ' * nextDirection.w' from needing to be run
+    //The microfacet distribution and the sampling correction are reciprocals
+    vec3 brdfValue = brdf(normal, direction, nextDirection.xyz, voxelMaterial);
+    
     // Light falloff is a consequence of the integral in the rendering equation.
     // Point sources of light don't exist.
     // They would have infinite radiance since their solid angle is 0. Any amount of light coming from 0 steradians and 0 projected area, will be infinite.
@@ -385,14 +427,25 @@ void main()
 
     // Set the output buffers
     setPosition(texelCoord, position); // Set where the ray should start from next
-    setDirection(texelCoord, nextDirection.xyz); // Set the direction the ray should start from next
+    setDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
+
+    setHitPosition(texelCoord, vec4(0));
+    setHitNormal(texelCoord, vec4(0, 0, 0, 1.0/0.0));
+    setHitVoxelPosition(texelCoord, vec3(0));
+    setHitMaterial(texelCoord, 0);
+
     if(wasHit){
         setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
         changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
     }else{
         //Nothing was hit
+        //changeLightAccumulation(texelCoord, dot(direction, normalize(vec3(1, 1, 1))) * vec3(1, 1, 0) * attentuation);
+        if(dot(direction, normalize(vec3(1, 1, 1))) > 0.9){
+            changeLightAccumulation(texelCoord, vec3(1, 1, 0) * attentuation); //And there is no light from this direction
+        }else{
+            changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
+        }
         setAttenuation(texelCoord, vec3(0));//No more light can come
-        changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
     }
     
 }

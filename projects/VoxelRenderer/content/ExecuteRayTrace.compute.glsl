@@ -207,7 +207,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
-    bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
+    bool isOutside = false; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -219,7 +219,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         bool isOutsideVolume = (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0))));
-        if ((i > 1) && isOutsideVolume)
+        if ((i > 0) && isOutsideVolume)
         {
             // No voxel was hit
             break;
@@ -327,8 +327,11 @@ void main()
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
     hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
+    if(!hit.wasHit){
+        hit.dist = 1.0 / 0.0;
+    }
 
-    if (hit.wasHit && hit.dist < currentDepth)
+    if (hit.dist < currentDepth)
     {
         setHitPosition(texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
         setHitNormal(texelCoord, vec4(hit.normal, hit.dist)); // Record the world space normal direction of the hit surface
