@@ -13,9 +13,12 @@ void WorldGenerator::generate(VoxelWorld& voxelWorld)
 {
     //TODO: Remove copyFrom, and also set material. Otherwise voxels are black. 
     data.copyFrom(voxelWorld);
-
     data.clearOccupancy();
+    generate();
+    data.writeTo(voxelWorld);
+}
 
+void WorldGenerator::generate(){
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
     for (int x = 0; x < data.getSize().x; ++x)
@@ -32,8 +35,6 @@ void WorldGenerator::generate(VoxelWorld& voxelWorld)
             }
         }
     }
-    
-    data.writeTo(voxelWorld);
 }
 
 void WorldGenerator::showDebugMenu()

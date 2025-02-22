@@ -17,5 +17,6 @@ private:
 public:
     explicit WorldGenerator(glm::ivec3 worldSize);
     void generate(VoxelWorld& voxelWorld);
-    void showDebugMenu();
+    virtual void generate();
+    virtual void showDebugMenu();
 };
