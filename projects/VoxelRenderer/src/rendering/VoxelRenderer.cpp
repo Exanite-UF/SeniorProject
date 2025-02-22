@@ -42,6 +42,7 @@ void VoxelRenderer::remakeTextures()
     rayHitNormalBuffer.setSize(size);
     rayHitMaterialBuffer.setSize(size);
     rayHitVoxelPositionBuffer.setSize(size);
+    rayHitMiscBuffer.setSize(2 * size);
 
     // Create a new texture
     rayStartBuffer.setSize(size);
@@ -122,33 +123,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
     rayStartBuffer.unbind();
     rayDirectionBuffer.unbind();
 
-    // Reset the hit info
-    glUseProgram(resetHitInfoProgram);
-
-    rayHitPositionBuffer.bind(0);
-    rayHitNormalBuffer.bind(1);
-    rayHitMaterialBuffer.bind(2);
-    rayHitVoxelPositionBuffer.bind(3);
-    attentuationBuffer.bind(4);
-    accumulatedLightBuffer.bind(5);
-
-    glUniform3i(glGetUniformLocation(resetHitInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
-
-    {
-        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-        // Ensure compute shader completes
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    }
-
-    rayHitPositionBuffer.unbind();
-    rayHitNormalBuffer.unbind();
-    rayHitMaterialBuffer.unbind();
-    rayHitVoxelPositionBuffer.unbind();
-    attentuationBuffer.unbind();
-    accumulatedLightBuffer.unbind();
-
-    glUseProgram(0);
+    resetHitInfo();
 
     resetVisualInfo();
 }
@@ -167,6 +142,7 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     rayHitNormalBuffer.bind(5);
     rayHitMaterialBuffer.bind(6);
     rayHitVoxelPositionBuffer.bind(7);
+    rayHitMiscBuffer.bind(8);
 
     {
         GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
@@ -208,6 +184,40 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     rayHitNormalBuffer.unbind();
     rayHitMaterialBuffer.unbind();
     rayHitVoxelPositionBuffer.unbind();
+    rayHitMiscBuffer.unbind();
+
+    glUseProgram(0);
+}
+
+void VoxelRenderer::resetHitInfo()
+{
+    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (ySize + 8 - 1) / 8;
+    GLuint workGroupsZ = raysPerPixel;
+
+    // Reset the hit info
+    glUseProgram(resetHitInfoProgram);
+
+    rayHitPositionBuffer.bind(0);
+    rayHitNormalBuffer.bind(1);
+    rayHitMaterialBuffer.bind(2);
+    rayHitVoxelPositionBuffer.bind(3);
+    rayHitMiscBuffer.bind(4);
+
+    glUniform3i(glGetUniformLocation(resetHitInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
+
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    }
+
+    rayHitPositionBuffer.unbind();
+    rayHitNormalBuffer.unbind();
+    rayHitMaterialBuffer.unbind();
+    rayHitVoxelPositionBuffer.unbind();
+    rayHitMiscBuffer.unbind();
 
     glUseProgram(0);
 }
@@ -253,6 +263,7 @@ void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
     rayDirectionBuffer.bind(5);
     attentuationBuffer.bind(6);
     accumulatedLightBuffer.bind(7);
+    rayHitMiscBuffer.bind(10);
 
     {
         GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
@@ -299,6 +310,7 @@ void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
     rayDirectionBuffer.unbind();
     attentuationBuffer.unbind();
     accumulatedLightBuffer.unbind();
+    rayHitMiscBuffer.unbind();
 
     glUseProgram(0);
 }
@@ -312,6 +324,7 @@ void VoxelRenderer::display()
     rayHitMaterialBuffer.bind(2);
     rayHitVoxelPositionBuffer.bind(3);
     accumulatedLightBuffer.bind(4);
+    rayHitMiscBuffer.bind(5);
 
     glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), xSize, ySize, raysPerPixel);
 
@@ -326,5 +339,7 @@ void VoxelRenderer::display()
     rayHitMaterialBuffer.unbind();
     rayHitVoxelPositionBuffer.unbind();
     accumulatedLightBuffer.unbind();
+    rayHitMiscBuffer.unbind();
+
     glUseProgram(0);
 }

@@ -2,11 +2,11 @@
 
 layout(std430, binding = 0) buffer HitPosition
 {
-    vec4 hitPosition[];
+    float hitPosition[];
 };
 layout(std430, binding = 1) buffer HitNormal
 {
-    vec4 hitNormal[];
+    float hitNormal[];
 };
 
 layout(std430, binding = 2) buffer HitMaterial
@@ -19,6 +19,11 @@ layout(std430, binding = 3) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
+layout(std430, binding = 5) buffer HitMisc
+{
+    float hitMisc[];
+};
+
 layout(std430, binding = 4) buffer AccumulatedLight
 {
     float accumulatedLight[];
@@ -27,18 +32,16 @@ layout(std430, binding = 4) buffer AccumulatedLight
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
 
-vec4 getHitPosition(ivec3 coord)
+vec3 getHitPosition(ivec3 coord)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-
-    return hitPosition[index];
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return vec3(hitPosition[0 + index], hitPosition[1 + index], hitPosition[2 + index]);
 }
 
-vec4 getHitNormal(ivec3 coord)
+vec3 getHitNormal(ivec3 coord)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-
-    return hitNormal[index];
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return vec3(hitNormal[0 + index], hitNormal[1 + index], hitNormal[2 + index]);
 }
 
 uint getHitMaterial(ivec3 coord)
@@ -53,6 +56,17 @@ vec3 getHitVoxelPosition(ivec3 coord)
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
 
     return vec3(hitVoxelPosition[0 + index], hitVoxelPosition[1 + index], hitVoxelPosition[2 + index]);
+}
+
+
+bool getHitWasHit(ivec3 coord){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return hitMisc[index + 0] > 0;
+}
+
+float getHitDist(ivec3 coord){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return hitMisc[index + 1];
 }
 
 vec3 getLight(ivec3 coord)
@@ -81,56 +95,12 @@ void main()
     for (int i = 0; i < size.z; i++)
     {
         ivec3 texelCoord = ivec3(gl_FragCoord.xy, i);
-        vec4 pos = getHitPosition(texelCoord); // imageLoad(hitPosition, ivec3(gl_FragCoord.xy, i));
-        vec4 normal = getHitNormal(texelCoord); // imageLoad(hitNormal, ivec3(gl_FragCoord.xy, i));
-        uint material = getHitMaterial(texelCoord); // imageLoad(hitMaterial, ivec3(gl_FragCoord.xy, i)).r;
-        vec3 voxelPos = getHitVoxelPosition(texelCoord);
-        float falloff = (normal.w * 0.01 + 1) * (normal.w * 0.01 + 1);
 
         vec3 light = getLight(texelCoord);
 
-        // This is the pseudo material rendering code
-        uint r = (material & 1) + ((material & 16) >> 3) + ((material & 256) >> 6);
-        uint g = ((material & (1 << 1)) >> 1) + ((material & (16 << 1)) >> 4) + ((material & (256 << 1)) >> 7);
-        uint b = ((material & (1 << 2)) >> 2) + ((material & (16 << 2)) >> 5) + ((material & (256 << 2)) >> 8);
+        vec3 colorBase = light;
 
-        // vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
-        vec3 voxelPosition = getHitVoxelPosition(texelCoord);
-        vec2 hitUV;
-        if (abs(normal.x) > 0)
-        {
-            // yz
-            hitUV = voxelPosition.yz;
-        }
-        else if (abs(normal.y) > 0)
-        {
-            // xz
-            hitUV = voxelPosition.xz;
-        }
-        else if (abs(normal.z) > 0)
-        {
-            // xy
-            hitUV = voxelPosition.xy;
-        }
-
-        hitUV *= 0.1;
-        hitUV = mod(hitUV, 1);
-
-        vec3 colorBase = light;//vec3(hitUV, 0);
-
-        /*
-        // This is the workload rendering code
-        vec3 colorBase = vec3(material / 100.f);
-
-        if (material > 100)
-        {
-            int temp = min(200, int(material));
-            colorBase = hueToRGB(0.5 - (material - 100) / 200.f);
-        }
-        */
-
-        // vec3 colorBase = abs(normal.xyz);
-        color += colorBase;// / falloff;
+        color += colorBase;
     }
     color /= size.z;
     fragColor = vec4(color, 1);

@@ -23,11 +23,11 @@ layout(std430, binding = 3) buffer MaterialMap
 
 layout(std430, binding = 4) buffer HitPosition
 {
-    vec4 hitPosition[];
+    float hitPosition[];
 };
 layout(std430, binding = 5) buffer HitNormal
 {
-    vec4 hitNormal[];
+    float hitNormal[];
 };
 
 layout(std430, binding = 6) buffer HitMaterial
@@ -40,6 +40,10 @@ layout(std430, binding = 7) buffer HitVoxelPosition
     float hitVoxelPosition[];
 };
 
+layout(std430, binding = 8) buffer HitMisc{
+    float hitMisc[];
+};
+
 uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture (not the size of the voxel world)
 uniform uint mipMapTextureCount;
 uniform uint mipMapStartIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
@@ -50,23 +54,46 @@ uniform vec3 voxelWorldPosition;
 uniform vec4 voxelWorldRotation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
 
-void setHitPosition(ivec3 coord, vec4 value)
+void setHitPosition(ivec3 coord, vec3 value)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitPosition[index] = value;
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitPosition[index + 0] = value.x;
+    hitPosition[index + 1] = value.y;
+    hitPosition[index + 2] = value.z;
 }
 
-void setHitNormal(ivec3 coord, vec4 value)
+void setHitNormal(ivec3 coord, vec3 value)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitNormal[index] = value;
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitNormal[index + 0] = value.x;
+    hitNormal[index + 1] = value.y;
+    hitNormal[index + 2] = value.z;
 }
 
-vec4 getHitNormal(ivec3 coord)
+vec3 getHitNormal(ivec3 coord)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return vec3(hitNormal[0 + index], hitNormal[1 + index], hitNormal[2 + index]);
+}
 
-    return hitNormal[index];
+float getHitWasHit(ivec3 coord){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return hitMisc[index + 0];
+}
+
+float getHitDist(ivec3 coord){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return hitMisc[index + 1];
+}
+
+void setHitWasHit(ivec3 coord, bool value){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    hitMisc[index + 0] = (value) ? 1.0 : 0.0;
+}
+
+void setHitDist(ivec3 coord, float value){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    hitMisc[index + 1] = value;
 }
 
 void setHitMaterial(ivec3 coord, uint value)
@@ -179,6 +206,10 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     hit.material = 0;
     hit.wasHit = false;
 
+    if(currentDepth <= 0){
+        return hit;
+    }
+
     rayDir /= length(rayDir);
 
     vec3 aRayDir = 1 / abs(rayDir); // This is a constant that is used several times
@@ -289,12 +320,12 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    vec3 rayPos = getPos(texelCoord); // imageLoad(rayPosition, texelCoord).xyz;
-    vec3 rayDir = getDir(texelCoord); // imageLoad(rayDirection, texelCoord).xyz;
+    vec3 rayPos = getPos(texelCoord);
+    vec3 rayDir = getDir(texelCoord);
 
     vec3 rayStart = rayPos;
 
-    float currentDepth = getHitNormal(texelCoord).w; // imageLoad(hitNormal, texelCoord).w;
+    float currentDepth = getHitDist(texelCoord);
 
     vec3 voxelWorldSize = 2. * voxelResolution;
 
@@ -333,10 +364,13 @@ void main()
 
     if (hit.dist < currentDepth)
     {
-        setHitPosition(texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
-        setHitNormal(texelCoord, vec4(hit.normal, hit.dist)); // Record the world space normal direction of the hit surface
+        setHitPosition(texelCoord, hit.hitLocation); // Record the world space position of the hit surface
+        setHitNormal(texelCoord, hit.normal); // Record the world space normal direction of the hit surface
         setHitMaterial(texelCoord, hit.material);
         setHitVoxelPosition(texelCoord, voxelPosition);
+
+        setHitWasHit(texelCoord, hit.wasHit);
+        setHitDist(texelCoord, hit.dist);
     }
 
     // setHitMaterial(texelCoord, hit.iterations);//Record the number of iterations into the material texture

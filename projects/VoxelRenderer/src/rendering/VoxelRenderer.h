@@ -28,8 +28,10 @@ private:
     GraphicsBuffer<glm::vec3> rayDirectionBuffer;
 
     // These buffers are used to store the result of a ray trace step
-    GraphicsBuffer<glm::vec4> rayHitPositionBuffer; //(x, y, z, wasHit)
-    GraphicsBuffer<glm::vec4> rayHitNormalBuffer; //(x, y, z, depth)
+    GraphicsBuffer<glm::vec3> rayHitPositionBuffer; //(x, y, z)
+    GraphicsBuffer<glm::vec3> rayHitNormalBuffer; //(x, y, z)
+    GraphicsBuffer<float> rayHitMiscBuffer;//(wasHit, depth)
+
     GraphicsBuffer<uint32_t> rayHitMaterialBuffer; //(material)
     GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer; //(x, y, z)
 
@@ -66,6 +68,7 @@ public:
 
     void prepareRayTraceFromCamera(const Camera& camera);
 
+    void resetHitInfo();
     void resetVisualInfo();
 
     void executeRayTrace(std::vector<VoxelWorld>& worlds);

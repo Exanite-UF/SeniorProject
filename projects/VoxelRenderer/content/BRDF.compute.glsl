@@ -20,11 +20,11 @@ struct MaterialProperties
 
 layout(std430, binding = 0) buffer HitPosition
 {
-    vec4 hitPosition[];
+    float hitPosition[];
 };
 layout(std430, binding = 1) buffer HitNormal
 {
-    vec4 hitNormal[];
+    float hitNormal[];
 };
 
 layout(std430, binding = 2) buffer HitMaterial
@@ -35,6 +35,10 @@ layout(std430, binding = 2) buffer HitMaterial
 layout(std430, binding = 3) buffer HitVoxelPosition
 {
     float hitVoxelPosition[];
+};
+
+layout(std430, binding = 10) buffer HitMisc{
+    float hitMisc[];
 };
 
 layout(std430, binding = 4) buffer RayPosition
@@ -94,18 +98,16 @@ uniform float random; // This is used to make non-deterministic randomness
 
 // Buffer access and set
 
-vec4 getHitPosition(ivec3 coord)
+vec3 getHitPosition(ivec3 coord)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-
-    return hitPosition[index];
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return vec3(hitPosition[0 + index], hitPosition[1 + index], hitPosition[2 + index]);
 }
 
-vec4 getHitNormal(ivec3 coord)
+vec3 getHitNormal(ivec3 coord)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-
-    return hitNormal[index];
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return vec3(hitNormal[0 + index], hitNormal[1 + index], hitNormal[2 + index]);
 }
 
 uint getHitMaterial(ivec3 coord)
@@ -122,6 +124,16 @@ vec3 getHitVoxelPosition(ivec3 coord)
     return vec3(hitVoxelPosition[0 + index], hitVoxelPosition[1 + index], hitVoxelPosition[2 + index]);
 }
 
+bool getHitWasHit(ivec3 coord){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return hitMisc[index + 0] > 0;
+}
+
+float getHitDist(ivec3 coord){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    return hitMisc[index + 1];
+}
+
 vec3 getPriorAttenuation(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
@@ -129,16 +141,20 @@ vec3 getPriorAttenuation(ivec3 coord)
     return vec3(priorAttenuation[index + 0], priorAttenuation[index + 1], priorAttenuation[index + 2]);
 }
 
-void setHitPosition(ivec3 coord, vec4 value)
+void setHitPosition(ivec3 coord, vec3 value)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitPosition[index] = value;
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitPosition[index + 0] = value.x;
+    hitPosition[index + 1] = value.y;
+    hitPosition[index + 2] = value.z;
 }
 
-void setHitNormal(ivec3 coord, vec4 value)
+void setHitNormal(ivec3 coord, vec3 value)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitNormal[index] = value;
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitNormal[index + 0] = value.x;
+    hitNormal[index + 1] = value.y;
+    hitNormal[index + 2] = value.z;
 }
 
 void setHitMaterial(ivec3 coord, uint value)
@@ -154,6 +170,17 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 1] = value.y;
     hitVoxelPosition[index + 2] = value.z;
 }
+
+void setHitWasHit(ivec3 coord, bool value){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    hitMisc[index + 0] = (value) ? 1.0 : 0.0;
+}
+
+void setHitDist(ivec3 coord, float value){
+    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    hitMisc[index + 1] = value;
+}
+
 
 
 vec3 getDirection(ivec3 coord)
@@ -178,13 +205,6 @@ void setPosition(ivec3 coord, vec3 value)
     rayPosition[0 + index] = value.x;
     rayPosition[1 + index] = value.y;
     rayPosition[2 + index] = value.z;
-}
-
-void clearZBuffer(ivec3 coord)
-{
-     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-
-    hitNormal[index].w = 1.0 / 0.0;
 }
 
 void setDirection(ivec3 coord, vec3 value)
@@ -213,74 +233,6 @@ vec2 randomVec2(float seed)
     return vec2(hash(seed), hash(seed + 1.0));
 }
 
-// This has the correct distribution for a Labertian material
-// It returns a direction, and a multiplier that needs to be applied to the final light intensity (It corrects for the sampling distribution. It is the reciprocal of the PDF of the distribution)
-vec4 randomHemisphereDirection(vec3 normal, vec2 rand)
-{
-    float theta = acos(sqrt(rand.x)); // Cosine-weighted distribution (I don't know why this make the PDF equal to cos(theta), but the internet says is does)
-    float phi = 2.0 * 3.14159265359 * rand.y; // Uniform azimuthal angle
-
-    // Convert to Cartesian coordinates
-    float x = cos(phi) * sin(theta);
-    float y = sin(phi) * sin(theta);
-    float z = cos(theta);
-
-    // Convert from local (z-up) space to world space
-    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
-    vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
-    vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
-    // We now have three vectors: the normal direction, perpedicular to the normal, and other perpendicular to the normal
-
-    vec3 dir = tangent * x + bitangent * y + normal * z; // This is a transformation between coordinate systems
-
-    return vec4(dir, 3.1415926589 / dot(normal, dir));
-}
-
-// This is a uniform distribution
-// It returns a direction, and a multiplier that needs to be applied to the final light intensity (It corrects for the sampling distribution. It is the reciprocal of the PDF of the distribution)
-vec4 randomHemisphereDirectionUniform(vec3 normal, vec2 rand)
-{
-    float theta = acos(1.0 - rand.x); // Uniform distribution
-    float phi = 2.0 * 3.14159265359 * rand.y;
-
-    float x = cos(phi) * sin(theta);
-    float y = sin(phi) * sin(theta);
-    float z = cos(theta);
-
-    // Convert from local (z-up) space to world space
-    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
-    vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
-    vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
-    // We now have three vectors: the normal direction, perpedicular to the normal, and other perpendicular to the normal
-
-    return vec4(tangent * x + bitangent * y + normal * z, 6.28318530718);
-}
-
-// This is the GGX distribution
-
-// This is the GGX
-// It returns a direction, and a multiplier that needs to be applied to the final light intensity (It corrects for the sampling distribution. It is the reciprocal of the PDF of the distribution)
-//vec4 randomHemisphereDirectionGGX(vec3 normal, vec2 rand, float roughness)
-//{
-//    // Random azimuthal angle (in [0, 2*pi])
-//    float phi = 2.0 * 3.14159 * rand.x;
-//
-//    // Compute polar angle (in [0, pi])
-//    float cosTheta = sqrt((1.0 - rand.y) / (1.0 + (roughness * roughness - 1.0) * rand.y));
-//    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-//
-//    // Convert from local (z-up) space to world space
-//    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
-//    vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
-//    vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
-//    // We now have three vectors: the normal direction, perpedicular to the normal, and other perpendicular to the normal
-//
-//    // Now we can compute the final direction
-//    vec3 direction = cos(phi) * sinTheta * tangent + sin(phi) * sinTheta * bitangent + cosTheta * normal;
-//
-//    return vec4(direction, 1.0 / microfacetDistribution(dot(normalize(normal + direction), normal), roughness));
-//}
-
 
 // For metals baseReflectivity is the metallicAlbedo
 // For non-metals, it is a completely different property (I'm going to go with 1)
@@ -288,18 +240,6 @@ vec4 randomHemisphereDirectionUniform(vec3 normal, vec2 rand)
 vec3 fresnel(float dotOfViewAndHalfway, vec3 baseReflectivity)
 {
     return baseReflectivity + (1 - baseReflectivity) * pow(1 - dotOfViewAndHalfway, 5); // Schlick’s approximation
-}
-
-// This is also based on GGX
-float geometricBlocking(float dotOfViewAndNormal, float dotOfLightAndNormal, float roughness)
-{
-    float something = (roughness + 1) * (roughness + 1) / 8; // I don't know what this represents (its usually called k)
-    // something can also be roughness / 2
-    // But that is a worse approximation of the underlying function
-    float factor1 = max(dotOfViewAndNormal, 0) / (dotOfViewAndNormal * (1 - something) + something);
-    float factor2 = max(dotOfLightAndNormal, 0) / (dotOfLightAndNormal * (1 - something) + something);
-
-    return factor1 * factor2;
 }
 
 //This works in tangent space
@@ -322,25 +262,6 @@ float microfacetDistributionGGX(float roughness, float dotOfNormalAndHalfway){
     return temp / (3.1415926589 * temp * temp);
 }
 
-//Should give the rotation that moves from v1 to v2
-vec4 rotateBetweenVectors(vec3 v1, vec3 v2){
-    vec4 q;
-    vec3 a = cross(v1, v2);
-    q.xyz = a;
-    q.w = sqrt((length(v1) * length(v1)) * (length(v2) * length(v2))) + dot(v1, v2);
-    return normalize(q);
-}
-
- vec3 qtransform( vec4 q, vec3 v ){ 
-	return v + 2.0*cross(cross(v, q.xyz ) + q.w*v, q.xyz);
-} 
-
-//Makes the normal vector up
-//This should rotate the input
-//(How does the input needs to rotate such that the normal direction faces along the z axis)
-vec3 toTangentSpace(vec3 input, vec3 normal){
-    return qtransform(rotateBetweenVectors(normal, vec3(0, 0, 1)), input);
-}
 
 vec4 sampleGGX(float roughness, vec2 rand, vec3 view, vec3 normal){
     float a = roughness * roughness;
@@ -475,37 +396,35 @@ void main()
     uint materialID = materialMap[getHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
 
     // Load the hit position
-    vec4 temp = getHitPosition(texelCoord);
-    bool wasHit = temp.w != 0;
-    vec3 position = temp.xyz;
+    bool wasHit = getHitWasHit(texelCoord);
+    vec3 position = getHitPosition(texelCoord);
 
     // Load the hit normal
-    temp = getHitNormal(texelCoord);
-    float dist = temp.w; // Distance that the ray cast covered
-    vec3 normal = temp.xyz; // The normal direction of the hit
+    //float dist = getHitDist(texelCoord); // Distance that the ray cast covered
+    vec3 normal = getHitNormal(texelCoord); // The normal direction of the hit
 
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
     vec3 direction = normalize(getDirection(texelCoord)); // The direction the ray cast was in
 
     // Find the uv coordinate for the texture
     // It is based on the hit location in voxel space
-    vec3 voxelPosition = getHitVoxelPosition(texelCoord);
-    vec2 hitUV;
-    if (abs(normal.x) > 0)
-    {
-        // yz
-        hitUV = voxelPosition.yz;
-    }
-    else if (abs(normal.y) > 0)
-    {
-        // xz
-        hitUV = voxelPosition.xz;
-    }
-    else if (abs(normal.z) > 0)
-    {
-        // xy
-        hitUV = voxelPosition.xy;
-    }
+    //vec3 voxelPosition = getHitVoxelPosition(texelCoord);
+    //vec2 hitUV;
+    //if (abs(normal.x) > 0)
+    //{
+    //    // yz
+    //    hitUV = voxelPosition.yz;
+    //}
+    //else if (abs(normal.y) > 0)
+    //{
+    //    // xz
+    //    hitUV = voxelPosition.xz;
+    //}
+    //else if (abs(normal.z) > 0)
+    //{
+    //    // xy
+    //    hitUV = voxelPosition.xy;
+    //}
     //vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
 
     // Format the voxel material into a struct
@@ -528,18 +447,6 @@ void main()
     //vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
     //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
     
-    // Light falloff is a consequence of the integral in the rendering equation.
-    // Point sources of light don't exist.
-    // They would have infinite radiance since their solid angle is 0. Any amount of light coming from 0 steradians and 0 projected area, will be infinite.
-    // If you do give a point source of light a finite radiance it would be pitch black. If it had infinite radiance, then the amount of light you should see is indeterminate.
-
-    // So long as our lights have actuall size, light falloff is natural consequence and is not something to be explicitly caused.
-    // Though if you do use a point source, then you would use the inverse square law on what is actually a radiant intesity value.
-    //   You calculate the surface area of the spherical arc at the distance away.
-    //   So a spot light confines its beam to a spherical arc of 1 steradian. You divide the radiant intensity by the surface area of the 1 steradian spherical arc when at the given distance away.
-    //   This has the effect of infinite brightness as you get closer. To prevent this you can add 1 to the surface area before dividing.
-    //   4 * pi * r^2 is the surface area of a sphere
-    //   steradians * r^2 is the surface are of a spherical arc of a given steradians
 
     vec3 receivedLight = voxelMaterial.emission * attentuation;
 
@@ -547,12 +454,10 @@ void main()
     setPosition(texelCoord, position); // Set where the ray should start from next
     setDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
 
-    setHitPosition(texelCoord, vec4(0));
-    setHitNormal(texelCoord, vec4(0, 0, 0, 1.0/0.0));
-    setHitVoxelPosition(texelCoord, vec3(0));
-    setHitMaterial(texelCoord, 0);
-    
+
+    setHitWasHit(texelCoord, false);
     if(wasHit){
+        setHitDist(texelCoord, 1.0 / 0.0);//Set the hit distance to infinite
         setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
         changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
     }else{
@@ -564,6 +469,8 @@ void main()
             changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
         }
         setAttenuation(texelCoord, vec3(0));//No more light can come
+
+        setHitDist(texelCoord, -1.0);//Set the hit distance such that early stopping will occur in the ray cast.
     }
     
 }
