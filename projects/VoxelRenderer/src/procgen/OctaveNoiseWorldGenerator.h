@@ -12,7 +12,10 @@ private:
 
     void generateData() override;
 
-public:        
-    OctaveNoiseWorldGenerator(glm::ivec3 worldSize) : WorldGenerator(worldSize) {}
+public:
+    OctaveNoiseWorldGenerator(glm::ivec3 worldSize)
+        : WorldGenerator(worldSize)
+    {
+    }
     void showDebugMenu() override;
 };

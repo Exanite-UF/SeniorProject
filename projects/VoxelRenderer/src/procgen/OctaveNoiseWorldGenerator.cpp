@@ -1,9 +1,10 @@
-#include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <imgui/imgui.h>
 #include <src/PerlinNoise.hpp>
+#include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/world/VoxelWorldData.h>
 
-void OctaveNoiseWorldGenerator::generateData(){
+void OctaveNoiseWorldGenerator::generateData()
+{
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
     for (int x = 0; x < data.getSize().x; ++x)
@@ -22,7 +23,8 @@ void OctaveNoiseWorldGenerator::generateData(){
     }
 }
 
-void OctaveNoiseWorldGenerator::showDebugMenu(){
+void OctaveNoiseWorldGenerator::showDebugMenu()
+{
     // TODO: Testing. Once finalized, add to existing Imgui fields.
     ImGui::SliderFloat("Seed", &seed, 0, 100);
     ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);

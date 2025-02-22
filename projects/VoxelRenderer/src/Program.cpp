@@ -29,6 +29,8 @@
 #include <src/Content.h>
 #include <src/Program.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/procgen/OctaveNoiseWorldGenerator.h>
+#include <src/procgen/WorldGenerator.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
@@ -38,8 +40,6 @@
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
-#include <src/procgen/WorldGenerator.h>
-#include <src/procgen/OctaveNoiseWorldGenerator.h>
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -140,7 +140,7 @@ void Program::run()
     renderer.setRaysPerPixel(1);
 
     // Main render loop
-    glm::vec3 cameraPosition(0, 0, worldSize.z/1.75f);
+    glm::vec3 cameraPosition(0, 0, worldSize.z / 1.75f);
     glm::vec2 cameraRotation(0);
     float moveSpeedExponent = 50;
     float mouseSensitivity = 0.002;
