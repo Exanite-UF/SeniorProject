@@ -138,7 +138,7 @@ void Program::run()
     renderer.setRaysPerPixel(1);
 
     // Main render loop
-    glm::vec3 cameraPosition(0);
+    glm::vec3 cameraPosition(0, 0, data.getSize().z/1.75f);
     glm::vec2 cameraRotation(0);
     float moveSpeedExponent = 50;
     float mouseSensitivity = 0.002;
@@ -152,6 +152,12 @@ void Program::run()
     int framesThisCycle = 0;
     float currentFPS = 0;
     float averagedDeltaTime = 0;
+
+    // Procedural Generation
+    float seed = 0;
+    float baseHeight = 100;
+    int octaves = 3;
+    float persistence = 0.5;
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -248,23 +254,25 @@ void Program::run()
             data.copyFrom(voxelWorld);
         }
 
+        // TODO: Testing. Once finalized, add to existing Imgui fields.
+        ImGui::SliderFloat("Seed", &seed, 0, 100);
+        ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
+        ImGui::SliderInt("Octaves", &octaves, 1, 100);
+        ImGui::SliderFloat("Persistence", &persistence, 0, 1);
+
         if (input->isKeyPressed(GLFW_KEY_F8))
         {
             data.clearOccupancy();
 
-            float baseHeight = 100;
-            float octaves = 3;
-            float persistence = 0.5;
-            
-            float seed = 0;
             siv::BasicPerlinNoise<float> perlinNoise(seed);
 
             for (int x = 0; x < data.getSize().x; ++x)
             {
                 for (int y = 0; y < data.getSize().y; ++y)
                 {
-                    float noise = perlinNoise.octave2D_01(x/512.0f, y/512.0f, octaves, persistence);
-                    float height = noise * data.getSize().z;
+                    float noise = perlinNoise.octave2D_01(((float)x)/data.getSize().x, ((float)y)/data.getSize().y, octaves, persistence);
+                    int maxOffset = data.getSize().z - baseHeight;
+                    float height = baseHeight + (noise * maxOffset);
 
                     for(int z = 0; z < height; ++z)
                     {
