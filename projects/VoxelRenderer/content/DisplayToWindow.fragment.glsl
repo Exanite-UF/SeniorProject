@@ -115,7 +115,7 @@ void main()
         hitUV *= 0.1;
         hitUV = mod(hitUV, 1);
 
-        vec3 colorBase = light;//vec3(hitUV, 0);
+        vec3 colorBase = light; // vec3(hitUV, 0);
 
         /*
         // This is the workload rendering code
@@ -129,7 +129,7 @@ void main()
         */
 
         // vec3 colorBase = abs(normal.xyz);
-        color += colorBase;// / falloff;
+        color += colorBase; // / falloff;
     }
     color /= size.z;
     fragColor = vec4(color, 1);
