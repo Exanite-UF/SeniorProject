@@ -21,15 +21,24 @@ layout(std430, binding = 3) buffer MaterialMap
     uint materialMap[];
 };
 
-// layout(rgba8ui, binding = 0) uniform readonly uimage3D texture1;
-// layout(rgba8ui, binding = 1) uniform readonly uimage3D texture2;
-// layout(rgba8ui, binding = 2) uniform readonly uimage3D texture3;
-// layout(rgba8ui, binding = 3) uniform readonly uimage3D texture4;
-// layout(rgba8ui, binding = 4) uniform readonly uimage3D texture5;
+layout(std430, binding = 4) buffer HitPosition
+{
+    vec4 hitPosition[];
+};
+layout(std430, binding = 5) buffer HitNormal
+{
+    vec4 hitNormal[];
+};
 
-layout(rgba32f, binding = 5) uniform image3D hitPosition;
-layout(rgba32f, binding = 6) uniform image3D hitNormal;
-layout(r16ui, binding = 7) uniform uimage3D hitMaterial;
+layout(std430, binding = 6) buffer HitMaterial
+{
+    uint hitMaterial[];
+};
+
+layout(std430, binding = 7) buffer HitVoxelPosition
+{
+    float hitVoxelPosition[];
+};
 
 uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture (not the size of the voxel world)
 uniform uint mipMapTextureCount;
@@ -40,6 +49,39 @@ uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 voxelWorldPosition;
 uniform vec4 voxelWorldRotation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
+
+void setHitPosition(ivec3 coord, vec4 value)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitPosition[index] = value;
+}
+
+void setHitNormal(ivec3 coord, vec4 value)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitNormal[index] = value;
+}
+
+vec4 getHitNormal(ivec3 coord)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+
+    return hitNormal[index];
+}
+
+void setHitMaterial(ivec3 coord, uint value)
+{
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitMaterial[index] = value;
+}
+
+void setHitVoxelPosition(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    hitVoxelPosition[index + 0] = value.x;
+    hitVoxelPosition[index + 1] = value.y;
+    hitVoxelPosition[index + 2] = value.z;
+}
 
 // coord is a cell coord
 uint getByte(ivec3 coord, int mipMapTexture)
@@ -149,7 +191,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
     // Put the ray at the surface of the cube
     float distToCube = rayboxintersect(rayStart, rayDir, vec3(0), vec3(size));
-    rayPos += rayDir * max(0.0, distToCube - 0.001); // The -0.001 is for numerical stability when entering the volume
+    rayPos += rayDir * max(0.0, distToCube - 0.001); // The -0.001 is for numerical stability when entering the volume (This is the aformentioned correction)
 
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
@@ -165,7 +207,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
-    bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
+    bool isOutside = false; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -177,7 +219,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         bool isOutsideVolume = (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0))));
-        if ((i > 1) && isOutsideVolume)
+        if ((i > 0) && isOutsideVolume)
         {
             // No voxel was hit
             break;
@@ -252,38 +294,50 @@ void main()
 
     vec3 rayStart = rayPos;
 
-    float currentDepth = imageLoad(hitNormal, texelCoord).w;
+    float currentDepth = getHitNormal(texelCoord).w; // imageLoad(hitNormal, texelCoord).w;
 
-    vec3 voxelWorldSize = 2. * voxelResolution; // The size of the voxel world in voxels
+    vec3 voxelWorldSize = 2. * voxelResolution;
 
-    rayPos -= voxelWorldPosition; // - 0.5 * vec3(voxelWorldSize);
-    rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos);
-    rayPos /= voxelWorldScale;
-    rayPos += 0.5 * vec3(voxelWorldSize);
+    // Transform the ray position to voxel space
+    rayPos -= voxelWorldPosition; // Find position relative to the voxel world
+    rayPos = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayPos); // Inverse rotations lets us rotate from world space to voxel space
+    rayPos /= voxelWorldScale; // Undo the scale now that we are aligned with voxel space
+    rayPos += 0.5 * vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
 
+    // Transform the ray direction to voxel space
     rayDir = qtransform(vec4(-voxelWorldRotation.xyz, voxelWorldRotation.w), rayDir);
     rayDir /= voxelWorldScale;
 
+    // Increment the ray forward slightly for numerical stability (This is corrected for in the intersection code)
     rayPos += rayDir * 0.001;
 
+    // Find the intersection point of the ray cast
     RayHit hit = findIntersection(rayPos, rayDir, 200, currentDepth);
 
-    hit.hitLocation -= 0.5 * vec3(voxelWorldSize);
-    hit.hitLocation *= voxelWorldScale;
-    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation);
-    hit.hitLocation += voxelWorldPosition;
+    vec3 voxelPosition = hit.hitLocation; // Store the position of the intersection in voxel space
 
+    // Transform the hit location to world space
+    hit.hitLocation -= 0.5 * vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
+    hit.hitLocation *= voxelWorldScale; // Apply the scale of the voxel world
+    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
+    hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
+
+    // Transform the hit normal from
     hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
     hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
-
-    if (hit.wasHit && hit.dist < currentDepth)
-    {
-        imageStore(hitPosition, texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
-        imageStore(hitNormal, texelCoord, vec4(hit.normal, hit.dist)); // Record the world space normal direction of the hit surface
-        imageStore(hitMaterial, texelCoord, uvec4(hit.material));
+    if(!hit.wasHit){
+        hit.dist = 1.0 / 0.0;
     }
 
-    // imageStore(hitMaterial, texelCoord, uvec4(hit.iterations));//Record the number of iterations into the material texture
+    if (hit.dist < currentDepth)
+    {
+        setHitPosition(texelCoord, vec4(hit.hitLocation, hit.wasHit)); // Record the world space position of the hit surface
+        setHitNormal(texelCoord, vec4(hit.normal, hit.dist)); // Record the world space normal direction of the hit surface
+        setHitMaterial(texelCoord, hit.material);
+        setHitVoxelPosition(texelCoord, voxelPosition);
+    }
+
+    // setHitMaterial(texelCoord, hit.iterations);//Record the number of iterations into the material texture
 }

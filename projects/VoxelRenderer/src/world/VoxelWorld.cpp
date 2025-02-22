@@ -22,6 +22,7 @@ void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool 
     generateOccupancyUsingNoise(currentNoiseTime, isRand2, fillAmount);
     updateMipMaps();
 
+    // This calls a shader that hard codes the material values (it is non-essential)
     assignMaterial(0);
     assignMaterial(1);
     assignMaterial(2);

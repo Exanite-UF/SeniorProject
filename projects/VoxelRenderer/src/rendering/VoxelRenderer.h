@@ -1,8 +1,11 @@
 #pragma once
 
+#include "src/graphics/GraphicsBuffer.h"
 #include <src/world/Camera.h>
 #include <src/world/VoxelWorld.h>
+#include <src/world/MaterialManager.h>
 #include <vector>
+
 
 // The voxel renderer needs to be able to render multiple voxel worlds
 class VoxelRenderer
@@ -21,19 +24,26 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
-    GraphicsBuffer<float> rayStartBuffer;
-    GraphicsBuffer<float> rayDirectionBuffer;
+    GraphicsBuffer<glm::vec3> rayStartBuffer;
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer;
 
     // These buffers are used to store the result of a ray trace step
-    GLuint rayHitPositionBuffer = 0; //(x, y, z, wasHit)
-    GLuint rayHitNormalBuffer = 0; //(x, y, z, depth)
-    GLuint rayHitMaterialBuffer = 0; //(material)
+    GraphicsBuffer<glm::vec4> rayHitPositionBuffer; //(x, y, z, wasHit)
+    GraphicsBuffer<glm::vec4> rayHitNormalBuffer; //(x, y, z, depth)
+    GraphicsBuffer<uint32_t> rayHitMaterialBuffer; //(material)
+    GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer; //(x, y, z)
+
+    GraphicsBuffer<glm::vec3> attentuationBuffer; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer; //(r, g, b)
+
+    GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
     static GLuint executeRayTraceProgram;
     static GLuint resetHitInfoProgram;
     static GLuint displayToWindowProgram;
+    static GLuint BRDFProgram;
 
     int xSize = 0;
     int ySize = 0;
@@ -56,6 +66,10 @@ public:
     void prepareRayTraceFromCamera(const Camera& camera);
 
     void executeRayTrace(std::vector<VoxelWorld>& worlds);
+
+    // materialMap: This maps from material index to material id (What is stored in the material result to an actual material)
+    // materialTextureSizes: This stores the size of voxel in each material texture (it is 512 vec2 values)
+    void accumulateLight(MaterialManager& materialManager);
 
     void display();
 };

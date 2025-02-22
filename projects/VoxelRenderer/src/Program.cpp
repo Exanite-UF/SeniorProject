@@ -132,6 +132,7 @@ void Program::run()
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
 
+
     // Create the renderer
     VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
@@ -151,6 +152,9 @@ void Program::run()
     int framesThisCycle = 0;
     float currentFPS = 0;
     float averagedDeltaTime = 0;
+
+    bool isSingleRender = false;
+    bool isFirstRender = true;
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -332,7 +336,7 @@ void Program::run()
             showMenuGUI = !showMenuGUI;
         }
 
-        {
+        if(!isSingleRender || isFirstRender){
             renderer.setResolution(window->size.x, window->size.y);
 
             camera.transform.setGlobalPosition(cameraPosition);
@@ -341,10 +345,15 @@ void Program::run()
             // Scales and rotates the world. For testing purposes.
             // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)totalElapsedTime, glm::normalize(glm::vec3(-1.f, 0, 0))));
             // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
-
             renderer.prepareRayTraceFromCamera(camera);
-            renderer.executeRayTrace(scene.worlds);
+            for(int i = 0; i < 3; i++){
+                renderer.executeRayTrace(scene.worlds);
+                renderer.accumulateLight(MaterialManager::getInstance());
+            }
+            
+            // renderer.accumulateLight();//TODO: call this
             renderer.display();
+            isFirstRender = false;
         }
 
         {
