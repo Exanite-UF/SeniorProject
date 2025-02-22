@@ -38,6 +38,8 @@
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
+#include <src/procgen/WorldGenerator.h>
+#include <src/procgen/OctaveNoiseWorldGenerator.h>
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -126,7 +128,8 @@ void Program::run()
     Scene scene {};
     Camera& camera = scene.camera;
 
-    VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    glm::ivec3 worldSize = glm::ivec3(128, 128, 256);
+    VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram, worldSize);
     // worlds.at(1).transform.position = glm::vec3(256, 0, 0);
 
     VoxelWorldData data {};
@@ -137,7 +140,7 @@ void Program::run()
     renderer.setRaysPerPixel(1);
 
     // Main render loop
-    glm::vec3 cameraPosition(0);
+    glm::vec3 cameraPosition(0, 0, worldSize.z/1.75f);
     glm::vec2 cameraRotation(0);
     float moveSpeedExponent = 50;
     float mouseSensitivity = 0.002;
@@ -151,6 +154,9 @@ void Program::run()
     int framesThisCycle = 0;
     float currentFPS = 0;
     float averagedDeltaTime = 0;
+
+    // Procedural Generation
+    OctaveNoiseWorldGenerator worldGenerator(worldSize);
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -247,19 +253,10 @@ void Program::run()
             data.copyFrom(voxelWorld);
         }
 
+        worldGenerator.showDebugMenu();
         if (input->isKeyPressed(GLFW_KEY_F8))
         {
-            data.clearOccupancy();
-
-            for (int x = 0; x < data.getSize().x; ++x)
-            {
-                for (int y = 0; y < data.getSize().y; ++y)
-                {
-                    data.setVoxelOccupancy({ x, y, x }, true);
-                }
-            }
-
-            data.writeTo(voxelWorld);
+            worldGenerator.generate(voxelWorld);
         }
 
         if (input->isKeyPressed(GLFW_KEY_F9))

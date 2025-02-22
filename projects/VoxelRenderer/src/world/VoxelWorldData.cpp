@@ -13,7 +13,7 @@ void VoxelWorldData::copyFrom(VoxelWorld& world)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
+    
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialIdMapIndices.at(materialIdMapIndices.size() - 1), materialMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
