@@ -39,7 +39,7 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 #include <src/procgen/WorldGenerator.h>
-#include <src/PerlinNoise.hpp>
+#include <src/procgen/OctaveNoiseWorldGenerator.h>
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -156,7 +156,7 @@ void Program::run()
     float averagedDeltaTime = 0;
 
     // Procedural Generation
-    WorldGenerator worldGenerator(worldSize);
+    OctaveNoiseWorldGenerator worldGenerator(worldSize);
 
     // IMGUI Menu
     bool showMenuGUI = false;

@@ -6,17 +6,13 @@
 
 class WorldGenerator
 {
-private:
+protected:
     VoxelWorldData data;
 
-    float seed = 0;
-    float baseHeight = 100;
-    int octaves = 3;
-    float persistence = 0.5;
+    virtual void generateData() = 0;
 
 public:
     explicit WorldGenerator(glm::ivec3 worldSize);
     void generate(VoxelWorld& voxelWorld);
-    virtual void generate();
-    virtual void showDebugMenu();
+    virtual void showDebugMenu() = 0;
 };
