@@ -22,15 +22,20 @@ MaterialManager::MaterialManager()
         auto material = Material();
         // TODO: Set placeholder material properties
         if(i % 4 == 0){
-            material.emission = glm::vec3(1, 1, 1);
+            material.emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
+            //material.emission = glm::vec3(1, 1, 1);
+            //material.emission *= glm::vec3(0.1, 0.1, 0.1);
+            material.albedo = glm::vec3(0, 0, 0);
+            material.metallic = 0.0;
         }else{
             material.emission = glm::vec3(0, 0, 0);
+            material.albedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
+            material.metallic = (rand() % 1000) / 1000.0;
+            material.metallicAlbedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
         }
         
-        material.albedo = glm::vec3(1, 0, 0);
-        material.roughness = 1;
-        material.metallic = 0;
-        material.metallicAlbedo = glm::vec3(0,0,0);
+        material.roughness = (rand() % 1000) / 1000.0;
+        
 
         materials[i] = material;
     }

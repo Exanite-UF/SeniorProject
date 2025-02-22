@@ -26,6 +26,7 @@ layout(std430, binding = 4) buffer AccumulatedLight
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
+
 vec4 getHitPosition(ivec3 coord)
 {
     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z

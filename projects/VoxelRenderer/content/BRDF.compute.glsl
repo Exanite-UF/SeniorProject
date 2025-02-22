@@ -257,35 +257,30 @@ vec4 randomHemisphereDirectionUniform(vec3 normal, vec2 rand)
 }
 
 // This is the GGX distribution
-float microfacetDistribution(float dotOfNormalAndHalfway, float roughness)
-{
-    float rough2 = roughness * roughness * roughness * roughness;
-    float temp = dotOfNormalAndHalfway * dotOfNormalAndHalfway * (rough2 - 1) + 1;
-    return rough2 / (3.1415926589 * temp * temp);
-}
 
 // This is the GGX
 // It returns a direction, and a multiplier that needs to be applied to the final light intensity (It corrects for the sampling distribution. It is the reciprocal of the PDF of the distribution)
-vec4 randomHemisphereDirectionGGX(vec3 normal, vec2 rand, float roughness)
-{
-    // Random azimuthal angle (in [0, 2*pi])
-    float phi = 2.0 * 3.14159 * rand.x;
+//vec4 randomHemisphereDirectionGGX(vec3 normal, vec2 rand, float roughness)
+//{
+//    // Random azimuthal angle (in [0, 2*pi])
+//    float phi = 2.0 * 3.14159 * rand.x;
+//
+//    // Compute polar angle (in [0, pi])
+//    float cosTheta = sqrt((1.0 - rand.y) / (1.0 + (roughness * roughness - 1.0) * rand.y));
+//    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+//
+//    // Convert from local (z-up) space to world space
+//    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
+//    vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
+//    vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
+//    // We now have three vectors: the normal direction, perpedicular to the normal, and other perpendicular to the normal
+//
+//    // Now we can compute the final direction
+//    vec3 direction = cos(phi) * sinTheta * tangent + sin(phi) * sinTheta * bitangent + cosTheta * normal;
+//
+//    return vec4(direction, 1.0 / microfacetDistribution(dot(normalize(normal + direction), normal), roughness));
+//}
 
-    // Compute polar angle (in [0, pi])
-    float cosTheta = sqrt((1.0 - rand.y) / (1.0 + (roughness * roughness - 1.0) * rand.y));
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-
-    // Convert from local (z-up) space to world space
-    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
-    vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
-    vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
-    // We now have three vectors: the normal direction, perpedicular to the normal, and other perpendicular to the normal
-
-    // Now we can compute the final direction
-    vec3 direction = cos(phi) * sinTheta * tangent + sin(phi) * sinTheta * bitangent + cosTheta * normal;
-
-    return vec4(direction, 1.0 / microfacetDistribution(dot(normalize(normal + direction), normal), roughness));
-}
 
 // For metals baseReflectivity is the metallicAlbedo
 // For non-metals, it is a completely different property (I'm going to go with 1)
@@ -307,25 +302,130 @@ float geometricBlocking(float dotOfViewAndNormal, float dotOfLightAndNormal, flo
     return factor1 * factor2;
 }
 
-// view is the direction we came from
-// light is the direction we are going
-// These names come from standard terminology for the subject
+//This works in tangent space
+//So the normal is (0, 0, 1)
+float geometricBlockingGGX(float roughness, float dotOfLightAndNormal, float dotOfViewAndNormal){
+    dotOfLightAndNormal = abs(dotOfLightAndNormal);
+    dotOfViewAndNormal = abs(dotOfViewAndNormal);
+    float numerator = 2 * dotOfLightAndNormal * dotOfViewAndNormal;
+    float temp = roughness * roughness;
+    float denominator1 = dotOfViewAndNormal * sqrt(temp + (1 - temp) * dotOfLightAndNormal * dotOfLightAndNormal);
+    float denominator2 = dotOfLightAndNormal * sqrt(temp + (1 - temp) * dotOfViewAndNormal * dotOfViewAndNormal);
+    return numerator / (denominator1 + denominator2);
+}
+
+//This works in tangent space
+//So the normal is (0, 0, 1)
+float microfacetDistributionGGX(float roughness, float dotOfNormalAndHalfway){
+    float temp = roughness * roughness;
+    float temp2 = dotOfNormalAndHalfway * dotOfNormalAndHalfway * (temp - 1) + 1;
+    return temp / (3.1415926589 * temp * temp);
+}
+
+//Should give the rotation that moves from v1 to v2
+vec4 rotateBetweenVectors(vec3 v1, vec3 v2){
+    vec4 q;
+    vec3 a = cross(v1, v2);
+    q.xyz = a;
+    q.w = sqrt((length(v1) * length(v1)) * (length(v2) * length(v2))) + dot(v1, v2);
+    return normalize(q);
+}
+
+ vec3 qtransform( vec4 q, vec3 v ){ 
+	return v + 2.0*cross(cross(v, q.xyz ) + q.w*v, q.xyz);
+} 
+
+//Makes the normal vector up
+//This should rotate the input
+//(How does the input needs to rotate such that the normal direction faces along the z axis)
+vec3 toTangentSpace(vec3 input, vec3 normal){
+    return qtransform(rotateBetweenVectors(normal, vec3(0, 0, 1)), input);
+}
+
+vec4 sampleGGX(float roughness, vec2 rand, vec3 view, vec3 normal){
+    float a = roughness * roughness;
+
+    // -- Calculate theta and phi for our microfacet normal wm by
+    // -- importance sampling the Ggx distribution of normals
+    float theta = acos(sqrt((1.0f - rand.x) / ((a - 1.0f) * rand.x + 1.0f)));
+    float phi = 6.28318530718 * rand.y;
+    
+    // -- Convert from spherical to Cartesian coordinates
+    //wm is the microfacet direction
+    vec3 microfacetDirection = vec3(
+        cos(phi) * sin(theta),
+        sin(phi) * sin(theta),
+        cos(theta)
+    );
+
+    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
+    vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
+    vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
+    microfacetDirection = tangent * microfacetDirection.x + bitangent * microfacetDirection.y + normal * microfacetDirection.z;
+    
+
+     // -- Calculate light by reflecting view about wm
+    vec3 light = reflect(view, microfacetDirection);
+
+    // -- Ensure our sample is in the upper hemisphere
+    if(dot(light, normal) < 0){
+        return vec4(light, 0);
+    }else{
+        vec3 halfway = normalize(view + light); // This is used by several things
+        return vec4(light, 1 / (microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway)) * dot(microfacetDirection, normal) / abs(4 * dot(view, microfacetDirection))));
+    }
+}
+
+vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal){
+    float a = roughness * roughness;
+
+    // -- Calculate theta and phi for our microfacet normal wm by
+    // -- importance sampling the Ggx distribution of normals
+    float theta = acos(sqrt((1.0f - rand.x) / ((a - 1.0f) * rand.x + 1.0f)));
+    float phi = 6.28318530718 * rand.y;
+    
+    // -- Convert from spherical to Cartesian coordinates
+    //wm is the microfacet direction
+    vec3 microfacetDirection = vec3(
+        cos(phi) * sin(theta),
+        sin(phi) * sin(theta),
+        cos(theta)
+    );
+
+    vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
+    vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
+    vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
+    microfacetDirection = tangent * microfacetDirection.x + bitangent * microfacetDirection.y + normal * microfacetDirection.z;
+    
+
+     // -- Calculate light by reflecting view about wm
+    vec3 light = reflect(view, microfacetDirection);
+
+    // -- Ensure our sample is in the upper hemisphere
+    if(dot(light, normal) < 0){
+        return vec4(light, 0);
+    }else{
+        vec3 halfway = normalize(view + light); // This is used by several things
+        return vec4(light, 1 / (dot(microfacetDirection, normal) / abs(dot(view, microfacetDirection))));
+    }
+}
+
+
+
 vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 {
     vec3 halfway = normalize(view + light); // This is used by several things
 
+    float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway));//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+
     vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
 
-    // Since the microfacet distribution is equal to the sampling distribution, this factors cancels out with the division by the sampling distribution
-    // GGX has a specific sampling distribution to use, and it is equal to the microfacet distribution
-    float microfacetComponent = 1;//microfacetDistribution(dot(halfway, normal), voxelMaterial.roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
-
-    vec3 fresnelComponent = vec3(1);//fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+    vec3 fresnelComponent = fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
 
     // This approximates how much light is blocked by microfacets, when looking from different directions
     float dotOfViewAndNormal = dot(view, normal);
     float dotOfLightAndNormal = dot(light, normal);
-    float geometricComponent = geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
+    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal));//geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
 
     // The effect of the metallicAlbedo is performed in the fresenl component
     // A non metallic material is assumed to not be affected by the fresnel effect
@@ -337,6 +437,34 @@ vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
     vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
 
     return microfacetComponent * fresnelComponent * geometricComponent * albedo / abs(4 * dotOfViewAndNormal * dotOfLightAndNormal);
+}
+
+vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
+{
+    vec3 halfway = normalize(view + light); // This is used by several things
+
+    //This component is part of the sampling distribution pdf, so it cancels out
+    //float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway));//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+
+    vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
+
+    vec3 fresnelComponent = fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+
+    // This approximates how much light is blocked by microfacets, when looking from different directions
+    float dotOfViewAndNormal = dot(view, normal);
+    float dotOfLightAndNormal = dot(light, normal);
+    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal));//geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
+
+    // The effect of the metallicAlbedo is performed in the fresenl component
+    // A non metallic material is assumed to not be affected by the fresnel effect
+    // The fresnel component will color the reflected light, and will behave according to an approximation of the fresnel effect
+    // Since albedo is about perfectly diffuse refection color, that would imply no fresnel effect
+    // This does mean that there are two ways to get a colored mirror reflection. (one with and one without the fresnel effect)
+    // It also means that the color of the metallic albedo will show off stronger at sharper angles
+    // We add the metallic value to the albedo to prevent darkening. (this is a multiplier, so not doing this would just make metals black)
+    vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
+
+    return fresnelComponent * geometricComponent * albedo / abs(dotOfViewAndNormal);
 }
 
 void main()
@@ -394,21 +522,11 @@ void main()
     voxelMaterial.metallic *= rmTexture.g;
     */
 
+    vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
+    vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
-    //vec4 nextDirection = randomHemisphereDirectionUniform(normal, randomVec2(seed));//randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
-    vec4 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
-
-    // Calculate the BRDF
-
-    // Usually we would divide by the sampling distribution (I already calculated the reciprocal), but in this case the sampling distribution is equal to the microfacet distribution that is used inside this function, so they end up cancelling out
-    
-    //This is how the brdf is usually calculated
-    //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
-    
-    //This works for GGX because of how the sampling distribution and BRDF are made
-    //Note that the microfacet distribution is being ignored in the BRDF calculation to prevent ' * nextDirection.w' from needing to be run
-    //The microfacet distribution and the sampling correction are reciprocals
-    vec3 brdfValue = brdf(normal, direction, nextDirection.xyz, voxelMaterial);
+    //vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
+    //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
     
     // Light falloff is a consequence of the integral in the rendering equation.
     // Point sources of light don't exist.
@@ -433,7 +551,7 @@ void main()
     setHitNormal(texelCoord, vec4(0, 0, 0, 1.0/0.0));
     setHitVoxelPosition(texelCoord, vec3(0));
     setHitMaterial(texelCoord, 0);
-
+    
     if(wasHit){
         setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
         changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
@@ -441,7 +559,7 @@ void main()
         //Nothing was hit
         //changeLightAccumulation(texelCoord, dot(direction, normalize(vec3(1, 1, 1))) * vec3(1, 1, 0) * attentuation);
         if(dot(direction, normalize(vec3(1, 1, 1))) > 0.9){
-            changeLightAccumulation(texelCoord, vec3(1, 1, 0) * attentuation); //And there is no light from this direction
+            changeLightAccumulation(texelCoord, vec3(10, 10, 0) * attentuation); //The sun
         }else{
             changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
         }

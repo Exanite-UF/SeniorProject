@@ -26,6 +26,7 @@ GLuint VoxelRenderer::executeRayTraceProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
 GLuint VoxelRenderer::displayToWindowProgram;
 GLuint VoxelRenderer::BRDFProgram;
+GLuint VoxelRenderer::resetVisualInfoProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -67,6 +68,7 @@ VoxelRenderer::VoxelRenderer()
     resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
     displayToWindowProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
     BRDFProgram = ShaderManager::getInstance().getComputeProgram(Content::brdfComputeShader);
+    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
 
@@ -109,7 +111,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
         glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
         glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
         glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
-        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f); // A little bit of randomness for temporal accumulation
+        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 100000) / 100000.f, (rand() % 100000) / 100000.f); // A little bit of randomness for temporal accumulation
+        
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -146,6 +149,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
     accumulatedLightBuffer.unbind();
 
     glUseProgram(0);
+
+    resetVisualInfo();
 }
 
 void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
@@ -207,6 +212,31 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
     glUseProgram(0);
 }
 
+void VoxelRenderer::resetVisualInfo()
+{
+    glUseProgram(resetVisualInfoProgram);
+
+    attentuationBuffer.bind(0);
+    accumulatedLightBuffer.bind(1);
+
+    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (ySize + 8 - 1) / 8;
+    GLuint workGroupsZ = raysPerPixel;
+
+    glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    }
+
+    attentuationBuffer.unbind();
+    accumulatedLightBuffer.unbind();
+
+    glUseProgram(0);
+}
+
 void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
@@ -230,7 +260,7 @@ void VoxelRenderer::accumulateLight(MaterialManager& materialManager)
         GLuint workGroupsZ = raysPerPixel;
 
         glUniform3i(glGetUniformLocation(BRDFProgram, "resolution"), xSize, ySize, raysPerPixel);
-        glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 1000) / 1000.f); // A little bit of randomness for temporal accumulation
+        glUniform1f(glGetUniformLocation(BRDFProgram, "random"), (rand() % 100000) / 100000.f); // A little bit of randomness for temporal accumulation
         
         //std::cout << "hi" << std::endl;
         glUniform1ui(glGetUniformLocation(BRDFProgram, "materialMapSize"), Constants::VoxelWorld::materialMapCount);

@@ -44,7 +44,8 @@ private:
     static GLuint resetHitInfoProgram;
     static GLuint displayToWindowProgram;
     static GLuint BRDFProgram;
-
+    static GLuint resetVisualInfoProgram;
+    
     int xSize = 0;
     int ySize = 0;
     int raysPerPixel = 0;
@@ -64,6 +65,8 @@ public:
     void setRaysPerPixel(int number);
 
     void prepareRayTraceFromCamera(const Camera& camera);
+
+    void resetVisualInfo();
 
     void executeRayTrace(std::vector<VoxelWorld>& worlds);
 
