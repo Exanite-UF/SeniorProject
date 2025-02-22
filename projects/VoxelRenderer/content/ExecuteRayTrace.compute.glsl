@@ -327,7 +327,8 @@ void main()
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
     hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
-    if(!hit.wasHit){
+    if (!hit.wasHit)
+    {
         hit.dist = 1.0 / 0.0;
     }
 

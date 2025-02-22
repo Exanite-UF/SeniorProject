@@ -50,8 +50,7 @@ struct MaterialData
 
     float padding3;
     float padding4;
-    
-    
+
     // glm::vec3 color;
     //
     // glm::vec2 uvOffset;

@@ -2,7 +2,7 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-//Padded to 32 bytes long
+// Padded to 32 bytes long
 struct MaterialProperties
 {
     vec3 emission;
@@ -61,7 +61,7 @@ layout(std430, binding = 7) buffer AccumulatedLight
 // As such 512 textures are sent in for each material property
 
 // This struct is 40 bytes long (The data is tightly packed)
-//struct MaterialTextureSet
+// struct MaterialTextureSet
 //{
 //    sampler2D emission; // uint64_t
 //    sampler2D albedo;
@@ -70,25 +70,24 @@ layout(std430, binding = 7) buffer AccumulatedLight
 //    vec2 size; // The scaling of each material tells us what percent of a texture each voxel is when measured linearly.//This is 2 floats (and it is packed dense)
 //};
 
-layout(std430, binding = 8) buffer MaterialMap{
+layout(std430, binding = 8) buffer MaterialMap
+{
     uint materialMap[]; // This maps from the material index from the ray cast to the index of an actual material
 };
 // Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 9) buffer MaterialBases{
-    MaterialProperties materialBases[];//This is the base colors of the materials
+layout(std430, binding = 9) buffer MaterialBases
+{
+    MaterialProperties materialBases[]; // This is the base colors of the materials
 };
 // Each entry is 48 bytes long (There are 8 bytes of padding)
-//layout(std430, binding = 10) buffer MaterialTextures{
+// layout(std430, binding = 10) buffer MaterialTextures{
 //    MaterialTextureSet materialTextures[];// This is the data used to find the bindless textures
 //};
 
 uniform uint materialMapSize;
 uniform uint materialCount;
 
-
-
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
-
 
 uniform float random; // This is used to make non-deterministic randomness
 
@@ -155,7 +154,6 @@ void setHitVoxelPosition(ivec3 coord, vec3 value)
     hitVoxelPosition[index + 2] = value.z;
 }
 
-
 vec3 getDirection(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
@@ -182,7 +180,7 @@ void setPosition(ivec3 coord, vec3 value)
 
 void clearZBuffer(ivec3 coord)
 {
-     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
 
     hitNormal[index].w = 1.0 / 0.0;
 }
@@ -318,9 +316,9 @@ vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 
     // Since the microfacet distribution is equal to the sampling distribution, this factors cancels out with the division by the sampling distribution
     // GGX has a specific sampling distribution to use, and it is equal to the microfacet distribution
-    float microfacetComponent = 1;//microfacetDistribution(dot(halfway, normal), voxelMaterial.roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+    float microfacetComponent = 1; // microfacetDistribution(dot(halfway, normal), voxelMaterial.roughness);//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
 
-    vec3 fresnelComponent = vec3(1);//fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+    vec3 fresnelComponent = vec3(1); // fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
 
     // This approximates how much light is blocked by microfacets, when looking from different directions
     float dotOfViewAndNormal = dot(view, normal);
@@ -342,7 +340,7 @@ vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z;//texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
+    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
     uint materialID = materialMap[getHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
 
@@ -378,13 +376,13 @@ void main()
         // xy
         hitUV = voxelPosition.xy;
     }
-    //vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
+    // vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
 
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
-    voxelMaterial = materialBases[materialID];//This is the base value of the material
+    voxelMaterial = materialBases[materialID]; // This is the base value of the material
 
-    //Multiply in the texture values
+    // Multiply in the texture values
     /*
     voxelMaterial.emission *= texture(sampler2d(materialTextures[materialID].emission), uv).xyz;
     voxelMaterial.albedo *= texture(sampler2d(materialTextures[materialID].albedo), uv).xyz;
@@ -394,22 +392,21 @@ void main()
     voxelMaterial.metallic *= rmTexture.g;
     */
 
-
-    //vec4 nextDirection = randomHemisphereDirectionUniform(normal, randomVec2(seed));//randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
+    // vec4 nextDirection = randomHemisphereDirectionUniform(normal, randomVec2(seed));//randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
     vec4 nextDirection = randomHemisphereDirectionGGX(normal, randomVec2(seed), voxelMaterial.roughness); // Get the next direction to sample in
 
     // Calculate the BRDF
 
     // Usually we would divide by the sampling distribution (I already calculated the reciprocal), but in this case the sampling distribution is equal to the microfacet distribution that is used inside this function, so they end up cancelling out
-    
-    //This is how the brdf is usually calculated
-    //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
-    
-    //This works for GGX because of how the sampling distribution and BRDF are made
-    //Note that the microfacet distribution is being ignored in the BRDF calculation to prevent ' * nextDirection.w' from needing to be run
-    //The microfacet distribution and the sampling correction are reciprocals
+
+    // This is how the brdf is usually calculated
+    // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// store the factor that needs to be multiplied by the BRDF to cancel out the bias caused by a non-uniform sampling distribution
+
+    // This works for GGX because of how the sampling distribution and BRDF are made
+    // Note that the microfacet distribution is being ignored in the BRDF calculation to prevent ' * nextDirection.w' from needing to be run
+    // The microfacet distribution and the sampling correction are reciprocals
     vec3 brdfValue = brdf(normal, direction, nextDirection.xyz, voxelMaterial);
-    
+
     // Light falloff is a consequence of the integral in the rendering equation.
     // Point sources of light don't exist.
     // They would have infinite radiance since their solid angle is 0. Any amount of light coming from 0 steradians and 0 projected area, will be infinite.
@@ -430,22 +427,27 @@ void main()
     setDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
 
     setHitPosition(texelCoord, vec4(0));
-    setHitNormal(texelCoord, vec4(0, 0, 0, 1.0/0.0));
+    setHitNormal(texelCoord, vec4(0, 0, 0, 1.0 / 0.0));
     setHitVoxelPosition(texelCoord, vec3(0));
     setHitMaterial(texelCoord, 0);
 
-    if(wasHit){
+    if (wasHit)
+    {
         setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
         changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
-    }else{
-        //Nothing was hit
-        //changeLightAccumulation(texelCoord, dot(direction, normalize(vec3(1, 1, 1))) * vec3(1, 1, 0) * attentuation);
-        if(dot(direction, normalize(vec3(1, 1, 1))) > 0.9){
-            changeLightAccumulation(texelCoord, vec3(1, 1, 0) * attentuation); //And there is no light from this direction
-        }else{
-            changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
-        }
-        setAttenuation(texelCoord, vec3(0));//No more light can come
     }
-    
+    else
+    {
+        // Nothing was hit
+        // changeLightAccumulation(texelCoord, dot(direction, normalize(vec3(1, 1, 1))) * vec3(1, 1, 0) * attentuation);
+        if (dot(direction, normalize(vec3(1, 1, 1))) > 0.9)
+        {
+            changeLightAccumulation(texelCoord, vec3(1, 1, 0) * attentuation); // And there is no light from this direction
+        }
+        else
+        {
+            changeLightAccumulation(texelCoord, vec3(0)); // And there is no light from this direction
+        }
+        setAttenuation(texelCoord, vec3(0)); // No more light can come
+    }
 }
