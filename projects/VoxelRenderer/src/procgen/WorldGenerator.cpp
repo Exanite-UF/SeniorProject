@@ -11,6 +11,9 @@ WorldGenerator::WorldGenerator(glm::ivec3 worldSize)
 
 void WorldGenerator::generate(VoxelWorld& voxelWorld)
 {
+    //TODO: Remove copyFrom, and also set material. Otherwise voxels are black. 
+    data.copyFrom(voxelWorld);
+
     data.clearOccupancy();
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
