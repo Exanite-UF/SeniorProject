@@ -3,8 +3,9 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldUtility.h>
+#include <glm/gtc/integer.hpp> 
 
-VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
+VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram, glm::ivec3 size)
 {
     this->makeNoiseComputeProgram = makeNoiseComputeProgram;
     this->makeMipMapComputeProgram = makeMipMapComputeProgram;
@@ -13,7 +14,13 @@ VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeP
     this->currentNoiseTime = 0;
 
     // Initialize world size and contents
-    setSize({ 512, 512, 512 });
+    size = {
+        1 << glm::log2(size.x - 1) + 1,
+        1 << glm::log2(size.y - 1) + 1,
+        1 << glm::log2(size.z - 1) + 1
+    };
+
+    setSize(size);
     generateOccupancyAndMipMapsAndMaterials(0, true, 0.6);
 }
 

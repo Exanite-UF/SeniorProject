@@ -127,7 +127,8 @@ void Program::run()
     Scene scene {};
     Camera& camera = scene.camera;
 
-    VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    glm::ivec3 worldSize = glm::ivec3(128, 128, 256);
+    VoxelWorld& voxelWorld = scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram, worldSize);
     // worlds.at(1).transform.position = glm::vec3(256, 0, 0);
 
     VoxelWorldData data {};
