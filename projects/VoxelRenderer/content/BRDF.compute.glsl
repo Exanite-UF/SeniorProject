@@ -18,45 +18,47 @@ struct MaterialProperties
     float padding4;
 } voxelMaterial;
 
-layout(std430, binding = 0) buffer HitPosition
+
+layout(std430, binding = 0) readonly buffer HitPosition
 {
     float hitPosition[];
 };
-layout(std430, binding = 1) buffer HitNormal
+layout(std430, binding = 1) readonly buffer HitNormal
 {
     float hitNormal[];
 };
 
-layout(std430, binding = 2) buffer HitMaterial
+layout(std430, binding = 2) readonly buffer HitMaterial
 {
     uint hitMaterial[];
 };
 
-layout(std430, binding = 3) buffer HitVoxelPosition
+layout(std430, binding = 3) readonly buffer HitVoxelPosition
 {
     float hitVoxelPosition[];
 };
 
-layout(std430, binding = 10) buffer HitMisc{
+layout(std430, binding = 10) restrict buffer HitMisc
+{
     float hitMisc[];
 };
 
-layout(std430, binding = 4) buffer RayPosition
+layout(std430, binding = 4) restrict buffer RayPosition
 {
     float rayPosition[];
 };
 
-layout(std430, binding = 5) buffer RayDirection
+layout(std430, binding = 5) restrict buffer RayDirection
 {
     float rayDirection[];
 };
 
-layout(std430, binding = 6) buffer PriorAttenuation
+layout(std430, binding = 6) restrict buffer PriorAttenuation
 {
     float priorAttenuation[];
 };
 
-layout(std430, binding = 7) buffer AccumulatedLight
+layout(std430, binding = 7) restrict buffer AccumulatedLight
 {
     float accumulatedLight[];
 };
@@ -74,11 +76,11 @@ layout(std430, binding = 7) buffer AccumulatedLight
 //    vec2 size; // The scaling of each material tells us what percent of a texture each voxel is when measured linearly.//This is 2 floats (and it is packed dense)
 //};
 
-layout(std430, binding = 8) buffer MaterialMap{
+layout(std430, binding = 8) restrict buffer MaterialMap{
     uint materialMap[]; // This maps from the material index from the ray cast to the index of an actual material
 };
 // Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 9) buffer MaterialBases{
+layout(std430, binding = 9) restrict buffer MaterialBases{
     MaterialProperties materialBases[];//This is the base colors of the materials
 };
 // Each entry is 48 bytes long (There are 8 bytes of padding)
@@ -139,36 +141,6 @@ vec3 getPriorAttenuation(ivec3 coord)
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
 
     return vec3(priorAttenuation[index + 0], priorAttenuation[index + 1], priorAttenuation[index + 2]);
-}
-
-void setHitPosition(ivec3 coord, vec3 value)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitPosition[index + 0] = value.x;
-    hitPosition[index + 1] = value.y;
-    hitPosition[index + 2] = value.z;
-}
-
-void setHitNormal(ivec3 coord, vec3 value)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitNormal[index + 0] = value.x;
-    hitNormal[index + 1] = value.y;
-    hitNormal[index + 2] = value.z;
-}
-
-void setHitMaterial(ivec3 coord, uint value)
-{
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitMaterial[index] = value;
-}
-
-void setHitVoxelPosition(ivec3 coord, vec3 value)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    hitVoxelPosition[index + 0] = value.x;
-    hitVoxelPosition[index + 1] = value.y;
-    hitVoxelPosition[index + 2] = value.z;
 }
 
 void setHitWasHit(ivec3 coord, bool value){
@@ -393,19 +365,39 @@ void main()
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
     float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z;//texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
-    uint materialID = materialMap[getHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
+    
+
+    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
+    vec3 direction = normalize(getDirection(texelCoord)); // The direction the ray cast was in
 
     // Load the hit position
     bool wasHit = getHitWasHit(texelCoord);
+
+    setHitWasHit(texelCoord, false);
+    if(!wasHit){
+        //Nothing was hit
+        //changeLightAccumulation(texelCoord, dot(direction, normalize(vec3(1, 1, 1))) * vec3(1, 1, 0) * attentuation);
+        if(dot(direction, normalize(vec3(1, 1, 1))) > 0.9){
+            changeLightAccumulation(texelCoord, vec3(10, 10, 0) * attentuation); //The sun
+        }else{
+            changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
+        }
+        setAttenuation(texelCoord, vec3(0));//No more light can come
+
+        setHitDist(texelCoord, -1.0);//Set the hit distance such that early stopping will occur in the ray cast.
+        return;
+    }
+
+
+
     vec3 position = getHitPosition(texelCoord);
 
     // Load the hit normal
     //float dist = getHitDist(texelCoord); // Distance that the ray cast covered
     vec3 normal = getHitNormal(texelCoord); // The normal direction of the hit
 
-    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
-    vec3 direction = normalize(getDirection(texelCoord)); // The direction the ray cast was in
 
+    uint materialID = materialMap[getHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
     // Find the uv coordinate for the texture
     // It is based on the hit location in voxel space
     //vec3 voxelPosition = getHitVoxelPosition(texelCoord);
@@ -455,22 +447,9 @@ void main()
     setDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
 
 
-    setHitWasHit(texelCoord, false);
-    if(wasHit){
-        setHitDist(texelCoord, 1.0 / 0.0);//Set the hit distance to infinite
-        setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
-        changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
-    }else{
-        //Nothing was hit
-        //changeLightAccumulation(texelCoord, dot(direction, normalize(vec3(1, 1, 1))) * vec3(1, 1, 0) * attentuation);
-        if(dot(direction, normalize(vec3(1, 1, 1))) > 0.9){
-            changeLightAccumulation(texelCoord, vec3(10, 10, 0) * attentuation); //The sun
-        }else{
-            changeLightAccumulation(texelCoord, vec3(0)); //And there is no light from this direction
-        }
-        setAttenuation(texelCoord, vec3(0));//No more light can come
-
-        setHitDist(texelCoord, -1.0);//Set the hit distance such that early stopping will occur in the ray cast.
-    }
+    
+    setHitDist(texelCoord, 1.0 / 0.0);//Set the hit distance to infinite
+    setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
+    changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
     
 }
