@@ -1,6 +1,7 @@
 #include "Texture.h"
 
-Texture::Texture(GLuint textureId, TextureType type)
+Texture::Texture(GLuint textureId, TextureType type, glm::ivec2 size)
+    : size(size)
 {
     this->textureId = textureId;
     // bindlessHandle = glGetTextureHandleARB(textureId);
@@ -17,6 +18,11 @@ GLuint Texture::getTextureId()
 uint64_t Texture::getBindlessHandle()
 {
     return bindlessHandle;
+}
+
+glm::ivec2 Texture::getSize()
+{
+    return size;
 }
 
 TextureType Texture::getType()
