@@ -557,7 +557,7 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
     // float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway));//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
 
     vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
-    
+
     vec3 fresnelComponent = fresnel(abs(dot(light, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
 
     // This approximates how much light is blocked by microfacets, when looking from different directions
@@ -626,7 +626,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection)
     voxelMaterial.roughness *= rmTexture.r;
     voxelMaterial.metallic *= rmTexture.g;
     */
-    
+
     normal = normalize(normal);
     direction = normalize(direction);
     vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
