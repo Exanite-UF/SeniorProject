@@ -139,7 +139,7 @@ void Program::run()
 
     // Create the renderer
     VoxelRenderer renderer;
-    renderer.setRaysPerPixel(1);
+    renderer.setRaysPerPixel(3);
 
     // Main render loop
     glm::vec3 cameraPosition(0);
@@ -367,7 +367,7 @@ void Program::run()
             scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(-1.f, 0, 0))));
             scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
             renderer.prepareRayTraceFromCamera(camera);
-            for(int i = 0; i <= 1; i++){
+            for(int i = 0; i <= 2; i++){
                 renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
             }
             

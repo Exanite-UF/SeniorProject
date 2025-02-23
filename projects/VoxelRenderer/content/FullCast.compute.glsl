@@ -284,8 +284,10 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     hit.iterations = 0;
     hit.material = 0;
     hit.wasHit = false;
+    hit.isNearest = true;
 
     if(currentDepth <= 0){
+        hit.isNearest = false;
         return hit;
     }
 
@@ -306,6 +308,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
     {
+        hit.isNearest = false;
         return hit;
     }
 
@@ -314,6 +317,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     // If the start of the voxel volume is behind the currently closest thing, then there is not reason to continue
     if (depth > currentDepth)
     {
+        hit.isNearest = false;
         return hit;
     }
 
@@ -390,9 +394,8 @@ vec3 qtransform(vec4 q, vec3 v)
 
 RayHit rayCast(ivec3 texelCoord, vec3 rayDir){
     
-
-    vec3 rayPos = getRayPosition(texelCoord);
-    
+    vec3 startPos = getRayPosition(texelCoord);
+    vec3 rayPos = startPos;
 
     vec3 rayStart = rayPos;
 
@@ -428,12 +431,12 @@ RayHit rayCast(ivec3 texelCoord, vec3 rayDir){
     hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
-    hit.dist = length(rayDir * voxelWorldScale * hit.dist); // length(hit.hitLocation - rayStart);
+    hit.dist = length(startPos - hit.hitLocation); // length(hit.hitLocation - rayStart);
     if(!hit.wasHit){
         hit.dist = 1.0 / 0.0;
     }
 
-    if(hit.dist > currentDepth){
+    if(hit.dist > currentDepth || !hit.isNearest){
         hit.isNearest = false;
         return hit;
     }
