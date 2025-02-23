@@ -674,9 +674,8 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 float sunSize = 0.99;
 vec3 sunDir = normalize(vec3(1,1,1));
 
-void main()
-{
-    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
+
+void attempt(ivec3 texelCoord){
     vec3 rayDir = normalize(getRayDirection(texelCoord));
     float currentDepth = getHitDist(texelCoord);
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
@@ -711,4 +710,15 @@ void main()
     }
 
     BRDF(texelCoord, hit, rayDir, attentuation);
+}
+
+void main()
+{
+    for(int i = 0; i < 1; i++){
+        ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
+        attempt(texelCoord);
+        setHitWasHit(texelCoord, false);
+        setHitDist(texelCoord, 1.0 / 0.0);
+    }
+    
 }

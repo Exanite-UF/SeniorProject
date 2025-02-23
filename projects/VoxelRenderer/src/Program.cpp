@@ -372,7 +372,6 @@ void Program::run()
             for (int i = 0; i <= 2; i++)
             {
                 renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
-                renderer.resetHitInfo();
             }
 
             renderer.display(camera, frameCount);
