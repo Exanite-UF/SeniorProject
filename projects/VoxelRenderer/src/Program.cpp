@@ -29,6 +29,7 @@
 #include <src/Content.h>
 #include <src/Program.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/rendering/Framebuffer.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/BufferedEvent.h>
@@ -161,6 +162,8 @@ void Program::run()
     int frameCount = 0;
     int maxFrames = 0;
 
+    Framebuffer framebuffer(window->size);
+
     // IMGUI Menu
     bool showMenuGUI = false;
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -197,186 +200,164 @@ void Program::run()
         window->update();
         inputManager->update();
 
-        if (!inputManager->cursorEnteredThisFrame)
+        // TODO: Unorganized code
         {
-            auto mouseDelta = input->getMouseDelta();
-
-            cameraRotation.y -= mouseDelta.x * mouseSensitivity;
-            cameraRotation.x += mouseDelta.y * mouseSensitivity;
-            cameraRotation.x = std::min(std::max(cameraRotation.x, -glm::pi<float>() / 2), glm::pi<float>() / 2);
-
-            if (glm::length(mouseDelta) > 0)
+            if (!inputManager->cursorEnteredThisFrame)
             {
+                auto mouseDelta = input->getMouseDelta();
+
+                cameraRotation.y -= mouseDelta.x * mouseSensitivity;
+                cameraRotation.x += mouseDelta.y * mouseSensitivity;
+                cameraRotation.x = std::min(std::max(cameraRotation.x, -glm::pi<float>() / 2), glm::pi<float>() / 2);
+
+                if (glm::length(mouseDelta) > 0)
+                {
+                    frameCount = 0;
+                }
+            }
+            else
+            {
+                inputManager->cursorEnteredThisFrame = false;
+            }
+
+            auto right = Camera::getRight(cameraRotation.y, cameraRotation.x);
+            auto forward = Camera::getForward(cameraRotation.y, cameraRotation.x);
+
+            if (input->isKeyHeld(GLFW_KEY_A))
+            {
+                cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
                 frameCount = 0;
             }
-        }
-        else
-        {
-            inputManager->cursorEnteredThisFrame = false;
-        }
 
-        auto right = Camera::getRight(cameraRotation.y, cameraRotation.x);
-        auto forward = Camera::getForward(cameraRotation.y, cameraRotation.x);
-
-        if (input->isKeyHeld(GLFW_KEY_A))
-        {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
-            frameCount = 0;
-        }
-
-        if (input->isKeyHeld(GLFW_KEY_D))
-        {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
-            frameCount = 0;
-        }
-
-        if (input->isKeyHeld(GLFW_KEY_W))
-        {
-            cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
-            frameCount = 0;
-        }
-
-        if (input->isKeyHeld(GLFW_KEY_S))
-        {
-            cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
-            frameCount = 0;
-        }
-
-        if (input->isKeyHeld(GLFW_KEY_SPACE))
-        {
-            cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
-            frameCount = 0;
-        }
-
-        if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
-        {
-            cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
-            frameCount = 0;
-        }
-
-        if (input->isKeyHeld(GLFW_KEY_E))
-        {
-            voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
-        }
-
-        if (input->isKeyPressed(GLFW_KEY_F5))
-        {
-            data.copyFrom(voxelWorld);
-        }
-
-        if (input->isKeyPressed(GLFW_KEY_F8))
-        {
-            data.clearOccupancy();
-
-            for (int x = 0; x < data.getSize().x; ++x)
+            if (input->isKeyHeld(GLFW_KEY_D))
             {
-                for (int y = 0; y < data.getSize().y; ++y)
+                cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
+                frameCount = 0;
+            }
+
+            if (input->isKeyHeld(GLFW_KEY_W))
+            {
+                cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
+                frameCount = 0;
+            }
+
+            if (input->isKeyHeld(GLFW_KEY_S))
+            {
+                cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
+                frameCount = 0;
+            }
+
+            if (input->isKeyHeld(GLFW_KEY_SPACE))
+            {
+                cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
+                frameCount = 0;
+            }
+
+            if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
+            {
+                cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
+                frameCount = 0;
+            }
+
+            if (input->isKeyHeld(GLFW_KEY_E))
+            {
+                voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_F5))
+            {
+                data.copyFrom(voxelWorld);
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_F8))
+            {
+                data.clearOccupancy();
+
+                for (int x = 0; x < data.getSize().x; ++x)
                 {
-                    data.setVoxelOccupancy({ x, y, x }, true);
+                    for (int y = 0; y < data.getSize().y; ++y)
+                    {
+                        data.setVoxelOccupancy({ x, y, x }, true);
+                    }
+                }
+
+                data.writeTo(voxelWorld);
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_F9))
+            {
+                data.writeTo(voxelWorld);
+            }
+
+            if (remakeNoise)
+            {
+                // The noise time should not be incremented here
+                voxelWorld.generateOccupancyAndMipMapsAndMaterials(0, isRand2, fillAmount);
+                remakeNoise = false;
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_F))
+            {
+                GLFWmonitor* monitor = glfwGetWindowMonitor(window->glfwWindowHandle);
+                if (monitor == NULL)
+                {
+                    window->setFullscreen();
+                    frameCount = 0;
+                }
+                else
+                {
+                    window->setWindowed();
+                    frameCount = 0;
                 }
             }
 
-            data.writeTo(voxelWorld);
-        }
-
-        if (input->isKeyPressed(GLFW_KEY_F9))
-        {
-            data.writeTo(voxelWorld);
-        }
-
-        if (remakeNoise)
-        {
-            // The noise time should not be incremented here
-            voxelWorld.generateOccupancyAndMipMapsAndMaterials(0, isRand2, fillAmount);
-            remakeNoise = false;
-        }
-
-        if (input->isKeyPressed(GLFW_KEY_F))
-        {
-            GLFWmonitor* monitor = glfwGetWindowMonitor(window->glfwWindowHandle);
-            if (monitor == NULL)
+            if (input->isKeyPressed(GLFW_KEY_Q))
             {
-                window->setFullscreen();
+                int mode = glfwGetInputMode(window->glfwWindowHandle, GLFW_CURSOR);
+
+                if (mode == GLFW_CURSOR_DISABLED)
+                {
+                    glfwSetInputMode(window->glfwWindowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                }
+                else
+                {
+                    glfwSetInputMode(window->glfwWindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
+            }
+            if (input->isKeyPressed(GLFW_KEY_ESCAPE))
+            {
+                glfwSetWindowShouldClose(window->glfwWindowHandle, GLFW_TRUE);
+            }
+            if (input->isKeyPressed(GLFW_KEY_R))
+            {
+                isWorkload = !isWorkload;
+            }
+            if (input->isKeyPressed(GLFW_KEY_T))
+            {
+                isRand2 = !isRand2;
+                remakeNoise = true;
+            }
+
+            // Scroll
+            if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL))
+            {
+                fillAmount -= input->getMouseScroll().y * 0.01;
+                fillAmount = std::clamp(fillAmount, 0.f, 1.f);
+                remakeNoise = true;
                 frameCount = 0;
             }
             else
             {
-                window->setWindowed();
-                frameCount = 0;
+                moveSpeedExponent += input->getMouseScroll().y;
             }
-        }
 
-        if (input->isKeyPressed(GLFW_KEY_Q))
-        {
-            int mode = glfwGetInputMode(window->glfwWindowHandle, GLFW_CURSOR);
-
-            if (mode == GLFW_CURSOR_DISABLED)
+            // F3 Debug Menu
+            if (input->isKeyPressed(GLFW_KEY_F3))
             {
-                glfwSetInputMode(window->glfwWindowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }
-            else
-            {
-                glfwSetInputMode(window->glfwWindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            }
-        }
-        if (input->isKeyPressed(GLFW_KEY_ESCAPE))
-        {
-            glfwSetWindowShouldClose(window->glfwWindowHandle, GLFW_TRUE);
-        }
-        if (input->isKeyPressed(GLFW_KEY_R))
-        {
-            isWorkload = !isWorkload;
-        }
-        if (input->isKeyPressed(GLFW_KEY_T))
-        {
-            isRand2 = !isRand2;
-            remakeNoise = true;
-        }
-
-        // Scroll
-        if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL))
-        {
-            fillAmount -= input->getMouseScroll().y * 0.01;
-            fillAmount = std::clamp(fillAmount, 0.f, 1.f);
-            remakeNoise = true;
-            frameCount = 0;
-        }
-        else
-        {
-            moveSpeedExponent += input->getMouseScroll().y;
-        }
-
-        // F3 Debug Menu
-        if (input->isKeyPressed(GLFW_KEY_F3))
-        {
-            showMenuGUI = !showMenuGUI;
-        }
-
-        // Render
-        if (maxFrames <= 0 || frameCount < maxFrames)
-        {
-            frameCount++;
-
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            renderer.setResolution(window->size.x, window->size.y);
-
-            camera.transform.setGlobalPosition(cameraPosition);
-            camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
-
-            // Scales and rotates the world. For testing purposes.
-            // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
-            // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
-            renderer.prepareRayTraceFromCamera(camera, frameCount == 1);
-            for (int i = 0; i <= 2; i++)
-            {
-                renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
+                showMenuGUI = !showMenuGUI;
             }
 
-            renderer.display(camera, frameCount);
-        }
-
-        {
+            // Render debug UI
             if (showMenuGUI)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
@@ -410,9 +391,47 @@ void Program::run()
             }
         }
 
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        // Render
+        {
+            // Render to offscreen texture
+            framebuffer.bind();
+            {
+                if (maxFrames <= 0 || frameCount < maxFrames)
+                {
+                    frameCount++;
 
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                    renderer.setResolution(window->size.x, window->size.y);
+
+                    camera.transform.setGlobalPosition(cameraPosition);
+                    camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
+
+                    // Scales and rotates the world. For testing purposes.
+                    // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
+                    // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
+                    renderer.prepareRayTraceFromCamera(camera, frameCount == 1);
+                    for (int i = 0; i <= 2; i++)
+                    {
+                        renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
+                    }
+
+                    renderer.display(camera, frameCount);
+                }
+            }
+
+            // Render to screen
+            framebuffer.unbind();
+            {
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                // Render IMGUI
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            }
+        }
+
+        // Present
         glfwSwapBuffers(window->glfwWindowHandle);
     }
 }
