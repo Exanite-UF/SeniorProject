@@ -112,6 +112,8 @@ void Program::run()
     // Configure OpenGL
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0, 0, 0, 0);
+
+    glEnable(GL_DEPTH_TEST);
     glClearDepth(0); // Reverse-Z
     glDepthFunc(GL_GREATER); // Reverse-Z
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
