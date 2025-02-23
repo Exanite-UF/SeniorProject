@@ -477,7 +477,7 @@ vec2 randomVec2(float seed)
 // So this parameter will be a linear interpolation based on the metallic parameter between 1 and the metallicAlbedo
 vec3 fresnel(float dotOfViewAndHalfway, vec3 baseReflectivity)
 {
-    return baseReflectivity + (1 - baseReflectivity) * pow(1 - dotOfViewAndHalfway, 5); // Schlick’s approximation
+    return baseReflectivity + (1 - baseReflectivity) * pow(abs(1 - dotOfViewAndHalfway), 5); // Schlick’s approximation
 }
 
 //This works in tangent space

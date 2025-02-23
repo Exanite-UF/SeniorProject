@@ -69,12 +69,12 @@ public:
     void setResolution(int x, int y);
     void setRaysPerPixel(int number);
 
-    void prepareRayTraceFromCamera(const Camera& camera);
+    void prepareRayTraceFromCamera(const Camera& camera, bool resetLight = true);
 
     void resetHitInfo();
-    void resetVisualInfo();
+    void resetVisualInfo(bool resetLight = true, bool resetAttentuation = true);
 
     void executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager);
 
-    void display();
+    void display(int frameCount);
 };

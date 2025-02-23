@@ -23,6 +23,9 @@ layout(std430, binding = 3) buffer AccumulatedLight2
 };
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+uniform bool resetLight;
+uniform bool resetAttentuation;
+
 
 void setAttenuation(ivec3 coord, vec3 value)
 {
@@ -45,7 +48,7 @@ void setLightAccumulation(ivec3 coord, vec3 value)
     accumulatedLight1[0 + index] = value.x;
     accumulatedLight1[1 + index] = value.y;
     accumulatedLight1[2 + index] = value.z;
-    
+
     accumulatedLight2[0 + index] = value.x;
     accumulatedLight2[1 + index] = value.y;
     accumulatedLight2[2 + index] = value.z;
@@ -60,8 +63,14 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    setAttenuation(texelCoord, vec3(1));
-    setLightAccumulation(texelCoord, vec3(0));
+    if(resetAttentuation){
+        setAttenuation(texelCoord, vec3(1));
+    }
+    
+    if(resetLight){
+        setLightAccumulation(texelCoord, vec3(0));
+    }
+    
     
     
     // imageStore(hitPosition, texelCoord, vec4(0));

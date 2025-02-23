@@ -7,6 +7,7 @@ layout(std430, binding = 0) buffer AccumulatedLight
 };
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+uniform int frameCount;
 
 
 vec3 getLight(ivec3 coord)
@@ -42,7 +43,7 @@ void main()
 
         color += colorBase;
     }
-    color /= size.z;
+    color /= size.z * frameCount;
     fragColor = vec4(color, 1);
 
     // fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);

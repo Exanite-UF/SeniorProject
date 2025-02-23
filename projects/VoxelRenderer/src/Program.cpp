@@ -366,14 +366,13 @@ void Program::run()
             // Scales and rotates the world. For testing purposes.
             scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(-1.f, 0, 0))));
             scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
-            renderer.prepareRayTraceFromCamera(camera);
+            renderer.prepareRayTraceFromCamera(camera, frameCount == 1);
             for(int i = 0; i <= 2; i++){
                 renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
                 renderer.resetHitInfo();
             }
             
-            // renderer.accumulateLight();//TODO: call this
-            renderer.display();
+            renderer.display(frameCount);
         }
 
         {

@@ -98,7 +98,7 @@ void VoxelRenderer::setRaysPerPixel(int number)
     isSizingDirty = true;
 }
 
-void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
+void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLight)
 {
     handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
@@ -150,7 +150,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
 
     resetHitInfo();
 
-    resetVisualInfo();
+    resetVisualInfo(resetLight);
 }
 
 void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager)
@@ -277,7 +277,7 @@ void VoxelRenderer::resetHitInfo()
     glUseProgram(0);
 }
 
-void VoxelRenderer::resetVisualInfo()
+void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttentuation)
 {
     glUseProgram(resetVisualInfoProgram);
 
@@ -293,6 +293,9 @@ void VoxelRenderer::resetVisualInfo()
     GLuint workGroupsZ = raysPerPixel;
 
     glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttentuation);
+    
     {
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -308,7 +311,7 @@ void VoxelRenderer::resetVisualInfo()
     glUseProgram(0);
 }
 
-void VoxelRenderer::display()
+void VoxelRenderer::display(int frameCount)
 {
     glUseProgram(displayToWindowProgram);
 
@@ -320,6 +323,7 @@ void VoxelRenderer::display()
     
 
     glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), xSize, ySize, raysPerPixel);
+    glUniform1i(glGetUniformLocation(displayToWindowProgram, "frameCount"), frameCount);
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     {
