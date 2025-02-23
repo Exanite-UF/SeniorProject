@@ -24,19 +24,21 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
-    GraphicsBuffer<glm::vec3> rayStartBuffer;
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer;
+    GraphicsBuffer<glm::vec3> rayStartBuffer1;
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer1;
+    GraphicsBuffer<glm::vec3> rayStartBuffer2;
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer2;
+
 
     // These buffers are used to store the result of a ray trace step
-    GraphicsBuffer<glm::vec3> rayHitPositionBuffer; //(x, y, z)
-    GraphicsBuffer<glm::vec3> rayHitNormalBuffer; //(x, y, z)
     GraphicsBuffer<float> rayHitMiscBuffer;//(wasHit, depth)
 
-    GraphicsBuffer<uint32_t> rayHitMaterialBuffer; //(material)
-    GraphicsBuffer<glm::vec3> rayHitVoxelPositionBuffer; //(x, y, z)
+    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
+    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
-    GraphicsBuffer<glm::vec3> attentuationBuffer; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer; //(r, g, b)
+    int currentBuffer = 0;
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
@@ -47,6 +49,7 @@ private:
     static GLuint displayToWindowProgram;
     static GLuint BRDFProgram;
     static GLuint resetVisualInfoProgram;
+    static GLuint fullCastProgram;
     
     int xSize = 0;
     int ySize = 0;
@@ -71,11 +74,7 @@ public:
     void resetHitInfo();
     void resetVisualInfo();
 
-    void executeRayTrace(std::vector<VoxelWorld>& worlds);
-
-    // materialMap: This maps from material index to material id (What is stored in the material result to an actual material)
-    // materialTextureSizes: This stores the size of voxel in each material texture (it is 512 vec2 values)
-    void accumulateLight(MaterialManager& materialManager);
+    void executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager);
 
     void display();
 };

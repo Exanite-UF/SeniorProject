@@ -1,73 +1,13 @@
 #version 440
 
-layout(std430, binding = 0) buffer HitPosition
-{
-    float hitPosition[];
-};
-layout(std430, binding = 1) buffer HitNormal
-{
-    float hitNormal[];
-};
 
-layout(std430, binding = 2) buffer HitMaterial
-{
-    uint hitMaterial[];
-};
-
-layout(std430, binding = 3) buffer HitVoxelPosition
-{
-    float hitVoxelPosition[];
-};
-
-layout(std430, binding = 5) buffer HitMisc
-{
-    float hitMisc[];
-};
-
-layout(std430, binding = 4) buffer AccumulatedLight
+layout(std430, binding = 0) buffer AccumulatedLight
 {
     float accumulatedLight[];
 };
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
-
-vec3 getHitPosition(ivec3 coord)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-    return vec3(hitPosition[0 + index], hitPosition[1 + index], hitPosition[2 + index]);
-}
-
-vec3 getHitNormal(ivec3 coord)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-    return vec3(hitNormal[0 + index], hitNormal[1 + index], hitNormal[2 + index]);
-}
-
-uint getHitMaterial(ivec3 coord)
-{
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-
-    return hitMaterial[index];
-}
-
-vec3 getHitVoxelPosition(ivec3 coord)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
-
-    return vec3(hitVoxelPosition[0 + index], hitVoxelPosition[1 + index], hitVoxelPosition[2 + index]);
-}
-
-
-bool getHitWasHit(ivec3 coord){
-    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-    return hitMisc[index + 0] > 0;
-}
-
-float getHitDist(ivec3 coord){
-    int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
-    return hitMisc[index + 1];
-}
 
 vec3 getLight(ivec3 coord)
 {

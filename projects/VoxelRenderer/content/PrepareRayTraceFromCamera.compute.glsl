@@ -11,11 +11,61 @@ layout(std430, binding = 1) buffer RayDirection
     float rayDirection[];
 };
 
+/*
+layout(std430, binding = 2) buffer PriorAttenuation1
+{
+    float priorAttenuation1[];
+};
+
+layout(std430, binding = 3) buffer AccumulatedLight1
+{
+    float accumulatedLight1[];
+};
+
+layout(std430, binding = 4) buffer PriorAttenuation2
+{
+    float priorAttenuation2[];
+};
+
+layout(std430, binding = 5) buffer AccumulatedLight2
+{
+    float accumulatedLight2[];
+};
+*/
+
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 camPosition;
 uniform vec4 camRotation;
 uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 uniform vec2 jitter; //([0, 1), [0, 1))
+
+
+/*
+void setAttenuation(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
+
+    priorAttenuation1[0 + index] = value.x;
+    priorAttenuation1[1 + index] = value.y;
+    priorAttenuation1[2 + index] = value.z;
+    priorAttenuation2[0 + index] = value.x;
+    priorAttenuation2[1 + index] = value.y;
+    priorAttenuation2[2 + index] = value.z;
+}
+
+
+
+void setLightAccumulation(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    accumulatedLight1[0 + index] = value.x;
+    accumulatedLight1[1 + index] = value.y;
+    accumulatedLight1[2 + index] = value.z;
+    accumulatedLight2[0 + index] = value.x;
+    accumulatedLight2[1 + index] = value.y;
+    accumulatedLight2[2 + index] = value.z;
+}
+*/
 
 // Applies a quaternion
 vec3 qtransform(vec4 q, vec3 v)
@@ -113,6 +163,8 @@ void main()
 
     setPos(texelCoord, camPosition);
     setDir(texelCoord, rayDir);
+    //setAttenuation(texelCoord, vec3(1));
+    //setLightAccumulation(texelCoord, vec3(0));
     // imageStore(rayPosition, texelCoord, vec4(camPosition, shouldTrace));
     // imageStore(rayDirection, texelCoord, vec4(rayDir, 0.0));
 }
