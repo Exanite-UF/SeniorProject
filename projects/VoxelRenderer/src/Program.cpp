@@ -200,7 +200,8 @@ void Program::run()
         window->update();
         inputManager->update();
 
-        // TODO: Unorganized code
+        // Update
+        // TODO: This code should be moved into individual systems
         {
             if (!inputManager->cursorEnteredThisFrame)
             {
@@ -389,6 +390,15 @@ void Program::run()
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
+
+            // Sync camera position
+            // TODO: This should be managed by a CameraSystem or Camera class
+            camera.transform.setGlobalPosition(cameraPosition);
+            camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
+
+            // Scales and rotates the world. For testing purposes.
+            // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
+            // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
         }
 
         // Render
@@ -400,16 +410,14 @@ void Program::run()
                 {
                     frameCount++;
 
-                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                    // Resize resources
                     renderer.setResolution(window->size);
+                    framebuffer.setSize(window->size);
 
+                    // Clear
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                    camera.transform.setGlobalPosition(cameraPosition);
-                    camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
-
-                    // Scales and rotates the world. For testing purposes.
-                    // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
-                    // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
+                    // Run voxel renderer
                     renderer.prepareRayTraceFromCamera(camera, frameCount == 1);
                     for (int i = 0; i <= 2; i++)
                     {
@@ -423,6 +431,7 @@ void Program::run()
             // Render to screen
             framebuffer.unbind();
             {
+                // Clear
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 // Render IMGUI
