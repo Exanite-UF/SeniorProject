@@ -96,7 +96,7 @@ void main()
     }
     color /= size.z * frameCount;
     fragColor = vec4(color, 1);
-    gl_FragDepth = minDepth / 100000; // TODO: How far is the far plane?
+    gl_FragDepth = 1 - (minDepth / 100000); // TODO: How far is the far plane?
 
     // fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);
 }
