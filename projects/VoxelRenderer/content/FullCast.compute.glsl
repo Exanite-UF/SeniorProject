@@ -402,23 +402,13 @@ vec3 qtransform(vec4 q, vec3 v)
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
-RayHit rayCast(ivec3 texelCoord, vec3 rayDir)
+RayHit rayCast(ivec3 texelCoord, vec3 rayDir, float currentDepth)
 {
 
     vec3 startPos = getRayPosition(texelCoord);
     vec3 rayPos = startPos;
 
     vec3 rayStart = rayPos;
-
-    float currentDepth = getHitDist(texelCoord);
-
-    // If the depth to beat is infinity, then that means that the ray is currently missing everything
-    // As such the attentuation will need to be 0, and the accumulated light should not change
-    if (isinf(currentDepth))
-    {
-        setAttenuation(texelCoord, vec3(0));
-        changeLightAccumulation(texelCoord, vec3(0));
-    }
 
     vec3 voxelWorldSize = 2. * voxelResolution;
 
@@ -548,6 +538,37 @@ vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal)
     }
 }
 
+
+
+
+
+vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
+{
+    vec3 halfway = normalize(-view + light); // This is used by several things
+
+    float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway)); // This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+
+    vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
+    
+    vec3 fresnelComponent = fresnel(abs(dot(light, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+
+    // This approximates how much light is blocked by microfacets, when looking from different directions
+    float dotOfViewAndNormal = dot(view, normal);
+    float dotOfLightAndNormal = dot(light, normal);
+    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal)); // geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
+
+    // The effect of the metallicAlbedo is performed in the fresenl component
+    // A non metallic material is assumed to not be affected by the fresnel effect
+    // The fresnel component will color the reflected light, and will behave according to an approximation of the fresnel effect
+    // Since albedo is about perfectly diffuse refection color, that would imply no fresnel effect
+    // This does mean that there are two ways to get a colored mirror reflection. (one with and one without the fresnel effect)
+    // It also means that the color of the metallic albedo will show off stronger at sharper angles
+    // We add the metallic value to the albedo to prevent darkening. (this is a multiplier, so not doing this would just make metals black)
+    vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
+
+    return microfacetComponent * fresnelComponent * geometricComponent * albedo / abs(4 * dotOfViewAndNormal * dotOfLightAndNormal);
+}
+
 vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 {
 
@@ -578,11 +599,11 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 }
 
 // It is guaranteeed to be a hit
-void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection)
+void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 {
     float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
-    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
+    
     vec3 direction = rayDirection; // The direction the ray cast was in
 
     vec3 position = hit.hitLocation;
@@ -629,8 +650,12 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection)
     
     normal = normalize(normal);
     direction = normalize(direction);
+
+
+
     vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
     vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+
 
     // vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
     // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
@@ -645,25 +670,45 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection)
     changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
 }
 
+
+float sunSize = 0.99;
+vec3 sunDir = normalize(vec3(1,1,1));
+
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-    vec3 rayDir = getRayDirection(texelCoord);
+    vec3 rayDir = normalize(getRayDirection(texelCoord));
+    float currentDepth = getHitDist(texelCoord);
+    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
 
-    RayHit hit = rayCast(texelCoord, rayDir);
+    // If the depth to beat is infinity, then that means that the ray is currently missing everything
+    // As such the attentuation will need to be 0, and the accumulated light should not change
+    if (isinf(currentDepth))
+    {
+        if(dot(rayDir, sunDir) > sunSize){
+            changeLightAccumulation(texelCoord, 1 / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
+        }else if(dot(rayDir, vec3(0, 0, 1)) > 0){
+            changeLightAccumulation(texelCoord, 1 * vec3(40, 77, 222) / 255 * attentuation);
+        }else{
+            changeLightAccumulation(texelCoord, 0.1*vec3(61,150,11) / 255 * attentuation);
+        }
+        setAttenuation(texelCoord, vec3(0));
+    }
 
+    RayHit hit = rayCast(texelCoord, rayDir, currentDepth);
+    
     // If it is not the nearest, then it should do nothing
     // If it did not hit, then it should do nothing
     if (!hit.isNearest || !hit.wasHit)
     {
         return;
     }
-
+    
     if (texelCoord.z == 0 && isFirstRay)
     {
         setFirstHitNormal(texelCoord, hit.normal);
         setFirstHitPosition(texelCoord, hit.hitLocation);
     }
 
-    BRDF(texelCoord, hit, rayDir);
+    BRDF(texelCoord, hit, rayDir, attentuation);
 }
