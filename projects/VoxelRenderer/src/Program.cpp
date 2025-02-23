@@ -114,8 +114,8 @@ void Program::run()
     glClearColor(0, 0, 0, 0);
 
     glEnable(GL_DEPTH_TEST);
-    glClearDepth(0); // Reverse-Z
-    glDepthFunc(GL_GREATER); // Reverse-Z
+    // glClearDepth(0); // Reverse-Z
+    // glDepthFunc(GL_GREATER); // Reverse-Z
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Load shader programs
@@ -409,9 +409,8 @@ void Program::run()
         // Render
         {
             // Render to offscreen texture
-            framebuffer.bind();
+            // framebuffer.bind();
             {
-                if (maxFrames <= 0 || frameCount < maxFrames)
                 {
                     frameCount++;
 
@@ -434,10 +433,10 @@ void Program::run()
             }
 
             // Render to screen
-            framebuffer.unbind();
+            // framebuffer.unbind();
             {
                 // Clear
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 // Render IMGUI
                 ImGui::Render();
