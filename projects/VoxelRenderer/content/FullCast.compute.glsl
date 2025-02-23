@@ -33,6 +33,7 @@ uniform uint materialMapSize;
 uniform uint materialCount;
 uniform float random; // This is used to make non-deterministic randomness
 
+uniform bool isFirstRay;
 
 layout(std430, binding = 0) buffer RayPosition
 {
@@ -233,6 +234,31 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 
 
 
+layout(std430, binding = 13) buffer FirstHitNormal{
+    float firstHitNormal[];
+};
+
+void setFirstHitNormal(ivec3 coord, vec3 value){
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitNormal[0 + index] = value.x;
+    firstHitNormal[1 + index] = value.y;
+    firstHitNormal[2 + index] = value.z;
+}
+
+
+layout(std430, binding = 14) buffer FirstHitPosition{
+    float firstHitPosition[];
+};
+
+void setFirstHitPosition(ivec3 coord, vec3 value){
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitPosition[0 + index] = value.x;
+    firstHitPosition[1 + index] = value.y;
+    firstHitPosition[2 + index] = value.z;
+}
+
+
+
 
 struct RayHit
 {
@@ -389,7 +415,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
 vec3 qtransform(vec4 q, vec3 v)
 {
-    return v + 2.0 * cross(cross(v, q.xyz) + q.w * v, q.xyz);
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
 RayHit rayCast(ivec3 texelCoord, vec3 rayDir){
@@ -650,6 +676,10 @@ void main()
         return;
     }
 
+    if(texelCoord.z == 0 && isFirstRay){
+        setFirstHitNormal(texelCoord, hit.normal);
+        setFirstHitPosition(texelCoord, hit.hitLocation);
+    }
     
     BRDF(texelCoord, hit, rayDir);
 }

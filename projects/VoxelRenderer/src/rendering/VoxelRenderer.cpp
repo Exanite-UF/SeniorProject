@@ -41,6 +41,9 @@ void VoxelRenderer::remakeTextures()
 
     rayHitMiscBuffer.setSize(2 * size);
 
+    normalBuffer.setSize(xSize * ySize);
+    positionBuffer.setSize(xSize * ySize);
+
     // Create a new texture
     rayStartBuffer1.setSize(size);
     rayDirectionBuffer1.setSize(size);
@@ -124,9 +127,10 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), xSize, ySize, raysPerPixel);
         glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
+
         glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
         glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
-        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 100000) / 100000.f, (rand() % 100000) / 100000.f); // A little bit of randomness for temporal accumulation
+        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000000) / 1000000.f, (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
         
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -151,6 +155,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
     resetHitInfo();
 
     resetVisualInfo(resetLight);
+    isFirstRay = true;
 }
 
 void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager)
@@ -192,6 +197,9 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialMan
         accumulatedLightBuffer2.bind(10);//Input
     }
 
+    normalBuffer.bind(13);
+    positionBuffer.bind(14);
+
     {
         GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
         GLuint workGroupsY = (ySize + 8 - 1) / 8;
@@ -199,9 +207,11 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialMan
 
         glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), xSize, ySize, raysPerPixel);
 
+        glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
+
         glUniform1ui(glGetUniformLocation(fullCastProgram, "materialMapSize"), Constants::VoxelWorld::materialMapCount);
         glUniform1ui(glGetUniformLocation(fullCastProgram, "materialCount"), Constants::VoxelWorld::materialCount);
-        glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 100000) / 100000.f); // A little bit of randomness for temporal accumulation
+        glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
         for (auto& voxelWorld : worlds)
         {
@@ -245,9 +255,14 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialMan
     attentuationBuffer2.unbind();
     accumulatedLightBuffer2.unbind();
 
+    normalBuffer.unbind();
+    positionBuffer.unbind();
+
     glUseProgram(0);
 
     currentBuffer++;
+
+    isFirstRay = false;
 }
 
 
@@ -285,6 +300,8 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttentuation)
     accumulatedLightBuffer1.bind(1);
     attentuationBuffer2.bind(2);
     accumulatedLightBuffer2.bind(3);
+    normalBuffer.bind(4);
+    positionBuffer.bind(5);
 
     
 
@@ -307,11 +324,13 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttentuation)
     accumulatedLightBuffer1.unbind();
     attentuationBuffer2.unbind();
     accumulatedLightBuffer2.unbind();
+    normalBuffer.unbind();
+    positionBuffer.unbind();
 
     glUseProgram(0);
 }
 
-void VoxelRenderer::display(int frameCount)
+void VoxelRenderer::display(const Camera& camera, int frameCount)
 {
     glUseProgram(displayToWindowProgram);
 
@@ -320,10 +339,16 @@ void VoxelRenderer::display(int frameCount)
     }else{
         accumulatedLightBuffer2.bind(0);
     }
+
+    normalBuffer.bind(1);
+    positionBuffer.bind(2);
     
 
     glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), xSize, ySize, raysPerPixel);
     glUniform1i(glGetUniformLocation(displayToWindowProgram, "frameCount"), frameCount);
+
+    glUniform4fv(glGetUniformLocation(displayToWindowProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
+    glUniform3fv(glGetUniformLocation(displayToWindowProgram, "cameraPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     {
@@ -336,6 +361,9 @@ void VoxelRenderer::display(int frameCount)
     }else{
         accumulatedLightBuffer2.unbind();
     }
+
+    normalBuffer.unbind();
+    positionBuffer.unbind();
 
     glUseProgram(0);
 }

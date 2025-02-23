@@ -38,6 +38,11 @@ private:
     GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
     GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
+
+    GraphicsBuffer<glm::vec3> normalBuffer;
+    GraphicsBuffer<glm::vec3> positionBuffer;
+
+
     int currentBuffer = 0;
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
@@ -55,6 +60,7 @@ private:
     int ySize = 0;
     int raysPerPixel = 0;
 
+    bool isFirstRay = false;
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
 
     // This makes the images using the size and rays per pixel
@@ -76,5 +82,5 @@ public:
 
     void executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager);
 
-    void display(int frameCount);
+    void display(const Camera& camera, int frameCount);
 };

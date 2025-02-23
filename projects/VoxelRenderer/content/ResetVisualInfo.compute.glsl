@@ -22,6 +22,17 @@ layout(std430, binding = 3) buffer AccumulatedLight2
     float accumulatedLight2[];
 };
 
+layout(std430, binding = 4) buffer FirstHitNormal{
+    float firstHitNormal[];
+};
+
+layout(std430, binding = 5) buffer FirstHitPosition{
+    float firstHitPosition[];
+};
+
+
+
+
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform bool resetLight;
 uniform bool resetAttentuation;
@@ -55,6 +66,20 @@ void setLightAccumulation(ivec3 coord, vec3 value)
 }
 
 
+void setFirstHitNormal(ivec3 coord, vec3 value){
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitNormal[0 + index] = value.x;
+    firstHitNormal[1 + index] = value.y;
+    firstHitNormal[2 + index] = value.z;
+}
+
+void setFirstHitPosition(ivec3 coord, vec3 value){
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitPosition[0 + index] = value.x;
+    firstHitPosition[1 + index] = value.y;
+    firstHitPosition[2 + index] = value.z;
+}
+
 // layout(rgba32f, binding = 0) uniform writeonly image3D hitPosition;
 // layout(rgba32f, binding = 1) uniform writeonly image3D hitNormal;
 // layout(r16ui, binding = 2) uniform writeonly uimage3D hitMaterial;
@@ -71,7 +96,10 @@ void main()
         setLightAccumulation(texelCoord, vec3(0));
     }
     
-    
+    if(texelCoord.z == 0){
+        setFirstHitNormal(texelCoord, vec3(0));
+        setFirstHitPosition(texelCoord, vec3(0));
+    }
     
     // imageStore(hitPosition, texelCoord, vec4(0));
     // imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
