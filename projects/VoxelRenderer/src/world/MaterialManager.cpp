@@ -2,6 +2,7 @@
 
 #include <array>
 #include <span>
+#include <cmath>
 
 MaterialManager* MaterialManager::instance = nullptr;
 
@@ -34,9 +35,9 @@ MaterialManager::MaterialManager()
             material.metallic = (rand() % 1000) / 1000.0;
             material.metallicAlbedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
         }
-        
+
         material.roughness = sqrt((rand() % 1000) / 1000.0);
-        
+
 
         materials[i] = material;
     }
