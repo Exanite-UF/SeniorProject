@@ -13,6 +13,11 @@ glm::ivec2 Framebuffer::getSize()
 
 void Framebuffer::setSize(glm::ivec2 size)
 {
+    if (this->size == size)
+    {
+        return;
+    }
+
     this->size = size;
 
     // Create color texture
