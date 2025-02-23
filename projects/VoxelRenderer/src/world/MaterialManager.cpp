@@ -29,7 +29,7 @@ MaterialManager::MaterialManager()
             material.emission *= 0.5;
             // material.emission = glm::vec3(1, 1, 1);
             // material.emission *= glm::vec3(0.1, 0.1, 0.1);
-            
+
             material.metallic = 0.0;
             material.metallicAlbedo = glm::vec3(0, 0, 0);
         }
