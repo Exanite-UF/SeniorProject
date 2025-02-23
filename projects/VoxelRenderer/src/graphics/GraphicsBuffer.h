@@ -79,6 +79,11 @@ uint64_t GraphicsBuffer<T>::getElementCount() const
 template <typename T>
 void GraphicsBuffer<T>::setSize(std::uint64_t elementCount)
 {
+    if (this->elementCount == elementCount)
+    {
+        return;
+    }
+
     this->elementCount = elementCount;
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferId); // Bind the buffer so we can set the data
