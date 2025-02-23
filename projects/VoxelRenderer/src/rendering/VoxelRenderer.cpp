@@ -37,23 +37,23 @@ void VoxelRenderer::remakeTextures()
     // If the variable is 0, meaning that no texture is bound, then it will do nothing
     // glDeleteTextures(1, &rayStartBuffer);
     // glDeleteTextures(1, &rayDirectionBuffer);
-    uint64_t size = xSize * ySize * raysPerPixel;
+    uint64_t size1D = size.x * size.y * raysPerPixel;
 
-    rayHitMiscBuffer.setSize(2 * size);
+    rayHitMiscBuffer.setSize(2 * size1D);
 
-    normalBuffer.setSize(xSize * ySize);
-    positionBuffer.setSize(xSize * ySize);
+    normalBuffer.setSize(size.x * size.y);
+    positionBuffer.setSize(size.x * size.y);
 
     // Create a new texture
-    rayStartBuffer1.setSize(size);
-    rayDirectionBuffer1.setSize(size);
-    rayStartBuffer2.setSize(size);
-    rayDirectionBuffer2.setSize(size);
+    rayStartBuffer1.setSize(size1D);
+    rayDirectionBuffer1.setSize(size1D);
+    rayStartBuffer2.setSize(size1D);
+    rayDirectionBuffer2.setSize(size1D);
 
-    attentuationBuffer1.setSize(size);
-    accumulatedLightBuffer1.setSize(size);
-    attentuationBuffer2.setSize(size);
-    accumulatedLightBuffer2.setSize(size);
+    attentuationBuffer1.setSize(size1D);
+    accumulatedLightBuffer1.setSize(size1D);
+    attentuationBuffer2.setSize(size1D);
+    accumulatedLightBuffer2.setSize(size1D);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -78,15 +78,14 @@ VoxelRenderer::VoxelRenderer()
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
 
-void VoxelRenderer::setResolution(int x, int y)
+void VoxelRenderer::setResolution(glm::ivec2 size)
 {
-    if (xSize == x && ySize == y)
+    if (this->size == size)
     {
         return;
     }
 
-    xSize = x;
-    ySize = y;
+    this->size = size;
     isSizingDirty = true;
 }
 
@@ -105,8 +104,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
 {
     handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
-    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (ySize + 8 - 1) / 8;
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
 
     glUseProgram(prepareRayTraceFromCameraProgram);
@@ -128,7 +127,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
     // accumulatedLightBuffer2.bind(5);
 
     {
-        glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), xSize, ySize, raysPerPixel);
+        glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, raysPerPixel);
         glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
 
         glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
@@ -212,11 +211,11 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialMan
     positionBuffer.bind(14);
 
     {
-        GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-        GLuint workGroupsY = (ySize + 8 - 1) / 8;
+        GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+        GLuint workGroupsY = (size.y + 8 - 1) / 8;
         GLuint workGroupsZ = raysPerPixel;
 
-        glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), xSize, ySize, raysPerPixel);
+        glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), size.x, size.y, raysPerPixel);
 
         glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
 
@@ -277,8 +276,8 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialMan
 
 void VoxelRenderer::resetHitInfo()
 {
-    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (ySize + 8 - 1) / 8;
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
 
     // Reset the hit info
@@ -286,7 +285,7 @@ void VoxelRenderer::resetHitInfo()
 
     rayHitMiscBuffer.bind(0);
 
-    glUniform3i(glGetUniformLocation(resetHitInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
+    glUniform3i(glGetUniformLocation(resetHitInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -311,11 +310,11 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttentuation)
     normalBuffer.bind(4);
     positionBuffer.bind(5);
 
-    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (ySize + 8 - 1) / 8;
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
 
-    glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), xSize, ySize, raysPerPixel);
+    glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttentuation);
 
@@ -352,7 +351,7 @@ void VoxelRenderer::display(const Camera& camera, int frameCount)
     normalBuffer.bind(1);
     positionBuffer.bind(2);
 
-    glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), xSize, ySize, raysPerPixel);
+    glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(displayToWindowProgram, "frameCount"), frameCount);
 
     glUniform4fv(glGetUniformLocation(displayToWindowProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));

@@ -87,7 +87,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Wrap OpenGL handle with the Texture class
-        auto texture = std::make_shared<Texture>(textureId, type);
+        auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height));
 
         // Insert texture into cache
         textures[cacheKey] = texture;

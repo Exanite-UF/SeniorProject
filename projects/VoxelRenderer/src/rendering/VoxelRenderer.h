@@ -52,8 +52,7 @@ private:
     static GLuint resetVisualInfoProgram;
     static GLuint fullCastProgram;
 
-    int xSize = 0;
-    int ySize = 0;
+    glm::ivec2 size;
     int raysPerPixel = 0;
 
     bool isFirstRay = false;
@@ -68,7 +67,7 @@ private:
 public:
     VoxelRenderer();
 
-    void setResolution(int x, int y);
+    void setResolution(glm::ivec2 size);
     void setRaysPerPixel(int number);
 
     void prepareRayTraceFromCamera(const Camera& camera, bool resetLight = true);
