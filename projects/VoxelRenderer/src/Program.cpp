@@ -139,7 +139,7 @@ void Program::run()
 
     // Create the renderer
     VoxelRenderer renderer;
-    renderer.setRaysPerPixel(3);
+    renderer.setRaysPerPixel(1);
 
     // Main render loop
     glm::vec3 cameraPosition(0);
@@ -369,6 +369,7 @@ void Program::run()
             renderer.prepareRayTraceFromCamera(camera);
             for(int i = 0; i <= 2; i++){
                 renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
+                renderer.resetHitInfo();
             }
             
             // renderer.accumulateLight();//TODO: call this

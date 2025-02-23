@@ -401,6 +401,13 @@ RayHit rayCast(ivec3 texelCoord, vec3 rayDir){
 
     float currentDepth = getHitDist(texelCoord);
 
+    //If the depth to beat is infinity, then that means that the ray is currently missing everything
+    //As such the attentuation will need to be 0, and the accumulated light should not change
+    if(isinf(currentDepth)){
+        setAttenuation(texelCoord, vec3(0));
+        changeLightAccumulation(texelCoord, vec3(0));
+    }
+
     vec3 voxelWorldSize = 2. * voxelResolution;
 
     // Transform the ray position to voxel space
@@ -530,6 +537,7 @@ vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal){
 
 vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 {
+    
     vec3 halfway = normalize(view + light); // This is used by several things
 
     //This component is part of the sampling distribution pdf, so it cancels out
@@ -537,7 +545,7 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 
     vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
 
-    vec3 fresnelComponent = fresnel(dot(view, halfway), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+    vec3 fresnelComponent = fresnel(abs(dot(view, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
 
     // This approximates how much light is blocked by microfacets, when looking from different directions
     float dotOfViewAndNormal = dot(view, normal);
@@ -609,7 +617,8 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection){
     voxelMaterial.roughness *= rmTexture.r;
     voxelMaterial.metallic *= rmTexture.g;
     */
-
+    direction = normalize(direction);
+    normal = normalize(normal);
     vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
     vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
@@ -622,13 +631,10 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection){
     // Set the output buffers
     setRayPosition(texelCoord, position); // Set where the ray should start from next
     setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
-
-
     
-    //setHitDist(texelCoord, 1.0 / 0.0);//Set the hit distance to infinite
+
     setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
     changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
-    setAttenuation(texelCoord, vec3(2));
 }
 
 void main()
@@ -639,13 +645,8 @@ void main()
     RayHit hit = rayCast(texelCoord, rayDir);
 
     //If it is not the nearest, then it should do nothing
-    if(!hit.isNearest){
-        return;
-    }
-
-    if(!hit.wasHit){
-        setAttenuation(texelCoord, vec3(0));
-        changeLightAccumulation(texelCoord, vec3(0));
+    //If it did not hit, then it should do nothing
+    if(!hit.isNearest || !hit.wasHit){
         return;
     }
 
