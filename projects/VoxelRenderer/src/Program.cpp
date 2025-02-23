@@ -128,8 +128,8 @@ void Program::run()
 
     scene.worlds.reserve(2); // Issue, this cannot have reallocations.
     scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
-    //scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
-    //scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
+    // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
     VoxelWorld& voxelWorld = scene.worlds.at(0);
 
@@ -366,8 +366,8 @@ void Program::run()
             camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
 
             // Scales and rotates the world. For testing purposes.
-            //scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
-            //scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
+            // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
+            // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
             renderer.prepareRayTraceFromCamera(camera, frameCount == 1);
             for (int i = 0; i <= 2; i++)
             {
