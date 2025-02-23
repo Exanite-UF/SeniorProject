@@ -401,8 +401,8 @@ void Program::run()
                     frameCount++;
 
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                    renderer.setResolution(window->size);
 
-                    renderer.setResolution(window->size.x, window->size.y);
 
                     camera.transform.setGlobalPosition(cameraPosition);
                     camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
