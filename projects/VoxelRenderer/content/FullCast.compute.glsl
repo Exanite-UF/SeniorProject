@@ -677,7 +677,7 @@ void attempt(ivec3 texelCoord){
     {
         if (dot(rayDir, sunDir) > sunSize)
         {
-            changeLightAccumulation(texelCoord, 1 / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
+            changeLightAccumulation(texelCoord, 5 / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
         }
         else if (dot(rayDir, vec3(0, 0, 1)) > 0)
         {
