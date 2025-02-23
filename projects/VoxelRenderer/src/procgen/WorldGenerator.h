@@ -1,8 +1,8 @@
 #pragma once
 
+#include <glm/vec3.hpp>
 #include <memory>
 #include <src/world/VoxelWorldData.h>
-#include <glm/vec3.hpp>
 
 class WorldGenerator
 {
