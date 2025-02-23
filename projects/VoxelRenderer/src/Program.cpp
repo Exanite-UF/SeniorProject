@@ -411,6 +411,7 @@ void Program::run()
             // Render to offscreen texture
             // framebuffer.bind();
             {
+                if (maxFrames <= 0 || frameCount < maxFrames)
                 {
                     frameCount++;
 
