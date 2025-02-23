@@ -21,6 +21,23 @@ void setByte(ivec3 coord, uint value, uint byteNumber)
     materialMap[bufferIndex] |= value << (8 * bufferOffset);
 }
 
+/*
+void setMaterial(ivec3 coord, uint value)
+{
+    ivec3 p2 = (coord >> (2 * i)) & 1;
+    uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2);
+
+    int index = (p2.x + resolution.x * (p2.y + resolution.y * p2.z)) + int(materialStartIndex);
+
+    int bufferIndex = index; // 4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
+    int bufferOffset = int(byteNumber);
+    for(int i = 0; i < 4; i++){
+        materialMap[bufferIndex] &= ~(uint(k) << (8 * i));//Clear the bit at the correct location
+        materialMap[bufferIndex] |= (((value >> i) & 1) * k) << (8 * i);//Get the correct bit from the value and use k to put that value in the correct location
+    }
+}
+*/
+
 void main()
 {
 

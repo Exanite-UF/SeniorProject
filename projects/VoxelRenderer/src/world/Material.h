@@ -5,6 +5,7 @@
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 // Materials are a property of voxels, however, they are also used heavily by the VoxelWorld and VoxelRenderer
 // This means we need to account for how they are used before deciding how they should be stored
@@ -43,8 +44,12 @@ struct MaterialData
     glm::vec3 albedo;
     float padding1;
     glm::vec3 metallicAlbedo;
+    float padding2;
     float roughness;
     float metallic;
+
+    float padding3;
+    float padding4;
 
     // glm::vec3 color;
     //

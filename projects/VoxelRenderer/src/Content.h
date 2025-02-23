@@ -14,6 +14,9 @@ public:
     constexpr static std::string_view raymarcherFragmentShader = "content/Raymarcher.fragment.glsl";
     constexpr static std::string_view resetHitInfoComputeShader = "content/ResetHitInfo.compute.glsl";
     constexpr static std::string_view screenTriVertexShader = "content/ScreenTri.vertex.glsl";
+    constexpr static std::string_view brdfComputeShader = "content/BRDF.compute.glsl";
+    constexpr static std::string_view resetVisualInfoComputeShader = "content/ResetVisualInfo.compute.glsl";
+    constexpr static std::string_view fullCastComputeShader = "content/FullCast.compute.glsl";
 
     constexpr static std::string_view defaultColorTexture = "content/DefaultColor.png";
     constexpr static std::string_view defaultNormalTexture = "content/DefaultNormal.png";

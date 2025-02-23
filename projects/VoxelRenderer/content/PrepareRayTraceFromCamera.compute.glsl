@@ -113,6 +113,4 @@ void main()
 
     setPos(texelCoord, camPosition);
     setDir(texelCoord, rayDir);
-    // imageStore(rayPosition, texelCoord, vec4(camPosition, shouldTrace));
-    // imageStore(rayDirection, texelCoord, vec4(rayDir, 0.0));
 }

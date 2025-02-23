@@ -1,6 +1,8 @@
 #pragma once
 
+#include "src/graphics/GraphicsBuffer.h"
 #include <src/world/Camera.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
 #include <vector>
 
@@ -21,24 +23,40 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
-    GraphicsBuffer<float> rayStartBuffer;
-    GraphicsBuffer<float> rayDirectionBuffer;
+    GraphicsBuffer<glm::vec3> rayStartBuffer1;
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer1;
+    GraphicsBuffer<glm::vec3> rayStartBuffer2;
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer2;
 
     // These buffers are used to store the result of a ray trace step
-    GLuint rayHitPositionBuffer = 0; //(x, y, z, wasHit)
-    GLuint rayHitNormalBuffer = 0; //(x, y, z, depth)
-    GLuint rayHitMaterialBuffer = 0; //(material)
+    GraphicsBuffer<float> rayHitMiscBuffer; //(wasHit, depth)
+
+    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
+    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
+
+    GraphicsBuffer<glm::vec3> normalBuffer;
+    GraphicsBuffer<glm::vec3> positionBuffer;
+
+    int currentBuffer = 0;
+
+    GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
     static GLuint executeRayTraceProgram;
     static GLuint resetHitInfoProgram;
     static GLuint displayToWindowProgram;
+    static GLuint BRDFProgram;
+    static GLuint resetVisualInfoProgram;
+    static GLuint fullCastProgram;
 
     int xSize = 0;
     int ySize = 0;
     int raysPerPixel = 0;
 
+    bool isFirstRay = false;
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
 
     // This makes the images using the size and rays per pixel
@@ -53,9 +71,12 @@ public:
     void setResolution(int x, int y);
     void setRaysPerPixel(int number);
 
-    void prepareRayTraceFromCamera(const Camera& camera);
+    void prepareRayTraceFromCamera(const Camera& camera, bool resetLight = true);
 
-    void executeRayTrace(std::vector<VoxelWorld>& worlds);
+    void resetHitInfo();
+    void resetVisualInfo(bool resetLight = true, bool resetAttentuation = true);
 
-    void display();
+    void executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager);
+
+    void display(const Camera& camera, int frameCount);
 };
