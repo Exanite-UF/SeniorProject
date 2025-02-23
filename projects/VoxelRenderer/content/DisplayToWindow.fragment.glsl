@@ -61,7 +61,8 @@ void main()
 {
     ivec3 size = resolution; // imageSize(hitPosition);
 
-    float minDepth = 1.0 / 0.0; // Initialize to positive infinity
+    float farPlane = 10000;
+    float minDepth = farPlane;
     vec3 color = vec3(0);
     for (int i = 0; i < size.z; i++)
     {
@@ -96,7 +97,7 @@ void main()
     }
     color /= size.z * frameCount;
     fragColor = vec4(color, 1);
-    gl_FragDepth = 1 - (minDepth / 100000); // TODO: How far is the far plane?
+    gl_FragDepth = 1 - (minDepth / farPlane);
 
     // fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);
 }
