@@ -47,8 +47,4 @@ public:
     ~Program();
 
     void run();
-
-    static void log(const std::string& value = "");
-
-    static void assertIsTrue(bool condition, const std::string& errorMessage);
 };

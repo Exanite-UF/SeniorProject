@@ -1,6 +1,7 @@
 #include "TextureManager.h"
 
 #include <src/Program.h>
+#include <src/utilities/Assert.h>
 #include <stb_image.h>
 #include <stdexcept>
 
@@ -65,7 +66,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
     // Load texture data
     int width, height, rawChannelCount;
     auto rawTextureData = stbi_load(path.data(), &width, &height, &rawChannelCount, 3);
-    Program::assertIsTrue(rawTextureData != nullptr, "Failed to load texture: " + std::string(path));
+    Assert::isTrue(rawTextureData != nullptr, "Failed to load texture: " + std::string(path));
 
     try
     {

@@ -30,8 +30,10 @@
 #include <src/Program.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/Assert.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
+#include <src/utilities/Log.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
@@ -47,14 +49,14 @@ void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum
     }
 
     std::string messageStr(message, length);
-    log(messageStr);
+    Log::log(messageStr);
 }
 
 Program::Program()
 {
     // Ensure preconditions are met
     runEarlyStartupTests();
-    log("Starting Voxel Renderer");
+    Log::log("Starting Voxel Renderer");
 
     // Init GLFW
     if (!glfwInit())
@@ -179,7 +181,7 @@ void Program::run()
             averagedDeltaTime = fpsCycleTimer / framesThisCycle;
 
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
-            log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)");
+            Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)");
 
             fpsCycleTimer = 0;
             framesThisCycle = 0;
@@ -417,12 +419,6 @@ void Program::run()
     }
 }
 
-void Program::log(const std::string& value)
-{
-    std::cout << value + "\n"
-              << std::flush;
-}
-
 void Program::checkForContentFolder()
 {
     if (!std::filesystem::is_directory("content"))
@@ -430,20 +426,12 @@ void Program::checkForContentFolder()
         throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
     }
 
-    log("Found content folder");
-}
-
-void Program::assertIsTrue(const bool condition, const std::string& errorMessage)
-{
-    if (!condition)
-    {
-        throw std::runtime_error("Assert failed: " + errorMessage);
-    }
+    Log::log("Found content folder");
 }
 
 void Program::runEarlyStartupTests()
 {
-    log("Running early startup tests (in constructor)");
+    Log::log("Running early startup tests (in constructor)");
 
     {
         // Make sure the content folder exists
@@ -452,12 +440,12 @@ void Program::runEarlyStartupTests()
 
     {
         // This allows us to safely use nullptr instead of NULL
-        assertIsTrue(NULL == nullptr, "Unsupported compiler: NULL must equal nullptr");
+        Assert::isTrue(NULL == nullptr, "Unsupported compiler: NULL must equal nullptr");
     }
 
     {
         // This allows us to safely use uint32_t instead of GLuint
-        assertIsTrue(sizeof(GLuint) == sizeof(uint32_t), "Unsupported compiler: sizeof(GLuint) must equal sizeof(uint32_t)");
+        Assert::isTrue(sizeof(GLuint) == sizeof(uint32_t), "Unsupported compiler: sizeof(GLuint) must equal sizeof(uint32_t)");
     }
 
     {
@@ -465,9 +453,9 @@ void Program::runEarlyStartupTests()
         // Must make sure to provide the TupleHasher template argument
         auto key = std::make_tuple("hello", 1);
         std::unordered_map<std::tuple<std::string, int>, int, TupleHasher<std::tuple<std::string, int>>> map;
-        assertIsTrue(!map.contains(key), "Incorrect map implementation: Map should be empty");
+        Assert::isTrue(!map.contains(key), "Incorrect map implementation: Map should be empty");
         map[key] = 1;
-        assertIsTrue(map.contains(key), "Incorrect map implementation: Map should contain key that was inserted");
+        Assert::isTrue(map.contains(key), "Incorrect map implementation: Map should contain key that was inserted");
     }
 
     {
@@ -479,20 +467,20 @@ void Program::runEarlyStartupTests()
         // Letting the shared_ptr fall out of scope or explicitly resetting it will unsubscribe from the event
         auto listener = testEvent.subscribe([&](int value)
             {
-                log("Event was successfully called");
+                Log::log("Event was successfully called");
                 counter += value;
             });
 
         // Listener is subscribed, this should add 5 to the counter
         testEvent.raise(5);
-        assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
+        Assert::isTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
 
         // Unsubscribe from event
         listener.reset();
 
         // Listener is unsubscribed, this should not affect the counter
         testEvent.raise(5);
-        assertIsTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
+        Assert::isTrue(counter == 5, "Incorrect event implementation: counter should equal 5");
     }
 
     {
@@ -502,17 +490,17 @@ void Program::runEarlyStartupTests()
 
         auto listener = testEvent.subscribe([&](int value)
             {
-                log("Buffered event was successfully called");
+                Log::log("Buffered event was successfully called");
                 counter += value;
             });
 
         // Listener is subscribed, but event has not been flushed. This should not affect the counter
         testEvent.raise(5);
-        assertIsTrue(counter == 0, "Incorrect buffered event implementation: counter should equal 0");
+        Assert::isTrue(counter == 0, "Incorrect buffered event implementation: counter should equal 0");
 
         // Flush events, this should add 5 to the counter
         testEvent.flush();
-        assertIsTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
+        Assert::isTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
 
         // Unsubscribe from event
         listener.reset();
@@ -520,22 +508,22 @@ void Program::runEarlyStartupTests()
         // Listener is unsubscribed, this should not affect the counter
         testEvent.raise(5);
         testEvent.flush();
-        assertIsTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
+        Assert::isTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
     }
 }
 
 void Program::runLateStartupTests()
 {
-    log("Running late startup tests (in run())");
+    Log::log("Running late startup tests (in run())");
 
     {
         // Verify shader storage block size is large enough
         GLint size;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
-        log("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
+        Log::log("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
 
         // 134217728 is the GL_MAX_SHADER_STORAGE_BLOCK_SIZE of Exanite's laptop, also equal to 512x512x512
-        assertIsTrue(size >= 134217728, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
+        Assert::isTrue(size >= 134217728, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
     }
 
     {
@@ -545,14 +533,14 @@ void Program::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workgroupSizes.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workgroupSizes.z);
 
-        log("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
+        Log::log("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
 
         glm::ivec3 workgroupCounts;
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workgroupCounts.x);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &workgroupCounts.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
-        log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+        Log::log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
     }
 
     {
