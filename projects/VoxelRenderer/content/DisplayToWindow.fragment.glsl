@@ -97,7 +97,9 @@ void main()
     }
     color /= size.z * frameCount;
     fragColor = vec4(color, 1);
-    gl_FragDepth = 1 - (minDepth / farPlane);
+
+    // This is used to output to the z-buffer. Also note that if this value fails the depth test, the fragment will be discarded.
+    // gl_FragDepth = 1 - (minDepth / farPlane);
 
     // fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);
 }
