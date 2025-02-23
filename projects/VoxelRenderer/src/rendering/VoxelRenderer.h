@@ -2,10 +2,9 @@
 
 #include "src/graphics/GraphicsBuffer.h"
 #include <src/world/Camera.h>
-#include <src/world/VoxelWorld.h>
 #include <src/world/MaterialManager.h>
+#include <src/world/VoxelWorld.h>
 #include <vector>
-
 
 // The voxel renderer needs to be able to render multiple voxel worlds
 class VoxelRenderer
@@ -29,19 +28,16 @@ private:
     GraphicsBuffer<glm::vec3> rayStartBuffer2;
     GraphicsBuffer<glm::vec3> rayDirectionBuffer2;
 
-
     // These buffers are used to store the result of a ray trace step
-    GraphicsBuffer<float> rayHitMiscBuffer;//(wasHit, depth)
+    GraphicsBuffer<float> rayHitMiscBuffer; //(wasHit, depth)
 
     GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
     GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
     GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
     GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
-
     GraphicsBuffer<glm::vec3> normalBuffer;
     GraphicsBuffer<glm::vec3> positionBuffer;
-
 
     int currentBuffer = 0;
 
@@ -55,7 +51,7 @@ private:
     static GLuint BRDFProgram;
     static GLuint resetVisualInfoProgram;
     static GLuint fullCastProgram;
-    
+
     int xSize = 0;
     int ySize = 0;
     int raysPerPixel = 0;

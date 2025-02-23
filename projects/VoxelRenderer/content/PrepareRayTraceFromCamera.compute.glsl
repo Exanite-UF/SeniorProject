@@ -11,14 +11,11 @@ layout(std430, binding = 1) buffer RayDirection
     float rayDirection[];
 };
 
-
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 camPosition;
 uniform vec4 camRotation;
 uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 uniform vec2 jitter; //([0, 1), [0, 1))
-
-
 
 // Applies a quaternion
 vec3 qtransform(vec4 q, vec3 v)

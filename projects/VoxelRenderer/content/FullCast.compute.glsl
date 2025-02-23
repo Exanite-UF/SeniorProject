@@ -2,7 +2,7 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-//Padded to 32 bytes long
+// Padded to 32 bytes long
 struct MaterialProperties
 {
     vec3 emission;
@@ -27,7 +27,6 @@ uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec3 voxelWorldPosition;
 uniform vec4 voxelWorldRotation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
-
 
 uniform uint materialMapSize;
 uniform uint materialCount;
@@ -58,14 +57,10 @@ vec3 getRayDirection(ivec3 coord)
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
-
-
-
 layout(std430, binding = 2) buffer RayPositionOut
 {
     float rayPositionOut[];
 };
-
 
 void setRayPosition(ivec3 coord, vec3 value)
 {
@@ -74,7 +69,6 @@ void setRayPosition(ivec3 coord, vec3 value)
     rayPositionOut[1 + index] = value.y;
     rayPositionOut[2 + index] = value.z;
 }
-
 
 layout(std430, binding = 3) buffer RayDirectionOut
 {
@@ -88,9 +82,6 @@ void setRayDirection(ivec3 coord, vec3 value)
     rayDirectionOut[1 + index] = value.y;
     rayDirectionOut[2 + index] = value.z;
 }
-
-
-
 
 layout(std430, binding = 4) buffer OccupancyMap
 {
@@ -144,43 +135,44 @@ uint getMaterial(ivec3 coord)
     return result;
 }
 
-
-
-layout(std430, binding = 6) buffer HitMisc{
+layout(std430, binding = 6) buffer HitMisc
+{
     float hitMisc[];
 };
 
-float getHitWasHit(ivec3 coord){
+float getHitWasHit(ivec3 coord)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     return hitMisc[index + 0];
 }
 
-void setHitWasHit(ivec3 coord, bool value){
+void setHitWasHit(ivec3 coord, bool value)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     hitMisc[index + 0] = (value) ? 1.0 : 0.0;
 }
 
-
-float getHitDist(ivec3 coord){
+float getHitDist(ivec3 coord)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     return hitMisc[index + 1];
 }
 
-void setHitDist(ivec3 coord, float value){
+void setHitDist(ivec3 coord, float value)
+{
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     hitMisc[index + 1] = value;
 }
 
-
-layout(std430, binding = 7) restrict buffer MaterialIndexer{
+layout(std430, binding = 7) restrict buffer MaterialIndexer
+{
     uint materialIndexer[]; // This maps from the material index from the ray cast to the index of an actual material
 };
 // Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 8) restrict buffer MaterialBases{
-    MaterialProperties materialBases[];//This is the base colors of the materials
+layout(std430, binding = 8) restrict buffer MaterialBases
+{
+    MaterialProperties materialBases[]; // This is the base colors of the materials
 };
-
-
 
 layout(std430, binding = 9) restrict buffer AttenuationIn
 {
@@ -194,14 +186,10 @@ vec3 getPriorAttenuation(ivec3 coord)
     return vec3(attenuationIn[index + 0], attenuationIn[index + 1], attenuationIn[index + 2]);
 }
 
-
-
-
 layout(std430, binding = 10) restrict buffer AccumulatedLightIn
 {
     float accumulatedLightIn[];
 };
-
 
 layout(std430, binding = 11) restrict buffer AttenuationOut
 {
@@ -217,7 +205,6 @@ void setAttenuation(ivec3 coord, vec3 value)
     attenuationOut[2 + index] = value.z;
 }
 
-
 layout(std430, binding = 12) restrict buffer AccumulatedLightOut
 {
     float accumulatedLightOut[];
@@ -231,34 +218,31 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
-
-
-
-layout(std430, binding = 13) buffer FirstHitNormal{
+layout(std430, binding = 13) buffer FirstHitNormal
+{
     float firstHitNormal[];
 };
 
-void setFirstHitNormal(ivec3 coord, vec3 value){
+void setFirstHitNormal(ivec3 coord, vec3 value)
+{
     int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
     firstHitNormal[0 + index] = value.x;
     firstHitNormal[1 + index] = value.y;
     firstHitNormal[2 + index] = value.z;
 }
 
-
-layout(std430, binding = 14) buffer FirstHitPosition{
+layout(std430, binding = 14) buffer FirstHitPosition
+{
     float firstHitPosition[];
 };
 
-void setFirstHitPosition(ivec3 coord, vec3 value){
+void setFirstHitPosition(ivec3 coord, vec3 value)
+{
     int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
     firstHitPosition[0 + index] = value.x;
     firstHitPosition[1 + index] = value.y;
     firstHitPosition[2 + index] = value.z;
 }
-
-
-
 
 struct RayHit
 {
@@ -302,7 +286,6 @@ float rayboxintersect(vec3 raypos, vec3 raydir, vec3 boxmin, vec3 boxmax)
     return tmin;
 }
 
-
 // Minimal aliasing (Fast)
 RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float currentDepth)
 {
@@ -312,7 +295,8 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     hit.wasHit = false;
     hit.isNearest = true;
 
-    if(currentDepth <= 0){
+    if (currentDepth <= 0)
+    {
         hit.isNearest = false;
         return hit;
     }
@@ -418,8 +402,9 @@ vec3 qtransform(vec4 q, vec3 v)
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
-RayHit rayCast(ivec3 texelCoord, vec3 rayDir){
-    
+RayHit rayCast(ivec3 texelCoord, vec3 rayDir)
+{
+
     vec3 startPos = getRayPosition(texelCoord);
     vec3 rayPos = startPos;
 
@@ -427,9 +412,10 @@ RayHit rayCast(ivec3 texelCoord, vec3 rayDir){
 
     float currentDepth = getHitDist(texelCoord);
 
-    //If the depth to beat is infinity, then that means that the ray is currently missing everything
-    //As such the attentuation will need to be 0, and the accumulated light should not change
-    if(isinf(currentDepth)){
+    // If the depth to beat is infinity, then that means that the ray is currently missing everything
+    // As such the attentuation will need to be 0, and the accumulated light should not change
+    if (isinf(currentDepth))
+    {
         setAttenuation(texelCoord, vec3(0));
         changeLightAccumulation(texelCoord, vec3(0));
     }
@@ -465,28 +451,26 @@ RayHit rayCast(ivec3 texelCoord, vec3 rayDir){
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
     hit.dist = length(startPos - hit.hitLocation); // length(hit.hitLocation - rayStart);
-    if(!hit.wasHit){
+    if (!hit.wasHit)
+    {
         hit.dist = 1.0 / 0.0;
     }
 
-    if(hit.dist > currentDepth || !hit.isNearest){
+    if (hit.dist > currentDepth || !hit.isNearest)
+    {
         hit.isNearest = false;
         return hit;
     }
 
     hit.isNearest = true;
 
-    //At this point was hit is true
-    
+    // At this point was hit is true
+
     setHitDist(texelCoord, hit.dist);
     setHitWasHit(texelCoord, hit.wasHit);
 
     return hit;
 }
-
-
-
-
 
 float hash(float seed)
 {
@@ -506,9 +490,10 @@ vec3 fresnel(float dotOfViewAndHalfway, vec3 baseReflectivity)
     return baseReflectivity + (1 - baseReflectivity) * pow(abs(1 - dotOfViewAndHalfway), 5); // Schlick’s approximation
 }
 
-//This works in tangent space
-//So the normal is (0, 0, 1)
-float geometricBlockingGGX(float roughness, float dotOfLightAndNormal, float dotOfViewAndNormal){
+// This works in tangent space
+// So the normal is (0, 0, 1)
+float geometricBlockingGGX(float roughness, float dotOfLightAndNormal, float dotOfViewAndNormal)
+{
     dotOfLightAndNormal = abs(dotOfLightAndNormal);
     dotOfViewAndNormal = abs(dotOfViewAndNormal);
     float numerator = 2 * dotOfLightAndNormal * dotOfViewAndNormal;
@@ -518,44 +503,46 @@ float geometricBlockingGGX(float roughness, float dotOfLightAndNormal, float dot
     return numerator / (denominator1 + denominator2);
 }
 
-//This works in tangent space
-//So the normal is (0, 0, 1)
-float microfacetDistributionGGX(float roughness, float dotOfNormalAndHalfway){
+// This works in tangent space
+// So the normal is (0, 0, 1)
+float microfacetDistributionGGX(float roughness, float dotOfNormalAndHalfway)
+{
     float temp = roughness * roughness;
     float temp2 = dotOfNormalAndHalfway * dotOfNormalAndHalfway * (temp - 1) + 1;
     return temp / (3.1415926589 * temp * temp);
 }
 
-
-vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal){
+vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal)
+{
     float a = roughness * roughness;
 
     // -- Calculate theta and phi for our microfacet normal wm by
     // -- importance sampling the Ggx distribution of normals
     float theta = acos(sqrt((1.0f - rand.x) / ((a - 1.0f) * rand.x + 1.0f)));
     float phi = 6.28318530718 * rand.y;
-    
+
     // -- Convert from spherical to Cartesian coordinates
-    //wm is the microfacet direction
+    // wm is the microfacet direction
     vec3 microfacetDirection = vec3(
         cos(phi) * sin(theta),
         sin(phi) * sin(theta),
-        cos(theta)
-    );
+        cos(theta));
 
     vec3 temp = abs(normal.z) < 0.5 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0); // Pick a direction not parallel with the normal (Either pick up if it is definitely not facing up, or pick along the x axis if it is definitely pointing up)
     vec3 tangent = normalize(cross(temp, normal)); // Get a vector perpecdicular to the previous two
     vec3 bitangent = cross(normal, tangent); // Get a second vector that is perpendicular to the previous 2
     microfacetDirection = tangent * microfacetDirection.x + bitangent * microfacetDirection.y + normal * microfacetDirection.z;
-    
 
-     // -- Calculate light by reflecting view about wm
+    // -- Calculate light by reflecting view about wm
     vec3 light = reflect(view, microfacetDirection);
 
     // -- Ensure our sample is in the upper hemisphere
-    if(dot(light, normal) < 0){
+    if (dot(light, normal) < 0)
+    {
         return vec4(light, 0);
-    }else{
+    }
+    else
+    {
         vec3 halfway = normalize(view + light); // This is used by several things
         return vec4(light, 1 / (dot(microfacetDirection, normal) / abs(dot(view, microfacetDirection))));
     }
@@ -563,11 +550,11 @@ vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal){
 
 vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 {
-    
+
     vec3 halfway = normalize(view + light); // This is used by several things
 
-    //This component is part of the sampling distribution pdf, so it cancels out
-    //float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway));//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+    // This component is part of the sampling distribution pdf, so it cancels out
+    // float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway));//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
 
     vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
 
@@ -576,7 +563,7 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
     // This approximates how much light is blocked by microfacets, when looking from different directions
     float dotOfViewAndNormal = dot(view, normal);
     float dotOfLightAndNormal = dot(light, normal);
-    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal));//geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
+    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal)); // geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
 
     // The effect of the metallicAlbedo is performed in the fresenl component
     // A non metallic material is assumed to not be affected by the fresnel effect
@@ -590,51 +577,47 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
     return fresnelComponent * geometricComponent * albedo / abs(dotOfViewAndNormal);
 }
 
-
-//It is guaranteeed to be a hit
-void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection){
-    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z;//texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
-
-    
+// It is guaranteeed to be a hit
+void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection)
+{
+    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
     vec3 direction = rayDirection; // The direction the ray cast was in
 
-
     vec3 position = hit.hitLocation;
 
     // Load the hit normal
-    //float dist = getHitDist(texelCoord); // Distance that the ray cast covered
+    // float dist = getHitDist(texelCoord); // Distance that the ray cast covered
     vec3 normal = hit.normal; // The normal direction of the hit
-
 
     uint materialID = materialIndexer[hit.material]; // Get the material index of the hit, and map it to an actual material
     // Find the uv coordinate for the texture
     // It is based on the hit location in voxel space
-    //vec3 voxelPosition = hit.voxelHitLocation;
-    //vec2 hitUV;
-    //if (abs(normal.x) > 0)
+    // vec3 voxelPosition = hit.voxelHitLocation;
+    // vec2 hitUV;
+    // if (abs(normal.x) > 0)
     //{
     //    // yz
     //    hitUV = voxelPosition.yz;
     //}
-    //else if (abs(normal.y) > 0)
+    // else if (abs(normal.y) > 0)
     //{
     //    // xz
     //    hitUV = voxelPosition.xz;
     //}
-    //else if (abs(normal.z) > 0)
+    // else if (abs(normal.z) > 0)
     //{
     //    // xy
     //    hitUV = voxelPosition.xy;
     //}
-    //vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
+    // vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
 
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
-    MaterialProperties voxelMaterial = materialBases[materialID];//This is the base value of the material
+    MaterialProperties voxelMaterial = materialBases[materialID]; // This is the base value of the material
 
-    //Multiply in the texture values
+    // Multiply in the texture values
     /*
     voxelMaterial.emission *= texture(sampler2d(materialTextures[materialID].emission), uv).xyz;
     voxelMaterial.albedo *= texture(sampler2d(materialTextures[materialID].albedo), uv).xyz;
@@ -648,16 +631,14 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection){
     vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
     vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
-    //vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
-    //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-    
+    // vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
+    // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
     vec3 receivedLight = voxelMaterial.emission * attentuation;
 
     // Set the output buffers
     setRayPosition(texelCoord, position); // Set where the ray should start from next
     setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
-    
 
     setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
     changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
@@ -670,16 +651,18 @@ void main()
 
     RayHit hit = rayCast(texelCoord, rayDir);
 
-    //If it is not the nearest, then it should do nothing
-    //If it did not hit, then it should do nothing
-    if(!hit.isNearest || !hit.wasHit){
+    // If it is not the nearest, then it should do nothing
+    // If it did not hit, then it should do nothing
+    if (!hit.isNearest || !hit.wasHit)
+    {
         return;
     }
 
-    if(texelCoord.z == 0 && isFirstRay){
+    if (texelCoord.z == 0 && isFirstRay)
+    {
         setFirstHitNormal(texelCoord, hit.normal);
         setFirstHitPosition(texelCoord, hit.hitLocation);
     }
-    
+
     BRDF(texelCoord, hit, rayDir);
 }
