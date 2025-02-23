@@ -485,9 +485,9 @@ vec2 randomVec2(float seed)
 // For metals baseReflectivity is the metallicAlbedo
 // For non-metals, it is a completely different property (I'm going to go with 1)
 // So this parameter will be a linear interpolation based on the metallic parameter between 1 and the metallicAlbedo
-vec3 fresnel(float dotOfViewAndHalfway, vec3 baseReflectivity)
+vec3 fresnel(float dotOfLightAndHalfway, vec3 baseReflectivity)
 {
-    return baseReflectivity + (1 - baseReflectivity) * pow(abs(1 - dotOfViewAndHalfway), 5); // Schlick’s approximation
+    return baseReflectivity + (1 - baseReflectivity) * pow(abs(1 - dotOfLightAndHalfway), 5); // Schlick’s approximation
 }
 
 // This works in tangent space
@@ -558,7 +558,7 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
 
     vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
 
-    vec3 fresnelComponent = fresnel(abs(dot(view, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+    vec3 fresnelComponent = fresnel(abs(dot(light, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
 
     // This approximates how much light is blocked by microfacets, when looking from different directions
     float dotOfViewAndNormal = dot(view, normal);
