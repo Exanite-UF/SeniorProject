@@ -187,13 +187,6 @@ void Program::run()
             framesThisCycle = 0;
         }
 
-        // Clear screen
-        // TODO: Why is this so far from the rest of the rendering code?
-        if (maxFrames == 0 || frameCount < maxFrames)
-        {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
-
         // Update IMGUI
         ImGuiIO& io = ImGui::GetIO();
         ImGui_ImplOpenGL3_NewFrame();
@@ -359,9 +352,13 @@ void Program::run()
             showMenuGUI = !showMenuGUI;
         }
 
+        // Render
         if (maxFrames <= 0 || frameCount < maxFrames)
         {
             frameCount++;
+
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             renderer.setResolution(window->size.x, window->size.y);
 
             camera.transform.setGlobalPosition(cameraPosition);
