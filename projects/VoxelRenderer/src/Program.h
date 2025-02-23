@@ -15,13 +15,6 @@
 #include <src/utilities/NonCopyable.h>
 #include <src/windowing/Window.h>
 
-// WASD Space Shift = movement
-// q = capture mouse
-// f = fullscreen toggle
-// e = progress through the noise's time
-// t = change between types of noise
-// scroll = change move speed
-// CTRL + scroll = change noise fill
 class Program : public NonCopyable
 {
 private:
