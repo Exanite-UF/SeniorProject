@@ -9,6 +9,16 @@ Texture::Texture(GLuint textureId, TextureType type)
     this->type = type;
 }
 
+GLuint Texture::getTextureId()
+{
+    return textureId;
+}
+
+uint64_t Texture::getBindlessHandle()
+{
+    return bindlessHandle;
+}
+
 TextureType Texture::getType()
 {
     return type;
