@@ -663,7 +663,8 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 }
 
 float sunSize = 0.99;
-vec3 sunDir = normalize(vec3(1, 1, 1));
+vec3 sunDir = normalize(vec3(1, -1, 1));
+float sunBrightness = 5;
 
 void attempt(ivec3 texelCoord)
 {
@@ -677,7 +678,7 @@ void attempt(ivec3 texelCoord)
     {
         if (dot(rayDir, sunDir) > sunSize)
         {
-            changeLightAccumulation(texelCoord, 1 / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
+            changeLightAccumulation(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
         }
         else if (dot(rayDir, vec3(0, 0, 1)) > 0)
         {
