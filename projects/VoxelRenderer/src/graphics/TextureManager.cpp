@@ -34,7 +34,7 @@ GLenum TextureManager::getOpenGlFormat(TextureType type)
             break;
     }
 
-    throw std::runtime_error("Unsupported texture type: " + type);
+    throw std::runtime_error("Unsupported texture type: " + std::to_string(type));
 }
 
 int TextureManager::getFormatChannelCount(GLenum format)
@@ -51,7 +51,7 @@ int TextureManager::getFormatChannelCount(GLenum format)
             break;
     }
 
-    throw std::runtime_error("Unsupported texture format: " + format);
+    throw std::runtime_error("Unsupported texture format: " + std::to_string(format));
 }
 
 std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type, GLenum format)
