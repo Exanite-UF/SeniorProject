@@ -20,7 +20,7 @@ MaterialManager::MaterialManager()
 {
     for (size_t i = 0; i < materials.size(); i++)
     {
-        auto material = Material();
+        auto material = Material(i, "Material " + std::to_string(i));
         // TODO: Set placeholder material properties
         if (i % 4 == 0)
         {
