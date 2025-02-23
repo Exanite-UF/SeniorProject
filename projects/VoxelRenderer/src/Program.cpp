@@ -126,16 +126,15 @@ void Program::run()
     Scene scene {};
     Camera& camera = scene.camera;
 
-    scene.worlds.reserve(2);//Issue, this cannot have reallocations.
+    scene.worlds.reserve(2); // Issue, this cannot have reallocations.
     scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
     VoxelWorld& voxelWorld = scene.worlds.at(0);
-    
+
     VoxelWorldData data {};
     data.copyFrom(voxelWorld);
-
 
     // Create the renderer
     VoxelRenderer renderer;
@@ -187,11 +186,11 @@ void Program::run()
         }
 
         // Clear screen
-        //TODO: Why is this so far from the rest of the rendering code?
-        if(maxFrames == 0 || frameCount < maxFrames){
+        // TODO: Why is this so far from the rest of the rendering code?
+        if (maxFrames == 0 || frameCount < maxFrames)
+        {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
-        
 
         // Update IMGUI
         ImGuiIO& io = ImGui::GetIO();
@@ -210,11 +209,11 @@ void Program::run()
             cameraRotation.y -= mouseDelta.x * mouseSensitivity;
             cameraRotation.x += mouseDelta.y * mouseSensitivity;
             cameraRotation.x = std::min(std::max(cameraRotation.x, -glm::pi<float>() / 2), glm::pi<float>() / 2);
-            
-            if(glm::length(mouseDelta) > 0){
+
+            if (glm::length(mouseDelta) > 0)
+            {
                 frameCount = 0;
             }
-            
         }
         else
         {
@@ -356,7 +355,8 @@ void Program::run()
             showMenuGUI = !showMenuGUI;
         }
 
-        if(maxFrames <= 0 || frameCount < maxFrames){
+        if (maxFrames <= 0 || frameCount < maxFrames)
+        {
             frameCount++;
             renderer.setResolution(window->size.x, window->size.y);
 
@@ -367,11 +367,12 @@ void Program::run()
             scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
             scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
             renderer.prepareRayTraceFromCamera(camera, frameCount == 1);
-            for(int i = 0; i <= 2; i++){
+            for (int i = 0; i <= 2; i++)
+            {
                 renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
                 renderer.resetHitInfo();
             }
-            
+
             renderer.display(camera, frameCount);
         }
 
@@ -413,7 +414,6 @@ void Program::run()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window->glfwWindowHandle);
-        
     }
 }
 
