@@ -121,6 +121,7 @@ void Program::run()
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Load shader programs
+    blitTextureGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFragmentShader);
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
@@ -420,7 +421,7 @@ void Program::run()
         // Render
         {
             // Render to offscreen texture
-            // framebuffer.bind();
+            framebuffer.bind();
             {
                 if (maxFrames <= 0 || frameCount < maxFrames)
                 {
@@ -445,10 +446,10 @@ void Program::run()
             }
 
             // Render to screen
-            // framebuffer.unbind();
+            framebuffer.unbind();
             {
                 // Clear
-                // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 // Render IMGUI
                 ImGui::Render();

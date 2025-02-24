@@ -38,6 +38,7 @@ public:
     float fillAmount = 0.6;
     bool remakeNoise = false;
 
+    GLuint blitTextureGraphicsProgram;
     GLuint raymarcherGraphicsProgram;
     GLuint makeNoiseComputeProgram;
     GLuint makeMipMapComputeProgram;
