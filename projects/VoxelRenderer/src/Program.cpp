@@ -136,7 +136,7 @@ void Program::run()
     Scene scene {};
     Camera& camera = scene.camera;
 
-    glm::ivec3 worldSize = glm::ivec3(128, 128, 256);
+    glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
 
     scene.worlds.reserve(2); // Issue, this cannot have reallocations.
     scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram, worldSize);
