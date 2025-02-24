@@ -5,7 +5,7 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldUtility.h>
 
-VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram, glm::ivec3 size)
+VoxelWorld::VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
 {
     this->makeNoiseComputeProgram = makeNoiseComputeProgram;
     this->makeMipMapComputeProgram = makeMipMapComputeProgram;

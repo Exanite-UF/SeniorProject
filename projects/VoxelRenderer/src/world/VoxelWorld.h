@@ -35,9 +35,8 @@ private:
 public:
     Transform transform;
 
-    // TODO: Consider having the width, height, and depth assigned by the constructor rather than hard coded.
     // Creates a voxel world
-    VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram, glm::ivec3 size);
+    VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram);
 
     [[nodiscard]] glm::ivec3 getSize() const;
 
