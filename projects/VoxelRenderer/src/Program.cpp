@@ -28,6 +28,7 @@
 
 #include <src/Content.h>
 #include <src/Program.h>
+#include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/procgen/WorldGenerator.h>
@@ -450,6 +451,22 @@ void Program::run()
             {
                 // Clear
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                // Copy world color texture
+                {
+                    glUseProgram(blitTextureGraphicsProgram);
+
+                    glGetUniformLocation(blitTextureGraphicsProgram, "sourceTexture");
+                    glActiveTexture(GL_TEXTURE0 + glGetUniformLocation(blitTextureGraphicsProgram, "sourceTexture"));
+                    glBindTexture(GL_TEXTURE_2D, framebuffer.colorTextureId);
+
+                    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+                    {
+                        glDrawArrays(GL_TRIANGLES, 0, 3);
+                    }
+                    glBindVertexArray(0);
+                    glUseProgram(0);
+                }
 
                 // Render IMGUI
                 ImGui::Render();
