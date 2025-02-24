@@ -1,5 +1,5 @@
+#include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
-#include <src/PerlinNoise.hpp>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/world/VoxelWorldData.h>
 

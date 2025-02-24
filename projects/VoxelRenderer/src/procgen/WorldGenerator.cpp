@@ -1,5 +1,5 @@
+#include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
-#include <src/PerlinNoise.hpp>
 #include <src/procgen/WorldGenerator.h>
 #include <src/world/VoxelWorldData.h>
 
