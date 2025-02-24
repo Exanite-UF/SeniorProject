@@ -61,8 +61,9 @@ void main()
 {
     ivec3 size = resolution; // imageSize(hitPosition);
 
+    float nearPlane = 0.01;
     float farPlane = 10000;
-    float minDepth = farPlane;
+    float depth = farPlane;
     vec3 color = vec3(0);
     for (int i = 0; i < size.z; i++)
     {
@@ -85,7 +86,7 @@ void main()
         //+x is in front of the camera
         //+y is to the left of the camera
         //+z is above the camera
-        minDepth = min(minDepth, position.x);
+        depth = min(depth, position.x);
 
         vec3 light = getLight(texelCoord);
 
@@ -99,7 +100,7 @@ void main()
     fragColor = vec4(color, 1);
 
     // This is used to output to the z-buffer. Also note that if this value fails the depth test, the fragment will be discarded.
-    // gl_FragDepth = 1 - (minDepth / farPlane);
+    gl_FragDepth = 1 - clamp((depth - nearPlane) / (farPlane - nearPlane), 0, 1); // TODO: Double check my math here
 
     // fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);
 }

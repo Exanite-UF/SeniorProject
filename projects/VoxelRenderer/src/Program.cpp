@@ -28,6 +28,7 @@
 
 #include <src/Content.h>
 #include <src/Program.h>
+#include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/procgen/WorldGenerator.h>
@@ -116,11 +117,13 @@ void Program::run()
     glClearColor(0, 0, 0, 0);
 
     glEnable(GL_DEPTH_TEST);
-    // glClearDepth(0); // Reverse-Z
-    // glDepthFunc(GL_GREATER); // Reverse-Z
+    glClearDepth(0); // Reverse-Z
+    glDepthFunc(GL_GREATER); // Reverse-Z
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Load shader programs
+    blitTextureGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFragmentShader);
+    blitFramebufferGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFramebufferFragmentShader);
     raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
@@ -420,8 +423,10 @@ void Program::run()
         // Render
         {
             // Render to offscreen texture
-            // framebuffer.bind();
+            framebuffer.bind();
             {
+                glDepthFunc(GL_ALWAYS);
+
                 if (maxFrames <= 0 || frameCount < maxFrames)
                 {
                     frameCount++;
@@ -445,10 +450,34 @@ void Program::run()
             }
 
             // Render to screen
-            // framebuffer.unbind();
+            framebuffer.unbind();
             {
-                // Clear
+                // Clear is not needed because the copy below fully overwrites
                 // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                // Copy world color texture
+                {
+                    // Keep depth test enabled, but always make the test succeed so we always write
+                    // This allows us to copy the depth over
+                    glDepthFunc(GL_ALWAYS);
+
+                    glUseProgram(blitFramebufferGraphicsProgram);
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, framebuffer.colorTextureId);
+
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, framebuffer.depthTextureId);
+
+                    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+                    {
+                        glDrawArrays(GL_TRIANGLES, 0, 3);
+                    }
+                    glBindVertexArray(0);
+                    glUseProgram(0);
+                }
+
+                glDepthFunc(GL_GREATER); // Reverse Z-Buffer
 
                 // Render IMGUI
                 ImGui::Render();
