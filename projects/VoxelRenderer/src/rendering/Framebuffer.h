@@ -2,8 +2,9 @@
 
 #include <GL/glew.h>
 #include <glm/vec2.hpp>
+#include <src/utilities/NonCopyable.h>
 
-class Framebuffer
+class Framebuffer : public NonCopyable
 {
 private:
     glm::ivec2 size;

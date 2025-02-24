@@ -4,7 +4,7 @@
 #include <memory>
 #include <src/world/VoxelWorldData.h>
 
-class WorldGenerator
+class WorldGenerator : public NonCopyable
 {
 protected:
     VoxelWorldData data;

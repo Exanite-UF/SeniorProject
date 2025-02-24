@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <span>
+#include <src/utilities/NonCopyable.h>
 #include <stdexcept>
 
 // A templated buffer class.
@@ -13,7 +14,7 @@
 // Note that a buffer can be bound to any buffer target at any time.
 // Eg: A buffer created using GL_SHADER_STORAGE_BUFFER can also be used as an ARRAY_BUFFER or any other buffer target.
 template <typename T>
-class GraphicsBuffer
+class GraphicsBuffer : public NonCopyable
 {
 private:
     // TODO: Consider removing this and the associated bind/unbind methods

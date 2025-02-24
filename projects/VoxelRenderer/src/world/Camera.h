@@ -3,14 +3,12 @@
 #include <glm/common.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <glm/mat3x3.hpp>
 #include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <src/utilities/NonCopyable.h>
 
 #include <src/world/Transform.h>
 
-class Camera
+class Camera : NonCopyable
 {
 public:
     Transform transform;

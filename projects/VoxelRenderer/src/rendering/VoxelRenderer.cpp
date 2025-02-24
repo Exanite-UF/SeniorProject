@@ -162,7 +162,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
     isFirstRay = true;
 }
 
-void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager)
+void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
 
@@ -225,26 +225,26 @@ void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialMan
 
         for (auto& voxelWorld : worlds)
         {
-            voxelWorld.bindBuffers(4, 5);
+            voxelWorld->bindBuffers(4, 5);
             {
-                glm::ivec3 voxelSize = voxelWorld.getSize();
+                glm::ivec3 voxelSize = voxelWorld->getSize();
                 // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
                 // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
                 glUniform3i(glGetUniformLocation(fullCastProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(fullCastProgram, "mipMapTextureCount"), voxelWorld.getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "mipMapStartIndices"), voxelWorld.getOccupancyMapIndices().size() - 1, voxelWorld.getOccupancyMapIndices().data());
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "materialStartIndices"), voxelWorld.getMaterialMapIndices().size() - 1, voxelWorld.getMaterialMapIndices().data());
+                glUniform1ui(glGetUniformLocation(fullCastProgram, "mipMapTextureCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "mipMapStartIndices"), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "materialStartIndices"), voxelWorld->getMaterialMapIndices().size() - 1, voxelWorld->getMaterialMapIndices().data());
 
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.transform.getGlobalPosition()));
-                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld.transform.getGlobalRotation()));
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.transform.getGlobalScale()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
+                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
-            voxelWorld.unbindBuffers();
+            voxelWorld->unbindBuffers();
         }
     }
 
@@ -299,7 +299,7 @@ void VoxelRenderer::resetHitInfo()
     glUseProgram(0);
 }
 
-void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttentuation)
+void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
 {
     glUseProgram(resetVisualInfoProgram);
 
@@ -316,7 +316,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttentuation)
 
     glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
-    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttentuation);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttenuation);
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);

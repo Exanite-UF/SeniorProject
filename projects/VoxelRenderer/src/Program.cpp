@@ -134,19 +134,19 @@ void Program::run()
 
     // Create the scene
     Scene scene {};
-    Camera& camera = scene.camera;
+    auto& camera = scene.camera;
 
     glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
 
-    scene.worlds.reserve(2); // Issue, this cannot have reallocations.
-    scene.worlds.emplace_back(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    scene.worlds.reserve(2);
+    scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
-    VoxelWorld& voxelWorld = scene.worlds.at(0);
+    auto& voxelWorld = scene.worlds.at(0);
 
     VoxelWorldData data {};
-    data.copyFrom(voxelWorld);
+    data.copyFrom(*voxelWorld);
 
     // Create the renderer
     VoxelRenderer renderer;
@@ -276,12 +276,12 @@ void Program::run()
 
             if (input->isKeyHeld(GLFW_KEY_E))
             {
-                voxelWorld.generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
+                voxelWorld->generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F5))
             {
-                data.copyFrom(voxelWorld);
+                data.copyFrom(*voxelWorld);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F7))
@@ -296,24 +296,24 @@ void Program::run()
                     }
                 }
 
-                data.writeTo(voxelWorld);
+                data.writeTo(*voxelWorld);
             }
 
             worldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
-                worldGenerator.generate(voxelWorld);
+                worldGenerator.generate(*voxelWorld);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F9))
             {
-                data.writeTo(voxelWorld);
+                data.writeTo(*voxelWorld);
             }
 
             if (remakeNoise)
             {
                 // The noise time should not be incremented here
-                voxelWorld.generateOccupancyAndMipMapsAndMaterials(0, isRand2, fillAmount);
+                voxelWorld->generateOccupancyAndMipMapsAndMaterials(0, isRand2, fillAmount);
                 remakeNoise = false;
             }
 
@@ -413,12 +413,8 @@ void Program::run()
 
             // Sync camera position
             // TODO: This should be managed by a CameraSystem or Camera class
-            camera.transform.setGlobalPosition(cameraPosition);
-            camera.transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
-
-            // Scales and rotates the world. For testing purposes.
-            // scene.worlds[0].transform.setLocalRotation(glm::angleAxis((float)1, glm::normalize(glm::vec3(1.f, 0.f, 0.0f))));
-            // scene.worlds[0].transform.setLocalScale(glm::vec3(1, 1, 2));
+            camera->transform.setGlobalPosition(cameraPosition);
+            camera->transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
         }
 
         // Render
@@ -438,13 +434,13 @@ void Program::run()
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                     // Run voxel renderer
-                    renderer.prepareRayTraceFromCamera(camera, frameCount == 1);
+                    renderer.prepareRayTraceFromCamera(*camera, frameCount == 1);
                     for (int i = 0; i <= 2; i++)
                     {
                         renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
                     }
 
-                    renderer.display(camera, frameCount);
+                    renderer.display(*camera, frameCount);
                 }
             }
 

@@ -2,7 +2,7 @@
 
 #include <src/world/VoxelWorld.h>
 
-class VoxelWorldData
+class VoxelWorldData : public NonCopyable
 {
 private:
     glm::ivec3 size;

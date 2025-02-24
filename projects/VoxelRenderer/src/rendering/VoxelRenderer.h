@@ -1,13 +1,14 @@
 #pragma once
 
-#include "src/graphics/GraphicsBuffer.h"
+#include <src/graphics/GraphicsBuffer.h>
+#include <src/utilities/NonCopyable.h>
 #include <src/world/Camera.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
 #include <vector>
 
 // The voxel renderer needs to be able to render multiple voxel worlds
-class VoxelRenderer
+class VoxelRenderer : public NonCopyable
 {
 private:
     // Odd Quirks of Images
@@ -73,9 +74,9 @@ public:
     void prepareRayTraceFromCamera(const Camera& camera, bool resetLight = true);
 
     void resetHitInfo();
-    void resetVisualInfo(bool resetLight = true, bool resetAttentuation = true);
+    void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true);
 
-    void executeRayTrace(std::vector<VoxelWorld>& worlds, MaterialManager& materialManager);
+    void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager);
 
     void display(const Camera& camera, int frameCount);
 };

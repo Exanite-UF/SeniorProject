@@ -9,9 +9,10 @@
 
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/utilities/NonCopyable.h>
 #include <src/world/Transform.h>
 
-class VoxelWorld
+class VoxelWorld : public NonCopyable
 {
 private:
     glm::ivec3 size; // Size of the voxel world in voxels

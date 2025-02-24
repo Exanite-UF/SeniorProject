@@ -5,6 +5,7 @@
 #include <memory>
 #include <unordered_set>
 
+#include <src/utilities/NonCopyable.h>
 #include <src/windowing/Window.h>
 
 // Stores a snapshot of the input state
@@ -41,7 +42,7 @@ struct Input
 };
 
 // This manages the recording of the input state
-class InputManager
+class InputManager : public NonCopyable
 {
 private:
     // Accumulates changes to the input state, so that it always has the most recent changes to the input.
