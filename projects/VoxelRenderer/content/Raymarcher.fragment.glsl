@@ -1,4 +1,4 @@
-#version 440
+#version 460 core
 
 uniform vec2 resolution;
 layout(rgba8ui, binding = 0) uniform readonly uimage3D texture1;
