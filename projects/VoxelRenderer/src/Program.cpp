@@ -446,7 +446,7 @@ void Program::run()
                         worlds[i] = scene.worlds[i];
                     }
 
-                    renderer.executeRayTrace(worlds, MaterialManager::getInstance(), 2);
+                    renderer.executeRayTrace(worlds, MaterialManager::getInstance(), 0);
 
                     renderer.display(*camera, frameCount);
                 }

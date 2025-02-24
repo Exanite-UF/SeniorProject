@@ -871,6 +871,7 @@ void main()
         
         attempt(texelCoord);
 
+        barrier();
         //This is true if the first ray hits
         if(texelCoord.z == 0 && wasFirstRayHit && i == 0){
             //changeLightAccumulation(texelCoord, vec3(10, 0, 0));
