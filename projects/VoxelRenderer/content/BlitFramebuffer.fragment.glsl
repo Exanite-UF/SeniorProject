@@ -10,5 +10,6 @@ out vec4 out_color;
 void main()
 {
     out_color = texture(sourceColorTexture, uv);
+    //out_color = vec4(vec3(texture(sourceDepthTexture, uv).x), 1);
     gl_FragDepth = texture(sourceDepthTexture, uv).x;
 }

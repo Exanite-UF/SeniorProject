@@ -50,10 +50,7 @@ void VoxelRenderer::remakeTextures()
     rayStartBuffer2.setSize(size1D);
     rayDirectionBuffer2.setSize(size1D);
 
-    attentuationBuffer1.setSize(size1D);
-    accumulatedLightBuffer1.setSize(size1D);
-    attentuationBuffer2.setSize(size1D);
-    accumulatedLightBuffer2.setSize(size1D);
+    accumulatedLightBuffer.setSize(size1D);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -110,16 +107,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
 
     glUseProgram(prepareRayTraceFromCameraProgram);
 
-    if (currentBuffer % 2 == 0)
-    {
-        rayStartBuffer1.bind(0);
-        rayDirectionBuffer1.bind(1);
-    }
-    else
-    {
-        rayStartBuffer2.bind(0);
-        rayDirectionBuffer2.bind(1);
-    }
+    rayStartBuffer1.bind(0);
+    rayDirectionBuffer1.bind(1);
 
     // attentuationBuffer1.bind(2);
     // accumulatedLightBuffer1.bind(3);
@@ -140,16 +129,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
     }
 
-    if (currentBuffer % 2 == 0)
-    {
-        rayStartBuffer1.unbind();
-        rayDirectionBuffer1.unbind();
-    }
-    else
-    {
-        rayStartBuffer2.unbind();
-        rayDirectionBuffer2.unbind();
-    }
+    rayStartBuffer1.unbind();
+    rayDirectionBuffer1.unbind();
 
     // attentuationBuffer1.unbind();
     // accumulatedLightBuffer1.unbind();
@@ -162,53 +143,31 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
     isFirstRay = true;
 }
 
-void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager)
+void VoxelRenderer::executeRayTrace(std::array<std::shared_ptr<VoxelWorld>, 8>& worlds, MaterialManager& materialManager, int bounces)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
-
+    
     glUseProgram(fullCastProgram);
+    outputBuffer = bounces + 1;//Used so that display will display from the correct buffer
 
     // bind rayStart info
-    if (currentBuffer % 2 == 0)
-    {
-        rayStartBuffer1.bind(0); // Input
-        rayDirectionBuffer1.bind(1); // Input
-        rayStartBuffer2.bind(2); // Output
-        rayDirectionBuffer2.bind(3); // Output
-    }
-    else
-    {
-        rayStartBuffer1.bind(2); // Output
-        rayDirectionBuffer1.bind(3); // Output
-        rayStartBuffer2.bind(0); // Input
-        rayDirectionBuffer2.bind(1); // Input
-    }
+    rayStartBuffer1.bind(0);
+    rayDirectionBuffer1.bind(1);
+    rayStartBuffer2.bind(2);
+    rayDirectionBuffer2.bind(3);
 
     // Occupancy Map = 4
     // Material Map = 5
 
-    rayHitMiscBuffer.bind(6);
+    rayHitMiscBuffer.bind(4);
 
-    materialManager.getMaterialMapBuffer().bind(7); // This is a mapping from the material index to the material id
-    materialManager.getMaterialDataBuffer().bind(8); // This binds the base data for each material
+    materialManager.getMaterialMapBuffer().bind(5); // This is a mapping from the material index to the material id
+    materialManager.getMaterialDataBuffer().bind(6); // This binds the base data for each material
 
-    if (currentBuffer % 2 == 0)
-    {
-        attentuationBuffer1.bind(9); // Input
-        accumulatedLightBuffer1.bind(10); // Input
-        attentuationBuffer2.bind(11); // Output
-        accumulatedLightBuffer2.bind(12); // Output
-    }
-    else
-    {
-        attentuationBuffer1.bind(11); // Output
-        accumulatedLightBuffer1.bind(12); // Output
-        attentuationBuffer2.bind(9); // Input
-        accumulatedLightBuffer2.bind(10); // Input
-    }
+    accumulatedLightBuffer.bind(10); // Input
 
-    normalBuffer.bind(13);
-    positionBuffer.bind(14);
+    normalBuffer.bind(11);
+    positionBuffer.bind(12);
 
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -217,32 +176,58 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
         glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), size.x, size.y, raysPerPixel);
 
-        glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
+        glUniform1i(glGetUniformLocation(fullCastProgram, "bounces"), bounces);
 
         glUniform1ui(glGetUniformLocation(fullCastProgram, "materialMapSize"), Constants::VoxelWorld::materialMapCount);
         glUniform1ui(glGetUniformLocation(fullCastProgram, "materialCount"), Constants::VoxelWorld::materialCount);
         glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
-        for (auto& voxelWorld : worlds)
+        for (int i = 0; i < 1; i++)
         {
-            voxelWorld->bindBuffers(4, 5);
-            {
-                glm::ivec3 voxelSize = voxelWorld->getSize();
-                // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
-                // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
+            std::shared_ptr<VoxelWorld>& voxelWorld = worlds[i];
+            
+            std::string temp = "isVoxelWorldLoaded" + std::to_string(i + 1);
+            if(voxelWorld == nullptr){
+                
+                glUniform1i(glGetUniformLocation(fullCastProgram, temp.c_str()), false);
+                continue;
+            }
 
-                glUniform3i(glGetUniformLocation(fullCastProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(fullCastProgram, "mipMapTextureCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "mipMapStartIndices"), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "materialStartIndices"), voxelWorld->getMaterialMapIndices().size() - 1, voxelWorld->getMaterialMapIndices().data());
+            voxelWorld->bindBuffers(13 + i, 21 + i);
 
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
-                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
 
-                glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+            glm::ivec3 voxelSize = voxelWorld->getSize();
+            // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
+            // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
+            
+            glUniform1i(glGetUniformLocation(fullCastProgram, temp.c_str()), true);
 
-                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+            temp = "voxelResolution" + std::to_string(i + 1);
+            glUniform3i(glGetUniformLocation(fullCastProgram, temp.c_str()), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
+            temp = "mipMapTextureCount" + std::to_string(i + 1);
+            glUniform1ui(glGetUniformLocation(fullCastProgram, temp.c_str()), voxelWorld->getOccupancyMapIndices().size() - 2);
+            temp = "mipMapStartIndices" + std::to_string(i + 1);
+            glUniform1uiv(glGetUniformLocation(fullCastProgram, temp.c_str()), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
+            temp = "materialStartIndices" + std::to_string(i + 1);
+            glUniform1uiv(glGetUniformLocation(fullCastProgram, temp.c_str()), voxelWorld->getMaterialMapIndices().size() - 1, voxelWorld->getMaterialMapIndices().data());
+
+            temp = "voxelWorldPosition" + std::to_string(i + 1);
+            glUniform3fv(glGetUniformLocation(fullCastProgram, temp.c_str()), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
+            temp = "voxelWorldRotation" + std::to_string(i + 1);
+            glUniform4fv(glGetUniformLocation(fullCastProgram, temp.c_str()), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
+            temp = "voxelWorldScale" + std::to_string(i + 1);
+            glUniform3fv(glGetUniformLocation(fullCastProgram, temp.c_str()), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
+        }
+
+        {
+            glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        }
+
+        for(auto& voxelWorld : worlds){
+            if(voxelWorld == nullptr){
+                continue;
             }
             voxelWorld->unbindBuffers();
         }
@@ -259,17 +244,13 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
     materialManager.getMaterialMapBuffer().unbind();
     materialManager.getMaterialDataBuffer().unbind();
 
-    attentuationBuffer1.unbind();
-    accumulatedLightBuffer1.unbind();
-    attentuationBuffer2.unbind();
-    accumulatedLightBuffer2.unbind();
+    accumulatedLightBuffer.unbind();
+
 
     normalBuffer.unbind();
     positionBuffer.unbind();
 
     glUseProgram(0);
-
-    currentBuffer++;
 
     isFirstRay = false;
 }
@@ -299,14 +280,11 @@ void VoxelRenderer::resetHitInfo()
     glUseProgram(0);
 }
 
-void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
+void VoxelRenderer::resetVisualInfo(bool resetLight)
 {
     glUseProgram(resetVisualInfoProgram);
 
-    attentuationBuffer1.bind(0);
-    accumulatedLightBuffer1.bind(1);
-    attentuationBuffer2.bind(2);
-    accumulatedLightBuffer2.bind(3);
+    accumulatedLightBuffer.bind(0);
     normalBuffer.bind(4);
     positionBuffer.bind(5);
 
@@ -316,7 +294,6 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
 
     glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
-    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttenuation);
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -325,10 +302,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-    attentuationBuffer1.unbind();
-    accumulatedLightBuffer1.unbind();
-    attentuationBuffer2.unbind();
-    accumulatedLightBuffer2.unbind();
+    accumulatedLightBuffer.unbind();
     normalBuffer.unbind();
     positionBuffer.unbind();
 
@@ -339,14 +313,7 @@ void VoxelRenderer::display(const Camera& camera, int frameCount)
 {
     glUseProgram(displayToWindowProgram);
 
-    if (currentBuffer % 2 == 0)
-    {
-        accumulatedLightBuffer1.bind(0);
-    }
-    else
-    {
-        accumulatedLightBuffer2.bind(0);
-    }
+    accumulatedLightBuffer.bind(0);
 
     normalBuffer.bind(1);
     positionBuffer.bind(2);
@@ -363,14 +330,7 @@ void VoxelRenderer::display(const Camera& camera, int frameCount)
     }
     glBindVertexArray(0);
 
-    if (currentBuffer % 2 == 0)
-    {
-        accumulatedLightBuffer1.unbind();
-    }
-    else
-    {
-        accumulatedLightBuffer2.unbind();
-    }
+    accumulatedLightBuffer.unbind();
 
     normalBuffer.unbind();
     positionBuffer.unbind();

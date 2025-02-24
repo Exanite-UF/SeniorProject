@@ -3,6 +3,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 ShaderManager* ShaderManager::instance = nullptr;
 
@@ -80,6 +81,8 @@ GLuint ShaderManager::getShaderModule(const std::string_view& shaderPath, GLenum
         message.resize(messageLength);
 
         glGetShaderInfoLog(shader, message.size(), nullptr, message.data());
+
+        std::cout << message.data() << std::endl;
 
         throw std::runtime_error("Failed to compile shader (" + std::string(shaderPath) + "): " + message);
     }
@@ -171,6 +174,7 @@ GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPat
 
             glGetProgramInfoLog(program, message.size(), nullptr, message.data());
 
+            std::cout << message.data() << std::endl;
             throw std::runtime_error("Failed to link shader program: " + message);
         }
     }

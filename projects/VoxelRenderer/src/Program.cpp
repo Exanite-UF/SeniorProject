@@ -429,6 +429,7 @@ void Program::run()
 
                 if (maxFrames <= 0 || frameCount < maxFrames)
                 {
+                    frameCount = 0;
                     frameCount++;
 
                     // Resize resources
@@ -440,10 +441,12 @@ void Program::run()
 
                     // Run voxel renderer
                     renderer.prepareRayTraceFromCamera(*camera, frameCount == 1);
-                    for (int i = 0; i <= 2; i++)
-                    {
-                        renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
+                    std::array<std::shared_ptr<VoxelWorld>, 8> worlds;
+                    for(int i = 0; i < 8 && i < scene.worlds.size(); i++){
+                        worlds[i] = scene.worlds[i];
                     }
+
+                    renderer.executeRayTrace(worlds, MaterialManager::getInstance(), 2);
 
                     renderer.display(*camera, frameCount);
                 }

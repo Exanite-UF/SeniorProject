@@ -92,7 +92,11 @@ void main()
 
         vec3 colorBase = light;
         // vec3 colorBase = -vec3(normal.x, normal.y, normal.z) * frameCount;
-        // vec3 colorBase = 0.001 * vec3(position.x, position.y, position.z) * frameCount;
+        //vec3 colorBase = 0.001 * vec3(position.x) * frameCount;
+
+        //if(colorBase.x > 0){
+        //    colorBase = vec3(frameCount);
+        //}
 
         color += colorBase;
     }

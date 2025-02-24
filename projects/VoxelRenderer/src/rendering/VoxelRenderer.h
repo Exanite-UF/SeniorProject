@@ -6,6 +6,7 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
 #include <vector>
+#include <array>
 
 // The voxel renderer needs to be able to render multiple voxel worlds
 class VoxelRenderer : public NonCopyable
@@ -32,17 +33,14 @@ private:
     // These buffers are used to store the result of a ray trace step
     GraphicsBuffer<float> rayHitMiscBuffer; //(wasHit, depth)
 
-    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer; //(r, g, b)
 
     GraphicsBuffer<glm::vec3> normalBuffer;
     GraphicsBuffer<glm::vec3> positionBuffer;
 
-    int currentBuffer = 0;
-
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
+
+    int outputBuffer = 0;
 
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
@@ -74,9 +72,9 @@ public:
     void prepareRayTraceFromCamera(const Camera& camera, bool resetLight = true);
 
     void resetHitInfo();
-    void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true);
+    void resetVisualInfo(bool resetLight = true);
 
-    void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager);
+    void executeRayTrace(std::array<std::shared_ptr<VoxelWorld>, 8>& worlds, MaterialManager& materialManager, int bounces);
 
     void display(const Camera& camera, int frameCount);
 };
