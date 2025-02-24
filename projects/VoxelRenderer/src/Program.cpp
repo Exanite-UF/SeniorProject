@@ -29,6 +29,8 @@
 #include <src/Content.h>
 #include <src/Program.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/procgen/OctaveNoiseWorldGenerator.h>
+#include <src/procgen/WorldGenerator.h>
 #include <src/rendering/Framebuffer.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/Assert.h>
@@ -134,8 +136,10 @@ void Program::run()
     Scene scene {};
     Camera& camera = scene.camera;
 
+    glm::ivec3 worldSize = glm::ivec3(128, 128, 256);
+
     scene.worlds.reserve(2); // Issue, this cannot have reallocations.
-    scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
+    scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram, worldSize);
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
@@ -149,7 +153,7 @@ void Program::run()
     renderer.setRaysPerPixel(1);
 
     // Main render loop
-    glm::vec3 cameraPosition(0);
+    glm::vec3 cameraPosition(0, 0, worldSize.z / 1.75f);
     glm::vec2 cameraRotation(0);
     float moveSpeedExponent = 50;
     float mouseSensitivity = 0.002;
@@ -164,10 +168,15 @@ void Program::run()
     float currentFPS = 0;
     float averagedDeltaTime = 0;
 
+    // Temporal accumulation
     int frameCount = 0;
     int maxFrames = 0;
 
+    // Off-screen rendering
     Framebuffer framebuffer(window->size);
+
+    // Procedural Generation
+    OctaveNoiseWorldGenerator worldGenerator(worldSize);
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -275,7 +284,7 @@ void Program::run()
                 data.copyFrom(voxelWorld);
             }
 
-            if (input->isKeyPressed(GLFW_KEY_F8))
+            if (input->isKeyPressed(GLFW_KEY_F7))
             {
                 data.clearOccupancy();
 
@@ -288,6 +297,12 @@ void Program::run()
                 }
 
                 data.writeTo(voxelWorld);
+            }
+
+            worldGenerator.showDebugMenu();
+            if (input->isKeyPressed(GLFW_KEY_F8))
+            {
+                worldGenerator.generate(voxelWorld);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F9))
