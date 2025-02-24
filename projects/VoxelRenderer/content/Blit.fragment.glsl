@@ -1,6 +1,6 @@
 #version 460 core
 
-uniform sampler2D sourceTexture;
+layout(binding = 0) uniform sampler2D sourceTexture;
 
 in vec2 uv;
 
