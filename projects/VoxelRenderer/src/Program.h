@@ -39,6 +39,7 @@ public:
     bool remakeNoise = false;
 
     GLuint blitTextureGraphicsProgram;
+    GLuint blitFramebufferGraphicsProgram;
     GLuint raymarcherGraphicsProgram;
     GLuint makeNoiseComputeProgram;
     GLuint makeMipMapComputeProgram;
