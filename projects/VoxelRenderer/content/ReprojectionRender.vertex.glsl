@@ -30,6 +30,6 @@ void main()
     pos.y *= resolution.x / float(resolution.y);//Correct for aspect ratio
 
     uv = vec2(aPos.xy);
-    gl_Position = vec4(pos, pos.z);
+    gl_Position = vec4(pos.xy, 1, pos.z);
     //gl_Position = vec4((uv - 0.5) * 2, 0, 1);
 }

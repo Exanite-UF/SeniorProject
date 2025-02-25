@@ -57,6 +57,8 @@ int framesThisCycle1 = 0;
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
 
+std::mutex mtx;
+
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
@@ -139,22 +141,31 @@ void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std:
     //mtx.lock();
     renderer.prepareRayTraceFromCamera(*camera);
     renderer.executePathTrace(scene.worlds, MaterialManager::getInstance(), 2);
-    
+
     renderer.asynchronousDisplay(*camera, reprojection);
-    //mtx.unlock();
+
     
 }
 
 
 void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection, GLFWwindow* context, bool& isDone){
     glfwMakeContextCurrent(context);
+    auto start = std::chrono::high_resolution_clock::now();
     while(!isDone){
-        
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
         glFinish();
+        //glfwSwapBuffers(context);
         framesThisCycle1++;
+
         reprojection.swapBuffers();
+
+        
+        //auto end = std::chrono::high_resolution_clock::now();
+        //while(std::chrono::duration<double>(end - start).count() < 1){
+        //    end = std::chrono::high_resolution_clock::now();
+        //}
+        //start = end;
     }
 }
 
@@ -175,7 +186,8 @@ void Program::run()
     glEnable(GL_DEPTH_TEST);
     glClearDepth(0); // Reverse-Z
     glDepthFunc(GL_GREATER); // Reverse-Z
-    glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
+    
+    //glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Load shader programs
     blitTextureGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFragmentShader);
@@ -209,7 +221,7 @@ void Program::run()
 
     // Create the renderer
     VoxelRenderer renderer;
-    renderer.setRaysPerPixel(2);
+    renderer.setRaysPerPixel(1);
 
     
 
@@ -300,6 +312,7 @@ void Program::run()
 
         // Update
         // TODO: This code should be moved into individual systems
+        
         {
             //mtx.lock();
             if (!inputManager->cursorEnteredThisFrame)
@@ -497,8 +510,7 @@ void Program::run()
             // Render to offscreen texture
                        
             //renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-            {
-                //mtx.lock();
+            {                
                 renderResolution = window->size;
                 reprojection.setSize(renderResolution);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

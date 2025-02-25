@@ -204,7 +204,8 @@ void AsynchronousReprojection::render(const Camera& camera)
     {
         //glBindBuffer(GL_ARRAY_BUFFER, VBO);
         //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        
+        //glPointSize(3);//I don't know why the points need to be this large
+        //glDrawArrays(GL_POINTS, 0, vertices.size());
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
         //glBindBuffer(GL_ARRAY_BUFFER, 0);
         //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

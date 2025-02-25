@@ -15,6 +15,8 @@ layout(std430, binding = 2) buffer FirstHitPosition
     float firstHitPosition[];
 };
 
+
+
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec4 cameraRotation;
 uniform vec3 cameraPosition;
