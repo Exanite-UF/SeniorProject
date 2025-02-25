@@ -515,6 +515,7 @@ void Program::run()
                 reprojection.setSize(renderResolution);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glDepthFunc(GL_GREATER);
+                
                 reprojection.render(*camera);
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
