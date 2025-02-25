@@ -6,6 +6,7 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
 #include <vector>
+#include <thread>
 
 #include "AsynchronousReprojection.h"
 
@@ -62,6 +63,8 @@ private:
     bool isFirstRay = false;
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
 
+    
+
     // This makes the images using the size and rays per pixel
     // It remakes them if textures are already bound
     void remakeTextures();
@@ -80,6 +83,8 @@ public:
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true);
 
     void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager);
+
+    void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager, int bounces);
 
     void display(const Camera& camera, int frameCount);
 

@@ -244,6 +244,7 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[2 + index] = value.z;
 }
 
+
 struct RayHit
 {
     bool wasHit;
@@ -712,11 +713,8 @@ void attempt(ivec3 texelCoord)
 
 void main()
 {
-    for (int i = 0; i < 1; i++)
-    {
-        ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-        attempt(texelCoord);
-        setHitWasHit(texelCoord, false);
-        setHitDist(texelCoord, 1.0 / 0.0);
-    }
+    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
+    attempt(texelCoord);
+    setHitWasHit(texelCoord, false);
+    setHitDist(texelCoord, 1.0 / 0.0);
 }

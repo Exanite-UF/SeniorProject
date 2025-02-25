@@ -56,14 +56,13 @@ vec3 hueToRGB(float hue)
     return clamp(vec3(r, g, b), 0.0, 1.0);
 }
 
-
+in vec2 uv;
 layout (location = 0) out vec4 fragColor;
 layout (location = 1) out vec3 posBuffer;
 
 void main()
 {
     ivec3 size = resolution; // imageSize(hitPosition);
-
     vec3 color = vec3(0);
 
     vec3 normal = getNormal(ivec3(gl_FragCoord.xy, 0));
@@ -84,7 +83,7 @@ void main()
     //+y is to the left of the camera
     //+z is above the camera
 
-    position = position - cameraPosition;
+    //position = position - cameraPosition;
 
     for (int i = 0; i < size.z; i++)
     {
@@ -100,7 +99,7 @@ void main()
     }
     color /= size.z;
 
-
     fragColor = vec4(color, 1);
     posBuffer = position;
+   
 }

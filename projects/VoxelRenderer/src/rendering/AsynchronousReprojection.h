@@ -13,9 +13,14 @@
 class AsynchronousReprojection{
  private:
     glm::ivec2 size;
-    GLuint framebufferId;
-    GLuint colorTextureId;
-    GLuint positionTextureId;
+    GLuint colorTextureId1;
+    GLuint positionTextureId1;
+
+    GLuint colorTextureId2;
+    GLuint positionTextureId2;
+
+    int currentFrameBuffer = 0;//This is the framebuffer that the VoxelRenderer renders to
+
 
     glm::quat lastCameraRotation;
     glm::vec3 lastCameraPosition;
@@ -34,7 +39,8 @@ class AsynchronousReprojection{
  public:
     AsynchronousReprojection(glm::ivec2 size);
 
-    GLuint getFrameBufferId() const;
+    GLuint getColorTexture() const;
+    GLuint getPositionTexture() const;
 
     glm::ivec2 getSize();
     void setSize(glm::ivec2 size);
@@ -42,4 +48,6 @@ class AsynchronousReprojection{
     void render(const Camera& camera);
 
     void recordCameraTransform(const Camera& camera);
+
+    void swapBuffers();
 };

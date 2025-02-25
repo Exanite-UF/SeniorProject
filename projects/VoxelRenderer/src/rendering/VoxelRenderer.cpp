@@ -80,6 +80,7 @@ VoxelRenderer::VoxelRenderer()
     asynchronousDisplayProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::renderAsynchronousFragmentShader);
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
+
 }
 
 void VoxelRenderer::setResolution(glm::ivec2 size)
@@ -169,7 +170,6 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
 void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
-
     glUseProgram(fullCastProgram);
 
     // bind rayStart info
@@ -245,12 +245,16 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+                
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+                
             }
             voxelWorld->unbindBuffers();
         }
-    }
+    }    
+
 
     // unbind rayStart info
     rayStartBuffer1.unbind();
@@ -276,6 +280,14 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
     currentBuffer++;
 
     isFirstRay = false;
+}
+
+void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager, int bounces)
+{
+    for (int i = 0; i <= bounces; i++)
+    {
+        executeRayTrace(worlds, MaterialManager::getInstance());
+    }
 }
 
 void VoxelRenderer::resetHitInfo()
@@ -403,8 +415,15 @@ void VoxelRenderer::asynchronousDisplay(const Camera& camera, AsynchronousReproj
     glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
     glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
 
+
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
-    glBindFramebuffer(GL_FRAMEBUFFER, reprojection.getFrameBufferId());
+
+    GLuint framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, reprojection.getColorTexture(), 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, reprojection.getPositionTexture(), 0);
+    glDepthFunc(GL_ALWAYS);
     {
         const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
         glDrawBuffers(2, buffers);
@@ -412,6 +431,7 @@ void VoxelRenderer::asynchronousDisplay(const Camera& camera, AsynchronousReproj
     }
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &framebuffer);
 
     if (currentBuffer % 2 == 0)
     {

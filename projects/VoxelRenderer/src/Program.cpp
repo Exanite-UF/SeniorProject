@@ -25,6 +25,9 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <thread>
+#include <mutex>
 
 #include <src/Content.h>
 #include <src/Program.h>
@@ -46,7 +49,13 @@
 #include <src/world/VoxelWorldData.h>
 
 
+
+
 #include <src/rendering/AsynchronousReprojection.h>
+
+int framesThisCycle1 = 0;
+float currentFPS1 = 0;
+float averagedDeltaTime1 = 0;
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -71,8 +80,19 @@ Program::Program()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    window = std::make_shared<Window>();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // Enable debug messages
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+    offscreen_context = glfwCreateWindow(1024, 1024, "", NULL, NULL);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    window = std::make_shared<Window>(offscreen_context);
     inputManager = std::make_shared<InputManager>(window);
+
+    
 
     // Init IMGUI
     IMGUI_CHECKVERSION();
@@ -103,6 +123,39 @@ Program::~Program()
 
     // Shutdown GLFW
     glfwTerminate();
+}
+
+
+void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection){
+    glDepthFunc(GL_ALWAYS);
+    // Resize resources
+    renderer.setResolution(renderResolution);
+    //reprojection.setSize(renderResolution);
+
+    // Clear
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Run voxel renderer
+    //mtx.lock();
+    renderer.prepareRayTraceFromCamera(*camera);
+    renderer.executePathTrace(scene.worlds, MaterialManager::getInstance(), 2);
+    
+    renderer.asynchronousDisplay(*camera, reprojection);
+    //mtx.unlock();
+    
+}
+
+
+void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection, GLFWwindow* context, bool& isDone){
+    glfwMakeContextCurrent(context);
+    while(!isDone){
+        
+        glViewport(0, 0, renderResolution.x, renderResolution.y);
+        renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
+        glFinish();
+        framesThisCycle1++;
+        reprojection.swapBuffers();
+    }
 }
 
 void Program::run()
@@ -156,7 +209,7 @@ void Program::run()
 
     // Create the renderer
     VoxelRenderer renderer;
-    renderer.setRaysPerPixel(1);
+    renderer.setRaysPerPixel(2);
 
     
 
@@ -176,6 +229,8 @@ void Program::run()
     float currentFPS = 0;
     float averagedDeltaTime = 0;
 
+    
+
     // Temporal accumulation
     int frameCount = 0;
     int maxFrames = 0;
@@ -186,8 +241,22 @@ void Program::run()
     // Procedural Generation
     OctaveNoiseWorldGenerator worldGenerator(worldSize);
 
+
+    bool shouldRenderPathTrace = true;
+
     // IMGUI Menu
     bool showMenuGUI = false;
+
+
+    
+
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    bool isDone = false;
+    glm::ivec2 renderResolution = window->size;
+    std::cout << offscreen_context << std::endl;
+    std::thread pathTraceThread;
+    pathTraceThread = std::thread(pathTraceLoop, std::ref(renderer), std::ref(renderResolution), camera, std::ref(scene), std::ref(reprojection), offscreen_context, std::ref(isDone));
+    
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
@@ -205,11 +274,16 @@ void Program::run()
             currentFPS = framesThisCycle / fpsCycleTimer;
             averagedDeltaTime = fpsCycleTimer / framesThisCycle;
 
+            currentFPS1 = framesThisCycle1 / fpsCycleTimer;
+            averagedDeltaTime1 = fpsCycleTimer / framesThisCycle1;
+
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
-            Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)");
+            auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
+            Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
 
             fpsCycleTimer = 0;
             framesThisCycle = 0;
+            framesThisCycle1 = 0;
         }
 
         // Update IMGUI
@@ -222,9 +296,12 @@ void Program::run()
         window->update();
         inputManager->update();
 
+        
+
         // Update
         // TODO: This code should be moved into individual systems
         {
+            //mtx.lock();
             if (!inputManager->cursorEnteredThisFrame)
             {
                 auto mouseDelta = input->getMouseDelta();
@@ -240,7 +317,7 @@ void Program::run()
 
             auto right = Camera::getRight(cameraRotation.y, cameraRotation.x);
             auto forward = Camera::getForward(cameraRotation.y, cameraRotation.x);
-
+            
             if (input->isKeyHeld(GLFW_KEY_A))
             {
                 cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
@@ -271,10 +348,13 @@ void Program::run()
                 cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
             }
 
+            //mtx.unlock();
+
             if (input->isKeyHeld(GLFW_KEY_E))
             {
                 voxelWorld->generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
             }
+
 
             if (input->isKeyPressed(GLFW_KEY_F5))
             {
@@ -307,6 +387,7 @@ void Program::run()
                 data.writeTo(*voxelWorld);
             }
 
+            
             if (remakeNoise)
             {
                 // The noise time should not be incremented here
@@ -414,85 +495,28 @@ void Program::run()
         // Render
         {
             // Render to offscreen texture
-            
-            
-            if(frameCount % 100 == 0){
-                glDepthFunc(GL_ALWAYS);
-
-                if (maxFrames <= 0 || frameCount < maxFrames)
-                {
-                    // Resize resources
-                    renderer.setResolution(window->size);
-                    //framebuffer.setSize(window->size);
-                    reprojection.setSize(window->size);
-
-                    // Clear
-                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                    // Run voxel renderer
-                    renderer.prepareRayTraceFromCamera(*camera);
-                    for (int i = 0; i <= 2; i++)
-                    {
-                        renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
-                    }
-
-                    //renderer.display(*camera, frameCount);
-                    renderer.asynchronousDisplay(*camera, reprojection);
-                }
-            }
-            
-
+                       
+            //renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
             {
-                glDepthFunc(GL_ALWAYS);
+                //mtx.lock();
+                renderResolution = window->size;
+                reprojection.setSize(renderResolution);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glDepthFunc(GL_GREATER);
                 reprojection.render(*camera);
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
                 frameCount++;
+                //mtx.unlock();
             }
 
 
-            // Render to screen
-            
-            /*
-            {
-                // Clear is not needed because the copy below fully overwrites
-                // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                // Copy world color texture
-                {
-                    // Keep depth test enabled, but always make the test succeed so we always write
-                    // This allows us to copy the depth over
-                    glDepthFunc(GL_ALWAYS);
-
-                    glUseProgram(blitFramebufferGraphicsProgram);
-
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, framebuffer.colorTextureId);
-
-                    glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_2D, framebuffer.depthTextureId);
-
-                    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
-                    {
-                        glDrawArrays(GL_TRIANGLES, 0, 3);
-                    }
-                    glBindVertexArray(0);
-                    glUseProgram(0);
-                }
-
-                glDepthFunc(GL_GREATER); // Reverse Z-Buffer
-
-                // Render IMGUI
-                ImGui::Render();
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            }
-            */
         }
-
         // Present
         glfwSwapBuffers(window->glfwWindowHandle);
     }
+    isDone = true;
+    pathTraceThread.join();
 }
 
 void Program::checkForContentFolder()

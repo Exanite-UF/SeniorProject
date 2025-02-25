@@ -65,15 +65,26 @@ AsynchronousReprojection::AsynchronousReprojection(glm::ivec2 size)
     glGenBuffers(1, &VBO);  
     glGenBuffers(1, &EBO);
 
-
-
-    glGenFramebuffers(1, &framebufferId);
     setSize(size);
 }
 
-GLuint AsynchronousReprojection::getFrameBufferId() const
+GLuint AsynchronousReprojection::getColorTexture() const
 {
-    return framebufferId;
+    if(currentFrameBuffer % 2 == 0){
+        return colorTextureId1;
+    }else{
+        return colorTextureId2;
+    }
+    
+}
+
+GLuint AsynchronousReprojection::getPositionTexture() const
+{
+    if(currentFrameBuffer % 2 == 0){
+        return positionTextureId1;
+    }else{
+        return positionTextureId2;
+    }
 }
 
 glm::ivec2 AsynchronousReprojection::getSize()
@@ -88,13 +99,16 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
         return;
     }
 
+    glFinish();
+
     this->size = size;
 
     generateMesh();
 
     // Create color texture
-    glGenTextures(1, &colorTextureId);
-    glBindTexture(GL_TEXTURE_2D, colorTextureId);
+    glDeleteTextures(1, &colorTextureId1);
+    glGenTextures(1, &colorTextureId1);
+    glBindTexture(GL_TEXTURE_2D, colorTextureId1);
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -106,8 +120,9 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Create position texture
-    glGenTextures(1, &positionTextureId);
-    glBindTexture(GL_TEXTURE_2D, positionTextureId);
+    glDeleteTextures(1, &positionTextureId1);
+    glGenTextures(1, &positionTextureId1);
+    glBindTexture(GL_TEXTURE_2D, positionTextureId1);
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -121,26 +136,61 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Bind textures to framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, framebufferId);
+
+    // Create color texture
+    glDeleteTextures(1, &colorTextureId2);
+    glGenTextures(1, &colorTextureId2);
+    glBindTexture(GL_TEXTURE_2D, colorTextureId2);
     {
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTextureId, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, positionTextureId, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA, GL_FLOAT, nullptr);
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Create position texture
+    glDeleteTextures(1, &positionTextureId2);
+    glGenTextures(1, &positionTextureId2);
+    glBindTexture(GL_TEXTURE_2D, positionTextureId2);
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, size.x, size.y, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void AsynchronousReprojection::render(const Camera& camera)
 {
     glUseProgram(renderProgram);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, colorTextureId);
+    //std::cout << currentFrameBuffer << std::endl;
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, positionTextureId);
+    if(currentFrameBuffer % 2 == 0){
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorTextureId2);
+    
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, positionTextureId2);
+    }else{
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorTextureId1);
+    
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, positionTextureId1);
+    }
+    
 
-    glm::vec3 deltaPos = camera.transform.getGlobalPosition() - lastCameraPosition;
+    glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
     glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
 
     //std::cout << deltaPos.x << " " << deltaPos.y << " " << deltaPos.z << std::endl;
@@ -154,12 +204,18 @@ void AsynchronousReprojection::render(const Camera& camera)
     {
         //glBindBuffer(GL_ARRAY_BUFFER, VBO);
         //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glClear(GL_COLOR_BUFFER_BIT);
+        
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
         //glBindBuffer(GL_ARRAY_BUFFER, 0);
         //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     glBindVertexArray(0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glUseProgram(0);
 }
@@ -168,4 +224,9 @@ void AsynchronousReprojection::recordCameraTransform(const Camera& camera)
 {
     lastCameraPosition = camera.transform.getGlobalPosition();
     lastCameraRotation = camera.transform.getGlobalRotation();
+}
+
+void AsynchronousReprojection::swapBuffers()
+{
+    currentFrameBuffer++;
 }
