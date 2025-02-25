@@ -7,6 +7,8 @@
 #include <src/world/VoxelWorld.h>
 #include <vector>
 
+#include "AsynchronousReprojection.h"
+
 // The voxel renderer needs to be able to render multiple voxel worlds
 class VoxelRenderer : public NonCopyable
 {
@@ -52,6 +54,7 @@ private:
     static GLuint BRDFProgram;
     static GLuint resetVisualInfoProgram;
     static GLuint fullCastProgram;
+    static GLuint asynchronousDisplayProgram;
 
     glm::ivec2 size;
     int raysPerPixel = 0;
@@ -79,4 +82,6 @@ public:
     void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager);
 
     void display(const Camera& camera, int frameCount);
+
+    void asynchronousDisplay(const Camera& camera, AsynchronousReprojection& reprojection);
 };

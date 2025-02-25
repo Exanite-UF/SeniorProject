@@ -45,6 +45,9 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 
+
+#include <src/rendering/AsynchronousReprojection.h>
+
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
@@ -155,6 +158,8 @@ void Program::run()
     VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
 
+    
+
     // Main render loop
     glm::vec3 cameraPosition(0, 0, worldSize.z / 1.75f);
     glm::vec2 cameraRotation(0);
@@ -175,8 +180,8 @@ void Program::run()
     int frameCount = 0;
     int maxFrames = 0;
 
-    // Off-screen rendering
-    Framebuffer framebuffer(window->size);
+
+    AsynchronousReprojection reprojection(window->size);
 
     // Procedural Generation
     OctaveNoiseWorldGenerator worldGenerator(worldSize);
@@ -227,11 +232,6 @@ void Program::run()
                 cameraRotation.y -= mouseDelta.x * mouseSensitivity;
                 cameraRotation.x += mouseDelta.y * mouseSensitivity;
                 cameraRotation.x = std::min(std::max(cameraRotation.x, -glm::pi<float>() / 2), glm::pi<float>() / 2);
-
-                if (glm::length(mouseDelta) > 0)
-                {
-                    frameCount = 0;
-                }
             }
             else
             {
@@ -244,37 +244,31 @@ void Program::run()
             if (input->isKeyHeld(GLFW_KEY_A))
             {
                 cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
-                frameCount = 0;
             }
 
             if (input->isKeyHeld(GLFW_KEY_D))
             {
                 cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
-                frameCount = 0;
             }
 
             if (input->isKeyHeld(GLFW_KEY_W))
             {
                 cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
-                frameCount = 0;
             }
 
             if (input->isKeyHeld(GLFW_KEY_S))
             {
                 cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
-                frameCount = 0;
             }
 
             if (input->isKeyHeld(GLFW_KEY_SPACE))
             {
                 cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
-                frameCount = 0;
             }
 
             if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
             {
                 cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
-                frameCount = 0;
             }
 
             if (input->isKeyHeld(GLFW_KEY_E))
@@ -326,12 +320,10 @@ void Program::run()
                 if (monitor == NULL)
                 {
                     window->setFullscreen();
-                    frameCount = 0;
                 }
                 else
                 {
                     window->setWindowed();
-                    frameCount = 0;
                 }
             }
 
@@ -368,7 +360,6 @@ void Program::run()
                 fillAmount -= input->getMouseScroll().y * 0.01;
                 fillAmount = std::clamp(fillAmount, 0.f, 1.f);
                 remakeNoise = true;
-                frameCount = 0;
             }
             else
             {
@@ -423,34 +414,47 @@ void Program::run()
         // Render
         {
             // Render to offscreen texture
-            framebuffer.bind();
-            {
+            
+            
+            if(frameCount % 100 == 0){
                 glDepthFunc(GL_ALWAYS);
 
                 if (maxFrames <= 0 || frameCount < maxFrames)
                 {
-                    frameCount++;
-
                     // Resize resources
                     renderer.setResolution(window->size);
-                    framebuffer.setSize(window->size);
+                    //framebuffer.setSize(window->size);
+                    reprojection.setSize(window->size);
 
                     // Clear
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                     // Run voxel renderer
-                    renderer.prepareRayTraceFromCamera(*camera, frameCount == 1);
+                    renderer.prepareRayTraceFromCamera(*camera);
                     for (int i = 0; i <= 2; i++)
                     {
                         renderer.executeRayTrace(scene.worlds, MaterialManager::getInstance());
                     }
 
-                    renderer.display(*camera, frameCount);
+                    //renderer.display(*camera, frameCount);
+                    renderer.asynchronousDisplay(*camera, reprojection);
                 }
             }
+            
+
+            {
+                glDepthFunc(GL_ALWAYS);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                reprojection.render(*camera);
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                frameCount++;
+            }
+
 
             // Render to screen
-            framebuffer.unbind();
+            
+            /*
             {
                 // Clear is not needed because the copy below fully overwrites
                 // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -483,6 +487,7 @@ void Program::run()
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             }
+            */
         }
 
         // Present

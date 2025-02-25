@@ -402,13 +402,9 @@ vec3 qtransform(vec4 q, vec3 v)
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
-RayHit rayCast(ivec3 texelCoord, vec3 rayDir, float currentDepth)
+RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
 {
-
-    vec3 startPos = getRayPosition(texelCoord);
     vec3 rayPos = startPos;
-
-    vec3 rayStart = rayPos;
 
     vec3 voxelWorldSize = 2. * voxelResolution;
 
@@ -440,7 +436,7 @@ RayHit rayCast(ivec3 texelCoord, vec3 rayDir, float currentDepth)
     hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
-    hit.dist = length(startPos - hit.hitLocation); // length(hit.hitLocation - rayStart);
+    hit.dist = length(startPos - hit.hitLocation);
     if (!hit.wasHit)
     {
         hit.dist = 1.0 / 0.0;
@@ -668,6 +664,7 @@ float sunBrightness = 5;
 
 void attempt(ivec3 texelCoord)
 {
+    vec3 startPos = getRayPosition(texelCoord);
     vec3 rayDir = normalize(getRayDirection(texelCoord));
     float currentDepth = getHitDist(texelCoord);
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
@@ -689,9 +686,13 @@ void attempt(ivec3 texelCoord)
             changeLightAccumulation(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attentuation);
         }
         setAttenuation(texelCoord, vec3(0));
+        if(texelCoord.z == 0 && isFirstRay){
+            setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
+        }
+        
     }
 
-    RayHit hit = rayCast(texelCoord, rayDir, currentDepth);
+    RayHit hit = rayCast(texelCoord, startPos, rayDir, currentDepth);
 
     // If it is not the nearest, then it should do nothing
     // If it did not hit, then it should do nothing

@@ -28,6 +28,7 @@ GLuint VoxelRenderer::displayToWindowProgram;
 GLuint VoxelRenderer::BRDFProgram;
 GLuint VoxelRenderer::resetVisualInfoProgram;
 GLuint VoxelRenderer::fullCastProgram;
+GLuint VoxelRenderer::asynchronousDisplayProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -75,6 +76,9 @@ VoxelRenderer::VoxelRenderer()
     BRDFProgram = ShaderManager::getInstance().getComputeProgram(Content::brdfComputeShader);
     resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
     fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
+
+    asynchronousDisplayProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::renderAsynchronousFragmentShader);
+
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
 
@@ -376,4 +380,52 @@ void VoxelRenderer::display(const Camera& camera, int frameCount)
     positionBuffer.unbind();
 
     glUseProgram(0);
+}
+
+void VoxelRenderer::asynchronousDisplay(const Camera& camera, AsynchronousReprojection& reprojection)
+{
+    glUseProgram(asynchronousDisplayProgram);
+
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.bind(0);
+    }
+    else
+    {
+        accumulatedLightBuffer2.bind(0);
+    }
+
+    normalBuffer.bind(1);
+    positionBuffer.bind(2);
+
+    glUniform3i(glGetUniformLocation(asynchronousDisplayProgram, "resolution"), size.x, size.y, raysPerPixel);
+
+    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
+    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
+
+    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+    glBindFramebuffer(GL_FRAMEBUFFER, reprojection.getFrameBufferId());
+    {
+        const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+        glDrawBuffers(2, buffers);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.unbind();
+    }
+    else
+    {
+        accumulatedLightBuffer2.unbind();
+    }
+
+    normalBuffer.unbind();
+    positionBuffer.unbind();
+
+    glUseProgram(0);
+
+    reprojection.recordCameraTransform(camera);
 }
