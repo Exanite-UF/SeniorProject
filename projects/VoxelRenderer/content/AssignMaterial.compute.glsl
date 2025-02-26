@@ -12,7 +12,7 @@ uniform uint materialStartIndex;
 
 void setByte(ivec3 coord, uint value, uint byteNumber)
 {
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)) + int(materialStartIndex);
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)) + int(materialStartIndex / 4);
 
     int bufferIndex = index; // 4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
     int bufferOffset = int(byteNumber);

@@ -118,7 +118,7 @@ uint getMaterial(ivec3 coord)
         uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // make the bitmask that corresponds to the correct bit in the byte that we want
 
         ivec3 tempRes = voxelResolution / (1 << (2 * level)); // get the resolution of the requested level
-        int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z); // + int(materialStartIndices[level]);
+        int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z) + int(materialStartIndices[level] / 4);
 
         // 4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
 
