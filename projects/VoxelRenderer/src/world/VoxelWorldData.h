@@ -26,6 +26,7 @@ public:
 
     void setVoxelOccupancy(glm::ivec3 position, bool isOccupied);
     void setVoxelMaterial(glm::ivec3 position, const Material& material);
+    void setVoxelMaterial(glm::ivec3 position, const uint16_t material);
     void setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2);
 
     void decodeMaterialMipMap();

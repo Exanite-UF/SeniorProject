@@ -86,9 +86,14 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
 
 void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const Material& material)
 {
+    setVoxelMaterial(position, material.index);
+}
+
+void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const uint16_t material)
+{
     // Each material ID is 16 bits, but we only use the lower 12 bits
     auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
-    flattenedMaterialMap[voxelIndex] = material.index;
+    flattenedMaterialMap[voxelIndex] = material;
 }
 
 void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2)

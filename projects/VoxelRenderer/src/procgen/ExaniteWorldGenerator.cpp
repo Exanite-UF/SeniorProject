@@ -11,7 +11,8 @@ void ExaniteWorldGenerator::generateData()
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {
-            data.setVoxelOccupancy({ x, y, x }, true);
+            data.setVoxelOccupancy(glm::ivec3(x, y, x), true);
+            data.setVoxelMaterial(glm::ivec3(x, y, x), 0);
         }
     }
 }
