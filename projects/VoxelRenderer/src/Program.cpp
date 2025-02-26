@@ -357,7 +357,7 @@ void Program::run()
             }
 
             // Scroll
-            if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL))
+            if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL) && input->getMouseScroll().y != 0)
             {
                 fillAmount -= input->getMouseScroll().y * 0.01;
                 fillAmount = std::clamp(fillAmount, 0.f, 1.f);
