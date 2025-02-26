@@ -4,20 +4,6 @@
 #include <stdexcept>
 #include <string>
 
-ShaderManager* ShaderManager::instance = nullptr;
-
-ShaderManager& ShaderManager::getInstance()
-{
-    if (instance == nullptr)
-    {
-        instance = new ShaderManager();
-    }
-
-    return *instance;
-}
-
-ShaderManager::ShaderManager() = default;
-
 ShaderManager::~ShaderManager()
 {
     for (const auto& computeProgram : computePrograms)

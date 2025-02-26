@@ -5,18 +5,6 @@
 #include <span>
 #include <src/utilities/ColorUtility.h>
 
-MaterialManager* MaterialManager::instance = nullptr;
-
-MaterialManager& MaterialManager::getInstance()
-{
-    if (instance == nullptr)
-    {
-        instance = new MaterialManager();
-    }
-
-    return *instance;
-}
-
 MaterialManager::MaterialManager()
 {
     size_t customMaterialCount = 0;
@@ -78,10 +66,6 @@ MaterialManager::MaterialManager()
     }
 
     writeToGpu();
-}
-
-MaterialManager::~MaterialManager()
-{
 }
 
 uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const
