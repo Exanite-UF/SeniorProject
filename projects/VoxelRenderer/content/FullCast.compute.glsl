@@ -118,7 +118,7 @@ uint getMaterial(ivec3 coord)
         uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // make the bitmask that corresponds to the correct bit in the byte that we want
 
         ivec3 tempRes = voxelResolution / (1 << (2 * level)); // get the resolution of the requested level
-        int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z); // + int(materialStartIndices[level]);
+        int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z) + int(materialStartIndices[level] / 4);
 
         // 4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
 
@@ -331,7 +331,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
-    bool isOutside = false; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
+    bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -703,7 +703,8 @@ void attempt(ivec3 texelCoord)
     if (texelCoord.z == 0 && isFirstRay)
     {
         setFirstHitNormal(texelCoord, hit.normal);
-        setFirstHitPosition(texelCoord, hit.hitLocation);
+        //setFirstHitPosition(texelCoord, hit.hitLocation);
+        setFirstHitPosition(texelCoord, vec3(hit.material));
     }
 
     BRDF(texelCoord, hit, rayDir, attentuation);
