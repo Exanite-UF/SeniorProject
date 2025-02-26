@@ -64,6 +64,7 @@ void VoxelWorldData::setSize(glm::ivec3 size)
 
 void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
 {
+    // Calculate cell position and count
     auto cellPosition = position / 2;
     auto cellCount = size / 2;
 
@@ -108,6 +109,8 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
 
 void VoxelWorldData::decodeMaterialMipMap()
 {
+    // TODO: Consider optimizing this. This currently runs in (w^3 * 3) time. Can improve to (w^3 + w^3 / 4^3 + w^3 / 4^6) time by iterating each mipmap once.
+    // Realistically, this function is called at most once per voxel world, if at all.
     auto& materialManager = MaterialManager::getInstance();
     for (int z = 0; z < size.x; ++z)
     {
@@ -115,14 +118,31 @@ void VoxelWorldData::decodeMaterialMipMap()
         {
             for (int x = 0; x < size.x; ++x)
             {
-                uint32_t materialMipMappedId;
+                uint16_t materialMipMappedId = 0;
+
                 auto cellCount = size;
+                auto cellPosition = glm::ivec3(x, y, z);
                 for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
                 {
+                    // Calculate cell position and count
                     cellCount /= 4;
+                    cellPosition /= 4;
+
+                    // Calculate uint index of cell
+                    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
+
+                    // Calculate which bit to set
+                    auto oddX = x % 4;
+                    auto oddY = y % 4;
+                    auto oddZ = z % 4;
+
+                    auto cellValue = reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex];
+                    auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
+                    auto partialId = cellValue & (0b1111 << bitsShifted);
+                    materialMipMappedId |= (partialId >> bitsShifted) << (mipMapI * 4);
                 }
 
-                setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialByMipMappedId(materialMipMapId));
+                setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialByMipMappedId(materialMipMappedId));
             }
         }
     }

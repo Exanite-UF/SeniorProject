@@ -91,6 +91,6 @@ public:
 
     // GLuint textureId = 0;
 
-    int16_t getIndex() const;
-    const std::string& getId() const;
+    [[nodiscard]] int16_t getIndex() const;
+    [[nodiscard]] const std::string& getId() const;
 };
