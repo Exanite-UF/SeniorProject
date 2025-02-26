@@ -103,7 +103,7 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
 {
     // Each mipmapped material ID is 12 bits, separated into 4 bit parts
     // material0 is the ID stored in the lowest/highest resolution mipmap layer
-    std::array materialIdParts = {material0, material1, material2};
+    std::array materialIdParts = { material0, material1, material2 };
 
     auto cellCount = size;
     auto cellPosition = glm::ivec3(position.x, position.y, position.z);
