@@ -17,7 +17,7 @@ void VoxelWorldData::copyFrom(VoxelWorld& world)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialIdMapIndices.at(materialIdMapIndices.size() - 1), materialMap.data());
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -33,7 +33,7 @@ void VoxelWorldData::writeTo(VoxelWorld& world)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialIdMapIndices.at(materialIdMapIndices.size() - 1), materialMap.data());
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     world.updateMipMaps();
@@ -56,8 +56,8 @@ void VoxelWorldData::setSize(glm::ivec3 size)
     occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
     occupancyMap.resize(occupancyMapIndices.at(1));
 
-    materialIdMapIndices = VoxelWorldUtility::getMaterialMapIndices(size);
-    materialMap.resize(materialIdMapIndices.at(materialIdMapIndices.size() - 1));
+    materialMapIndices = VoxelWorldUtility::getMaterialMapIndices(size);
+    materialMap.resize(materialMapIndices.at(materialMapIndices.size() - 1));
 
     flattenedMaterialMap.resize(size.x * size.y * size.z);
 }
@@ -130,6 +130,7 @@ void VoxelWorldData::decodeMaterialMipMap()
 
                     // Calculate uint index of cell
                     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
+                    cellIndex += materialMapIndices.at(mipMapI);
 
                     // Calculate which bit to set
                     auto oddX = x % 4;
