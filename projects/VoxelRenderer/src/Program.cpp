@@ -45,6 +45,8 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 
+#include "procgen/ExaniteWorldGenerator.h"
+
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
@@ -179,7 +181,8 @@ void Program::run()
     Framebuffer framebuffer(window->size);
 
     // Procedural Generation
-    OctaveNoiseWorldGenerator worldGenerator(worldSize);
+    ExaniteWorldGenerator exaniteWorldGenerator(worldSize);
+    OctaveNoiseWorldGenerator octaveWorldGenerator(worldSize);
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -289,23 +292,13 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_F7))
             {
-                data.clearOccupancy();
-
-                for (int x = 0; x < data.getSize().x; ++x)
-                {
-                    for (int y = 0; y < data.getSize().y; ++y)
-                    {
-                        data.setVoxelOccupancy({ x, y, x }, true);
-                    }
-                }
-
-                data.writeTo(*voxelWorld);
+                exaniteWorldGenerator.generate(*voxelWorld);
             }
 
-            worldGenerator.showDebugMenu();
+            octaveWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
-                worldGenerator.generate(*voxelWorld);
+                octaveWorldGenerator.generate(*voxelWorld);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F9))
