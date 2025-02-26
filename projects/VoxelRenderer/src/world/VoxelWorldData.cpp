@@ -130,7 +130,7 @@ void VoxelWorldData::decodeMaterialMipMap()
 
                     // Calculate uint index of cell
                     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
-                    cellIndex += materialMapIndices.at(mipMapI);
+                    cellIndex += materialMapIndices.at(mipMapI) / 4;
 
                     // Calculate which bit to set
                     auto oddX = x % 4;
