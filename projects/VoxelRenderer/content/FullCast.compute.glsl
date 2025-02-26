@@ -703,7 +703,7 @@ void attempt(ivec3 texelCoord)
     if (texelCoord.z == 0 && isFirstRay)
     {
         setFirstHitNormal(texelCoord, hit.normal);
-        //setFirstHitPosition(texelCoord, hit.hitLocation);
+        // setFirstHitPosition(texelCoord, hit.hitLocation);
         setFirstHitPosition(texelCoord, vec3(hit.material));
     }
 
