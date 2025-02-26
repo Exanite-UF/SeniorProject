@@ -5,19 +5,19 @@
 #include <src/utilities/NonCopyable.h>
 #include <vector>
 
-class GameObject : public NonCopyable
+class GameObject : public NonCopyable, public std::enable_shared_from_this<GameObject>
 {
 public:
     GameObject();
     ~GameObject();
 
-    std::vector<Component*> components;
+    std::vector<std::weak_ptr<Component>> components;
 
     template <typename T, typename... Args>
-    T* addComponent(Args&&... args);
+    std::shared_ptr<T> addComponent(Args&&... args);
 
     template <typename T>
-    T* getComponent();
+    std::shared_ptr<T> getComponent();
 
     // Calls destroy on all the components in the list
     void destroy();

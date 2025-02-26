@@ -1,16 +1,17 @@
 #include "Component.h"
 
-Component::Component(GameObject* _parent)
+Component::Component(std::shared_ptr<GameObject> parent)
 {
-    gameObject = _parent;
+    this->gameObject = parent;
 }
 
 Component::~Component()
 {
-    // nothing here yet
+    onDestroy();
+    gameObject.reset();
 }
 
 void Component::destroy()
 {
-    //
+    // Depends on specific component, will figure out soon
 }

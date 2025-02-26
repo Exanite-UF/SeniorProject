@@ -2,37 +2,38 @@
 
 GameObject::GameObject()
 {
-    // Create the transform
-    Component* transform = new TransformComponent(this);
-    components.push_back(transform);
+    // Create the transform 
+    auto transform = std::make_shared<TransformComponent>(shared_from_this());
+    //this->addComponent(std::weak_ptr<Component>(transform)); <- this isnt working and ik it's something to do with the weak pointer
+    components.push_back(std::weak_ptr<Component>(transform)); // temporary
 }
 
 GameObject::~GameObject()
 {
-    // loop to clear the pointers, seems a bit destructive
-    for (Component* component : components)
-    {
-        delete component;
-    }
+    this->destroy();
+    components.clear();
 }
 
 template <typename T, typename... Args>
-T* GameObject::addComponent(Args&&... args)
+std::shared_ptr<T> GameObject::addComponent(Args&&... args)
 {
-    T* component = new T(std::forward<Args>(args)...);
-    component->gameObject = this;
-    components.push_back(component);
-    // component->onCreate();
+    std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
+    component->gameObject = shared_from_this();
+    components.push_back(std::weak_ptr<Component>(component));
+    component->onCreate();
     return component;
 }
 
 template <typename T>
-T* GameObject::getComponent()
+std::shared_ptr<T> GameObject::getComponent()
 {
-    for (Component* component : components)
+    for (const std::weak_ptr<Component>& weakComponent : components)
     {
         // attempting to cast component to type T
-        T* castedComponent = dynamic_cast<T*>(component);
+        if (auto component = weakComponent.lock())
+        {
+            std::shared_ptr<T> castedComponent = std::dynamic_pointer_cast<T>(component);
+        }
         if (castedComponent != nullptr)
         {
             return castedComponent;
@@ -44,4 +45,11 @@ T* GameObject::getComponent()
 
 void GameObject::destroy()
 {
+    for (const std::weak_ptr<Component>& weakComponent : components)
+    {
+        if (auto component = weakComponent.lock())
+        {
+            component->destroy();
+        }
+    }
 }

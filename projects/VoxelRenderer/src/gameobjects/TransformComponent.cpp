@@ -1,22 +1,20 @@
 #include "TransformComponent.h"
 
-TransformComponent::TransformComponent(GameObject* gameObject)
+TransformComponent::TransformComponent(std::shared_ptr<GameObject> gameObject)
     : Component(gameObject)
 {
-    position = glm::vec3(0.0f);
-    rotation = glm::vec3(0.0f);
-    scale = glm::vec3(1.0f);
+    // used preexisting transform class
+    transform = new Transform();
 }
 
-// not sure if the following are needed but will keep for now for consistency
-void TransformComponent::onCreate()
+TransformComponent::~TransformComponent()
 {
+    delete transform;
+    onDestroy();
+    gameObject.reset();
 }
 
-void TransformComponent::onUpdate()
+void TransformComponent::destroy()
 {
-}
-
-void TransformComponent::onDestroy()
-{
+    //not sure if transform needs a destory, might make it virtual
 }

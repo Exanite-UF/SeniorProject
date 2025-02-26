@@ -10,15 +10,13 @@ class Component : public NonCopyable
     // Also, it makes sense that the GameObjects owns the lifecycle of the Components it has.
 
 public:
-    GameObject* gameObject;
-    Component(GameObject* parent);
+    std::shared_ptr<GameObject> gameObject;
+    Component(std::shared_ptr<GameObject> parent);
     ~Component();
 
     void destroy();
 
     virtual void onUpdate() = 0;
-
-    // Might not need:
     virtual void onCreate() = 0;
     virtual void onDestroy() = 0;
 

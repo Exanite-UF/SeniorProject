@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <src/gameobjects/Component.h>
+#include <src/world/Transform.h>
 
 class TransformComponent : public Component
 {
@@ -16,13 +17,16 @@ class TransformComponent : public Component
     // onDestroy() override;
 
 public:
-    glm::vec3 position;
-    glm::vec3 rotation;
-    glm::vec3 scale;
 
-    TransformComponent(GameObject* gameObject);
+    std::shared_ptr<GameObject> gameObject;
+    Transform* transform; // don't think we need a shared ptr for this
 
-    void onUpdate() override;
-    void onCreate() override;
-    void onDestroy() override;
+    TransformComponent(std::shared_ptr<GameObject> parent);
+    ~TransformComponent();
+
+    void destroy();
+
+    virtual void onUpdate() = 0;
+    virtual void onCreate() = 0;
+    virtual void onDestroy() = 0;
 };
