@@ -38,11 +38,11 @@ MaterialManager::MaterialManager()
     dirt.roughness = 1;
 
     auto& blueLight = addMaterial("blue_light", "Blue Light");
-    dirt.albedo = glm::vec3(1);
-    dirt.emission = ColorUtility::srgbToLinear("#09e4e8");
-    dirt.metallic = 0;
-    dirt.metallicAlbedo = glm::vec3(0);
-    dirt.roughness = 1;
+    blueLight.albedo = glm::vec3(1);
+    blueLight.emission = ColorUtility::srgbToLinear("#09e4e8");
+    blueLight.metallic = 0;
+    blueLight.metallicAlbedo = glm::vec3(0);
+    blueLight.roughness = 1;
 
     // Generate placeholder materials
     for (size_t i = customMaterialCount; i < materials.size(); i++)
