@@ -84,6 +84,32 @@ MaterialManager::~MaterialManager()
 {
 }
 
+uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const
+{
+    uint32_t id = ((material0 & 0b1111) << 0) | ((material1 & 0b1111) << 4) | ((material2 & 0b1111) << 8);
+    return materialMap[id];
+}
+
+Material& MaterialManager::getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2)
+{
+    return getMaterialByIndex(getMaterialIndexByMipMappedId(material0, material1, material2));
+}
+
+Material& MaterialManager::getMaterialByIndex(uint16_t index)
+{
+    return materials[index];
+}
+
+GraphicsBuffer<uint32_t>& MaterialManager::getMaterialMapBuffer()
+{
+    return materialMapBuffer;
+}
+
+GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
+{
+    return materialDataBuffer;
+}
+
 void MaterialManager::writeToGpu()
 {
     // Convert CPU material format to GPU material format
@@ -104,14 +130,4 @@ void MaterialManager::writeToGpu()
     // Write data to GPU
     materialMapBuffer.readFrom(materialMap);
     materialDataBuffer.readFrom(materialData);
-}
-
-GraphicsBuffer<uint32_t>& MaterialManager::getMaterialMapBuffer()
-{
-    return materialMapBuffer;
-}
-
-GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
-{
-    return materialDataBuffer;
 }

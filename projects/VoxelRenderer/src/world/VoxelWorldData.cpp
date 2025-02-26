@@ -86,7 +86,7 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
 
 void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const Material& material)
 {
-    setVoxelMaterial(position, material.index);
+    setVoxelMaterial(position, material.getIndex());
 }
 
 void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const uint16_t material)

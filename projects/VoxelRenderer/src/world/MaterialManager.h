@@ -11,6 +11,7 @@
 class MaterialManager : public NonCopyable
 {
 private:
+    // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
     std::array<uint32_t, Constants::VoxelWorld::materialMapCount> materialMap;
     std::array<Material, Constants::VoxelWorld::materialCount> materials;
 
@@ -26,10 +27,15 @@ private:
     ~MaterialManager();
 
 public:
-    void writeToGpu();
+    uint32_t getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const;
+    Material& getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2);
+
+    Material& getMaterialByIndex(uint16_t index);
 
     GraphicsBuffer<uint32_t>& getMaterialMapBuffer();
     GraphicsBuffer<MaterialData>& getMaterialDataBuffer();
+
+    void writeToGpu();
 
     static MaterialManager& getInstance();
 };
