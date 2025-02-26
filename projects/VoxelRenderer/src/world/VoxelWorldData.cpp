@@ -83,3 +83,28 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
         occupancyMap[cellIndex] &= ~bit;
     }
 }
+
+void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const Material& material)
+{
+    // Each material ID is 16 bits, but we only use the lower 12 bits
+    auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
+    flattenedMaterialMap[voxelIndex] = material.index;
+}
+
+void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2)
+{
+    // Each mipmapped material ID is 12 bits, separated into 4 bit parts
+    // material0 is the ID stored in the lowest/highest resolution mipmap layer
+
+    // TODO
+}
+
+void VoxelWorldData::decodeMaterialMipMap()
+{
+    // TODO
+}
+
+void VoxelWorldData::encodeMaterialMipMap()
+{
+    // TODO
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <src/world/Material.h>
 #include <src/world/VoxelWorld.h>
 
 class VoxelWorldData : public NonCopyable
@@ -24,6 +25,11 @@ public:
     void setSize(glm::ivec3 size);
 
     void setVoxelOccupancy(glm::ivec3 position, bool isOccupied);
+    void setVoxelMaterial(glm::ivec3 position, const Material& material);
+    void setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2);
+
+    void decodeMaterialMipMap();
+    void encodeMaterialMipMap();
 
     void copyFrom(VoxelWorld& world);
     void writeTo(VoxelWorld& world);
