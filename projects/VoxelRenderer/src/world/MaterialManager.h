@@ -26,7 +26,9 @@ private:
     MaterialManager();
 
 public:
+    uint32_t getMaterialIndexByMipMappedId(uint16_t mipMapId) const;
     uint32_t getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const;
+    Material& getMaterialByMipMappedId(uint16_t mipMapId);
     Material& getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2);
 
     Material& getMaterialByIndex(uint16_t index);

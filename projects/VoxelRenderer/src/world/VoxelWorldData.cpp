@@ -1,5 +1,7 @@
 #include "VoxelWorldData.h"
 
+#include "MaterialManager.h"
+
 #include <src/world/VoxelWorldUtility.h>
 #include <stdexcept>
 
@@ -63,10 +65,10 @@ void VoxelWorldData::setSize(glm::ivec3 size)
 void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
 {
     auto cellPosition = position / 2;
-    auto halfSize = size / 2;
+    auto cellCount = size / 2;
 
     // Calculate byte index of cell
-    auto cellIndex = cellPosition.x + halfSize.x * (cellPosition.y + halfSize.y * cellPosition.z);
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
 
     // Calculate which bit to set
     auto oddX = position.x % 2;
@@ -106,7 +108,24 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
 
 void VoxelWorldData::decodeMaterialMipMap()
 {
-    // TODO
+    auto& materialManager = MaterialManager::getInstance();
+    for (int z = 0; z < size.x; ++z)
+    {
+        for (int y = 0; y < size.x; ++y)
+        {
+            for (int x = 0; x < size.x; ++x)
+            {
+                uint32_t materialMipMappedId;
+                auto cellCount = size;
+                for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
+                {
+                    cellCount /= 4;
+                }
+
+                setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialByMipMappedId(materialMipMapId));
+            }
+        }
+    }
 }
 
 void VoxelWorldData::encodeMaterialMipMap()

@@ -68,10 +68,20 @@ MaterialManager::MaterialManager()
     writeToGpu();
 }
 
+uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint16_t mipMapId) const
+{
+    return materialMap[mipMapId];
+}
+
 uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const
 {
     uint32_t id = ((material0 & 0b1111) << 0) | ((material1 & 0b1111) << 4) | ((material2 & 0b1111) << 8);
     return materialMap[id];
+}
+
+Material& MaterialManager::getMaterialByMipMappedId(uint16_t mipMapId)
+{
+    return getMaterialByIndex(getMaterialIndexByMipMappedId(mipMapId));
 }
 
 Material& MaterialManager::getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2)
