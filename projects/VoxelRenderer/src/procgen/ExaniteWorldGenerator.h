@@ -4,6 +4,9 @@
 
 class ExaniteWorldGenerator : public WorldGenerator
 {
+private:
+    int materialToUse = 0;
+
 protected:
     void generateData() override;
 

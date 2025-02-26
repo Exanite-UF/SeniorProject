@@ -290,6 +290,7 @@ void Program::run()
                 data.copyFrom(*voxelWorld);
             }
 
+            exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F7))
             {
                 exaniteWorldGenerator.generate(*voxelWorld);
