@@ -177,5 +177,22 @@ void VoxelWorldData::decodeMaterialMipMap()
 
 void VoxelWorldData::encodeMaterialMipMap()
 {
-    // TODO
+    for (int z = 0; z < size.x; ++z)
+    {
+        for (int y = 0; y < size.x; ++y)
+        {
+            for (int x = 0; x < size.x; ++x)
+            {
+                // TODO: This isn't meant to fully work. To properly encode the material mipmaps, we need a solver!
+                auto materialIndexI = x + size.x * (y + size.y * z);
+                auto materialIndex = flattenedMaterialMap[materialIndexI];
+
+                auto material0 = materialIndex & (0b1111 << 0) >> 0;
+                auto material1 = materialIndex & (0b1111 << 4) >> 4;
+                auto material2 = materialIndex & (0b1111 << 8) >> 8;
+
+                setVoxelMipMappedMaterial(glm::ivec3(x, y, z), material0, material1, material2);
+            }
+        }
+    }
 }
