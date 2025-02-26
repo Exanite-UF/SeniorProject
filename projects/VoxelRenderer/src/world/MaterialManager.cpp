@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <span>
+#include <src/utilities/ColorUtility.h>
 
 MaterialManager* MaterialManager::instance = nullptr;
 
@@ -18,10 +19,35 @@ MaterialManager& MaterialManager::getInstance()
 
 MaterialManager::MaterialManager()
 {
-    for (size_t i = 0; i < materials.size(); i++)
+    size_t customMaterialCount = 0;
+    auto addMaterial = [&](std::string id, std::string name) -> Material&
+    {
+        auto index = customMaterialCount;
+        customMaterialCount++;
+
+        materials[index] = Material(index, name);
+        return materials[index];
+    };
+
+    // Define custom materials
+    auto& dirt = addMaterial("dirt", "Dirt");
+    dirt.albedo = ColorUtility::srgbToLinear("#70381c");
+    dirt.emission = glm::vec3(0);
+    dirt.metallic = 0;
+    dirt.metallicAlbedo = glm::vec3(0);
+    dirt.roughness = 1;
+
+    auto& blueLight = addMaterial("blue_light", "Blue Light");
+    dirt.albedo = glm::vec3(1);
+    dirt.emission = ColorUtility::srgbToLinear("#09e4e8");
+    dirt.metallic = 0;
+    dirt.metallicAlbedo = glm::vec3(0);
+    dirt.roughness = 1;
+
+    // Generate placeholder materials
+    for (size_t i = customMaterialCount; i < materials.size(); i++)
     {
         auto material = Material(i, "Material " + std::to_string(i));
-        // TODO: Set placeholder material properties
         if (i % 4 == 0)
         {
             material.emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);

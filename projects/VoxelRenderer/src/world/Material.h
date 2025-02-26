@@ -71,7 +71,7 @@ public:
     int16_t index = -1; // Index of the material in the material array
     std::string id; // String ID
 
-    std::string name = "UNNAMED"; // Display name
+    std::string name; // Display name
 
     glm::vec3 emission = glm::vec3(0);
     glm::vec3 albedo = glm::vec3(1);
@@ -80,7 +80,7 @@ public:
     float metallic = 0;
 
     Material();
-    Material(uint16_t index, std::string id);
+    Material(uint16_t index, std::string id, std::string name = "UNNAMED");
 
     // glm::vec3 color = glm::vec3(1, 1, 1);
 
