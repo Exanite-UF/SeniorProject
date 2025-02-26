@@ -73,11 +73,11 @@ public:
 
     std::string name = "UNNAMED"; // Display name
 
-    glm::vec3 emission;
-    glm::vec3 albedo;
-    glm::vec3 metallicAlbedo;
-    float roughness;
-    float metallic;
+    glm::vec3 emission = glm::vec3(0);
+    glm::vec3 albedo = glm::vec3(1);
+    glm::vec3 metallicAlbedo = glm::vec3(1);
+    float roughness = 1;
+    float metallic = 0;
 
     Material();
     Material(uint16_t index, std::string id);
