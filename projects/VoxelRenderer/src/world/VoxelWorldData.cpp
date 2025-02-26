@@ -132,10 +132,10 @@ void VoxelWorldData::decodeMaterialMipMap()
                     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
                     cellIndex += materialMapIndices.at(mipMapI) / 4;
 
-                    // Calculate which bit to set
-                    auto oddX = x % 4;
-                    auto oddY = y % 4;
-                    auto oddZ = z % 4;
+                    // Calculate which set of 4-bits to get
+                    auto oddX = (x >> (2 * mipMapI)) % 2;
+                    auto oddY = (y >> (2 * mipMapI)) % 2;
+                    auto oddZ = (z >> (2 * mipMapI)) % 2;
 
                     auto cellValue = reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex];
                     auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
@@ -143,7 +143,8 @@ void VoxelWorldData::decodeMaterialMipMap()
                     materialMipMappedId |= (partialId >> bitsShifted) << (mipMapI * 4);
                 }
 
-                setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialByMipMappedId(materialMipMappedId));
+                // setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
+                setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialIndexByMipMappedId(materialMipMappedId));
             }
         }
     }
