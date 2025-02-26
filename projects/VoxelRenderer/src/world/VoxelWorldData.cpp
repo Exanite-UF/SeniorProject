@@ -124,11 +124,10 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
 
         auto cellValue = materialIdParts[mipMapI];
 
-        auto bitmask = 0b1111;
         auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
 
-        reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex] &= ~(0b1111 < bitsShifted);
-        reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex] |= cellValue < bitsShifted;
+        reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex] &= ~(0b1111 << bitsShifted);
+        reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex] |= cellValue << bitsShifted;
     }
 }
 
@@ -187,9 +186,9 @@ void VoxelWorldData::encodeMaterialMipMap()
                 auto materialIndexI = x + size.x * (y + size.y * z);
                 auto materialIndex = flattenedMaterialMap[materialIndexI];
 
-                auto material0 = materialIndex & (0b1111 << 0) >> 0;
-                auto material1 = materialIndex & (0b1111 << 4) >> 4;
-                auto material2 = materialIndex & (0b1111 << 8) >> 8;
+                auto material0 = (materialIndex & (0b1111 << 0)) >> 0;
+                auto material1 = (materialIndex & (0b1111 << 4)) >> 4;
+                auto material2 = (materialIndex & (0b1111 << 8)) >> 8;
 
                 setVoxelMipMappedMaterial(glm::ivec3(x, y, z), material0, material1, material2);
             }
