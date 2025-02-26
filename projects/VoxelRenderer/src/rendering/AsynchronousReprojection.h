@@ -1,17 +1,18 @@
 #pragma once
 
 #include <GL/glew.h>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <src/world/Camera.h>
 
 #include <vector>
 
-//I should probably use a framebuffer, but this needs a custom framebuffer
-class AsynchronousReprojection{
- private:
+// I should probably use a framebuffer, but this needs a custom framebuffer
+class AsynchronousReprojection
+{
+private:
     glm::ivec2 size;
     GLuint colorTextureId1;
     GLuint positionTextureId1;
@@ -19,8 +20,7 @@ class AsynchronousReprojection{
     GLuint colorTextureId2;
     GLuint positionTextureId2;
 
-    int currentFrameBuffer = 0;//This is the framebuffer that the VoxelRenderer renders to
-
+    int currentFrameBuffer = 0; // This is the framebuffer that the VoxelRenderer renders to
 
     glm::quat lastCameraRotation;
     glm::vec3 lastCameraPosition;
@@ -36,7 +36,7 @@ class AsynchronousReprojection{
 
     void generateMesh();
 
- public:
+public:
     AsynchronousReprojection(glm::ivec2 size);
 
     GLuint getColorTexture() const;

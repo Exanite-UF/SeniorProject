@@ -1,8 +1,8 @@
 #include "AsynchronousReprojection.h"
 
-#include <src/graphics/ShaderManager.h>
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
+#include <src/graphics/ShaderManager.h>
 
 #include <iostream>
 
@@ -11,10 +11,12 @@ GLuint AsynchronousReprojection::renderProgram;
 void AsynchronousReprojection::generateMesh()
 {
     vertices.resize(size.x * size.y * 3);
-    indices.resize((size.x - 1) * (size.y - 1) * 2 * 3);//number of squares -> number of triangle -> number of edges
+    indices.resize((size.x - 1) * (size.y - 1) * 2 * 3); // number of squares -> number of triangle -> number of edges
 
-    for(int x = 0; x < size.x; x++){
-        for(int y = 0; y < size.y; y++){
+    for (int x = 0; x < size.x; x++)
+    {
+        for (int y = 0; y < size.y; y++)
+        {
             std::size_t index = 3 * (x + y * size.x);
 
             vertices[index + 0] = (float)x / (size.x - 1);
@@ -23,11 +25,13 @@ void AsynchronousReprojection::generateMesh()
         }
     }
 
-    for(int x = 0; x < size.x - 1; x++){
-        for(int y = 0; y < size.y - 1; y++){
+    for (int x = 0; x < size.x - 1; x++)
+    {
+        for (int y = 0; y < size.y - 1; y++)
+        {
             std::size_t index = 6 * (x + y * (size.x - 1));
-            
-            //This happens once per square
+
+            // This happens once per square
             std::size_t topLeftI = (x + y * size.x);
             std::size_t topRightI = topLeftI + 1;
             std::size_t bottomLeftI = topLeftI + size.x;
@@ -46,14 +50,13 @@ void AsynchronousReprojection::generateMesh()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW); 
-
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW); 
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0); 
+    glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 }
 
@@ -61,8 +64,8 @@ AsynchronousReprojection::AsynchronousReprojection(glm::ivec2 size)
 {
     renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader);
 
-    glGenVertexArrays(1, &VAO);  
-    glGenBuffers(1, &VBO);  
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
     setSize(size);
@@ -70,19 +73,24 @@ AsynchronousReprojection::AsynchronousReprojection(glm::ivec2 size)
 
 GLuint AsynchronousReprojection::getColorTexture() const
 {
-    if(currentFrameBuffer % 2 == 0){
+    if (currentFrameBuffer % 2 == 0)
+    {
         return colorTextureId1;
-    }else{
+    }
+    else
+    {
         return colorTextureId2;
     }
-    
 }
 
 GLuint AsynchronousReprojection::getPositionTexture() const
 {
-    if(currentFrameBuffer % 2 == 0){
+    if (currentFrameBuffer % 2 == 0)
+    {
         return positionTextureId1;
-    }else{
+    }
+    else
+    {
         return positionTextureId2;
     }
 }
@@ -136,7 +144,6 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-
     // Create color texture
     glDeleteTextures(1, &colorTextureId2);
     glGenTextures(1, &colorTextureId2);
@@ -173,42 +180,44 @@ void AsynchronousReprojection::render(const Camera& camera)
 {
     glUseProgram(renderProgram);
 
-    //std::cout << currentFrameBuffer << std::endl;
+    // std::cout << currentFrameBuffer << std::endl;
 
-    if(currentFrameBuffer % 2 == 0){
+    if (currentFrameBuffer % 2 == 0)
+    {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTextureId2);
-    
+
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-    }else{
+    }
+    else
+    {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTextureId1);
-    
+
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, positionTextureId1);
     }
-    
 
-    glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
-    glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
+    glm::vec3 deltaPos = camera.transform.getGlobalPosition(); // - lastCameraPosition;
+    glm::quat deltaRot = camera.transform.getGlobalRotation(); // * glm::inverse(lastCameraRotation);
 
-    //std::cout << deltaPos.x << " " << deltaPos.y << " " << deltaPos.z << std::endl;
+    // std::cout << deltaPos.x << " " << deltaPos.y << " " << deltaPos.z << std::endl;
 
     glUniform3f(glGetUniformLocation(renderProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
     glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
     glUniform2i(glGetUniformLocation(renderProgram, "resolution"), size.x, size.y);
 
-    //glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+    // glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     glBindVertexArray(VAO);
     {
-        //glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        //glPointSize(3);//I don't know why the points need to be this large
-        //glDrawArrays(GL_POINTS, 0, vertices.size());
+        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        // glPointSize(3);//I don't know why the points need to be this large
+        // glDrawArrays(GL_POINTS, 0, vertices.size());
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        // glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     glBindVertexArray(0);
 

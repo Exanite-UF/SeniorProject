@@ -244,7 +244,6 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[2 + index] = value.z;
 }
 
-
 struct RayHit
 {
     bool wasHit;
@@ -687,10 +686,10 @@ void attempt(ivec3 texelCoord)
             changeLightAccumulation(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attentuation);
         }
         setAttenuation(texelCoord, vec3(0));
-        if(texelCoord.z == 0 && isFirstRay){
+        if (texelCoord.z == 0 && isFirstRay)
+        {
             setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
         }
-        
     }
 
     RayHit hit = rayCast(texelCoord, startPos, rayDir, currentDepth);

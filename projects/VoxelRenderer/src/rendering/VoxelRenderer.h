@@ -5,8 +5,8 @@
 #include <src/world/Camera.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
-#include <vector>
 #include <thread>
+#include <vector>
 
 #include "AsynchronousReprojection.h"
 
@@ -62,8 +62,6 @@ private:
 
     bool isFirstRay = false;
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
-
-    
 
     // This makes the images using the size and rays per pixel
     // It remakes them if textures are already bound

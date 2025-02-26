@@ -15,8 +15,6 @@
 #include <src/utilities/NonCopyable.h>
 #include <src/windowing/Window.h>
 
-
-
 class Program : public NonCopyable
 {
 private:
@@ -36,8 +34,6 @@ public:
     std::shared_ptr<InputManager> inputManager;
 
     GLFWwindow* offscreen_context;
-    
-
 
     bool isWorkload = false; // View toggle
     bool isRand2 = true; // Noise type toggle
