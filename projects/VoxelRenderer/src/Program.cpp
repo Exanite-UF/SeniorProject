@@ -18,8 +18,6 @@
 #include <assimp/scene.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "graphics/TextureManager.h"
-
 #include <stb_image.h>
 
 #include <filesystem>
@@ -30,6 +28,8 @@
 #include <src/Program.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/graphics/TextureManager.h>
+#include <src/procgen/ExaniteWorldGenerator.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/procgen/WorldGenerator.h>
 #include <src/rendering/Framebuffer.h>
@@ -44,8 +44,6 @@
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
-
-#include "procgen/ExaniteWorldGenerator.h"
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
