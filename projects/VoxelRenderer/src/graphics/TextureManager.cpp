@@ -5,21 +5,6 @@
 #include <stb_image.h>
 #include <stdexcept>
 
-TextureManager* TextureManager::instance = nullptr;
-
-TextureManager& TextureManager::getInstance()
-{
-    if (instance == nullptr)
-    {
-        instance = new TextureManager();
-    }
-
-    return *instance;
-}
-
-TextureManager::TextureManager() = default;
-TextureManager::~TextureManager() = default;
-
 GLenum TextureManager::getOpenGlFormat(TextureType type)
 {
     switch (type)

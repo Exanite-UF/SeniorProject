@@ -5,12 +5,15 @@
 
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>
-#include <src/utilities/NonCopyable.h>
+#include <src/utilities/Singleton.h>
 #include <src/world/Material.h>
 
-class MaterialManager : public NonCopyable
+class MaterialManager : public Singleton<MaterialManager>
 {
+    friend class Singleton;
+
 private:
+    // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
     std::array<uint32_t, Constants::VoxelWorld::materialMapCount> materialMap;
     std::array<Material, Constants::VoxelWorld::materialCount> materials;
 
@@ -20,16 +23,18 @@ private:
     GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialMapCount);
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
 
-    static MaterialManager* instance;
-
     MaterialManager();
-    ~MaterialManager();
 
 public:
-    void writeToGpu();
+    uint32_t getMaterialIndexByMipMappedId(uint16_t mipMapId) const;
+    uint32_t getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const;
+    Material& getMaterialByMipMappedId(uint16_t mipMapId);
+    Material& getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2);
+
+    Material& getMaterialByIndex(uint16_t index);
 
     GraphicsBuffer<uint32_t>& getMaterialMapBuffer();
     GraphicsBuffer<MaterialData>& getMaterialDataBuffer();
 
-    static MaterialManager& getInstance();
+    void writeToGpu();
 };

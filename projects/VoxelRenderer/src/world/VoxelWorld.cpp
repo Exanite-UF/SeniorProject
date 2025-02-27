@@ -126,7 +126,7 @@ void VoxelWorld::updateMipMaps()
         glDispatchCompute(workGroupCount, 1, 1);
 
         // Ensure compute shader completes
-        glMemoryBarrier(GL_ALL_BARRIER_BITS); // Ensure writes are finished
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
     }
 
     occupancyMap.unbind();
@@ -153,7 +153,7 @@ void VoxelWorld::assignMaterial(int level)
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
     // Ensure compute shader completes
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     this->materialMap.unbind();
 }
 
