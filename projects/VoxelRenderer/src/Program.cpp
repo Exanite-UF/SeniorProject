@@ -20,6 +20,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <CGAL/Distance_2/Point_2_Point_2.h>
+
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -616,5 +618,7 @@ void Program::runLateStartupTests()
         Assimp::Importer importer {};
         const aiScene* scene = importer.ReadFile("content/Cube.fbx", 0);
         importer.FreeScene();
+
+        Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
     }
 }
