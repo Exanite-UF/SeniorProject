@@ -92,6 +92,12 @@ include(./external/jolt/Jolt/Jolt.cmake)
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ./external/stb)
 
+# Boost
+add_subdirectory(./external/boost-v1.87.0)
+
+# CGAL
+add_subdirectory(./external/cgal)
+
 # Extra libraries ()
 add_library(extra STATIC)
 target_include_directories(extra PUBLIC ./external/extra/include)
