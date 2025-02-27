@@ -166,6 +166,6 @@ void VoxelWorld::setSize(glm::ivec3 size)
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
 
     materialMapIndices = VoxelWorldUtility::getMaterialMapIndices(size);
-    //std::cout <<"MATERIAL SIZE "<< materialMapIndices[materialMapIndices.size() - 1] << std::endl;
+    // std::cout <<"MATERIAL SIZE "<< materialMapIndices[materialMapIndices.size() - 1] << std::endl;
     this->materialMap.setSize(materialMapIndices[materialMapIndices.size() - 1]);
 }
