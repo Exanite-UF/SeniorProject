@@ -147,7 +147,7 @@ void VoxelWorld::assignMaterial(int level)
     GLuint workGroupsY = (sizeY + 8 - 1) / 8;
     GLuint workGroupsZ = (sizeZ + 8 - 1) / 8;
 
-    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "resolution"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
+    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "cellCount"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
     glUniform1ui(glGetUniformLocation(assignMaterialComputeProgram, "materialStartIndex"), materialMapIndices[level]); // Pass in the resolution of the previous mip map texture
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);

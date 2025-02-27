@@ -143,12 +143,9 @@ void Program::run()
 
     glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
 
-    scene.worlds.reserve(2);
-    scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
+    auto& voxelWorld = scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
-
-    auto& voxelWorld = scene.worlds.at(0);
 
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);
