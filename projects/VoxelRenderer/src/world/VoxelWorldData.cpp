@@ -155,7 +155,8 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
 
 void VoxelWorldData::decodeMaterialMipMap()
 {
-    // TODO: This is wrong. See setVoxelMipMappedMaterial for correct version.
+    // See setVoxelMipMappedMaterial for comments on how this works. The code is very similar.
+
     // TODO: Consider optimizing this. This currently runs in (w^3 * 3) time. Can improve to (w^3 + w^3 / 4^3 + w^3 / 4^6) time by iterating each mipmap once.
     // Realistically, this function is called at most once per voxel world, if at all.
     auto& materialManager = MaterialManager::getInstance();
@@ -165,16 +166,21 @@ void VoxelWorldData::decodeMaterialMipMap()
         {
             for (int x = 0; x < size.x; ++x)
             {
+                // This stores the mipmapped material ID, not the material index
                 uint16_t materialMipMappedId = 0;
 
-                auto cellCount = size;
-                auto cellPosition = glm::ivec3(x, y, z);
+                // Voxels correspond to 1x1x1 regions
+                // This won't always be the position of the original voxel because of mipmapping
+                auto voxelPosition = glm::ivec3(x, y, z);
+
+                // Cells correspond to 2x2x2 regions
+                auto cellCount = size / 2;
+                auto cellPosition = voxelPosition / 2;
+
+                // Iterate each mipmap level
+                // Note that each mipmap level increases region size by 4 times
                 for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
                 {
-                    // Calculate cell position and count
-                    cellCount /= 4;
-                    cellPosition /= 4;
-
                     // Calculate uint index of cell
                     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
                     cellIndex += materialMapIndices.at(mipMapI) / 4;
@@ -184,14 +190,22 @@ void VoxelWorldData::decodeMaterialMipMap()
                     auto oddY = y % 2;
                     auto oddZ = z % 2;
 
+                    // Get value from cell and extract the 4 bit segment that we want
                     auto cellValue = reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex];
                     auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
-                    auto partialId = cellValue & (0b1111 << bitsShifted);
-                    materialMipMappedId |= (partialId >> bitsShifted) << (mipMapI * 4);
+                    auto voxelValue = cellValue & (0b1111 << bitsShifted);
+
+                    // Store voxel value as part of result
+                    materialMipMappedId |= (voxelValue >> bitsShifted) << (mipMapI * 4);
+
+                    // Update region size
+                    voxelPosition /= 4;
+                    cellCount /= 4;
+                    cellPosition /= 4;
                 }
 
-                // setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
-                setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialIndexByMipMappedId(materialMipMappedId));
+                setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
+                // setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialIndexByMipMappedId(materialMipMappedId));
             }
         }
     }
