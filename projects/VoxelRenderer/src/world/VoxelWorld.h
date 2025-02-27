@@ -29,7 +29,7 @@ private:
     GLuint assignMaterialComputeProgram = 0; // TODO: Consider moving assignMaterial to a world generator class
 
     void generateOccupancyUsingNoise(double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
-    void assignMaterial(); // This runs the assign material shader
+    void assignMaterial(int level); // This runs the assign material shader
 
     void setSize(glm::ivec3 size);
 
