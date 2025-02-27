@@ -19,6 +19,3 @@
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb.git
-[submodule "external/cgal"]
-	path = external/cgal
-	url = https://github.com/CGAL/cgal.git
