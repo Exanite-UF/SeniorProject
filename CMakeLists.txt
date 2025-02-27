@@ -96,7 +96,8 @@ target_include_directories(stb INTERFACE ./external/stb)
 add_subdirectory(./external/boost-v1.87.0)
 
 # CGAL
-add_subdirectory(./external/cgal)
+add_library(cgal INTERFACE)
+target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
 
 # Extra libraries ()
 add_library(extra STATIC)
