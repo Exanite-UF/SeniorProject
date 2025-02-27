@@ -12,6 +12,7 @@ void WorldGenerator::generate(VoxelWorld& voxelWorld)
     data.copyFrom(voxelWorld);
     data.decodeMaterialMipMap();
     data.clearOccupancy();
+    // data.clearMaterials();
     {
         generateData();
     }
