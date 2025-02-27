@@ -141,7 +141,7 @@ void Program::run()
     Scene scene {};
     auto& camera = scene.camera;
 
-    glm::ivec3 worldSize = glm::ivec3(32, 32, 32);
+    glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
 
     auto& voxelWorld = scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
