@@ -18,19 +18,32 @@ MaterialManager::MaterialManager()
     };
 
     // Define custom materials
-    auto& dirt = addMaterial("dirt", "Dirt");
-    dirt.albedo = ColorUtility::srgbToLinear("#70381c");
-    dirt.emission = glm::vec3(0);
-    dirt.metallic = 0;
-    dirt.metallicAlbedo = glm::vec3(0);
-    dirt.roughness = 1;
+    {
+        auto& material = addMaterial("dirt", "Dirt");
+        material.albedo = ColorUtility::srgbToLinear("#70381c");
+        material.emission = glm::vec3(0);
+        material.metallic = 0;
+        material.metallicAlbedo = glm::vec3(0);
+        material.roughness = 1;
+    }
 
-    auto& blueLight = addMaterial("blue_light", "Blue Light");
-    blueLight.albedo = glm::vec3(1);
-    blueLight.emission = ColorUtility::srgbToLinear("#09e4e8");
-    blueLight.metallic = 0;
-    blueLight.metallicAlbedo = glm::vec3(0);
-    blueLight.roughness = 1;
+    {
+        auto& material = addMaterial("blue_light", "Blue Light");
+        material.albedo = glm::vec3(1);
+        material.emission = ColorUtility::srgbToLinear("#09e4e8");
+        material.metallic = 0;
+        material.metallicAlbedo = glm::vec3(0);
+        material.roughness = 1;
+    }
+
+    {
+        auto& material = addMaterial("red_light", "Red Light");
+        material.albedo = glm::vec3(1);
+        material.emission = ColorUtility::srgbToLinear("#ff0000");
+        material.metallic = 0;
+        material.metallicAlbedo = glm::vec3(0);
+        material.roughness = 1;
+    }
 
     // Generate placeholder materials
     for (size_t i = customMaterialCount; i < materials.size(); i++)
