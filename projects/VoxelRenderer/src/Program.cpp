@@ -18,8 +18,6 @@
 #include <assimp/scene.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "graphics/TextureManager.h"
-
 #include <stb_image.h>
 
 #include <chrono>
@@ -33,6 +31,7 @@
 #include <src/Program.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/graphics/TextureManager.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/procgen/WorldGenerator.h>
 #include <src/rendering/Framebuffer.h>
