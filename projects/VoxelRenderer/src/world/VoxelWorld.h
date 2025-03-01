@@ -9,9 +9,10 @@
 
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/utilities/NonCopyable.h>
 #include <src/world/Transform.h>
 
-class VoxelWorld
+class VoxelWorld : public NonCopyable
 {
 private:
     glm::ivec3 size; // Size of the voxel world in voxels
@@ -35,9 +36,8 @@ private:
 public:
     Transform transform;
 
-    // TODO: Consider having the width, height, and depth assigned by the constructor rather than hard coded.
     // Creates a voxel world
-    VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram, glm::ivec3 size);
+    VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram);
 
     [[nodiscard]] glm::ivec3 getSize() const;
 

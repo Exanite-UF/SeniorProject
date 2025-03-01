@@ -4,7 +4,7 @@
 #include <memory>
 #include <src/world/VoxelWorldData.h>
 
-class WorldGenerator
+class WorldGenerator : public NonCopyable
 {
 protected:
     VoxelWorldData data;
@@ -13,6 +13,7 @@ protected:
 
 public:
     explicit WorldGenerator(glm::ivec3 worldSize);
+
     void generate(VoxelWorld& voxelWorld);
     virtual void showDebugMenu() = 0;
 };

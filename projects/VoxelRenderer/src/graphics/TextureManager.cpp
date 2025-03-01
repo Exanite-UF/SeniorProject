@@ -1,23 +1,9 @@
 #include "TextureManager.h"
 
 #include <src/Program.h>
+#include <src/utilities/Assert.h>
 #include <stb_image.h>
 #include <stdexcept>
-
-TextureManager* TextureManager::instance = nullptr;
-
-TextureManager& TextureManager::getInstance()
-{
-    if (instance == nullptr)
-    {
-        instance = new TextureManager();
-    }
-
-    return *instance;
-}
-
-TextureManager::TextureManager() = default;
-TextureManager::~TextureManager() = default;
 
 GLenum TextureManager::getOpenGlFormat(TextureType type)
 {
@@ -33,7 +19,7 @@ GLenum TextureManager::getOpenGlFormat(TextureType type)
             break;
     }
 
-    throw std::runtime_error("Unsupported texture type: " + type);
+    throw std::runtime_error("Unsupported texture type: " + std::to_string(type));
 }
 
 int TextureManager::getFormatChannelCount(GLenum format)
@@ -50,7 +36,7 @@ int TextureManager::getFormatChannelCount(GLenum format)
             break;
     }
 
-    throw std::runtime_error("Unsupported texture format: " + format);
+    throw std::runtime_error("Unsupported texture format: " + std::to_string(format));
 }
 
 std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type, GLenum format)
@@ -65,7 +51,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
     // Load texture data
     int width, height, rawChannelCount;
     auto rawTextureData = stbi_load(path.data(), &width, &height, &rawChannelCount, 3);
-    Program::assertIsTrue(rawTextureData != nullptr, "Failed to load texture: " + std::string(path));
+    Assert::isTrue(rawTextureData != nullptr, "Failed to load texture: " + std::string(path));
 
     try
     {
@@ -86,7 +72,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Wrap OpenGL handle with the Texture class
-        auto texture = std::make_shared<Texture>(textureId, type);
+        auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height));
 
         // Insert texture into cache
         textures[cacheKey] = texture;

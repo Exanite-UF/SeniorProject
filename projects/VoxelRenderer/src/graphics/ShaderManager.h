@@ -7,10 +7,10 @@
 #include <tuple>
 #include <unordered_map>
 
-#include <src/utilities/NonCopyable.h>
+#include <src/utilities/Singleton.h>
 #include <src/utilities/TupleHasher.h>
 
-class ShaderManager : public NonCopyable
+class ShaderManager : public Singleton<ShaderManager>
 {
 private:
     // (shaderPath, shaderType) -> (shaderModule)
@@ -26,8 +26,6 @@ private:
     // Output is cached
     GLuint getShaderModule(const std::string_view& shaderPath, GLenum shaderType);
 
-    static ShaderManager* instance;
-    ShaderManager();
     ~ShaderManager();
 
 public:
@@ -38,6 +36,4 @@ public:
     // Loads, compiles, and links a compute shader into a compute program
     // Output is cached
     GLuint getComputeProgram(const std::string_view& computeShaderPath);
-
-    static ShaderManager& getInstance();
 };

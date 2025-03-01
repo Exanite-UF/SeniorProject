@@ -1,4 +1,4 @@
-#version 440 core
+#version 460 core
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -113,6 +113,4 @@ void main()
 
     setPos(texelCoord, camPosition);
     setDir(texelCoord, rayDir);
-    // imageStore(rayPosition, texelCoord, vec4(camPosition, shouldTrace));
-    // imageStore(rayDirection, texelCoord, vec4(rayDir, 0.0));
 }

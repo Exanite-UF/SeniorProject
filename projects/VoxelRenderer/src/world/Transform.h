@@ -2,15 +2,16 @@
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>
+#include <src/utilities/NonCopyable.h>
 
-class Transform
+class Transform : public NonCopyable
 {
 private:
     glm::vec3 position = glm::vec3(0, 0, 0);
     glm::quat rotation = glm::quat(1, 0, 0, 0);
     glm::vec3 scale = glm::vec3(1, 1, 1);
 
-    Transform* parent;
+    Transform* parent = nullptr;
 
 public:
     [[nodiscard]] const glm::vec3& getLocalPosition() const;

@@ -1,8 +1,50 @@
-#version 440
+#version 460 core
 
-layout(rgba32f, binding = 0) uniform image3D hitPosition;
-layout(rgba32f, binding = 1) uniform image3D hitNormal;
-layout(r16ui, binding = 2) uniform uimage3D hitMaterial;
+layout(std430, binding = 0) buffer AccumulatedLight
+{
+    float accumulatedLight[];
+};
+
+layout(std430, binding = 1) buffer FirstHitNormal
+{
+    float firstHitNormal[];
+};
+
+layout(std430, binding = 2) buffer FirstHitPosition
+{
+    float firstHitPosition[];
+};
+
+uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+uniform int frameCount;
+uniform vec4 cameraRotation;
+uniform vec3 cameraPosition;
+
+vec3 getLight(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
+
+    return vec3(accumulatedLight[0 + index], accumulatedLight[1 + index], accumulatedLight[2 + index]);
+}
+
+vec3 getNormal(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
+
+    return vec3(firstHitNormal[0 + index], firstHitNormal[1 + index], firstHitNormal[2 + index]);
+}
+
+vec3 getPosition(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
+
+    return vec3(firstHitPosition[0 + index], firstHitPosition[1 + index], firstHitPosition[2 + index]);
+}
+
+vec3 qtransform(vec4 q, vec3 v)
+{
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
 
 out vec4 fragColor;
 
@@ -17,39 +59,48 @@ vec3 hueToRGB(float hue)
 
 void main()
 {
-    ivec3 size = imageSize(hitPosition);
+    ivec3 size = resolution; // imageSize(hitPosition);
 
+    float nearPlane = 0.01;
+    float farPlane = 10000;
+    float depth = farPlane;
     vec3 color = vec3(0);
     for (int i = 0; i < size.z; i++)
     {
-        vec4 pos = imageLoad(hitPosition, ivec3(gl_FragCoord.xy, i));
-        vec4 normal = imageLoad(hitNormal, ivec3(gl_FragCoord.xy, i));
-        uint material = imageLoad(hitMaterial, ivec3(gl_FragCoord.xy, i)).r;
-        float falloff = (normal.w * 0.01 + 1) * (normal.w * 0.01 + 1);
+        ivec3 texelCoord = ivec3(gl_FragCoord.xy, i);
 
-        // This is the pseudo material rendering code
-        uint r = (material & 1) + ((material & 16) >> 3) + ((material & 256) >> 6);
-        uint g = ((material & (1 << 1)) >> 1) + ((material & (16 << 1)) >> 4) + ((material & (256 << 1)) >> 7);
-        uint b = ((material & (1 << 2)) >> 2) + ((material & (16 << 2)) >> 5) + ((material & (256 << 2)) >> 8);
+        vec3 normal = getNormal(texelCoord);
+        vec3 position = getPosition(texelCoord);
 
-        vec3 colorBase = vec3(r / 7.0, g / 7.0, b / 7.0);
+        normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
+        // normal is now in camera space
+        //(1, 0, 0) toward the camera
+        //(0, 1, 0) to the right
+        //(0, 0, 1) down
 
-        /*
-        // This is the workload rendering code
-        vec3 colorBase = vec3(material / 100.f);
+        // Put this into a frame buffer (an actual framebuffer)
+        // And apply an anisotropic blur using the normal
 
-        if (material > 100)
-        {
-            int temp = min(200, int(material));
-            colorBase = hueToRGB(0.5 - (material - 100) / 200.f);
-        }
-        */
+        position = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), position - cameraPosition);
+        // At this point position is in camera space
+        //+x is in front of the camera
+        //+y is to the left of the camera
+        //+z is above the camera
+        depth = min(depth, position.x);
 
-        // vec3 colorBase = abs(normal.xyz);
-        color += colorBase / falloff;
+        vec3 light = getLight(texelCoord);
+
+        vec3 colorBase = light;
+        // vec3 colorBase = -vec3(normal.x, normal.y, normal.z) * frameCount;
+        // vec3 colorBase = 0.001 * vec3(position.x, position.y, position.z) * frameCount;
+
+        color += colorBase;
     }
-    color /= size.z;
+    color /= size.z * frameCount;
     fragColor = vec4(color, 1);
+
+    // This is used to output to the z-buffer. Also note that if this value fails the depth test, the fragment will be discarded.
+    gl_FragDepth = 1 - clamp((depth - nearPlane) / (farPlane - nearPlane), 0, 1); // TODO: Double check my math here
 
     // fragColor = vec4(gl_FragCoord.xy / size.xy, 0, 1);
 }

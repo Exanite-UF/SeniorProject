@@ -11,17 +11,24 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "VoxelRenderer.h"
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/TupleHasher.h>
+#include <src/world/Material.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::executeRayTraceProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
 GLuint VoxelRenderer::displayToWindowProgram;
+GLuint VoxelRenderer::BRDFProgram;
+GLuint VoxelRenderer::resetVisualInfoProgram;
+GLuint VoxelRenderer::fullCastProgram;
+GLuint VoxelRenderer::asynchronousDisplayProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -31,20 +38,24 @@ void VoxelRenderer::remakeTextures()
     // If the variable is 0, meaning that no texture is bound, then it will do nothing
     // glDeleteTextures(1, &rayStartBuffer);
     // glDeleteTextures(1, &rayDirectionBuffer);
-    glDeleteTextures(1, &rayHitPositionBuffer);
-    glDeleteTextures(1, &rayHitNormalBuffer);
-    glDeleteTextures(1, &rayHitMaterialBuffer);
+    uint64_t size1D = size.x * size.y * raysPerPixel;
+
+    rayHitMiscBuffer.setSize(2 * size1D);
+
+    normalBuffer.setSize(size.x * size.y);
+    positionBuffer.setSize(size.x * size.y);
+    materialBuffer.setSize(size.x * size.y);
 
     // Create a new texture
-    rayStartBuffer.setSize(xSize * ySize * raysPerPixel * 3);
-    rayDirectionBuffer.setSize(xSize * ySize * raysPerPixel * 3);
+    rayStartBuffer1.setSize(size1D);
+    rayDirectionBuffer1.setSize(size1D);
+    rayStartBuffer2.setSize(size1D);
+    rayDirectionBuffer2.setSize(size1D);
 
-    // rayStartBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    // rayDirectionBuffer = GraphicsUtils::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-
-    rayHitPositionBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitNormalBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    rayHitMaterialBuffer = GraphicsUtility::create3DImage(xSize, ySize, raysPerPixel, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
+    attentuationBuffer1.setSize(size1D);
+    accumulatedLightBuffer1.setSize(size1D);
+    attentuationBuffer2.setSize(size1D);
+    accumulatedLightBuffer2.setSize(size1D);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -63,17 +74,23 @@ VoxelRenderer::VoxelRenderer()
     executeRayTraceProgram = ShaderManager::getInstance().getComputeProgram(Content::executeRayTraceComputeShader);
     resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
     displayToWindowProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
+    BRDFProgram = ShaderManager::getInstance().getComputeProgram(Content::brdfComputeShader);
+    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
+    fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
+
+    asynchronousDisplayProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::renderAsynchronousFragmentShader);
+
+    glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
 
-void VoxelRenderer::setResolution(int x, int y)
+void VoxelRenderer::setResolution(glm::ivec2 size)
 {
-    if (xSize == x && ySize == y)
+    if (this->size == size)
     {
         return;
     }
 
-    xSize = x;
-    ySize = y;
+    this->size = size;
     isSizingDirty = true;
 }
 
@@ -88,247 +105,276 @@ void VoxelRenderer::setRaysPerPixel(int number)
     isSizingDirty = true;
 }
 
-void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera)
+void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLight)
 {
-    handleDirtySizing();
+    handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
-    GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (ySize + 8 - 1) / 8;
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
 
     glUseProgram(prepareRayTraceFromCameraProgram);
-    rayStartBuffer.bind(0);
-    rayDirectionBuffer.bind(1);
+
+    if (currentBuffer % 2 == 0)
     {
-        glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), xSize, ySize, raysPerPixel);
-        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
-        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
-        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
-        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000) / 1000.f, (rand() % 1000) / 1000.f);
+        rayStartBuffer1.bind(0);
+        rayDirectionBuffer1.bind(1);
+    }
+    else
+    {
+        rayStartBuffer2.bind(0);
+        rayDirectionBuffer2.bind(1);
+    }
+
+    // attentuationBuffer1.bind(2);
+    // accumulatedLightBuffer1.bind(3);
+    // attentuationBuffer2.bind(4);
+    // accumulatedLightBuffer2.bind(5);
+
+    {
+        glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, raysPerPixel);
+
+        lastCameraPosition = camera.transform.getGlobalPosition();
+        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(lastCameraPosition));
+
+        lastCameraRotation = camera.transform.getGlobalRotation();
+        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(lastCameraRotation));
+
+        lastCameraFOV = camera.getHorizontalFov();
+        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), lastCameraFOV);
+        glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000000) / 1000000.f, (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
         // Ensure compute shader completes
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
     }
-    rayStartBuffer.unbind();
-    rayDirectionBuffer.unbind();
 
-    // Reset the hit info
-    glUseProgram(resetHitInfoProgram);
-
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        rayHitPositionBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        rayHitNormalBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        rayHitMaterialBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_R16UI // Format
-    );
+    if (currentBuffer % 2 == 0)
     {
-        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-
-        // Ensure compute shader completes
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        rayStartBuffer1.unbind();
+        rayDirectionBuffer1.unbind();
     }
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    else
+    {
+        rayStartBuffer2.unbind();
+        rayDirectionBuffer2.unbind();
+    }
 
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    // attentuationBuffer1.unbind();
+    // accumulatedLightBuffer1.unbind();
+    // attentuationBuffer2.unbind();
+    // accumulatedLightBuffer2.unbind();
 
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_WRITE_ONLY, // Access qualifier
-        GL_R16UI // Format
-    );
+    resetHitInfo();
 
-    glUseProgram(0);
+    resetVisualInfo(resetLight);
+    isFirstRay = true;
 }
 
-void VoxelRenderer::executeRayTrace(std::vector<VoxelWorld>& worlds)
+void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager)
 {
-    handleDirtySizing();
-
-    glUseProgram(executeRayTraceProgram);
+    // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
+    glUseProgram(fullCastProgram);
 
     // bind rayStart info
-    rayStartBuffer.bind(0);
-    rayDirectionBuffer.bind(1);
+    if (currentBuffer % 2 == 0)
+    {
+        rayStartBuffer1.bind(0); // Input
+        rayDirectionBuffer1.bind(1); // Input
+        rayStartBuffer2.bind(2); // Output
+        rayDirectionBuffer2.bind(3); // Output
+    }
+    else
+    {
+        rayStartBuffer1.bind(2); // Output
+        rayDirectionBuffer1.bind(3); // Output
+        rayStartBuffer2.bind(0); // Input
+        rayDirectionBuffer2.bind(1); // Input
+    }
 
-    // bind hit info
-    glBindImageTexture(
-        5, // Image unit index (matches binding=0)
-        rayHitPositionBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    // Occupancy Map = 4
+    // Material Map = 5
 
-    glBindImageTexture(
-        6, // Image unit index (matches binding=0)
-        rayHitNormalBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    rayHitMiscBuffer.bind(6);
 
-    glBindImageTexture(
-        7, // Image unit index (matches binding=0)
-        rayHitMaterialBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    materialManager.getMaterialMapBuffer().bind(7); // This is a mapping from the material index to the material id
+    materialManager.getMaterialDataBuffer().bind(8); // This binds the base data for each material
+
+    if (currentBuffer % 2 == 0)
+    {
+        attentuationBuffer1.bind(9); // Input
+        accumulatedLightBuffer1.bind(10); // Input
+        attentuationBuffer2.bind(11); // Output
+        accumulatedLightBuffer2.bind(12); // Output
+    }
+    else
+    {
+        attentuationBuffer1.bind(11); // Output
+        accumulatedLightBuffer1.bind(12); // Output
+        attentuationBuffer2.bind(9); // Input
+        accumulatedLightBuffer2.bind(10); // Input
+    }
+
+    normalBuffer.bind(13);
+    positionBuffer.bind(14);
+    materialBuffer.bind(15);
 
     {
-        GLuint workGroupsX = (xSize + 8 - 1) / 8; // Ceiling division
-        GLuint workGroupsY = (ySize + 8 - 1) / 8;
+        GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+        GLuint workGroupsY = (size.y + 8 - 1) / 8;
         GLuint workGroupsZ = raysPerPixel;
 
-        glUniform3i(glGetUniformLocation(executeRayTraceProgram, "resolution"), xSize, ySize, raysPerPixel);
+        glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), size.x, size.y, raysPerPixel);
+
+        glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
+
+        glUniform1ui(glGetUniformLocation(fullCastProgram, "materialMapSize"), Constants::VoxelWorld::materialMapCount);
+        glUniform1ui(glGetUniformLocation(fullCastProgram, "materialCount"), Constants::VoxelWorld::materialCount);
+        glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
         for (auto& voxelWorld : worlds)
         {
-            voxelWorld.bindBuffers(2, 3);
+            voxelWorld->bindBuffers(4, 5);
             {
-                glm::ivec3 voxelSize = voxelWorld.getSize();
+                glm::ivec3 voxelSize = voxelWorld->getSize();
                 // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
                 // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
-                glUniform3i(glGetUniformLocation(executeRayTraceProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(executeRayTraceProgram, "mipMapTextureCount"), voxelWorld.getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "mipMapStartIndices"), voxelWorld.getOccupancyMapIndices().size() - 1, voxelWorld.getOccupancyMapIndices().data());
-                glUniform1uiv(glGetUniformLocation(executeRayTraceProgram, "materialStartIndices"), voxelWorld.getMaterialMapIndices().size() - 1, voxelWorld.getMaterialMapIndices().data());
+                glUniform3i(glGetUniformLocation(fullCastProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
+                glUniform1ui(glGetUniformLocation(fullCastProgram, "mipMapTextureCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "mipMapStartIndices"), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "materialStartIndices"), voxelWorld->getMaterialMapIndices().size() - 1, voxelWorld->getMaterialMapIndices().data());
 
-                glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld.transform.getGlobalPosition()));
-                glUniform4fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld.transform.getGlobalRotation()));
-                glUniform3fv(glGetUniformLocation(executeRayTraceProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld.transform.getGlobalScale()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
+                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
-            voxelWorld.unbindBuffers();
+            voxelWorld->unbindBuffers();
         }
     }
 
     // unbind rayStart info
-    rayStartBuffer.unbind();
-    rayDirectionBuffer.unbind();
+    rayStartBuffer1.unbind();
+    rayDirectionBuffer1.unbind();
+    rayStartBuffer2.unbind();
+    rayDirectionBuffer2.unbind();
 
-    // unbind hit info
-    glBindImageTexture(
-        5, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    rayHitMiscBuffer.unbind();
 
-    glBindImageTexture(
-        6, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    materialManager.getMaterialMapBuffer().unbind();
+    materialManager.getMaterialDataBuffer().unbind();
 
-    glBindImageTexture(
-        7, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    attentuationBuffer1.unbind();
+    accumulatedLightBuffer1.unbind();
+    attentuationBuffer2.unbind();
+    accumulatedLightBuffer2.unbind();
+
+    normalBuffer.unbind();
+    positionBuffer.unbind();
+    materialBuffer.unbind();
+
+    glUseProgram(0);
+
+    currentBuffer++;
+
+    isFirstRay = false;
+}
+
+void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager, int bounces)
+{
+    for (int i = 0; i <= bounces; i++)
+    {
+        executeRayTrace(worlds, MaterialManager::getInstance());
+    }
+}
+
+void VoxelRenderer::resetHitInfo()
+{
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
+    GLuint workGroupsZ = raysPerPixel;
+
+    // Reset the hit info
+    glUseProgram(resetHitInfoProgram);
+
+    rayHitMiscBuffer.bind(0);
+
+    glUniform3i(glGetUniformLocation(resetHitInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
+
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    rayHitMiscBuffer.unbind();
 
     glUseProgram(0);
 }
 
-void VoxelRenderer::display()
+void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
+{
+    glUseProgram(resetVisualInfoProgram);
+
+    attentuationBuffer1.bind(0);
+    accumulatedLightBuffer1.bind(1);
+    attentuationBuffer2.bind(2);
+    accumulatedLightBuffer2.bind(3);
+    normalBuffer.bind(4);
+    positionBuffer.bind(5);
+
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
+    GLuint workGroupsZ = raysPerPixel;
+
+    glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttenuation);
+
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    attentuationBuffer1.unbind();
+    accumulatedLightBuffer1.unbind();
+    attentuationBuffer2.unbind();
+    accumulatedLightBuffer2.unbind();
+    normalBuffer.unbind();
+    positionBuffer.unbind();
+
+    glUseProgram(0);
+}
+
+void VoxelRenderer::display(const Camera& camera, int frameCount)
 {
     glUseProgram(displayToWindowProgram);
 
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        rayHitPositionBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.bind(0);
+    }
+    else
+    {
+        accumulatedLightBuffer2.bind(0);
+    }
 
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        rayHitNormalBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    normalBuffer.bind(1);
+    positionBuffer.bind(2);
 
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        rayHitMaterialBuffer, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), size.x, size.y, raysPerPixel);
+    glUniform1i(glGetUniformLocation(displayToWindowProgram, "frameCount"), frameCount);
+
+    glUniform4fv(glGetUniformLocation(displayToWindowProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
+    glUniform3fv(glGetUniformLocation(displayToWindowProgram, "cameraPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     {
@@ -336,35 +382,90 @@ void VoxelRenderer::display()
     }
     glBindVertexArray(0);
 
-    glBindImageTexture(
-        0, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.unbind();
+    }
+    else
+    {
+        accumulatedLightBuffer2.unbind();
+    }
 
-    glBindImageTexture(
-        1, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_RGBA32F // Format
-    );
-
-    glBindImageTexture(
-        2, // Image unit index (matches binding=0)
-        0, // Texture ID
-        0, // Mip level
-        GL_TRUE, // Layered (true for 3D textures)
-        0, // Layer (ignored for 3D)
-        GL_READ_WRITE, // Access qualifier
-        GL_R16UI // Format
-    );
+    normalBuffer.unbind();
+    positionBuffer.unbind();
 
     glUseProgram(0);
+}
+
+void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
+{
+    lockAsynchronous();
+    glUseProgram(asynchronousDisplayProgram);
+
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.bind(0);
+    }
+    else
+    {
+        accumulatedLightBuffer2.bind(0);
+    }
+
+    normalBuffer.bind(1);
+    positionBuffer.bind(2);
+    materialBuffer.bind(3);
+
+    glUniform3i(glGetUniformLocation(asynchronousDisplayProgram, "resolution"), size.x, size.y, raysPerPixel);
+
+    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(lastCameraRotation));
+    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(lastCameraPosition));
+
+    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+
+    GLuint framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, reprojection.getColorTexture(), 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, reprojection.getPositionTexture(), 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, reprojection.getMaterialTexture(), 0);
+    glDepthFunc(GL_ALWAYS);
+    {
+        const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        glDrawBuffers(3, buffers);
+
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &framebuffer);
+
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.unbind();
+    }
+    else
+    {
+        accumulatedLightBuffer2.unbind();
+    }
+
+    normalBuffer.unbind();
+    positionBuffer.unbind();
+    materialBuffer.unbind();
+
+    glUseProgram(0);
+
+    reprojection.recordCameraTransform(lastCameraPosition, lastCameraRotation, lastCameraFOV);
+
+    glFinish(); // The assignment of the data before unlocking
+    unlockAsynchronous();
+}
+
+void VoxelRenderer::lockAsynchronous()
+{
+    asynchronousMtx.acquire();
+}
+
+void VoxelRenderer::unlockAsynchronous()
+{
+    asynchronousMtx.release();
 }

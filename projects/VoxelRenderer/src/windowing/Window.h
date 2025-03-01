@@ -7,8 +7,9 @@
 #include <unordered_map>
 
 #include <src/utilities/BufferedEvent.h>
+#include <src/utilities/NonCopyable.h>
 
-class Window
+class Window : public NonCopyable
 {
     // Stores last known window sizes/positions when not in fullscreen mode
     glm::i32vec2 lastWindowedPosition = glm::i32vec2(0);
@@ -44,6 +45,7 @@ public:
     BufferedEvent<Window*, int> cursorEnterEvent {};
 
     Window();
+    Window(GLFWwindow* shareContextWith);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 

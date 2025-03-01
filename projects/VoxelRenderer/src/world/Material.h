@@ -5,6 +5,9 @@
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+#include <string>
 
 // Materials are a property of voxels, however, they are also used heavily by the VoxelWorld and VoxelRenderer
 // This means we need to account for how they are used before deciding how they should be stored
@@ -43,8 +46,12 @@ struct MaterialData
     glm::vec3 albedo;
     float padding1;
     glm::vec3 metallicAlbedo;
+    float padding2;
     float roughness;
     float metallic;
+
+    float padding3;
+    float padding4;
 
     // glm::vec3 color;
     //
@@ -56,12 +63,26 @@ struct MaterialData
 
 class Material
 {
+    // A material can be uniquely identified either by its index or its ID
+    // When serializing voxels, voxels should store the integer index to save space
+    // When serializing materials, the string ID should be saved
+    // At least one string ID to integer index mapping should be saved, either in the material file or in a separate file
+
+private:
+    int16_t index = -1; // Index of the material in the material array
+    std::string id; // String ID
+
 public:
-    glm::vec3 emission;
-    glm::vec3 albedo;
-    glm::vec3 metallicAlbedo;
-    float roughness;
-    float metallic;
+    std::string name; // Display name
+
+    glm::vec3 emission = glm::vec3(0);
+    glm::vec3 albedo = glm::vec3(1);
+    glm::vec3 metallicAlbedo = glm::vec3(1);
+    float roughness = 1;
+    float metallic = 0;
+
+    Material();
+    Material(uint16_t index, std::string id, std::string name = "UNNAMED");
 
     // glm::vec3 color = glm::vec3(1, 1, 1);
 
@@ -70,5 +91,6 @@ public:
 
     // GLuint textureId = 0;
 
-    // TODO: Conversion to MaterialData struct (the GPU representation). This should be done by whatever manages the texture array, etc, since it requires more knowledge than what is known by a single material.
+    [[nodiscard]] int16_t getIndex() const;
+    [[nodiscard]] const std::string& getId() const;
 };

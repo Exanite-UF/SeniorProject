@@ -5,7 +5,7 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldUtility.h>
 
-VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram, glm::ivec3 size)
+VoxelWorld::VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
 {
     this->makeNoiseComputeProgram = makeNoiseComputeProgram;
     this->makeMipMapComputeProgram = makeMipMapComputeProgram;
@@ -29,6 +29,7 @@ void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool 
     generateOccupancyUsingNoise(currentNoiseTime, isRand2, fillAmount);
     updateMipMaps();
 
+    // This calls a shader that hard codes the material values (it is non-essential)
     assignMaterial(0);
     assignMaterial(1);
     assignMaterial(2);
@@ -125,7 +126,7 @@ void VoxelWorld::updateMipMaps()
         glDispatchCompute(workGroupCount, 1, 1);
 
         // Ensure compute shader completes
-        glMemoryBarrier(GL_ALL_BARRIER_BITS); // Ensure writes are finished
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Ensure writes are finished
     }
 
     occupancyMap.unbind();
@@ -146,13 +147,13 @@ void VoxelWorld::assignMaterial(int level)
     GLuint workGroupsY = (sizeY + 8 - 1) / 8;
     GLuint workGroupsZ = (sizeZ + 8 - 1) / 8;
 
-    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "resolution"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
+    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "cellCount"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
     glUniform1ui(glGetUniformLocation(assignMaterialComputeProgram, "materialStartIndex"), materialMapIndices[level]); // Pass in the resolution of the previous mip map texture
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
     // Ensure compute shader completes
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     this->materialMap.unbind();
 }
 
@@ -165,5 +166,6 @@ void VoxelWorld::setSize(glm::ivec3 size)
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
 
     materialMapIndices = VoxelWorldUtility::getMaterialMapIndices(size);
+    // std::cout <<"MATERIAL SIZE "<< materialMapIndices[materialMapIndices.size() - 1] << std::endl;
     this->materialMap.setSize(materialMapIndices[materialMapIndices.size() - 1]);
 }
