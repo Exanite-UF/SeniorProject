@@ -1,8 +1,8 @@
 #include "AsynchronousReprojection.h"
 
-#include <src/graphics/ShaderManager.h>
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
+#include <src/graphics/ShaderManager.h>
 
 #include <iostream>
 
@@ -13,10 +13,12 @@ GLuint AsynchronousReprojection::combineMaskProgram;
 void AsynchronousReprojection::generateMesh()
 {
     vertices.resize(size.x * size.y * 3);
-    indices.resize((size.x - 1) * (size.y - 1) * 2 * 3);//number of squares -> number of triangle -> number of edges
+    indices.resize((size.x - 1) * (size.y - 1) * 2 * 3); // number of squares -> number of triangle -> number of edges
 
-    for(int x = 0; x < size.x; x++){
-        for(int y = 0; y < size.y; y++){
+    for (int x = 0; x < size.x; x++)
+    {
+        for (int y = 0; y < size.y; y++)
+        {
             std::size_t index = 3 * (x + y * size.x);
 
             vertices[index + 0] = (float)x / (size.x - 1);
@@ -25,11 +27,13 @@ void AsynchronousReprojection::generateMesh()
         }
     }
 
-    for(int x = 0; x < size.x - 1; x++){
-        for(int y = 0; y < size.y - 1; y++){
+    for (int x = 0; x < size.x - 1; x++)
+    {
+        for (int y = 0; y < size.y - 1; y++)
+        {
             std::size_t index = 6 * (x + y * (size.x - 1));
-            
-            //This happens once per square
+
+            // This happens once per square
             std::size_t topLeftI = (x + y * size.x);
             std::size_t topRightI = topLeftI + 1;
             std::size_t bottomLeftI = topLeftI + size.x;
@@ -48,14 +52,13 @@ void AsynchronousReprojection::generateMesh()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW); 
-
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW); 
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0); 
+    glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 }
 
@@ -65,8 +68,8 @@ AsynchronousReprojection::AsynchronousReprojection(glm::ivec2 size)
     combineProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::combineReprojectionFragmentShader);
     combineMaskProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::makeCombineMaskFragmentShader);
 
-    glGenVertexArrays(1, &VAO);  
-    glGenBuffers(1, &VBO);  
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
     setSize(size);
@@ -74,28 +77,36 @@ AsynchronousReprojection::AsynchronousReprojection(glm::ivec2 size)
 
 GLuint AsynchronousReprojection::getColorTexture() const
 {
-    if(currentFrameBuffer % 2 == 0){
+    if (currentFrameBuffer % 2 == 0)
+    {
         return colorTextureId1;
-    }else{
+    }
+    else
+    {
         return colorTextureId2;
     }
-    
 }
 
 GLuint AsynchronousReprojection::getPositionTexture() const
 {
-    if(currentFrameBuffer % 2 == 0){
+    if (currentFrameBuffer % 2 == 0)
+    {
         return positionTextureId1;
-    }else{
+    }
+    else
+    {
         return positionTextureId2;
     }
 }
 
 GLuint AsynchronousReprojection::getMaterialTexture() const
 {
-    if(currentFrameBuffer % 2 == 0){
+    if (currentFrameBuffer % 2 == 0)
+    {
         return materialTextureId1;
-    }else{
+    }
+    else
+    {
         return materialTextureId2;
     }
 }
@@ -118,7 +129,7 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
 
     generateMesh();
 
-    //Create textures 1
+    // Create textures 1
     {
         // Create color texture
         glDeleteTextures(1, &colorTextureId1);
@@ -151,7 +162,6 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
-
         // Create material texture
         glDeleteTextures(1, &materialTextureId1);
         glGenTextures(1, &materialTextureId1);
@@ -169,8 +179,8 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
         }
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-    
-    //Create textures 2
+
+    // Create textures 2
     {
         // Create color texture
         glDeleteTextures(1, &colorTextureId2);
@@ -201,8 +211,7 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, size.x, size.y, 0, GL_RGB, GL_FLOAT, nullptr);
         }
-        glBindTexture(GL_TEXTURE_2D, 0); 
-
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Create material texture
         glDeleteTextures(1, &materialTextureId2);
@@ -221,7 +230,6 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
         }
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-    
 
     // Create frame count texture
     glDeleteTextures(1, &frameCountTextureID1);
@@ -256,8 +264,7 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-
-    //Make combine mask texture 
+    // Make combine mask texture
     glDeleteTextures(1, &combineMaskTextureID);
     glGenTextures(1, &combineMaskTextureID);
     glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
@@ -279,28 +286,30 @@ void AsynchronousReprojection::render(const Camera& camera)
 {
     glUseProgram(renderProgram);
 
-    //std::cout << currentFrameBuffer << std::endl;
+    // std::cout << currentFrameBuffer << std::endl;
 
-    //These use the opposite buffer that the get function returns
-    if(currentFrameBuffer % 2 == 0){
+    // These use the opposite buffer that the get function returns
+    if (currentFrameBuffer % 2 == 0)
+    {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTextureId2);
-    
+
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-    }else{
+    }
+    else
+    {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTextureId1);
-    
+
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, positionTextureId1);
     }
-    
 
-    glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
-    glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
+    glm::vec3 deltaPos = camera.transform.getGlobalPosition(); // - lastCameraPosition;
+    glm::quat deltaRot = camera.transform.getGlobalRotation(); // * glm::inverse(lastCameraRotation);
 
-    //std::cout << deltaPos.x << " " << deltaPos.y << " " << deltaPos.z << std::endl;
+    // std::cout << deltaPos.x << " " << deltaPos.y << " " << deltaPos.z << std::endl;
 
     glUniform3f(glGetUniformLocation(renderProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
     glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
@@ -309,13 +318,13 @@ void AsynchronousReprojection::render(const Camera& camera)
 
     glBindVertexArray(VAO);
     {
-        //glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        //glPointSize(3);//I don't know why the points need to be this large
-        //glDrawArrays(GL_POINTS, 0, vertices.size());
+        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        // glPointSize(3);//I don't know why the points need to be this large
+        // glDrawArrays(GL_POINTS, 0, vertices.size());
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        // glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     glBindVertexArray(0);
 
@@ -343,22 +352,26 @@ void AsynchronousReprojection::swapBuffers()
 void AsynchronousReprojection::combineBuffers()
 {
     static int oldBuffer = 0;
-    if(oldBuffer == currentFrameBuffer){
+    if (oldBuffer == currentFrameBuffer)
+    {
         return;
     }
-    //This is where combination occurs
+    // This is where combination occurs
 
-    //Make mask
+    // Make mask
     {
         glUseProgram(combineMaskProgram);
-        
-        if(currentFrameBuffer % 2 == 1){
+
+        if (currentFrameBuffer % 2 == 1)
+        {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorTextureId2);
 
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-        }else{
+        }
+        else
+        {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorTextureId1);
 
@@ -366,39 +379,36 @@ void AsynchronousReprojection::combineBuffers()
             glBindTexture(GL_TEXTURE_2D, positionTextureId1);
         }
 
+        glm::vec3 deltaPos = lastCameraPosition; // camera.transform.getGlobalPosition();// - lastCameraPosition;
+        glm::quat deltaRot = lastCameraRotation; // camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
 
-        glm::vec3 deltaPos = lastCameraPosition;//camera.transform.getGlobalPosition();// - lastCameraPosition;
-        glm::quat deltaRot = lastCameraRotation;//camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
-
-        //glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
-        //glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
+        // glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
+        // glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
 
         glUniform3f(glGetUniformLocation(combineMaskProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
         glUniform4f(glGetUniformLocation(combineMaskProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
         glUniform2i(glGetUniformLocation(combineMaskProgram, "resolution"), size.x, size.y);
         glUniform1f(glGetUniformLocation(combineMaskProgram, "horizontalFovTan"), lastCameraFOV);
 
-
-
-        //Need to render to a custom framebuffer, that switches its render target every time
+        // Need to render to a custom framebuffer, that switches its render target every time
         GLuint framebuffer;
         glGenFramebuffers(1, &framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        //Bind new data
+        // Bind new data
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, combineMaskTextureID, 0);
 
         glBindVertexArray(VAO);
         {
-            //glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glPointSize(3);//I don't know why the points need to be this large
+            glPointSize(3); // I don't know why the points need to be this large
             glDrawArrays(GL_POINTS, 0, vertices.size());
 
-            //glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-            
-            //glBindBuffer(GL_ARRAY_BUFFER, 0);
-            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+            // glBindBuffer(GL_ARRAY_BUFFER, 0);
+            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
         glBindVertexArray(0);
 
@@ -412,136 +422,142 @@ void AsynchronousReprojection::combineBuffers()
         glBindTexture(GL_TEXTURE_2D, 0);
 
         glUseProgram(0);
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
     }
 
-
-
-    //Combine
+    // Combine
     {
         glUseProgram(combineProgram);
 
-        //Bind old data
-        if(currentFrameBuffer % 2 == 1){
+        // Bind old data
+        if (currentFrameBuffer % 2 == 1)
+        {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorTextureId2);
-    
+
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-        }else{
+        }
+        else
+        {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorTextureId1);
-    
+
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, positionTextureId1);
         }
-    
-    
-        //Bind new data
-        if(currentFrameBuffer % 2 == 1){
+
+        // Bind new data
+        if (currentFrameBuffer % 2 == 1)
+        {
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId1);//Used to reject old data
-    
+            glBindTexture(GL_TEXTURE_2D, positionTextureId1); // Used to reject old data
+
             glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, materialTextureId1);//Used to reject old data
-        }else{
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId2);//Used to reject old data
-    
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, materialTextureId2);//Used to reject old data
+            glBindTexture(GL_TEXTURE_2D, materialTextureId1); // Used to reject old data
         }
-    
-        //Old frame count
-        if(currentFrameBuffer % 2 == 1){
+        else
+        {
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, positionTextureId2); // Used to reject old data
+
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, materialTextureId2); // Used to reject old data
+        }
+
+        // Old frame count
+        if (currentFrameBuffer % 2 == 1)
+        {
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, frameCountTextureID2);
-        }else{
+        }
+        else
+        {
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, frameCountTextureID1);
         }
-    
+
         glActiveTexture(GL_TEXTURE5);
         glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
-    
-        //Set uniform data
-        glm::vec3 deltaPos = lastCameraPosition;//camera.transform.getGlobalPosition();// - lastCameraPosition;
-        glm::quat deltaRot = lastCameraRotation;//camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
-        //glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
-        //glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
-    
+
+        // Set uniform data
+        glm::vec3 deltaPos = lastCameraPosition; // camera.transform.getGlobalPosition();// - lastCameraPosition;
+        glm::quat deltaRot = lastCameraRotation; // camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
+        // glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
+        // glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
+
         glUniform3f(glGetUniformLocation(combineProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
         glUniform4f(glGetUniformLocation(combineProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
         glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
-    
+
         glUniform1f(glGetUniformLocation(combineProgram, "horizontalFovTan"), lastCameraFOV);
-    
-    
-        //Need to render to a custom framebuffer, that switches its render target every time
+
+        // Need to render to a custom framebuffer, that switches its render target every time
         GLuint framebuffer;
         glGenFramebuffers(1, &framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        //Bind new data
-        if(currentFrameBuffer % 2 == 1){
+        // Bind new data
+        if (currentFrameBuffer % 2 == 1)
+        {
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextureId1, 0);
-        }else{
+        }
+        else
+        {
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextureId2, 0);
         }
-    
-        //New frame count
-        if(currentFrameBuffer % 2 == 1){
+
+        // New frame count
+        if (currentFrameBuffer % 2 == 1)
+        {
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextureID1, 0);
-        }else{
+        }
+        else
+        {
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextureID2, 0);
         }
-        
-    
-        
+
         glBindVertexArray(VAO);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         {
-            //glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+            const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
             glDrawBuffers(2, buffers);
             glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-            
-            //glBindBuffer(GL_ARRAY_BUFFER, 0);
-            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+            // glBindBuffer(GL_ARRAY_BUFFER, 0);
+            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
         glDisable(GL_BLEND);
         glBindVertexArray(0);
-    
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDeleteFramebuffers(1, &framebuffer);
-    
-    
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
-    
+
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
-    
+
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, 0);
-        
+
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, 0);
-    
+
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         glActiveTexture(GL_TEXTURE5);
         glBindTexture(GL_TEXTURE_2D, 0);
-    
+
         glUseProgram(0);
     }
 
     glFinish();
     oldBuffer = currentFrameBuffer;
 }
-
-

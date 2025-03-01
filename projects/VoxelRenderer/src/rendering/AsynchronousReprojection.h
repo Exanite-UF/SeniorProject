@@ -1,22 +1,23 @@
 #pragma once
 
 #include <GL/glew.h>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <src/world/Camera.h>
 
-#include <vector>
 #include <mutex>
+#include <vector>
 
-//I should probably use a framebuffer, but this needs a custom framebuffer
-class AsynchronousReprojection{
+// I should probably use a framebuffer, but this needs a custom framebuffer
+class AsynchronousReprojection
+{
 private:
     glm::ivec2 size;
     GLuint colorTextureId1;
     GLuint positionTextureId1;
-    GLuint materialTextureId1;//Used to combine frames
+    GLuint materialTextureId1; // Used to combine frames
 
     GLuint colorTextureId2;
     GLuint positionTextureId2;
@@ -27,10 +28,7 @@ private:
 
     GLuint combineMaskTextureID;
 
-
-
-    int currentFrameBuffer = 0;//This is the framebuffer that the VoxelRenderer renders to
-
+    int currentFrameBuffer = 0; // This is the framebuffer that the VoxelRenderer renders to
 
     glm::quat lastCameraRotation;
     glm::vec3 lastCameraPosition;
@@ -63,7 +61,7 @@ public:
 
     void recordCameraTransform(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 
-    //Uses the mutex to prevent the path tracing from starting until the temporal accumulation is done
+    // Uses the mutex to prevent the path tracing from starting until the temporal accumulation is done
     void swapBuffers();
 
     void combineBuffers();

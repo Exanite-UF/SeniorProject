@@ -15,9 +15,8 @@ in float distance;
 
 uniform ivec2 resolution;
 
-layout (location = 0) out vec4 out_color;
-layout (location = 1) out vec4 frameCountOut;
-
+layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 frameCountOut;
 
 void main()
 {
@@ -37,8 +36,6 @@ void main()
 
     frameCount = min(frameCount, 10);
 
-
     out_color = vec4(texture(oldColor, uv).xyz, float(frameCount) / (frameCount + 1));
     frameCountOut = vec4(frameCount + 1, 0, 0, 1);
-
 }

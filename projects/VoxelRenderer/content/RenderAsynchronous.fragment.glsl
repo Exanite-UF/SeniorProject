@@ -20,7 +20,6 @@ layout(std430, binding = 3) buffer FirstHitMaterial
     float firstHitMaterial[];
 };
 
-
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform vec4 cameraRotation;
 uniform vec3 cameraPosition;
@@ -53,13 +52,10 @@ vec3 getMaterial(ivec3 coord)
     return vec3(firstHitMaterial[0 + index], firstHitMaterial[1 + index], firstHitMaterial[2 + index]);
 }
 
-
 vec3 qtransform(vec4 q, vec3 v)
 {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
-
-
 
 vec3 hueToRGB(float hue)
 {
@@ -71,9 +67,9 @@ vec3 hueToRGB(float hue)
 }
 
 in vec2 uv;
-layout (location = 0) out vec4 fragColor;
-layout (location = 1) out vec3 posBuffer;
-layout (location = 2) out vec3 matBuffer;
+layout(location = 0) out vec4 fragColor;
+layout(location = 1) out vec3 posBuffer;
+layout(location = 2) out vec3 matBuffer;
 
 void main()
 {
@@ -93,13 +89,13 @@ void main()
     // Put this into a frame buffer (an actual framebuffer)
     // And apply an anisotropic blur using the normal
 
-    //position = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), position - cameraPosition);
-    // At this point position is in camera space
+    // position = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), position - cameraPosition);
+    //  At this point position is in camera space
     //+x is in front of the camera
     //+y is to the left of the camera
     //+z is above the camera
 
-    //position = position - cameraPosition;
+    // position = position - cameraPosition;
 
     for (int i = 0; i < size.z; i++)
     {
@@ -108,9 +104,9 @@ void main()
         vec3 light = getLight(texelCoord);
 
         vec3 colorBase = light;
-        //vec3 colorBase = vec3(material.x);
-        // vec3 colorBase = -vec3(normal.x, normal.y, normal.z) * frameCount;
-        // vec3 colorBase = 0.001 * vec3(position.x, position.y, position.z) * frameCount;
+        // vec3 colorBase = vec3(material.x);
+        //  vec3 colorBase = -vec3(normal.x, normal.y, normal.z) * frameCount;
+        //  vec3 colorBase = 0.001 * vec3(position.x, position.y, position.z) * frameCount;
 
         color += colorBase;
     }
@@ -119,5 +115,4 @@ void main()
     fragColor = vec4(color, 1);
     posBuffer = position;
     matBuffer = material;
-   
 }

@@ -81,7 +81,6 @@ VoxelRenderer::VoxelRenderer()
     asynchronousDisplayProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::renderAsynchronousFragmentShader);
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
-
 }
 
 void VoxelRenderer::setResolution(glm::ivec2 size)
@@ -252,16 +251,12 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
-                
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-                
             }
             voxelWorld->unbindBuffers();
         }
-    }    
-
+    }
 
     // unbind rayStart info
     rayStartBuffer1.unbind();
@@ -425,7 +420,6 @@ void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
     glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(lastCameraRotation));
     glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(lastCameraPosition));
 
-
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
     GLuint framebuffer;
@@ -436,11 +430,10 @@ void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, reprojection.getMaterialTexture(), 0);
     glDepthFunc(GL_ALWAYS);
     {
-        const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
         glDrawBuffers(3, buffers);
-        
+
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        
     }
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -463,7 +456,7 @@ void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
 
     reprojection.recordCameraTransform(lastCameraPosition, lastCameraRotation, lastCameraFOV);
 
-    glFinish();//The assignment of the data before unlocking
+    glFinish(); // The assignment of the data before unlocking
     unlockAsynchronous();
 }
 
