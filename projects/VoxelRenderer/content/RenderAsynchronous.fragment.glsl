@@ -15,6 +15,10 @@ layout(std430, binding = 2) buffer FirstHitPosition
     float firstHitPosition[];
 };
 
+layout(std430, binding = 3) buffer FirstHitMaterial
+{
+    float firstHitMaterial[];
+};
 
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
@@ -42,6 +46,14 @@ vec3 getPosition(ivec3 coord)
     return vec3(firstHitPosition[0 + index], firstHitPosition[1 + index], firstHitPosition[2 + index]);
 }
 
+vec3 getMaterial(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
+
+    return vec3(firstHitMaterial[0 + index], firstHitMaterial[1 + index], firstHitMaterial[2 + index]);
+}
+
+
 vec3 qtransform(vec4 q, vec3 v)
 {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
@@ -61,6 +73,7 @@ vec3 hueToRGB(float hue)
 in vec2 uv;
 layout (location = 0) out vec4 fragColor;
 layout (location = 1) out vec3 posBuffer;
+layout (location = 2) out vec3 matBuffer;
 
 void main()
 {
@@ -69,6 +82,7 @@ void main()
 
     vec3 normal = getNormal(ivec3(gl_FragCoord.xy, 0));
     vec3 position = getPosition(ivec3(gl_FragCoord.xy, 0));
+    vec3 material = getMaterial(ivec3(gl_FragCoord.xy, 0));
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
     // normal is now in camera space
@@ -94,6 +108,7 @@ void main()
         vec3 light = getLight(texelCoord);
 
         vec3 colorBase = light;
+        //vec3 colorBase = vec3(material.x);
         // vec3 colorBase = -vec3(normal.x, normal.y, normal.z) * frameCount;
         // vec3 colorBase = 0.001 * vec3(position.x, position.y, position.z) * frameCount;
 
@@ -103,5 +118,6 @@ void main()
 
     fragColor = vec4(color, 1);
     posBuffer = position;
+    matBuffer = material;
    
 }

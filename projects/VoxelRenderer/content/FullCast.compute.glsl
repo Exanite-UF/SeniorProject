@@ -218,6 +218,9 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
+
+
+
 layout(std430, binding = 13) buffer FirstHitNormal
 {
     float firstHitNormal[];
@@ -243,6 +246,22 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[1 + index] = value.y;
     firstHitPosition[2 + index] = value.z;
 }
+
+
+
+layout(std430, binding = 15) buffer FirstHitMaterial
+{
+    float firstHitMaterial[];
+};
+
+void setFirstHitMaterial(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitMaterial[0 + index] = value.x;
+    firstHitMaterial[1 + index] = value.y;
+    firstHitMaterial[2 + index] = value.z;
+}
+
 
 
 struct RayHit
@@ -640,6 +659,12 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     voxelMaterial.metallic *= rmTexture.g;
     */
 
+
+    if (texelCoord.z == 0 && isFirstRay)
+    {
+        setFirstHitMaterial(texelCoord, vec3(voxelMaterial.roughness, 0, 0));
+    }
+
     normal = normalize(normal);
     direction = normalize(direction);
 
@@ -689,6 +714,7 @@ void attempt(ivec3 texelCoord)
         setAttenuation(texelCoord, vec3(0));
         if(texelCoord.z == 0 && isFirstRay){
             setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
+            setFirstHitMaterial(texelCoord, vec3(1, 0, 0));//The skybox has a roughness of 1
         }
         
     }

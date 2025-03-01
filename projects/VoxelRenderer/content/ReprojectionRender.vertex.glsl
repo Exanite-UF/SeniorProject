@@ -6,6 +6,7 @@ layout(binding = 1) uniform sampler2D positionTexture;
 uniform vec4 inverseCameraRotation;
 uniform vec3 cameraPosition;
 uniform ivec2 resolution;
+uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 
 out vec2 uv;
 
@@ -16,11 +17,6 @@ vec3 qtransform(vec4 q, vec3 v)
 
 void main()
 {
-    vec4 positionUvs[3];
-    positionUvs[0] = vec4(-1, -1, 0, 0);
-    positionUvs[1] = vec4(3, -1, 2, 0);
-    positionUvs[2] = vec4(-1, 3, 0, 2);
-
     vec3 pos = texture(positionTexture, aPos.xy).xyz;
 
     pos -= cameraPosition;
@@ -28,6 +24,13 @@ void main()
 
     pos = vec3(-pos.y, pos.z, pos.x);
     pos.y *= resolution.x / float(resolution.y);//Correct for aspect ratio
+    pos.z *= horizontalFovTan;
+
+    pos.x *= float(resolution.x) / (resolution.x - 1);
+    pos.y *= float(resolution.y) / (resolution.y - 1);
+
+    //pos.x /= (1 - resolution.x * 0.000001);
+    //pos.y /= (1 - resolution.y * 0.000001);
 
     uv = vec2(aPos.xy);
     gl_Position = vec4(pos.xy, 0.1, pos.z);

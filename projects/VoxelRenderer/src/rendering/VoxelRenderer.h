@@ -7,6 +7,8 @@
 #include <src/world/VoxelWorld.h>
 #include <vector>
 #include <thread>
+#include <mutex>
+#include <semaphore>
 
 #include "AsynchronousReprojection.h"
 
@@ -40,10 +42,14 @@ private:
     GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
     GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
+    //Used as the final output buffers
     GraphicsBuffer<glm::vec3> normalBuffer;
     GraphicsBuffer<glm::vec3> positionBuffer;
+    GraphicsBuffer<glm::vec3> materialBuffer;//(roughness, _, _)
 
     int currentBuffer = 0;
+
+    std::binary_semaphore asynchronousMtx{1};//locked by asynchronous reprojection to prevent the asynchronous reprojection buffer from being overwritten too early
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
@@ -62,6 +68,10 @@ private:
 
     bool isFirstRay = false;
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
+
+    glm::vec3 lastCameraPosition;
+    glm::quat lastCameraRotation;
+    float lastCameraFOV;
 
     
 
@@ -88,5 +98,7 @@ public:
 
     void display(const Camera& camera, int frameCount);
 
-    void asynchronousDisplay(const Camera& camera, AsynchronousReprojection& reprojection);
+    void asynchronousDisplay(AsynchronousReprojection& reprojection);
+    void lockAsynchronous();
+    void unlockAsynchronous();
 };

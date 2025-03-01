@@ -127,7 +127,7 @@ Program::~Program()
     glfwTerminate();
 }
 
-
+//This will finish before continuing
 void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection){
     glDepthFunc(GL_ALWAYS);
     // Resize resources
@@ -142,9 +142,7 @@ void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std:
     renderer.prepareRayTraceFromCamera(*camera);
     renderer.executePathTrace(scene.worlds, MaterialManager::getInstance(), 2);
 
-    renderer.asynchronousDisplay(*camera, reprojection);
-
-    
+    renderer.asynchronousDisplay(reprojection);//This will finish before continuing
 }
 
 
@@ -154,12 +152,11 @@ void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::s
     while(!isDone){
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-        glFinish();
         //glfwSwapBuffers(context);
         framesThisCycle1++;
-
+        
         reprojection.swapBuffers();
-
+        renderer.lockAsynchronous();
         
         //auto end = std::chrono::high_resolution_clock::now();
         //while(std::chrono::duration<double>(end - start).count() < 1){
@@ -510,12 +507,19 @@ void Program::run()
             // Render to offscreen texture
                        
             //renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-            {                
+            {       
+               
+
                 renderResolution = window->size;
                 reprojection.setSize(renderResolution);
+                
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glDepthFunc(GL_GREATER);
                 
+                reprojection.combineBuffers();
+                renderer.unlockAsynchronous();
+
+
                 reprojection.render(*camera);
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -528,7 +532,10 @@ void Program::run()
         // Present
         glfwSwapBuffers(window->glfwWindowHandle);
     }
+
+    
     isDone = true;
+    renderer.unlockAsynchronous();
     pathTraceThread.join();
 }
 

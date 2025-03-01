@@ -44,6 +44,7 @@ void VoxelRenderer::remakeTextures()
 
     normalBuffer.setSize(size.x * size.y);
     positionBuffer.setSize(size.x * size.y);
+    materialBuffer.setSize(size.x * size.y);
 
     // Create a new texture
     rayStartBuffer1.setSize(size1D);
@@ -133,10 +134,15 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
 
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, raysPerPixel);
-        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
 
-        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
-        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
+        lastCameraPosition = camera.transform.getGlobalPosition();
+        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(lastCameraPosition));
+
+        lastCameraRotation = camera.transform.getGlobalRotation();
+        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(lastCameraRotation));
+
+        lastCameraFOV = camera.getHorizontalFov();
+        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), lastCameraFOV);
         glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000000) / 1000000.f, (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -213,6 +219,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     normalBuffer.bind(13);
     positionBuffer.bind(14);
+    materialBuffer.bind(15);
 
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -274,6 +281,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     normalBuffer.unbind();
     positionBuffer.unbind();
+    materialBuffer.unbind();
 
     glUseProgram(0);
 
@@ -394,8 +402,9 @@ void VoxelRenderer::display(const Camera& camera, int frameCount)
     glUseProgram(0);
 }
 
-void VoxelRenderer::asynchronousDisplay(const Camera& camera, AsynchronousReprojection& reprojection)
+void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
 {
+    lockAsynchronous();
     glUseProgram(asynchronousDisplayProgram);
 
     if (currentBuffer % 2 == 0)
@@ -409,11 +418,12 @@ void VoxelRenderer::asynchronousDisplay(const Camera& camera, AsynchronousReproj
 
     normalBuffer.bind(1);
     positionBuffer.bind(2);
+    materialBuffer.bind(3);
 
     glUniform3i(glGetUniformLocation(asynchronousDisplayProgram, "resolution"), size.x, size.y, raysPerPixel);
 
-    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
-    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
+    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(lastCameraRotation));
+    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(lastCameraPosition));
 
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
@@ -423,11 +433,14 @@ void VoxelRenderer::asynchronousDisplay(const Camera& camera, AsynchronousReproj
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, reprojection.getColorTexture(), 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, reprojection.getPositionTexture(), 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, reprojection.getMaterialTexture(), 0);
     glDepthFunc(GL_ALWAYS);
     {
-        const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-        glDrawBuffers(2, buffers);
+        const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        glDrawBuffers(3, buffers);
+        
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        
     }
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -444,8 +457,22 @@ void VoxelRenderer::asynchronousDisplay(const Camera& camera, AsynchronousReproj
 
     normalBuffer.unbind();
     positionBuffer.unbind();
+    materialBuffer.unbind();
 
     glUseProgram(0);
 
-    reprojection.recordCameraTransform(camera);
+    reprojection.recordCameraTransform(lastCameraPosition, lastCameraRotation, lastCameraFOV);
+
+    glFinish();//The assignment of the data before unlocking
+    unlockAsynchronous();
+}
+
+void VoxelRenderer::lockAsynchronous()
+{
+    asynchronousMtx.acquire();
+}
+
+void VoxelRenderer::unlockAsynchronous()
+{
+    asynchronousMtx.release();
 }
