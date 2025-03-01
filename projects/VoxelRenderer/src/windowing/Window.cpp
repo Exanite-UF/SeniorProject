@@ -1,8 +1,14 @@
 #include <stdexcept>
 
+#include "Window.h"
 #include <src/windowing/Window.h>
 
 Window::Window()
+{
+    Window(NULL);
+}
+
+Window::Window(GLFWwindow* shareContextWith)
 {
     // Configure GLFW and OpenGL
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
@@ -12,7 +18,7 @@ Window::Window()
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // Enable debug messages
 
     // Create the window
-    glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, nullptr);
+    glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, shareContextWith);
     if (glfwWindowHandle == nullptr)
     {
         throw std::runtime_error("Failed to create window");

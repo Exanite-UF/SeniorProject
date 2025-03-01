@@ -1,26 +1,74 @@
 #include "MaterialManager.h"
 
 #include <array>
+#include <cmath>
 #include <span>
-
-MaterialManager* MaterialManager::instance = nullptr;
-
-MaterialManager& MaterialManager::getInstance()
-{
-    if (instance == nullptr)
-    {
-        instance = new MaterialManager();
-    }
-
-    return *instance;
-}
+#include <src/utilities/ColorUtility.h>
 
 MaterialManager::MaterialManager()
 {
-    for (size_t i = 0; i < materials.size(); i++)
+    size_t customMaterialCount = 0;
+    auto addMaterial = [&](std::string id, std::string name) -> Material&
     {
-        auto material = Material();
-        // TODO: Set placeholder material properties
+        auto index = customMaterialCount;
+        customMaterialCount++;
+
+        materials[index] = Material(index, name);
+        return materials[index];
+    };
+
+    // Define custom materials
+    {
+        auto& material = addMaterial("dirt", "Dirt");
+        material.albedo = ColorUtility::srgbToLinear("#70381c");
+        material.emission = glm::vec3(0);
+        material.metallic = 0;
+        material.metallicAlbedo = glm::vec3(0);
+        material.roughness = 1;
+    }
+
+    {
+        auto& material = addMaterial("blue_light", "Blue Light");
+        material.albedo = glm::vec3(1);
+        material.emission = ColorUtility::srgbToLinear("#09e4e8");
+        material.metallic = 0;
+        material.metallicAlbedo = glm::vec3(0);
+        material.roughness = 1;
+    }
+
+    {
+        auto& material = addMaterial("red_light", "Red Light");
+        material.albedo = glm::vec3(1);
+        material.emission = ColorUtility::srgbToLinear("#ff0000");
+        material.metallic = 0;
+        material.metallicAlbedo = glm::vec3(0);
+        material.roughness = 1;
+    }
+
+    // Generate placeholder materials
+    for (size_t i = customMaterialCount; i < materials.size(); i++)
+    {
+        auto material = Material(i, "Material " + std::to_string(i));
+        if (i % 4 == 0)
+        {
+            material.emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
+            material.albedo = material.emission;
+            material.emission *= 0.5;
+            // material.emission = glm::vec3(1, 1, 1);
+            // material.emission *= glm::vec3(0.1, 0.1, 0.1);
+
+            material.metallic = 0.0;
+            material.metallicAlbedo = glm::vec3(0, 0, 0);
+        }
+        else
+        {
+            material.emission = glm::vec3(0, 0, 0);
+            material.albedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
+            material.metallic = (rand() % 1000) / 1000.0;
+            material.metallicAlbedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
+        }
+
+        material.roughness = (rand() % 1000) / 1000.0;
 
         materials[i] = material;
     }
@@ -33,8 +81,40 @@ MaterialManager::MaterialManager()
     writeToGpu();
 }
 
-MaterialManager::~MaterialManager()
+uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint16_t mipMapId) const
 {
+    return materialMap[mipMapId];
+}
+
+uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const
+{
+    uint32_t id = ((material0 & 0b1111) << 0) | ((material1 & 0b1111) << 4) | ((material2 & 0b1111) << 8);
+    return materialMap[id];
+}
+
+Material& MaterialManager::getMaterialByMipMappedId(uint16_t mipMapId)
+{
+    return getMaterialByIndex(getMaterialIndexByMipMappedId(mipMapId));
+}
+
+Material& MaterialManager::getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2)
+{
+    return getMaterialByIndex(getMaterialIndexByMipMappedId(material0, material1, material2));
+}
+
+Material& MaterialManager::getMaterialByIndex(uint16_t index)
+{
+    return materials[index];
+}
+
+GraphicsBuffer<uint32_t>& MaterialManager::getMaterialMapBuffer()
+{
+    return materialMapBuffer;
+}
+
+GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
+{
+    return materialDataBuffer;
 }
 
 void MaterialManager::writeToGpu()
@@ -57,14 +137,4 @@ void MaterialManager::writeToGpu()
     // Write data to GPU
     materialMapBuffer.readFrom(materialMap);
     materialDataBuffer.readFrom(materialData);
-}
-
-GraphicsBuffer<uint32_t>& MaterialManager::getMaterialMapBuffer()
-{
-    return materialMapBuffer;
-}
-
-GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
-{
-    return materialDataBuffer;
 }
