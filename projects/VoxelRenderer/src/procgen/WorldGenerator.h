@@ -13,6 +13,7 @@ protected:
 
 public:
     explicit WorldGenerator(glm::ivec3 worldSize);
+
     void generate(VoxelWorld& voxelWorld);
     virtual void showDebugMenu() = 0;
 };
