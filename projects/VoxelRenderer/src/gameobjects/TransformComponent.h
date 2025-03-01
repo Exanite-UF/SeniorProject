@@ -17,7 +17,6 @@ class TransformComponent : public Component
     // onDestroy() override;
 
 public:
-
     std::shared_ptr<GameObject> gameObject;
     Transform* transform; // don't think we need a shared ptr for this
 

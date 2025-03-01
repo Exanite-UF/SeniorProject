@@ -16,5 +16,5 @@ TransformComponent::~TransformComponent()
 
 void TransformComponent::destroy()
 {
-    //not sure if transform needs a destory, might make it virtual
+    // not sure if transform needs a destory, might make it virtual
 }
