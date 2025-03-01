@@ -28,6 +28,7 @@ GLuint VoxelRenderer::displayToWindowProgram;
 GLuint VoxelRenderer::BRDFProgram;
 GLuint VoxelRenderer::resetVisualInfoProgram;
 GLuint VoxelRenderer::fullCastProgram;
+GLuint VoxelRenderer::asynchronousDisplayProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -43,6 +44,7 @@ void VoxelRenderer::remakeTextures()
 
     normalBuffer.setSize(size.x * size.y);
     positionBuffer.setSize(size.x * size.y);
+    materialBuffer.setSize(size.x * size.y);
 
     // Create a new texture
     rayStartBuffer1.setSize(size1D);
@@ -75,6 +77,9 @@ VoxelRenderer::VoxelRenderer()
     BRDFProgram = ShaderManager::getInstance().getComputeProgram(Content::brdfComputeShader);
     resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
     fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
+
+    asynchronousDisplayProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::renderAsynchronousFragmentShader);
+
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
 
@@ -128,10 +133,15 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
 
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, raysPerPixel);
-        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
 
-        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
-        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), camera.getHorizontalFov());
+        lastCameraPosition = camera.transform.getGlobalPosition();
+        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(lastCameraPosition));
+
+        lastCameraRotation = camera.transform.getGlobalRotation();
+        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(lastCameraRotation));
+
+        lastCameraFOV = camera.getHorizontalFov();
+        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), lastCameraFOV);
         glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000000) / 1000000.f, (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -165,7 +175,6 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
 void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
-
     glUseProgram(fullCastProgram);
 
     // bind rayStart info
@@ -209,6 +218,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     normalBuffer.bind(13);
     positionBuffer.bind(14);
+    materialBuffer.bind(15);
 
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -266,12 +276,21 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     normalBuffer.unbind();
     positionBuffer.unbind();
+    materialBuffer.unbind();
 
     glUseProgram(0);
 
     currentBuffer++;
 
     isFirstRay = false;
+}
+
+void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager, int bounces)
+{
+    for (int i = 0; i <= bounces; i++)
+    {
+        executeRayTrace(worlds, MaterialManager::getInstance());
+    }
 }
 
 void VoxelRenderer::resetHitInfo()
@@ -376,4 +395,77 @@ void VoxelRenderer::display(const Camera& camera, int frameCount)
     positionBuffer.unbind();
 
     glUseProgram(0);
+}
+
+void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
+{
+    lockAsynchronous();
+    glUseProgram(asynchronousDisplayProgram);
+
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.bind(0);
+    }
+    else
+    {
+        accumulatedLightBuffer2.bind(0);
+    }
+
+    normalBuffer.bind(1);
+    positionBuffer.bind(2);
+    materialBuffer.bind(3);
+
+    glUniform3i(glGetUniformLocation(asynchronousDisplayProgram, "resolution"), size.x, size.y, raysPerPixel);
+
+    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(lastCameraRotation));
+    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(lastCameraPosition));
+
+    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+
+    GLuint framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, reprojection.getColorTexture(), 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, reprojection.getPositionTexture(), 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, reprojection.getMaterialTexture(), 0);
+    glDepthFunc(GL_ALWAYS);
+    {
+        const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        glDrawBuffers(3, buffers);
+
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &framebuffer);
+
+    if (currentBuffer % 2 == 0)
+    {
+        accumulatedLightBuffer1.unbind();
+    }
+    else
+    {
+        accumulatedLightBuffer2.unbind();
+    }
+
+    normalBuffer.unbind();
+    positionBuffer.unbind();
+    materialBuffer.unbind();
+
+    glUseProgram(0);
+
+    reprojection.recordCameraTransform(lastCameraPosition, lastCameraRotation, lastCameraFOV);
+
+    glFinish(); // The assignment of the data before unlocking
+    unlockAsynchronous();
+}
+
+void VoxelRenderer::lockAsynchronous()
+{
+    asynchronousMtx.acquire();
+}
+
+void VoxelRenderer::unlockAsynchronous()
+{
+    asynchronousMtx.release();
 }

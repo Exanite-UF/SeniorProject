@@ -33,6 +33,8 @@ public:
     std::shared_ptr<Window> window;
     std::shared_ptr<InputManager> inputManager;
 
+    GLFWwindow* offscreen_context;
+
     bool isWorkload = false; // View toggle
     bool isRand2 = true; // Noise type toggle
     float fillAmount = 0.6;
