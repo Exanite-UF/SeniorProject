@@ -1,9 +1,9 @@
 #include <iostream>
 
+#include <glm/gtc/integer.hpp>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldUtility.h>
-#include <glm/gtc/integer.hpp> 
 
 VoxelWorld::VoxelWorld(GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram, glm::ivec3 size)
 {

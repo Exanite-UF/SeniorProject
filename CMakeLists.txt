@@ -92,6 +92,14 @@ include(./external/jolt/Jolt/Jolt.cmake)
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ./external/stb)
 
+# Extra libraries ()
+add_library(extra STATIC)
+target_include_directories(extra PUBLIC ./external/extra/include)
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/extra/src/*.cpp)
+target_sources(extra PRIVATE ${sources})
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/extra/src/*.c)
+target_sources(extra PRIVATE ${sources})
+
 # --- First party ---
 
 add_subdirectory(./projects/VoxelRenderer)

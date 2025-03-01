@@ -1,8 +1,7 @@
-#include <src/procgen/WorldGenerator.h>
+#include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
-#include <src/PerlinNoise.hpp>
+#include <src/procgen/WorldGenerator.h>
 #include <src/world/VoxelWorldData.h>
-
 
 WorldGenerator::WorldGenerator(glm::ivec3 worldSize)
 {
@@ -11,7 +10,7 @@ WorldGenerator::WorldGenerator(glm::ivec3 worldSize)
 
 void WorldGenerator::generate(VoxelWorld& voxelWorld)
 {
-    //TODO: Remove copyFrom, and also set material. Otherwise voxels are black. 
+    // TODO: Remove copyFrom, and also set material. Otherwise voxels are black.
     data.copyFrom(voxelWorld);
     data.clearOccupancy();
     generateData();
