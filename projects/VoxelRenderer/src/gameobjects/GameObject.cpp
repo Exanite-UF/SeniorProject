@@ -2,9 +2,9 @@
 
 GameObject::GameObject()
 {
-    // Create the transform 
+    // Create the transform
     auto transform = std::make_shared<TransformComponent>(shared_from_this());
-    //this->addComponent(std::weak_ptr<Component>(transform)); <- this isnt working and ik it's something to do with the weak pointer
+    // this->addComponent(std::weak_ptr<Component>(transform)); <- this isnt working and ik it's something to do with the weak pointer
     components.push_back(std::weak_ptr<Component>(transform)); // temporary
 }
 
