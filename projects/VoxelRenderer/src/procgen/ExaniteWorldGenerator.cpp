@@ -13,8 +13,8 @@ void ExaniteWorldGenerator::generateData()
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {
-            data.setVoxelOccupancy(glm::ivec3(x, y, x), true);
-            data.setVoxelMaterial(glm::ivec3(x, y, x), materialToUse);
+            data.setVoxelOccupancy(glm::ivec3(x, y, 0), true);
+            data.setVoxelMaterial(glm::ivec3(x, y, 0), materialToUse);
         }
     }
 }

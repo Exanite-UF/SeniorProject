@@ -14,7 +14,7 @@ private:
 
     // Same format as on the GPU
     std::vector<uint8_t> materialMap;
-    std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> materialIdMapIndices;
+    std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> materialMapIndices;
 
     // Flattened material ID format
     // Must be encoded before sending to the GPU

@@ -63,15 +63,17 @@ struct MaterialData
 
 class Material
 {
-public:
     // A material can be uniquely identified either by its index or its ID
     // When serializing voxels, voxels should store the integer index to save space
     // When serializing materials, the string ID should be saved
     // At least one string ID to integer index mapping should be saved, either in the material file or in a separate file
+
+private:
     int16_t index = -1; // Index of the material in the material array
     std::string id; // String ID
 
-    std::string name = "UNNAMED"; // Display name
+public:
+    std::string name; // Display name
 
     glm::vec3 emission = glm::vec3(0);
     glm::vec3 albedo = glm::vec3(1);
@@ -80,7 +82,7 @@ public:
     float metallic = 0;
 
     Material();
-    Material(uint16_t index, std::string id);
+    Material(uint16_t index, std::string id, std::string name = "UNNAMED");
 
     // glm::vec3 color = glm::vec3(1, 1, 1);
 
@@ -88,4 +90,7 @@ public:
     // glm::vec2 uvSize = glm::vec2(1, 1); // (1, 1) is the size of 1 voxel.
 
     // GLuint textureId = 0;
+
+    [[nodiscard]] int16_t getIndex() const;
+    [[nodiscard]] const std::string& getId() const;
 };
