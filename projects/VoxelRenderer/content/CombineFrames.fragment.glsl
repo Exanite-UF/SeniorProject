@@ -38,12 +38,7 @@ void main()
     frameCount = min(frameCount, 10);
 
 
-    //out_color = vec4(vec3(texture(combineMask, localUV).x), 1);
     out_color = vec4(texture(oldColor, uv).xyz, float(frameCount) / (frameCount + 1));
     frameCountOut = vec4(frameCount + 1, 0, 0, 1);
 
-    //vec2 localUV = gl_FragCoord.xy / resolution.xy;
-    //vec3 oldPos = texture(oldPosition, uv).xyz;
-    //vec3 newPos = texture(newPosition, localUV).xyz;
-    //out_color = vec4(vec3(length(newPos - oldPos)), 1);
 }

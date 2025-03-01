@@ -31,12 +31,7 @@ void main()
 
     pos.x *= float(resolution.x) / (resolution.x - 1);
     pos.y *= float(resolution.y) / (resolution.y - 1);
-
-    //pos.x /= (1 - resolution.x * 0.000001);
-    //pos.y /= (1 - resolution.y * 0.000001);
-
     
     uv = vec2(aPos.xy);
     gl_Position = vec4(pos.xy, 0.1, pos.z);
-    //gl_Position = vec4((uv - 0.5) * 2, 0, 1);
 }

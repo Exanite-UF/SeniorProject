@@ -288,18 +288,12 @@ void AsynchronousReprojection::render(const Camera& camera)
     
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-        
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, materialTextureId2);
     }else{
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTextureId1);
     
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, positionTextureId1);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, materialTextureId1);
     }
     
 
