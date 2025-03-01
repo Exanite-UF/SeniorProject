@@ -9,9 +9,10 @@ WorldGenerator::WorldGenerator(glm::ivec3 worldSize)
 void WorldGenerator::generate(VoxelWorld& voxelWorld)
 {
     // TODO: Remove automatic copy, decode, encode when API has stabilized
-    data.copyFrom(voxelWorld);
-    data.decodeMaterialMipMap();
+    // data.copyFrom(voxelWorld);
+    // data.decodeMaterialMipMap();
     data.clearOccupancy();
+    data.clearMaterials();
     {
         generateData();
     }

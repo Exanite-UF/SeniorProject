@@ -36,4 +36,6 @@ public:
     void writeTo(VoxelWorld& world);
 
     void clearOccupancy();
+    void clearMaterials();
+    void clearMaterialMipMap();
 };

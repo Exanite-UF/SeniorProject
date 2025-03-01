@@ -108,14 +108,12 @@ layout(std430, binding = 5) buffer MaterialMap
 uint getMaterial(ivec3 coord)
 {
     uint result = 0;
-    uint counter = 0;
     for (int level = 0; level < 3; level++)
     {
         ivec3 tempCoord = coord / (1 << (2 * level));
         ivec3 cellCoord = tempCoord / 2;
 
         ivec3 p2 = tempCoord & 1; // Modulus 2 the voxel coordinate using a bitmask
-        uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // make the bitmask that corresponds to the correct bit in the byte that we want
 
         ivec3 tempRes = voxelResolution / (1 << (2 * level)); // get the resolution of the requested level
         int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z) + int(materialStartIndices[level] / 4);
@@ -123,13 +121,10 @@ uint getMaterial(ivec3 coord)
         // 4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
 
         // These grab the 4 bits we want from the uint
-        uint temp = materialMap[index];
-        result |= int((temp & (k << 0)) != 0) << counter;
-        result |= int((temp & (k << 8)) != 0) << (counter + 1);
-        result |= int((temp & (k << 16)) != 0) << (counter + 2);
-        result |= int((temp & (k << 24)) != 0) << (counter + 3);
-
-        counter += 4;
+        uint cellValue = materialMap[index];
+        uint bitsShifted = ((4 << p2.x) << (p2.y << 1)) << (p2.z << 2);
+        uint voxelValue = cellValue & (0xf << bitsShifted);
+        result |= (voxelValue >> bitsShifted) << (level * 4);
     }
 
     return result;
@@ -344,7 +339,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
-    bool isOutside = false; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
+    bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -724,6 +719,7 @@ void attempt(ivec3 texelCoord)
     {
         setFirstHitNormal(texelCoord, hit.normal);
         setFirstHitPosition(texelCoord, hit.hitLocation);
+        // setFirstHitPosition(texelCoord, vec3(hit.material));
     }
 
     BRDF(texelCoord, hit, rayDir, attentuation);
