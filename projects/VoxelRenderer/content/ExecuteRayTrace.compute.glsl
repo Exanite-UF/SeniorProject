@@ -140,7 +140,7 @@ uint getMaterial(ivec3 coord)
         ivec3 tempRes = voxelResolution / (1 << (2 * level)); // get the resolution of the requested level
         int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z) + int(materialStartIndices[level] / 4);
 
-        // 4 bits are used for a single material and these bits are spread across 4 bytes, so the index of the cell is the index of the uint
+        // 4 bits are used for a single material and these bits are stored within an uint, so the index of the cell is the index of the uint
 
         // These grab the 4 bits we want from the uint
         uint cellValue = materialMap[index];
@@ -151,6 +151,7 @@ uint getMaterial(ivec3 coord)
 
     return result;
 }
+
 vec3 qtransform(vec4 q, vec3 v)
 {
     return v + 2.0 * cross(cross(v, q.xyz) + q.w * v, q.xyz);
