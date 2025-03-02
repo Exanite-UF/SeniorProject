@@ -19,7 +19,7 @@ public:
 
     [[nodiscard]] float getHorizontalFov() const;
 
-    glm::vec3 getRightDirection() const;
-    glm::vec3 getForwardDirection() const;
-    glm::vec3 getUpDirection() const;
+    [[nodiscard]] glm::vec3 getRightDirection() const;
+    [[nodiscard]] glm::vec3 getForwardDirection() const;
+    [[nodiscard]] glm::vec3 getUpDirection() const;
 };
