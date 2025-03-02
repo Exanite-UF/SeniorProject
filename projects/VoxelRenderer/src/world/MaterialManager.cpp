@@ -76,6 +76,7 @@ MaterialManager::MaterialManager()
         material->roughness = (rand() % 1000) / 1000.0;
     }
 
+    // Generate placeholder material mappings
     for (size_t i = 0; i < materialMap.size(); i++)
     {
         materialMap[i] = i % Constants::VoxelWorld::materialCount;
