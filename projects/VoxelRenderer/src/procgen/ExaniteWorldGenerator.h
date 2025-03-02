@@ -5,7 +5,7 @@
 class ExaniteWorldGenerator : public WorldGenerator
 {
 private:
-    int materialToUse = 0;
+    std::string materialId = "dirt";
 
 protected:
     void generateData() override;

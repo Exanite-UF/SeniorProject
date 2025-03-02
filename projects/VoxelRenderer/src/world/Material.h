@@ -7,6 +7,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <src/utilities/NonCopyable.h>
 #include <string>
 
 // Materials are a property of voxels, however, they are also used heavily by the VoxelWorld and VoxelRenderer
@@ -61,7 +62,7 @@ struct MaterialData
     // uint16_t textureIndex;
 };
 
-class Material
+class Material : public NonCopyable
 {
     // A material can be uniquely identified either by its index or its ID
     // When serializing voxels, voxels should store the integer index to save space

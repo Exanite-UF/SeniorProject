@@ -12,17 +12,14 @@ class Camera : NonCopyable
 {
 public:
     Transform transform;
+    glm::vec2 rotation = glm::vec2(0);
 
-    float getHorizontalFov() const;
+    float moveSpeed = 32;
+    float mouseSensitivity = 0.002;
 
-    // TODO: Do we still want to use these?
-    static glm::vec3 getForward(float theta, float phi)
-    {
-        return { std::cos(theta), std::sin(theta), 0 };
-    }
+    [[nodiscard]] float getHorizontalFov() const;
 
-    static glm::vec3 getRight(float theta, float phi)
-    {
-        return { std::sin(theta), -std::cos(theta), 0 };
-    }
+    [[nodiscard]] glm::vec3 getRightDirection() const;
+    [[nodiscard]] glm::vec3 getForwardDirection() const;
+    [[nodiscard]] glm::vec3 getUpDirection() const;
 };

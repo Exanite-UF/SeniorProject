@@ -18,6 +18,10 @@ public:
     [[nodiscard]] const glm::quat& getLocalRotation() const;
     [[nodiscard]] const glm::vec3& getLocalScale() const;
 
+    [[nodiscard]] glm::vec3 getRightDirection() const;
+    [[nodiscard]] glm::vec3 getUpDirection() const;
+    [[nodiscard]] glm::vec3 getForwardDirection() const;
+
     [[nodiscard]] glm::vec3 getGlobalPosition() const;
     [[nodiscard]] glm::quat getGlobalRotation() const;
     [[nodiscard]] glm::vec3 getGlobalScale() const;

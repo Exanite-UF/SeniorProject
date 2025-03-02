@@ -1,6 +1,9 @@
 #include "ExaniteWorldGenerator.h"
 
 #include <imgui/imgui.h>
+#include <imgui/imgui_stdlib.h>
+#include <src/utilities/Log.h>
+#include <src/world/MaterialManager.h>
 
 ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
     : WorldGenerator(worldSize)
@@ -9,13 +12,21 @@ ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
 
 void ExaniteWorldGenerator::generateData()
 {
+    auto& materialManager = MaterialManager::getInstance();
+    std::shared_ptr<Material> material;
+    if (!materialManager.tryGetMaterialById(materialId, material))
+    {
+        material = materialManager.getMaterialByIndex(0);
+        Log::log("Failed to find material with id '" + materialId + "'. Using default material '" + material->getId() + "' instead.");
+    }
+
     for (int x = 0; x < data.getSize().x; ++x)
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {
             for (int z = 0; z < data.getSize().y; ++z)
             {
-                data.setVoxelMaterial(glm::ivec3(x, y, z), materialToUse);
+                data.setVoxelMaterial(glm::ivec3(x, y, z), material);
             }
         }
     }
@@ -33,6 +44,6 @@ void ExaniteWorldGenerator::showDebugMenu()
 {
     if (ImGui::CollapsingHeader("Exanite's Generator"))
     {
-        ImGui::SliderInt("Material", &materialToUse, 0, (1 << 4) - 1);
+        ImGui::InputText("Material", &materialId);
     }
 }
