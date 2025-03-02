@@ -10,10 +10,12 @@
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/utilities/Singleton.h>
 #include <src/world/Material.h>
+#include <src/world/VoxelWorldData.h>
 
 class MaterialManager : public Singleton<MaterialManager>
 {
     friend class Singleton;
+    friend class VoxelWorldData;
 
 private:
     // ----- CPU -----
