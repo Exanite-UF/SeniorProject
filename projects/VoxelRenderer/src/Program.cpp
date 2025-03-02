@@ -288,7 +288,6 @@ void Program::run()
 
         // Update
         // TODO: This code should be moved into individual systems
-
         {
             // mtx.lock();
             if (!inputManager->cursorEnteredThisFrame)
