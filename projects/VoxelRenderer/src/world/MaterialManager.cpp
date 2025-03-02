@@ -53,7 +53,7 @@ MaterialManager::MaterialManager()
     // Generate placeholder materials
     for (size_t i = customMaterialCount; i < materials.size(); i++)
     {
-        auto material = std::make_shared<Material>(i, "Material " + std::to_string(i));
+        auto& material = addMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
         if (i % 4 == 0)
         {
             material->emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
@@ -74,8 +74,6 @@ MaterialManager::MaterialManager()
         }
 
         material->roughness = (rand() % 1000) / 1000.0;
-
-        materials[i] = material;
     }
 
     for (size_t i = 0; i < materialMap.size(); i++)
