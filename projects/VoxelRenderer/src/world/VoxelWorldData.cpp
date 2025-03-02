@@ -1,6 +1,7 @@
 #include "VoxelWorldData.h"
 
 #include <src/utilities/Assert.h>
+#include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorldUtility.h>
 #include <stdexcept>
@@ -154,6 +155,8 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
 
 void VoxelWorldData::decodeMaterialMipMap()
 {
+    MeasureElapsedTimeScope scope("decodeMaterialMipMap");
+
     // See setVoxelMipMappedMaterial for comments on how this works. The code is very similar.
 
     // TODO: Consider optimizing this. This currently runs in (w^3 * 3) time. Can improve to (w^3 + w^3 / 4^3 + w^3 / 4^6) time by iterating each mipmap once.
@@ -212,6 +215,7 @@ void VoxelWorldData::decodeMaterialMipMap()
 
 void VoxelWorldData::encodeMaterialMipMap()
 {
+    MeasureElapsedTimeScope scope("encodeMaterialMipMap");
     for (int z = 0; z < size.x; ++z)
     {
         for (int y = 0; y < size.x; ++y)
