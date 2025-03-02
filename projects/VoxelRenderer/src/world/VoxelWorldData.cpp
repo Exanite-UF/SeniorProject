@@ -146,9 +146,9 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
         cellData[cellIndex] |= voxelValue << bitsShifted;
 
         // Update region size
-        voxelPosition /= 4;
-        cellCount /= 4;
-        cellPosition /= 4;
+        voxelPosition >>= 2;
+        cellCount >>= 2;
+        cellPosition >>= 2;
     }
 }
 
