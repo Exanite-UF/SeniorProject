@@ -17,6 +17,7 @@ class MaterialManager : public Singleton<MaterialManager>
 
 private:
     // ----- CPU -----
+    // TODO: Probably make these vectors and just check before adding new entries
     std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials {};
     std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
 
