@@ -124,19 +124,18 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
     auto cellCount = size / 2;
     auto cellPosition = position / 2;
 
+    // Note: The position/count calculations above can be done using a bitshift operation, but that apparently is slower
+
     // Iterate each mipmap level
     // Note that each mipmap level increases region size by 4 times
     for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
     {
         // Calculate uint index of cell
-        auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
-        cellIndex += materialMapIndices.at(mipMapI) / 4;
+        auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(mipMapI) / 4);
 
         // Calculate which set of 4-bits to set
-        auto oddX = voxelPosition.x % 2;
-        auto oddY = voxelPosition.y % 2;
-        auto oddZ = voxelPosition.z % 2;
-        auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
+        auto isOddPos = voxelPosition & 1;
+        auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2) << 2;
 
         // Get value that should be stored for this voxel
         auto voxelValue = materialIdParts[mipMapI];
