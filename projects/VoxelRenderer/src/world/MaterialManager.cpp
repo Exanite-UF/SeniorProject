@@ -13,7 +13,12 @@ MaterialManager::MaterialManager()
         auto index = customMaterialCount;
         customMaterialCount++;
 
-        materials[index] = std::make_shared<Material>(index, name);
+        auto material = std::make_shared<Material>(index, id);
+        material->name = name;
+
+        materials[index] = material;
+        materialsById.emplace(id, material);
+
         return materials[index];
     };
 
@@ -78,7 +83,7 @@ MaterialManager::MaterialManager()
         materialMap[i] = i % Constants::VoxelWorld::materialCount;
     }
 
-    writeToGpu();
+    updateGpuMaterialData();
 }
 
 uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint16_t mipMapId) const
@@ -107,6 +112,23 @@ const std::shared_ptr<Material>& MaterialManager::getMaterialByIndex(uint16_t in
     return materials[index];
 }
 
+const std::shared_ptr<Material>& MaterialManager::getMaterialById(std::string id)
+{
+    return materialsById.at(id);
+}
+
+bool MaterialManager::tryGetMaterialById(std::string id, std::shared_ptr<Material>& material)
+{
+    auto entry = materialsById.find(id);
+    if (entry == materialsById.end())
+    {
+        return false;
+    }
+
+    material = entry->second;
+    return true;
+}
+
 GraphicsBuffer<uint32_t>& MaterialManager::getMaterialMapBuffer()
 {
     return materialMapBuffer;
@@ -117,7 +139,7 @@ GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
     return materialDataBuffer;
 }
 
-void MaterialManager::writeToGpu()
+void MaterialManager::updateGpuMaterialData()
 {
     // Convert CPU material format to GPU material format
     // TODO: Optimize this to only convert changed materials
