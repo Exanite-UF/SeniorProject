@@ -1,6 +1,6 @@
 #pragma once
 
-#include <src/materials/Material.h>
+#include <src/world/Material.h>
 #include <src/world/VoxelWorld.h>
 
 class VoxelWorldData : public NonCopyable

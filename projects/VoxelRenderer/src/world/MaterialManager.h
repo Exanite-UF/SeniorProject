@@ -5,8 +5,8 @@
 
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>
-#include <src/materials/Material.h>
 #include <src/utilities/Singleton.h>
+#include <src/world/Material.h>
 
 class MaterialManager : public Singleton<MaterialManager>
 {

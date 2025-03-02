@@ -34,7 +34,6 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/graphics/TextureManager.h>
-#include <src/materials/MaterialManager.h>
 #include <src/procgen/ExaniteWorldGenerator.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/procgen/WorldGenerator.h>
@@ -47,6 +46,7 @@
 #include <src/utilities/Log.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/Scene.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>

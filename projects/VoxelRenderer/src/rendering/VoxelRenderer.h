@@ -3,9 +3,9 @@
 #include <mutex>
 #include <semaphore>
 #include <src/graphics/GraphicsBuffer.h>
-#include <src/materials/MaterialManager.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/world/Camera.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
 #include <thread>
 #include <vector>
