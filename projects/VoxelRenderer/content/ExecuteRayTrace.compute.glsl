@@ -144,7 +144,7 @@ uint getMaterial(ivec3 coord)
 
         // These grab the 4 bits we want from the uint
         uint cellValue = materialMap[index];
-        uint bitsShifted = ((4 << p2.x) << (p2.y << 1)) << (p2.z << 2);
+        uint bitsShifted = ((p2.x << 0) | (p2.y << 1) | (p2.z << 2)) << 2;
         uint voxelValue = cellValue & (0xf << bitsShifted);
         result |= (voxelValue >> bitsShifted) << (level * 4);
     }
