@@ -308,8 +308,8 @@ void Program::run()
 
             auto right = camera->transform.getRightDirection();
             auto forward = camera->transform.getForwardDirection();
-            auto up = camera->transform.getUpDirection(); // For testing. We usually want camera up/down movement to be not affected by camera rotation.
-            // auto up = glm::vec3(0, 0, 1);
+            // auto up = camera->transform.getUpDirection(); // For testing. We usually want camera up/down movement to be not affected by camera rotation.
+            auto up = glm::vec3(0, 0, 1);
 
             if (input->isKeyHeld(GLFW_KEY_A))
             {
