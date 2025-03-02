@@ -1,7 +1,6 @@
 #include "VoxelWorldData.h"
 
-#include "MaterialManager.h"
-
+#include <src/materials/MaterialManager.h>
 #include <src/utilities/Assert.h>
 #include <src/world/VoxelWorldUtility.h>
 #include <stdexcept>

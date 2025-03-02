@@ -15,10 +15,10 @@
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/materials/Material.h>
+#include <src/materials/MaterialManager.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/TupleHasher.h>
-#include <src/world/Material.h>
-#include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorld.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
