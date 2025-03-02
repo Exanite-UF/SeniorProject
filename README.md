@@ -20,8 +20,11 @@ git submodule update --init --recursive
     - /assets - Source assets that are yet to be exported.
     - /content - Assets ready to be used by the game. Copied into the build output folder by CMake.
     - /src - Source code
+      - /gameobjects - Entity-Component (EC) GameObject and scene graph implementation.
       - /graphics - General-purpose OpenGL abstractions and other utilities. See /rendering for the rendering code.
       - /input - Input management code. Can be related to windowing, but usually higher level.
+      - /materials - Code related to voxel world materials.
+      - /procgen - Code related to generating voxel worlds.
       - /rendering - Renderers and other specialized rendering code.
       - /utilities - Misc code that currently don't belong anywhere else.
       - /windowing - GLFW window management code.
