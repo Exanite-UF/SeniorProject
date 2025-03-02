@@ -202,7 +202,7 @@ void Program::run()
     Scene scene {};
     auto& camera = scene.camera;
 
-    glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
+    glm::ivec3 worldSize = glm::ivec3(64, 64, 64);
     auto& voxelWorld = scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
@@ -305,39 +305,38 @@ void Program::run()
                 inputManager->cursorEnteredThisFrame = false;
             }
 
-            auto right = camera->transform.getRightDirection();
-            auto forward = camera->transform.getForwardDirection();
-            // auto up = camera->transform.getUpDirection(); // For testing. We usually want camera up/down movement to be not affected by camera rotation.
-            auto up = glm::vec3(0, 0, 1);
+            auto cameraRightMoveDirection = camera->getRightDirection();
+            auto cameraForwardMoveDirection = camera->getForwardDirection();
+            auto cameraUpMoveDirection = camera->getUpDirection();
 
             if (input->isKeyHeld(GLFW_KEY_A))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -right);
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_D))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +right);
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_W))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +forward);
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_S))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -forward);
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_SPACE))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +up);
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraUpMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -up);
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
             }
 
             // mtx.unlock();
@@ -442,6 +441,7 @@ void Program::run()
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
                 {
                     auto cameraPosition = camera->transform.getGlobalPosition();
+                    auto cameraLookDirection = camera->transform.getForwardDirection();
 
                     ImGui::SetWindowFontScale(1.5f);
                     ImGui::Text("Voxel Rendering Project\n");
@@ -461,7 +461,7 @@ void Program::run()
                     ImGui::Text("\nCamera Position");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
                     ImGui::Text("\nCamera Look Direction");
-                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
+                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
                     ImGui::Text("\nFPS: %.2f", currentFPS);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
                 }
