@@ -2,5 +2,20 @@
 
 float Camera::getHorizontalFov() const
 {
-    return 3.1415926589 * 0.5;
+    return glm::pi<float>() / 2;
+}
+
+glm::vec3 Camera::getRightDirection() const
+{
+    return glm::vec3(std::sin(rotation.y), -std::cos(rotation.y), 0);
+}
+
+glm::vec3 Camera::getUpDirection() const
+{
+    return glm::vec3(0, 0, 1);
+}
+
+glm::vec3 Camera::getForwardDirection() const
+{
+    return glm::vec3(std::cos(rotation.y), std::sin(rotation.y), 0);
 }

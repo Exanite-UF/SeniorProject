@@ -202,11 +202,12 @@ void Program::run()
     Scene scene {};
     auto& camera = scene.camera;
 
-    glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
-
+    glm::ivec3 worldSize = glm::ivec3(64, 64, 64);
     auto& voxelWorld = scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
+
+    camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
 
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);
@@ -214,12 +215,6 @@ void Program::run()
     // Create the renderer
     VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
-
-    // Main render loop
-    glm::vec3 cameraPosition(0, 0, worldSize.z / 1.75f);
-    glm::vec2 cameraRotation(0);
-    float moveSpeedExponent = 50;
-    float mouseSensitivity = 0.002;
 
     // Engine time
     double totalElapsedTime = 0;
@@ -236,12 +231,11 @@ void Program::run()
     int maxFrames = 0;
 
     AsynchronousReprojection reprojection(window->size);
+    bool shouldRenderPathTrace = true;
 
     // Procedural Generation
     ExaniteWorldGenerator exaniteWorldGenerator(worldSize);
     OctaveNoiseWorldGenerator octaveWorldGenerator(worldSize);
-
-    bool shouldRenderPathTrace = true;
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -294,53 +288,55 @@ void Program::run()
 
         // Update
         // TODO: This code should be moved into individual systems
-
         {
             // mtx.lock();
             if (!inputManager->cursorEnteredThisFrame)
             {
                 auto mouseDelta = input->getMouseDelta();
 
-                cameraRotation.y -= mouseDelta.x * mouseSensitivity;
-                cameraRotation.x += mouseDelta.y * mouseSensitivity;
-                cameraRotation.x = std::min(std::max(cameraRotation.x, -glm::pi<float>() / 2), glm::pi<float>() / 2);
+                camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
+                camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
+                camera->rotation.x = glm::clamp(camera->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
+
+                camera->transform.setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
             else
             {
                 inputManager->cursorEnteredThisFrame = false;
             }
 
-            auto right = Camera::getRight(cameraRotation.y, cameraRotation.x);
-            auto forward = Camera::getForward(cameraRotation.y, cameraRotation.x);
+            auto cameraRightMoveDirection = camera->getRightDirection();
+            auto cameraForwardMoveDirection = camera->getForwardDirection();
+            auto cameraUpMoveDirection = camera->getUpDirection();
 
             if (input->isKeyHeld(GLFW_KEY_A))
             {
-                cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_D))
             {
-                cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * right;
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_W))
             {
-                cameraPosition += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_S))
             {
-                cameraPosition -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1)) * forward;
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_SPACE))
             {
-                cameraPosition.z += static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraUpMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
             {
-                cameraPosition.z -= static_cast<float>(deltaTime * std::pow(2, moveSpeedExponent * 0.1));
+                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
             }
 
             // mtx.unlock();
@@ -428,7 +424,7 @@ void Program::run()
             }
             else
             {
-                moveSpeedExponent += input->getMouseScroll().y;
+                camera->moveSpeed *= pow(1.1, input->getMouseScroll().y);
             }
 
             // F3 Debug Menu
@@ -444,6 +440,9 @@ void Program::run()
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
                 {
+                    auto cameraPosition = camera->transform.getGlobalPosition();
+                    auto cameraLookDirection = camera->transform.getForwardDirection();
+
                     ImGui::SetWindowFontScale(1.5f);
                     ImGui::Text("Voxel Rendering Project\n");
                     ImGui::SetWindowFontScale(1.0f);
@@ -462,18 +461,13 @@ void Program::run()
                     ImGui::Text("\nCamera Position");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
                     ImGui::Text("\nCamera Look Direction");
-                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", forward.x, forward.y, forward.z);
+                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
                     ImGui::Text("\nFPS: %.2f", currentFPS);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
                 }
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
-
-            // Sync camera position
-            // TODO: This should be managed by a CameraSystem or Camera class
-            camera->transform.setGlobalPosition(cameraPosition);
-            camera->transform.setGlobalRotation(glm::angleAxis((float)cameraRotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis((float)cameraRotation.x, glm::vec3(0, 1, 0)));
         }
 
         // Render

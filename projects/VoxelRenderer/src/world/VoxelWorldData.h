@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <src/world/Material.h>
 #include <src/world/VoxelWorld.h>
 
@@ -25,7 +27,7 @@ public:
     void setSize(glm::ivec3 size);
 
     void setVoxelOccupancy(glm::ivec3 position, bool isOccupied);
-    void setVoxelMaterial(glm::ivec3 position, const Material& material);
+    void setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material> material);
     void setVoxelMaterial(glm::ivec3 position, const uint16_t material);
     void setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2);
 

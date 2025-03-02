@@ -1,8 +1,7 @@
 #include "VoxelWorldData.h"
 
-#include "MaterialManager.h"
-
 #include <src/utilities/Assert.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorldUtility.h>
 #include <stdexcept>
 
@@ -98,9 +97,9 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
     }
 }
 
-void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const Material& material)
+void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material> material)
 {
-    setVoxelMaterial(position, material.getIndex());
+    setVoxelMaterial(position, material->getIndex());
 }
 
 void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const uint16_t material)
