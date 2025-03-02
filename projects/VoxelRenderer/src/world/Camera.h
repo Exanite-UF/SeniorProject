@@ -15,7 +15,11 @@ public:
     glm::vec2 rotation = glm::vec2(0);
 
     float moveSpeed = 32;
-    float mouseSensitivity = 0.02;
+    float mouseSensitivity = 0.002;
 
     [[nodiscard]] float getHorizontalFov() const;
+
+    glm::vec3 getRightDirection() const;
+    glm::vec3 getForwardDirection() const;
+    glm::vec3 getUpDirection() const;
 };
