@@ -7,6 +7,17 @@
 
 MaterialManager::MaterialManager()
 {
+    // Create palettes
+    for (int i = 0; i < materials1.size(); ++i)
+    {
+        materials1[i] = std::make_shared<MaterialPalette>();
+    }
+
+    for (int i = 0; i < materials2.size(); ++i)
+    {
+        materials2[i] = std::make_shared<MaterialPalette>();
+    }
+
     size_t customMaterialCount = 0;
     auto addMaterial = [&](std::string id, std::string name) -> std::shared_ptr<Material>&
     {
@@ -16,10 +27,10 @@ MaterialManager::MaterialManager()
         auto material = std::make_shared<Material>(index, id);
         material->name = name;
 
-        materials[index] = material;
+        materials0[index] = material;
         materialsById.emplace(id, material);
 
-        return materials[index];
+        return materials0[index];
     };
 
     // Define custom materials
@@ -51,7 +62,7 @@ MaterialManager::MaterialManager()
     }
 
     // Generate placeholder materials
-    for (size_t i = customMaterialCount; i < materials.size(); i++)
+    for (size_t i = customMaterialCount; i < materials0.size(); i++)
     {
         auto& material = addMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
         if (i % 4 == 0)
@@ -108,7 +119,7 @@ const std::shared_ptr<Material>& MaterialManager::getMaterialByMipMappedId(uint8
 
 const std::shared_ptr<Material>& MaterialManager::getMaterialByIndex(uint16_t index)
 {
-    return materials[index];
+    return materials0[index];
 }
 
 const std::shared_ptr<Material>& MaterialManager::getMaterialById(std::string id)
@@ -142,9 +153,9 @@ void MaterialManager::updateGpuMaterialData()
 {
     // Convert CPU material format to GPU material format
     // TODO: Optimize this to only convert changed materials
-    for (size_t i = 0; i < materials.size(); i++)
+    for (size_t i = 0; i < materials0.size(); i++)
     {
-        auto& material = materials[i];
+        auto& material = materials0[i];
         auto materialDataEntry = MaterialData();
         materialDataEntry.emission = material->emission;
         materialDataEntry.albedo = material->albedo;

@@ -17,11 +17,12 @@ class MaterialManager : public Singleton<MaterialManager>
 
 private:
     // ----- CPU -----
-    std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials {};
-    std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
+    // These arrays store different data, but are named materials# because they represent different layers of the material mipmaps
+    std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials0 {};
+    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::mippedMaterialPalette0IdCount> materials1 {};
+    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::mippedMaterialPalette1IdCount> materials2 {};
 
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::mippedMaterialPalette0IdCount> level0Palettes {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::mippedMaterialPalette1IdCount> level1Palettes {};
+    std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
 
     // ----- GPU -----
     // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
