@@ -1,5 +1,7 @@
 #pragma once
 
-class MaterialPalette
+#include <src/utilities/NonCopyable.h>
+
+class MaterialPalette : public NonCopyable
 {
 };
