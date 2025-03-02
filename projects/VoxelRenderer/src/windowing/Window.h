@@ -45,6 +45,7 @@ public:
     BufferedEvent<Window*, int> cursorEnterEvent {};
 
     Window();
+    Window(GLFWwindow* shareContextWith);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 

@@ -239,6 +239,19 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[2 + index] = value.z;
 }
 
+layout(std430, binding = 15) buffer FirstHitMaterial
+{
+    float firstHitMaterial[];
+};
+
+void setFirstHitMaterial(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitMaterial[0 + index] = value.x;
+    firstHitMaterial[1 + index] = value.y;
+    firstHitMaterial[2 + index] = value.z;
+}
+
 struct RayHit
 {
     bool wasHit;
@@ -397,13 +410,9 @@ vec3 qtransform(vec4 q, vec3 v)
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
-RayHit rayCast(ivec3 texelCoord, vec3 rayDir, float currentDepth)
+RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
 {
-
-    vec3 startPos = getRayPosition(texelCoord);
     vec3 rayPos = startPos;
-
-    vec3 rayStart = rayPos;
 
     vec3 voxelWorldSize = 2. * voxelResolution;
 
@@ -435,7 +444,7 @@ RayHit rayCast(ivec3 texelCoord, vec3 rayDir, float currentDepth)
     hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
-    hit.dist = length(startPos - hit.hitLocation); // length(hit.hitLocation - rayStart);
+    hit.dist = length(startPos - hit.hitLocation);
     if (!hit.wasHit)
     {
         hit.dist = 1.0 / 0.0;
@@ -638,6 +647,11 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     voxelMaterial.metallic *= rmTexture.g;
     */
 
+    if (texelCoord.z == 0 && isFirstRay)
+    {
+        setFirstHitMaterial(texelCoord, vec3(voxelMaterial.roughness, 0, 0));
+    }
+
     normal = normalize(normal);
     direction = normalize(direction);
 
@@ -663,6 +677,7 @@ float sunBrightness = 5;
 
 void attempt(ivec3 texelCoord)
 {
+    vec3 startPos = getRayPosition(texelCoord);
     vec3 rayDir = normalize(getRayDirection(texelCoord));
     float currentDepth = getHitDist(texelCoord);
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
@@ -684,9 +699,14 @@ void attempt(ivec3 texelCoord)
             changeLightAccumulation(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attentuation);
         }
         setAttenuation(texelCoord, vec3(0));
+        if (texelCoord.z == 0 && isFirstRay)
+        {
+            setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
+            setFirstHitMaterial(texelCoord, vec3(1, 0, 0)); // The skybox has a roughness of 1
+        }
     }
 
-    RayHit hit = rayCast(texelCoord, rayDir, currentDepth);
+    RayHit hit = rayCast(texelCoord, startPos, rayDir, currentDepth);
 
     // If it is not the nearest, then it should do nothing
     // If it did not hit, then it should do nothing
@@ -698,8 +718,8 @@ void attempt(ivec3 texelCoord)
     if (texelCoord.z == 0 && isFirstRay)
     {
         setFirstHitNormal(texelCoord, hit.normal);
-        // setFirstHitPosition(texelCoord, hit.hitLocation);
-        setFirstHitPosition(texelCoord, vec3(hit.material));
+        setFirstHitPosition(texelCoord, hit.hitLocation);
+        // setFirstHitPosition(texelCoord, vec3(hit.material));
     }
 
     BRDF(texelCoord, hit, rayDir, attentuation);
@@ -707,11 +727,8 @@ void attempt(ivec3 texelCoord)
 
 void main()
 {
-    for (int i = 0; i < 1; i++)
-    {
-        ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-        attempt(texelCoord);
-        setHitWasHit(texelCoord, false);
-        setHitDist(texelCoord, 1.0 / 0.0);
-    }
+    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
+    attempt(texelCoord);
+    setHitWasHit(texelCoord, false);
+    setHitDist(texelCoord, 1.0 / 0.0);
 }
