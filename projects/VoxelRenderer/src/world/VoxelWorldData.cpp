@@ -83,10 +83,9 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
 
     // Calculate which bit to set
-    auto oddX = position.x % 2;
-    auto oddY = position.y % 2;
-    auto oddZ = position.z % 2;
-    auto bit = 1 << (1 * oddX + 2 * oddY + 4 * oddZ);
+    auto isOddPos = position & 1;
+    auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2);
+    auto bit = 1 << bitsShifted;
 
     if (isOccupied)
     {
@@ -121,8 +120,8 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
     auto voxelPosition = position;
 
     // Cells correspond to 2x2x2 regions
-    auto cellCount = size / 2;
-    auto cellPosition = position / 2;
+    auto cellCount = size >> 1;
+    auto cellPosition = position >> 1;
 
     // Note: The position/count calculations above can be done using a bitshift operation, but that apparently is slower
 
@@ -134,8 +133,10 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
         auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(mipMapI) / 4);
 
         // Calculate which set of 4-bits to set
-        auto isOddPos = voxelPosition & 1;
-        auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2) << 2;
+        auto oddX = voxelPosition.x & 1;
+        auto oddY = voxelPosition.y & 1;
+        auto oddZ = voxelPosition.z & 1;
+        auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
 
         // Get value that should be stored for this voxel
         auto voxelValue = materialIdParts[mipMapI];
@@ -187,22 +188,22 @@ void VoxelWorldData::decodeMaterialMipMap()
                     cellIndex += materialMapIndices.at(mipMapI) / 4;
 
                     // Calculate which set of 4-bits to get
-                    auto oddX = x % 2;
-                    auto oddY = y % 2;
-                    auto oddZ = z % 2;
+                    auto oddX = x & 1;
+                    auto oddY = y & 1;
+                    auto oddZ = z & 1;
+                    auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
 
                     // Get value from cell and extract the 4 bit segment that we want
                     auto cellValue = reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex];
-                    auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
                     auto voxelValue = cellValue & (0b1111 << bitsShifted);
 
                     // Store voxel value as part of result
                     materialMipMappedId |= (voxelValue >> bitsShifted) << (mipMapI * 4);
 
                     // Update region size
-                    voxelPosition /= 4;
-                    cellCount /= 4;
-                    cellPosition /= 4;
+                    voxelPosition >>= 2;
+                    cellCount >>= 2;
+                    cellPosition >>= 2;
                 }
 
                 setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
