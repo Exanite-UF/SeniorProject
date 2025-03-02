@@ -15,6 +15,21 @@ const glm::vec3& Transform::getLocalScale() const
     return scale;
 }
 
+glm::vec3 Transform::getRightDirection() const
+{
+    return getGlobalRotation() * glm::vec3(0, -1, 0);
+}
+
+glm::vec3 Transform::getUpDirection() const
+{
+    return getGlobalRotation() * glm::vec3(0, 0, 1);
+}
+
+glm::vec3 Transform::getForwardDirection() const
+{
+    return getGlobalRotation() * glm::vec3(1, 0, 0);
+}
+
 // TODO: This currently does the same as the local version. Needs a proper implementation.
 glm::vec3 Transform::getGlobalPosition() const
 {
