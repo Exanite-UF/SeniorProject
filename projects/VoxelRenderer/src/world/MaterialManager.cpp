@@ -98,7 +98,10 @@ MaterialManager::MaterialManager()
     // Generate placeholder material mappings
     for (size_t i = 0; i < materialMap.size(); i++)
     {
-        materialMap[i] = i % Constants::VoxelWorld::materialCount;
+        auto material = getMaterialByIndex(i % Constants::VoxelWorld::materialCount);
+
+        materialMap[i] = material->getIndex();
+        material->ids.push_back(i);
     }
 
     updateGpuMaterialData();
