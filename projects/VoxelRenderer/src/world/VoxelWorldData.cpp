@@ -155,7 +155,7 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
 
 void VoxelWorldData::decodeMaterialMipMap()
 {
-    MeasureElapsedTimeScope scope("decodeMaterialMipMap");
+    MeasureElapsedTimeScope scope("VoxelWorldData::decodeMaterialMipMap");
 
     // See setVoxelMipMappedMaterial for comments on how this works. The code is very similar.
 
@@ -215,7 +215,7 @@ void VoxelWorldData::decodeMaterialMipMap()
 
 void VoxelWorldData::encodeMaterialMipMap()
 {
-    MeasureElapsedTimeScope scope("encodeMaterialMipMap");
+    MeasureElapsedTimeScope scope("VoxelWorldData::encodeMaterialMipMap");
     for (int z = 0; z < size.x; ++z)
     {
         for (int y = 0; y < size.x; ++y)
