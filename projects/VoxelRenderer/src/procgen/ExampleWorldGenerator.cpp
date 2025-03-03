@@ -14,10 +14,10 @@ void ExampleWorldGenerator::generateData()
 {
     auto& materialManager = MaterialManager::getInstance();
     std::shared_ptr<Material> material;
-    if (!materialManager.tryGetMaterialById(materialId, material))
+    if (!materialManager.tryGetMaterialById(materialKey, material))
     {
         material = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find material with id '" + materialId + "'. Using default material '" + material->getId() + "' instead.");
+        Log::log("Failed to find material with id '" + materialKey + "'. Using default material '" + material->getKey() + "' instead.");
     }
 
     for (int x = 0; x < data.getSize().x; ++x)
@@ -44,6 +44,6 @@ void ExampleWorldGenerator::showDebugMenu()
 {
     if (ImGui::CollapsingHeader("Example World Generator (F7)"))
     {
-        ImGui::InputText("Material", &materialId);
+        ImGui::InputText("Material", &materialKey);
     }
 }

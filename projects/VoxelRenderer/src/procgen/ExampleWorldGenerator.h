@@ -5,7 +5,7 @@
 class ExampleWorldGenerator : public WorldGenerator
 {
 private:
-    std::string materialId = "dirt";
+    std::string materialKey = "dirt";
 
 protected:
     void generateData() override;

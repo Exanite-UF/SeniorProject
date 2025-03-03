@@ -25,18 +25,18 @@ MaterialManager::MaterialManager()
 
     // Create addMaterial lambda
     size_t customMaterialCount = 0;
-    auto addMaterial = [&](const std::string& id, const std::string& name) -> std::shared_ptr<Material>&
+    auto addMaterial = [&](const std::string& key, const std::string& name) -> std::shared_ptr<Material>&
     {
         Assert::isTrue(customMaterialCount < materials0.size(), "Failed to add material: Too many materials defined");
 
         auto index = customMaterialCount;
         customMaterialCount++;
 
-        auto material = std::make_shared<Material>(index, id);
+        auto material = std::make_shared<Material>(index, key);
         material->name = name;
 
         materials0[index] = material;
-        materialsById.emplace(id, material);
+        materialsById.emplace(key, material);
 
         return materials0[index];
     };

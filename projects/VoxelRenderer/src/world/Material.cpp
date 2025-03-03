@@ -2,10 +2,10 @@
 
 Material::Material() = default;
 
-Material::Material(uint16_t index, std::string id, std::string name)
+Material::Material(uint16_t index, const std::string& key, const std::string& name)
 {
     this->index = index;
-    this->id = id;
+    this->key = key;
     this->name = name;
 }
 
@@ -14,7 +14,7 @@ int16_t Material::getIndex() const
     return index;
 }
 
-const std::string& Material::getId() const
+const std::string& Material::getKey() const
 {
-    return id;
+    return key;
 }
