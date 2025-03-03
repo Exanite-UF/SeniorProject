@@ -26,13 +26,13 @@ public:
 
         // The max number of material IDs. Material IDs are first mapped to indices representing material instances.
         // This is equivalent to 2^12 or 2^(3*4). This is because we have 4 bits per material mip level, and we have 3 mip levels.
-        static constexpr uint32_t mippedMaterialIdCount = 4096;
+        static constexpr uint32_t materialId0Count = 4096;
 
         // This is equivalent to 2^8.
-        static constexpr uint32_t mippedMaterialPalette0IdCount = 256;
+        static constexpr uint32_t materialId1Count = 256;
 
         // This is equivalent to 2^4.
-        static constexpr uint32_t mippedMaterialPalette1IdCount = 16;
+        static constexpr uint32_t materialId2Count = 16;
 
         // The max number of material instances.
         static constexpr uint32_t materialCount = 512;
