@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <span>
+#include <src/utilities/Assert.h>
 #include <src/utilities/ColorUtility.h>
 
 MaterialManager::MaterialManager()
@@ -18,9 +19,16 @@ MaterialManager::MaterialManager()
         materials2[i] = std::make_shared<MaterialPalette>();
     }
 
+    // Add default palettes
+    materials1[0]->addId(0);
+    materials2[0]->addId(0);
+
+    // Create addMaterial lambda
     size_t customMaterialCount = 0;
-    auto addMaterial = [&](std::string id, std::string name) -> std::shared_ptr<Material>&
+    auto addMaterial = [&](const std::string& id, const std::string& name) -> std::shared_ptr<Material>&
     {
+        Assert::isTrue(customMaterialCount < materials0.size(), "Failed to add material: Too many materials defined");
+
         auto index = customMaterialCount;
         customMaterialCount++;
 
