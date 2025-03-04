@@ -107,25 +107,25 @@ MaterialManager::MaterialManager()
     updateGpuMaterialData();
 }
 
-uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint16_t mipMapId) const
+uint32_t MaterialManager::getMaterialIndexByMippedId(uint16_t mippedId) const
 {
-    return materialIdToIndexMap[mipMapId];
+    return materialIdToIndexMap[mippedId];
 }
 
-uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const
+uint32_t MaterialManager::getMaterialIndexByMippedId(uint8_t material0, uint8_t material1, uint8_t material2) const
 {
     uint32_t id = ((material0 & 0b1111) << 0) | ((material1 & 0b1111) << 4) | ((material2 & 0b1111) << 8);
     return materialIdToIndexMap[id];
 }
 
-const std::shared_ptr<Material>& MaterialManager::getMaterialByMipMappedId(uint16_t mipMapId)
+const std::shared_ptr<Material>& MaterialManager::getMaterialByMippedId(uint16_t mipMapId)
 {
-    return getMaterialByIndex(getMaterialIndexByMipMappedId(mipMapId));
+    return getMaterialByIndex(getMaterialIndexByMippedId(mipMapId));
 }
 
-const std::shared_ptr<Material>& MaterialManager::getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2)
+const std::shared_ptr<Material>& MaterialManager::getMaterialByMippedId(uint8_t material0, uint8_t material1, uint8_t material2)
 {
-    return getMaterialByIndex(getMaterialIndexByMipMappedId(material0, material1, material2));
+    return getMaterialByIndex(getMaterialIndexByMippedId(material0, material1, material2));
 }
 
 const std::shared_ptr<Material>& MaterialManager::getMaterialByIndex(uint16_t index)

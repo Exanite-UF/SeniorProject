@@ -65,11 +65,11 @@ uint8_t VoxelWorldData::getVoxelPartialMaterialId(glm::ivec3 position, int level
     // Voxels correspond to 1x1x1 regions
     // This won't always be the position of the original voxel because of mipmapping
     // Each mipmap level increases region size by 4 times
-    auto voxelPosition = position >> (2 * level);
+    auto voxelPosition = position >> (level << 1);
 
     // Cells correspond to 2x2x2 regions
-    auto cellCount = size >> (2 * level + 1);
-    auto cellPosition = position >> (2 * level + 1);
+    auto cellCount = size >> ((level << 1) + 1);
+    auto cellPosition = position >> ((level << 1) + 1);
 
     // Calculate uint index of cell
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(level) >> 2);
@@ -92,11 +92,11 @@ void VoxelWorldData::setVoxelPartialMaterialId(glm::ivec3 position, uint8_t mate
     // Voxels correspond to 1x1x1 regions
     // This won't always be the position of the original voxel because of mipmapping
     // Each mipmap level increases region size by 4 times
-    auto voxelPosition = position >> (2 * level);
+    auto voxelPosition = position >> (level << 1);
 
     // Cells correspond to 2x2x2 regions
-    auto cellCount = size >> (2 * level + 1);
-    auto cellPosition = position >> (2 * level + 1);
+    auto cellCount = size >> ((level << 1) + 1);
+    auto cellPosition = position >> ((level << 1) + 1);
 
     // Calculate uint index of cell
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(level) >> 2);
@@ -163,7 +163,7 @@ void VoxelWorldData::decodeMaterialMipMap()
             for (int x = 0; x < size.x; ++x)
             {
                 uint16_t materialMippedId = getVoxelMippedMaterialId(glm::ivec3(x, y, z));
-                uint32_t materialIndex = materialManager.getMaterialIndexByMipMappedId(materialMippedId);
+                uint32_t materialIndex = materialManager.getMaterialIndexByMippedId(materialMippedId);
 
                 // setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
                 setVoxelMaterial(glm::ivec3(x, y, z), materialIndex);

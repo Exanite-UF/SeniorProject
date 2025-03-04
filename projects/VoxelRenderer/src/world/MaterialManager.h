@@ -51,11 +51,11 @@ private:
     MaterialManager();
 
 public:
-    uint32_t getMaterialIndexByMipMappedId(uint16_t mipMapId) const;
-    uint32_t getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const;
+    uint32_t getMaterialIndexByMippedId(uint16_t mippedId) const;
+    uint32_t getMaterialIndexByMippedId(uint8_t material0, uint8_t material1, uint8_t material2) const;
 
-    const std::shared_ptr<Material>& getMaterialByMipMappedId(uint16_t mipMapId);
-    const std::shared_ptr<Material>& getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2);
+    const std::shared_ptr<Material>& getMaterialByMippedId(uint16_t mipMapId);
+    const std::shared_ptr<Material>& getMaterialByMippedId(uint8_t material0, uint8_t material1, uint8_t material2);
     const std::shared_ptr<Material>& getMaterialByIndex(uint16_t index);
     const std::shared_ptr<Material>& getMaterialByKey(const std::string& key);
     bool tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material);
