@@ -202,7 +202,7 @@ void Program::run()
     // IMGUI Menu
     bool showMenuGUI = false;
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
 
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
@@ -455,12 +455,12 @@ void Program::run()
             renderer.pollCamera(*camera);
             renderer.render();
 
-            //auto end = std::chrono::high_resolution_clock::now();
-            //if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
+            // auto end = std::chrono::high_resolution_clock::now();
+            // if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
             //{
-            //    std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
-            //}
-            //start = end;
+            //     std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
+            // }
+            // start = end;
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
