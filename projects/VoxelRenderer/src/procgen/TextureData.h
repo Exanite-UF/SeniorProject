@@ -6,7 +6,8 @@
 
 // 2D or 3D array of single values
 // AKA Texture but that's already used. 
-class TextureData {
+class TextureData 
+{
 public:
     glm::ivec3 size;
     std::vector<uint32_t> map;
