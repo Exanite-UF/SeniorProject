@@ -5,6 +5,6 @@
 // Can be used by grid synthesizer as pre-generated probability at each tile. Grid's size would be smaller or equal, but otherwise arbitrary
 // Can be used by point synthesizer for choosing random points
 // Can be representation of rasterized shape or equations, hence why not called noise synthesizer
-class ImageSynthesizer {
+class TextureDataSynthesizer {
     
 };
