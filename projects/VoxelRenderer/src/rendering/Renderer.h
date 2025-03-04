@@ -59,7 +59,7 @@ private:
 
     std::thread::id owningThread;//The id of the thread that owns the asynchronous reprojection framebuffer objects (The thread that needs to render to the framebuffers)
     std::array<GLuint, 3> framebuffers{0};//These are the three framebuffer objects that are used as input to asynchronous reprojection
-    std::array<GLenum, 3> drawBuffers = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};//These are the buffers that the shader will write to when rendering to one of the three framebuffers (Use glDrawBuffers with this)
+    std::array<GLenum, 4> drawBuffers = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};//These are the buffers that the shader will write to when rendering to one of the three framebuffers (Use glDrawBuffers with this)
     
 
     struct BufferMapping{
@@ -78,6 +78,7 @@ private:
 
     std::array<GLuint, 3> colorTextures;
     std::array<GLuint, 3> positionTextures;
+    std::array<GLuint, 3> normalTextures;
     std::array<GLuint, 3> materialTextures;
 
 private:

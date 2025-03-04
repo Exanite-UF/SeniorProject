@@ -47,7 +47,8 @@ void Renderer::makeFramebuffers()
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, positionTextures[i], 0);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, materialTextures[i], 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normalTextures[i], 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, materialTextures[i], 0);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -140,6 +141,23 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
         glDeleteTextures(1, &positionTextures[i]);
         glGenTextures(1, &positionTextures[i]);
         glBindTexture(GL_TEXTURE_2D, positionTextures[i]);
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+        }
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Create material texture
+        glDeleteTextures(1, &normalTextures[i]);
+        glGenTextures(1, &normalTextures[i]);
+        glBindTexture(GL_TEXTURE_2D, normalTextures[i]);
         {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -255,7 +273,7 @@ void Renderer::reproject(float fov)
     glViewport(0, 0, width, height);
 
     swapDisplayBuffer();
-    reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
+    reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display]);
     reprojectionCount++;
 }
 

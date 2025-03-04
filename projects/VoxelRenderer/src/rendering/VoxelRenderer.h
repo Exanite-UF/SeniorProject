@@ -97,6 +97,6 @@ public:
 
     void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces);
 
-    void render(const GLuint& framebuffer, const std::array<GLenum, 3>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
+    void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 
 };

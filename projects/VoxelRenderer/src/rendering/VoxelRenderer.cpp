@@ -336,7 +336,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
     glUseProgram(0);
 }
 
-void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 3>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
+void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
     glUseProgram(asynchronousDisplayProgram);
 
@@ -363,7 +363,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 3
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glDepthFunc(GL_ALWAYS);
     {
-        glDrawBuffers(3, drawBuffers.data());
+        glDrawBuffers(4, drawBuffers.data());
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }

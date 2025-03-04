@@ -114,7 +114,7 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     }
 }
 
-void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const GLuint& colorTexture, const GLuint& positionTexture)
+void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture)
 {
     glUseProgram(renderProgram);
 
@@ -125,6 +125,9 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, colorTexture);
 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+
     glUniform3fv(glGetUniformLocation(renderProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
     glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), cameraRotation.x, cameraRotation.y, cameraRotation.z, -cameraRotation.w);
     glUniform2i(glGetUniformLocation(renderProgram, "resolution"), reprojectionResolution.x, reprojectionResolution.y);
@@ -132,13 +135,7 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
 
     glBindVertexArray(VAO);
     {
-        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glPointSize(3);//I don't know why the points need to be this large
-        // glDrawArrays(GL_POINTS, 0, vertices.size());
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-        // glBindBuffer(GL_ARRAY_BUFFER, 0);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     glBindVertexArray(0);
 
@@ -146,6 +143,9 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glUseProgram(0);

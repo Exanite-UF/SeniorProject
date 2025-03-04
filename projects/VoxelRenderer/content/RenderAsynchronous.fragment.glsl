@@ -69,7 +69,8 @@ vec3 hueToRGB(float hue)
 in vec2 uv;
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec3 posBuffer;
-layout(location = 2) out vec3 matBuffer;
+layout(location = 2) out vec3 normalBuffer;
+layout(location = 3) out vec3 matBuffer;
 
 void main()
 {
@@ -82,9 +83,9 @@ void main()
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
     // normal is now in camera space
-    //(1, 0, 0) toward the camera
-    //(0, 1, 0) to the right
-    //(0, 0, 1) down
+    //(-1, 0, 0) toward the camera
+    //(0, -1, 0) to the right
+    //(0, 0, -1) down
 
     // Put this into a frame buffer (an actual framebuffer)
     // And apply an anisotropic blur using the normal
@@ -115,4 +116,5 @@ void main()
     fragColor = vec4(color, 1);
     posBuffer = position;
     matBuffer = material;
+    normalBuffer = normal;
 }
