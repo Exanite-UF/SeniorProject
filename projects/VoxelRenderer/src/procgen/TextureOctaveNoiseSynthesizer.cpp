@@ -1,5 +1,3 @@
-#pragma once
-
 #include "TextureOctaveNoiseSynthesizer.h"
 
 #include <PerlinNoise/PerlinNoise.hpp>
