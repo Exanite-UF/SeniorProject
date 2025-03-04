@@ -23,27 +23,9 @@ MaterialManager::MaterialManager()
     materials1[0]->addId(0);
     materials2[0]->addId(0);
 
-    // Create addMaterial lambda
-    size_t customMaterialCount = 0;
-    auto addMaterial = [&](const std::string& key, const std::string& name) -> std::shared_ptr<Material>&
-    {
-        Assert::isTrue(customMaterialCount < materials0.size(), "Failed to add material: Too many materials defined");
-
-        auto index = customMaterialCount;
-        customMaterialCount++;
-
-        auto material = std::make_shared<Material>(index, key);
-        material->name = name;
-
-        materials0[index] = material;
-        materialsByKey.emplace(key, material);
-
-        return materials0[index];
-    };
-
     // Define custom materials
     {
-        auto& material = addMaterial("dirt", "Dirt");
+        auto& material = createMaterial("dirt", "Dirt");
         material->albedo = ColorUtility::srgbToLinear("#70381c");
         material->emission = glm::vec3(0);
         material->metallic = 0;
@@ -52,7 +34,7 @@ MaterialManager::MaterialManager()
     }
 
     {
-        auto& material = addMaterial("blue_light", "Blue Light");
+        auto& material = createMaterial("blue_light", "Blue Light");
         material->albedo = glm::vec3(1);
         material->emission = ColorUtility::srgbToLinear("#09e4e8");
         material->metallic = 0;
@@ -61,7 +43,7 @@ MaterialManager::MaterialManager()
     }
 
     {
-        auto& material = addMaterial("red_light", "Red Light");
+        auto& material = createMaterial("red_light", "Red Light");
         material->albedo = glm::vec3(1);
         material->emission = ColorUtility::srgbToLinear("#ff0000");
         material->metallic = 0;
@@ -70,9 +52,9 @@ MaterialManager::MaterialManager()
     }
 
     // Generate placeholder materials
-    for (size_t i = customMaterialCount; i < materials0.size(); i++)
+    for (size_t i = createdMaterialCount; i < materials0.size(); i++)
     {
-        auto& material = addMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
+        auto& material = createMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
         if (i % 4 == 0)
         {
             material->emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
@@ -180,4 +162,20 @@ void MaterialManager::updateGpuMaterialData()
     // Write data to GPU
     materialMapBuffer.readFrom(materialIdToIndexMap);
     materialDataBuffer.readFrom(materialData);
+}
+
+std::shared_ptr<Material>& MaterialManager::createMaterial(const std::string& key, const std::string& name)
+{
+    Assert::isTrue(createdMaterialCount < materials0.size(), "Failed to add material: Too many materials defined");
+
+    auto index = createdMaterialCount;
+    createdMaterialCount++;
+
+    auto material = std::make_shared<Material>(index, key);
+    material->name = name;
+
+    materials0[index] = material;
+    materialsByKey.emplace(key, material);
+
+    return materials0[index];
 }

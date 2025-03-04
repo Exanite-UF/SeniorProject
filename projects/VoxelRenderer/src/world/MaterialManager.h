@@ -19,17 +19,13 @@ class MaterialManager : public Singleton<MaterialManager>
 
 private:
     // ----- CPU data -----
+    // This tracks the number of created material definitions stored in the materials0 array
+    uint16_t createdMaterialCount = 0;
+
     // These arrays store different data, but are named materials# because they represent different layers of the material mipmaps
     std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials0 {};
     std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialMippedId1Count> materials1 {};
     std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialMippedId2Count> materials2 {};
-
-    // TODO: Implement these and other count tracking variables
-    // These track the number of materials/palettes used
-    // Each correspond to one of the arrays above
-    uint32_t material0Count = 0;
-    uint32_t material1Count = 0;
-    uint32_t material2Count = 0;
 
     // This maps mipped material ID to the index of the actual material
     // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
@@ -64,4 +60,7 @@ public:
     GraphicsBuffer<MaterialData>& getMaterialDataBuffer();
 
     void updateGpuMaterialData();
+
+private:
+    std::shared_ptr<Material>& createMaterial(const std::string& key, const std::string& name);
 };
