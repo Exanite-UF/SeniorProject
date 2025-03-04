@@ -297,9 +297,6 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& lastRenderedCamer
     }
 
     glDeleteVertexArrays(1, &VAO);
-    //glDeleteBuffers(1, &VBO);
-    //glDeleteBuffers(1, &EBO);
-
 
     glFinish();
     currentBuffer++;

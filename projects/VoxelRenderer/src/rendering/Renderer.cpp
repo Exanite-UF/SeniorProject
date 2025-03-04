@@ -9,17 +9,7 @@ void Renderer::offscreenRenderingFunc()
 
     while(isRenderingOffscreen){
         //If the render resolution has changed, then the frame buffers need to be remade
-        if(isSizeDirtyThread){
-            makeFramebuffers();
-        }
-
-
-        render(*scene, bounces);
-        glFinish();
-        //std::cout << "DONE" << std::endl;
-        swapWorkingBuffer();
-
-        
+        _render();
     }
 }
 
@@ -208,44 +198,105 @@ void Renderer::setBounces(const int& bounces)
     this->bounces = bounces;
 }
 
-void Renderer::render(Scene& scene, const int& bounces)
+void Renderer::render(float fov)
 {
-    std::scoped_lock lock(cameraMtx);
+    if(!isRenderingOffscreen){
+        _render();
+    }
 
-    lastRenderedCameraPosition = currentCameraPosition;
-    lastRenderedCameraRotation = currentCameraRotation;
-    lastRenderedCameraFOV = currentCameraFOV;
-
-    voxelRenderer->prepareRayTraceFromCamera(lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
-
-    voxelRenderer->executePathTrace(scene.worlds, bounces);
-
-    //getWorkingFramebuffer();
-    voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
+    reproject(fov);
 }
 
-void Renderer::reproject()
+void Renderer::_render()
+{
+    if(isSizeDirtyThread){
+        makeFramebuffers();
+    }
+
+    {
+        glViewport(0, 0, renderResolution.x, renderResolution.y);
+        std::scoped_lock lock(cameraMtx);
+
+        lastRenderedCameraPosition = currentCameraPosition;
+        lastRenderedCameraRotation = currentCameraRotation;
+        lastRenderedCameraFOV = currentCameraFOV;
+    
+        voxelRenderer->prepareRayTraceFromCamera(lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
+    
+        voxelRenderer->executePathTrace(scene->worlds, bounces);
+    
+        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
+    }
+    
+
+    glFinish();
+    swapWorkingBuffer();
+    renderCount++;
+}
+
+
+void Renderer::reproject(float fov)
 {
     std::scoped_lock lock(cameraMtx, bufferLocks.display);
+
+    
+
+    if(fov < 0){
+        fov = currentCameraFOV;
+    }
 
     int width, height;
     glfwGetWindowSize(mainContext, &width, &height);
 
+    glViewport(0, 0, width, height);
+
     swapDisplayBuffer();
-    reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, currentCameraFOV, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
+    reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
+    reprojectionCount++;
 }
 
 
-void Renderer::startOffscreenRendering()
+void Renderer::startAsynchronousReprojection()
 {
     isRenderingOffscreen = true;
+    isSizeDirtyThread = true;
     offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
 }
 
-void Renderer::stopOffscreenRendering()
+void Renderer::stopAsynchronousReprojection()
 {
     isRenderingOffscreen = false;
     if(offscreenThread.joinable()){
         offscreenThread.join();
     }
+    isSizeDirtyThread = true;
+}
+
+void Renderer::toggleAsynchronousReprojection()
+{
+    if(isRenderingOffscreen){
+        stopAsynchronousReprojection();
+    }else{
+        startAsynchronousReprojection();
+    }
+}
+
+int Renderer::getRenderCounter()
+{
+    return renderCount;
+}
+
+void Renderer::resetRenderCounter()
+{
+    renderCount = 0;
+}
+
+int Renderer::getReprojectionCounter()
+{
+    return reprojectionCount;
+}
+
+void Renderer::resetReprojectionCounter()
+{
+    reprojectionCount = 0;
 }

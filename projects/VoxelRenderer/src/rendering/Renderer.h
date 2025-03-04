@@ -22,6 +22,11 @@ class AsynchronousReprojection;
 
 class Renderer{
 private:
+    //Profiling
+    int renderCount = 0;
+    int reprojectionCount = 0;
+
+private:
     //Rendering Contexts
     GLFWwindow* offscreenContext = nullptr;
     GLFWwindow* mainContext = nullptr;
@@ -86,9 +91,8 @@ private:
     //Will crash on failure
     void isOwningThreadCheck();
 
-
-    void render(Scene& scene, const int& bounces);
-
+    void _render();
+    void reproject(float fov = -1);
 public:
 
     Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext);
@@ -97,10 +101,10 @@ public:
     void makeFramebuffers();
     
     //Grabs the most recently rendered frame.
-    //Needs to call AsynchronousReprojection to combine the frames
     void swapDisplayBuffer();
 
     //Pushes out the most recently rendered frame.
+    //Also calls AsynchronousReprojection to combine the frames
     void swapWorkingBuffer();
 
     //Gets the framebuffer that is rendered to asynchronously
@@ -116,9 +120,18 @@ public:
     void setScene(Scene& scene);
     void setBounces(const int& bounces);
     
-    void reproject();
+
+    void render(float fov = -1);
+    
 
 
-    void startOffscreenRendering();
-    void stopOffscreenRendering();
+    void startAsynchronousReprojection();
+    void stopAsynchronousReprojection();
+    void toggleAsynchronousReprojection();
+
+    int getRenderCounter();
+    void resetRenderCounter();
+    
+    int getReprojectionCounter();
+    void resetReprojectionCounter();
 };

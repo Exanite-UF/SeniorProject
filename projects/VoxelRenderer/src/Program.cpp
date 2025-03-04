@@ -54,7 +54,6 @@
 
 #include <src/rendering/Renderer.h>
 
-int framesThisCycle1 = 0;
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
 
@@ -175,8 +174,7 @@ void Program::run()
 
     // Create the renderer
     Renderer renderer{window->glfwWindowHandle, offscreen_context};
-    renderer.setRenderResolution(window->size);
-
+    renderer.setRenderResolution({1024, 1024});//Render resolution can be set seperately from display resolution
 
     //VoxelRenderer renderer;
     //renderer.setRaysPerPixel(1);
@@ -187,7 +185,6 @@ void Program::run()
 
     // Fps counter
     float fpsCycleTimer = 0;
-    int framesThisCycle = 0;
     float currentFPS = 0;
     float averagedDeltaTime = 0;
 
@@ -205,16 +202,8 @@ void Program::run()
     // IMGUI Menu
     bool showMenuGUI = false;
 
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    bool isDone = false;
-    glm::ivec2 renderResolution = window->size;
-
-
     renderer.setScene(scene);
-    renderer.startOffscreenRendering();
-
-    auto start = std::chrono::high_resolution_clock::now();
-
+    renderer.startAsynchronousReprojection();
 
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
@@ -227,12 +216,15 @@ void Program::run()
 
         // Fps counter
         fpsCycleTimer += deltaTime;
-        framesThisCycle++;
         if (fpsCycleTimer > 1)
         {
+            int framesThisCycle = renderer.getReprojectionCounter();
+            renderer.resetReprojectionCounter();
             currentFPS = framesThisCycle / fpsCycleTimer;
             averagedDeltaTime = fpsCycleTimer / framesThisCycle;
 
+            int framesThisCycle1 = renderer.getRenderCounter();
+            renderer.resetRenderCounter();
             currentFPS1 = framesThisCycle1 / fpsCycleTimer;
             averagedDeltaTime1 = fpsCycleTimer / framesThisCycle1;
 
@@ -318,6 +310,11 @@ void Program::run()
             if (input->isKeyPressed(GLFW_KEY_F5))
             {
                 data.copyFrom(*voxelWorld);
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_G))
+            {
+                renderer.toggleAsynchronousReprojection();
             }
 
             exaniteWorldGenerator.showDebugMenu();
@@ -447,35 +444,25 @@ void Program::run()
 
         // Render
         {
-            // Render to offscreen texture
+            //renderer.setRenderResolution(window->size);
+            renderer.setRenderResolution(window->size / 2);
 
-            // renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-            {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glDepthFunc(GL_GREATER);
 
-                renderResolution = window->size;
-                renderer.setRenderResolution(renderResolution);
+            renderer.pollCamera(*camera);
+            renderer.render(camera->getHorizontalFov() * 0.9);
+            //renderer.reproject(camera->getHorizontalFov() * 0.9);//You can reproject to a different fov
 
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                glDepthFunc(GL_GREATER);
-
-                renderer.pollCamera(*camera);
-                renderer.reproject();
-
-                ImGui::Render();
-                auto end = std::chrono::high_resolution_clock::now();
-                std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
-                start = end;
-
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-                frameCount++;
-            }
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            frameCount++;
         }
         // Present
         glfwSwapBuffers(window->glfwWindowHandle);
     }
 
-    isDone = true;
-    renderer.stopOffscreenRendering();
+    renderer.stopAsynchronousReprojection();
 }
 
 void Program::checkForContentFolder()
