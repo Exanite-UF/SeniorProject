@@ -10,9 +10,8 @@
 #include <thread>
 #include <vector>
 
-
-#include "Renderer.h"
 #include "AsynchronousReprojection.h"
+#include "Renderer.h"
 
 class Renderer;
 
@@ -33,7 +32,7 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
-    //These are used as input and output
+    // These are used as input and output
     GraphicsBuffer<glm::vec3> rayStartBuffer1;
     GraphicsBuffer<glm::vec3> rayDirectionBuffer1;
     GraphicsBuffer<glm::vec3> rayStartBuffer2;
@@ -53,7 +52,6 @@ private:
     GraphicsBuffer<glm::vec3> materialBuffer; //(roughness, _, _)
 
     int currentBuffer = 0;
-
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
@@ -78,13 +76,11 @@ private:
 
     void handleDirtySizing(); // Remakes the textures if the sizing is dirty
 
-    VoxelRenderer();//This is only supposed to be ran by Renderer
+    VoxelRenderer(); // This is only supposed to be ran by Renderer
 
     friend class Renderer;
 
 public:
-    
-
     void setResolution(glm::ivec2 size);
     void setRaysPerPixel(int number);
 
@@ -98,5 +94,4 @@ public:
     void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces);
 
     void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
-
 };

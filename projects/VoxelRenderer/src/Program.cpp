@@ -168,18 +168,16 @@ void Program::run()
 
     camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
 
-    
-
     VoxelWorldData data {};
-    data.copyFrom(*voxelWorld);    
+    data.copyFrom(*voxelWorld);
 
     // Create the renderer
-    Renderer renderer{window->glfwWindowHandle, offscreen_context};
-    renderer.setRenderResolution({1024, 1024});//Render resolution can be set seperately from display resolution
+    Renderer renderer { window->glfwWindowHandle, offscreen_context };
+    renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
     renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
-    //VoxelRenderer renderer;
-    //renderer.setRaysPerPixel(1);
+    // VoxelRenderer renderer;
+    // renderer.setRaysPerPixel(1);
 
     // Engine time
     double totalElapsedTime = 0;
@@ -458,10 +456,11 @@ void Program::run()
             renderer.render();
 
             auto end = std::chrono::high_resolution_clock::now();
-            if(std::chrono::duration<double>(end - start).count() > 1.1 / 60.){
+            if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
+            {
                 std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
             }
-            
+
             start = end;
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
