@@ -70,7 +70,7 @@ const std::shared_ptr<Material>& VoxelWorldData::getVoxelMaterial(glm::ivec3 pos
     auto& materialManager = MaterialManager::getInstance();
     auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
 
-    materialManager.getMaterialByIndex(flattenedMaterialMap[voxelIndex]);
+    return materialManager.getMaterialByIndex(flattenedMaterialMap[voxelIndex]);
 }
 
 void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material>& material)
