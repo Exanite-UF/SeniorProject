@@ -96,11 +96,11 @@ MaterialManager::MaterialManager()
     }
 
     // Generate placeholder material mappings
-    for (size_t i = 0; i < materialMap.size(); i++)
+    for (size_t i = 0; i < materialIdToIndexMap.size(); i++)
     {
         auto material = getMaterialByIndex(i % Constants::VoxelWorld::materialCount);
 
-        materialMap[i] = material->getIndex();
+        materialIdToIndexMap[i] = material->getIndex();
         material->ids.push_back(i);
     }
 
@@ -109,13 +109,13 @@ MaterialManager::MaterialManager()
 
 uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint16_t mipMapId) const
 {
-    return materialMap[mipMapId];
+    return materialIdToIndexMap[mipMapId];
 }
 
 uint32_t MaterialManager::getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const
 {
     uint32_t id = ((material0 & 0b1111) << 0) | ((material1 & 0b1111) << 4) | ((material2 & 0b1111) << 8);
-    return materialMap[id];
+    return materialIdToIndexMap[id];
 }
 
 const std::shared_ptr<Material>& MaterialManager::getMaterialByMipMappedId(uint16_t mipMapId)
@@ -174,10 +174,10 @@ void MaterialManager::updateGpuMaterialData()
         materialDataEntry.roughness = material->roughness;
         materialDataEntry.metallic = material->metallic;
 
-        materialData[i] = materialDataEntry;
+        encodedMaterialData[i] = materialDataEntry;
     }
 
     // Write data to GPU
-    materialMapBuffer.readFrom(materialMap);
-    materialDataBuffer.readFrom(materialData);
+    materialMapBuffer.readFrom(materialIdToIndexMap);
+    materialDataBuffer.readFrom(encodedMaterialData);
 }

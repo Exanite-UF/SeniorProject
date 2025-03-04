@@ -18,7 +18,7 @@ class MaterialManager : public Singleton<MaterialManager>
     friend class VoxelWorldData;
 
 private:
-    // ----- CPU -----
+    // ----- CPU oriented data -----
     // These arrays store different data, but are named materials# because they represent different layers of the material mipmaps
     std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials0 {};
     std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialMippedId1Count> materials1 {};
@@ -26,12 +26,14 @@ private:
 
     std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
 
-    // ----- GPU -----
+    // ----- GPU oriented data -----
     // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
-    std::array<uint32_t, Constants::VoxelWorld::materialMippedId0Count> materialMap {};
+    // This corresponds to the data stored by materialMapBuffer
+    std::array<uint32_t, Constants::VoxelWorld::materialMippedId0Count> materialIdToIndexMap {};
 
     // Stores the GPU encoded material data
-    std::array<MaterialData, Constants::VoxelWorld::materialCount> materialData {};
+    // This corresponds to the data stored by materialDataBuffer
+    std::array<MaterialData, Constants::VoxelWorld::materialCount> encodedMaterialData {};
 
     GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialMippedId0Count);
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
