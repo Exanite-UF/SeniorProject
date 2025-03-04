@@ -24,7 +24,7 @@ private:
     // This stores all material definitions
     std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials {};
 
-    std::shared_ptr<MaterialPaletteNode> palettes = std::make_shared<MaterialPaletteNode>(3);
+    std::shared_ptr<MaterialPaletteNode> palettes = std::make_shared<MaterialPaletteNode>(3, 0, 0);
 
     // This maps material string key to the actual material
     // Speeds up getting materials by string key

@@ -43,6 +43,6 @@ public:
 
         // The max number of materials or palettes per material palette region.
         // This is equivalent to 2^4. This is because we have 4 bits per material mip level.
-        static constexpr uint32_t materialsPerRegion = 16;
+        static constexpr uint32_t palettesPerRegion = 16;
     };
 };
