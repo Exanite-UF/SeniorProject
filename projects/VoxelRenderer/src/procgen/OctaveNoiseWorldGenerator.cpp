@@ -1,17 +1,20 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
+#include <src/procgen/TextureDataSynthesizer.h>
 #include <src/world/VoxelWorldData.h>
 
 void OctaveNoiseWorldGenerator::generateData()
 {
-    siv::BasicPerlinNoise<float> perlinNoise(seed);
+    TextureData textureData({data.getSize().x, data.getSize().y, 0});
+    TextureDataSynthesizer textureDataSynthesizer(seed);
+    textureDataSynthesizer.generateOctaveNoise(textureData, octaves, persistence);
 
     for (int x = 0; x < data.getSize().x; ++x)
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {
-            float noise = perlinNoise.octave2D_01(((float)x) / data.getSize().x, ((float)y) / data.getSize().y, octaves, persistence);
+            float noise = textureData.get(x, y);
             int offset = (int)(baseHeight + (noise * data.getSize().z));
             int height = glm::min(data.getSize().z, offset);
 
