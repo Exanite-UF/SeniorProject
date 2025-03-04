@@ -36,7 +36,7 @@ MaterialManager::MaterialManager()
         material->name = name;
 
         materials0[index] = material;
-        materialsById.emplace(key, material);
+        materialsByKey.emplace(key, material);
 
         return materials0[index];
     };
@@ -133,15 +133,15 @@ const std::shared_ptr<Material>& MaterialManager::getMaterialByIndex(uint16_t in
     return materials0[index];
 }
 
-const std::shared_ptr<Material>& MaterialManager::getMaterialById(std::string id)
+const std::shared_ptr<Material>& MaterialManager::getMaterialByKey(const std::string& key)
 {
-    return materialsById.at(id);
+    return materialsByKey.at(key);
 }
 
-bool MaterialManager::tryGetMaterialById(std::string id, std::shared_ptr<Material>& material)
+bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material)
 {
-    auto entry = materialsById.find(id);
-    if (entry == materialsById.end())
+    auto entry = materialsByKey.find(key);
+    if (entry == materialsByKey.end())
     {
         return false;
     }
@@ -174,10 +174,10 @@ void MaterialManager::updateGpuMaterialData()
         materialDataEntry.roughness = material->roughness;
         materialDataEntry.metallic = material->metallic;
 
-        encodedMaterialData[i] = materialDataEntry;
+        materialData[i] = materialDataEntry;
     }
 
     // Write data to GPU
     materialMapBuffer.readFrom(materialIdToIndexMap);
-    materialDataBuffer.readFrom(encodedMaterialData);
+    materialDataBuffer.readFrom(materialData);
 }
