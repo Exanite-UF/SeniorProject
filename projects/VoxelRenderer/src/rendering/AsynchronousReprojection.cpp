@@ -114,7 +114,7 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     }
 }
 
-void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture)
+void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const GLuint& colorTexture, const GLuint& positionTexture)
 {
     glUseProgram(renderProgram);
 
@@ -124,9 +124,6 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, colorTexture);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, normalTexture);
 
     glUniform3fv(glGetUniformLocation(renderProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
     glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), cameraRotation.x, cameraRotation.y, cameraRotation.z, -cameraRotation.w);
@@ -143,9 +140,6 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glUseProgram(0);

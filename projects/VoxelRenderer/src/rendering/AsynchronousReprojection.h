@@ -56,7 +56,7 @@ public:
     GLuint getMaterialTexture() const;
 
     void render(const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, 
-        const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture);
+        const GLuint& colorTexture, const GLuint& positionTexture);
 
     
     void combineBuffers(const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,

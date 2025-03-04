@@ -273,7 +273,7 @@ void Renderer::reproject(float fov)
     glViewport(0, 0, width, height);
 
     swapDisplayBuffer();
-    reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display]);
+    reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
     reprojectionCount++;
 }
 
