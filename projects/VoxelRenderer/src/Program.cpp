@@ -432,13 +432,14 @@ void Program::run()
                     ImGui::Text("\tF - Toggle Fullscreen");
                     ImGui::Text("\tQ - Toggle Mouse Input");
                     ImGui::Text("\tT - Change Noise Type");
+                    ImGui::Text("\tG - Toggle Reprojection");
                     ImGui::Text("\tMouse Scroll - Change Move Speed");
                     ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
                     ImGui::Text("\nCamera Position");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
                     ImGui::Text("\nCamera Look Direction");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
-                    ImGui::Text("\nFPS: %.2f", currentFPS);
+                    ImGui::Text("\nFPS: %.2f | %.2f", currentFPS, currentFPS1);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
                 }
                 ImGui::End();
