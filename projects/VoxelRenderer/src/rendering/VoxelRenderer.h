@@ -11,6 +11,9 @@
 #include <vector>
 
 #include "AsynchronousReprojection.h"
+#include "Renderer.h"
+
+class Renderer;
 
 // The voxel renderer needs to be able to render multiple voxel worlds
 class VoxelRenderer : public NonCopyable
@@ -29,6 +32,7 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
+    // These are used as input and output
     GraphicsBuffer<glm::vec3> rayStartBuffer1;
     GraphicsBuffer<glm::vec3> rayDirectionBuffer1;
     GraphicsBuffer<glm::vec3> rayStartBuffer2;
@@ -49,8 +53,6 @@ private:
 
     int currentBuffer = 0;
 
-    std::binary_semaphore asynchronousMtx { 1 }; // locked by asynchronous reprojection to prevent the asynchronous reprojection buffer from being overwritten too early
-
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
     // These are compute shaders that are used to render
@@ -66,12 +68,7 @@ private:
     glm::ivec2 size;
     int raysPerPixel = 0;
 
-    bool isFirstRay = false;
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
-
-    glm::vec3 lastCameraPosition;
-    glm::quat lastCameraRotation;
-    float lastCameraFOV;
 
     // This makes the images using the size and rays per pixel
     // It remakes them if textures are already bound
@@ -79,24 +76,22 @@ private:
 
     void handleDirtySizing(); // Remakes the textures if the sizing is dirty
 
-public:
-    VoxelRenderer();
+    VoxelRenderer(); // This is only supposed to be ran by Renderer
 
+    friend class Renderer;
+
+public:
     void setResolution(glm::ivec2 size);
     void setRaysPerPixel(int number);
 
-    void prepareRayTraceFromCamera(const Camera& camera, bool resetLight = true);
+    void prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight = true);
 
     void resetHitInfo();
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true);
 
-    void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager);
+    void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay);
 
-    void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager, int bounces);
+    void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces);
 
-    void display(const Camera& camera, int frameCount);
-
-    void asynchronousDisplay(AsynchronousReprojection& reprojection);
-    void lockAsynchronous();
-    void unlockAsynchronous();
+    void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 };

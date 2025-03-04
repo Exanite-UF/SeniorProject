@@ -52,11 +52,10 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 
-int framesThisCycle1 = 0;
+#include <src/rendering/Renderer.h>
+
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
-
-std::mutex mtx;
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -124,47 +123,6 @@ Program::~Program()
     glfwTerminate();
 }
 
-// This will finish before continuing
-void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection)
-{
-    glDepthFunc(GL_ALWAYS);
-    // Resize resources
-    renderer.setResolution(renderResolution);
-    // reprojection.setSize(renderResolution);
-
-    // Clear
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Run voxel renderer
-    // mtx.lock();
-    renderer.prepareRayTraceFromCamera(*camera);
-    renderer.executePathTrace(scene.worlds, MaterialManager::getInstance(), 2);
-
-    renderer.asynchronousDisplay(reprojection); // This will finish before continuing
-}
-
-void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection, GLFWwindow* context, bool& isDone)
-{
-    glfwMakeContextCurrent(context);
-    auto start = std::chrono::high_resolution_clock::now();
-    while (!isDone)
-    {
-        glViewport(0, 0, renderResolution.x, renderResolution.y);
-        renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-        // glfwSwapBuffers(context);
-        framesThisCycle1++;
-
-        reprojection.swapBuffers();
-        renderer.lockAsynchronous();
-
-        // auto end = std::chrono::high_resolution_clock::now();
-        // while(std::chrono::duration<double>(end - start).count() < 1){
-        //     end = std::chrono::high_resolution_clock::now();
-        // }
-        // start = end;
-    }
-}
-
 void Program::run()
 {
     // Ensure preconditions are met
@@ -214,8 +172,12 @@ void Program::run()
     data.copyFrom(*voxelWorld);
 
     // Create the renderer
-    VoxelRenderer renderer;
-    renderer.setRaysPerPixel(1);
+    Renderer renderer { window->glfwWindowHandle, offscreen_context };
+    renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
+    renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
+
+    // VoxelRenderer renderer;
+    // renderer.setRaysPerPixel(1);
 
     // Engine time
     double totalElapsedTime = 0;
@@ -223,7 +185,6 @@ void Program::run()
 
     // Fps counter
     float fpsCycleTimer = 0;
-    int framesThisCycle = 0;
     float currentFPS = 0;
     float averagedDeltaTime = 0;
 
@@ -231,7 +192,6 @@ void Program::run()
     int frameCount = 0;
     int maxFrames = 0;
 
-    AsynchronousReprojection reprojection(window->size);
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
@@ -242,12 +202,10 @@ void Program::run()
     // IMGUI Menu
     bool showMenuGUI = false;
 
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    bool isDone = false;
-    glm::ivec2 renderResolution = window->size;
-    std::cout << offscreen_context << std::endl;
-    std::thread pathTraceThread;
-    pathTraceThread = std::thread(pathTraceLoop, std::ref(renderer), std::ref(renderResolution), camera, std::ref(scene), std::ref(reprojection), offscreen_context, std::ref(isDone));
+    auto start = std::chrono::high_resolution_clock::now();
+
+    renderer.setScene(scene);
+    renderer.startAsynchronousReprojection();
 
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
@@ -260,12 +218,15 @@ void Program::run()
 
         // Fps counter
         fpsCycleTimer += deltaTime;
-        framesThisCycle++;
         if (fpsCycleTimer > 1)
         {
+            int framesThisCycle = renderer.getReprojectionCounter();
+            renderer.resetReprojectionCounter();
             currentFPS = framesThisCycle / fpsCycleTimer;
             averagedDeltaTime = fpsCycleTimer / framesThisCycle;
 
+            int framesThisCycle1 = renderer.getRenderCounter();
+            renderer.resetRenderCounter();
             currentFPS1 = framesThisCycle1 / fpsCycleTimer;
             averagedDeltaTime1 = fpsCycleTimer / framesThisCycle1;
 
@@ -351,6 +312,11 @@ void Program::run()
             if (input->isKeyPressed(GLFW_KEY_F5))
             {
                 data.copyFrom(*voxelWorld);
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_G))
+            {
+                renderer.toggleAsynchronousReprojection();
             }
 
             exaniteWorldGenerator.showDebugMenu();
@@ -464,13 +430,14 @@ void Program::run()
                     ImGui::Text("\tF - Toggle Fullscreen");
                     ImGui::Text("\tQ - Toggle Mouse Input");
                     ImGui::Text("\tT - Change Noise Type");
+                    ImGui::Text("\tG - Toggle Reprojection");
                     ImGui::Text("\tMouse Scroll - Change Move Speed");
                     ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
                     ImGui::Text("\nCamera Position");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
                     ImGui::Text("\nCamera Look Direction");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
-                    ImGui::Text("\nFPS: %.2f", currentFPS);
+                    ImGui::Text("\nFPS: %.2f | %.2f", currentFPS, currentFPS1);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
                 }
                 ImGui::End();
@@ -480,34 +447,30 @@ void Program::run()
 
         // Render
         {
-            // Render to offscreen texture
+            renderer.setRenderResolution(window->size);
 
-            // renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glDepthFunc(GL_GREATER);
+
+            renderer.pollCamera(*camera);
+            renderer.render();
+
+            auto end = std::chrono::high_resolution_clock::now();
+            if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
             {
-
-                renderResolution = window->size;
-                reprojection.setSize(renderResolution);
-
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                glDepthFunc(GL_GREATER);
-
-                reprojection.combineBuffers();
-                renderer.unlockAsynchronous();
-
-                reprojection.render(*camera);
-                ImGui::Render();
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-                frameCount++;
-                // mtx.unlock();
+                std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
             }
+
+            start = end;
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            frameCount++;
         }
         // Present
         glfwSwapBuffers(window->glfwWindowHandle);
     }
 
-    isDone = true;
-    renderer.unlockAsynchronous();
-    pathTraceThread.join();
+    renderer.stopAsynchronousReprojection();
 }
 
 void Program::checkForContentFolder()
