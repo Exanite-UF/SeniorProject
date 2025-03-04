@@ -154,7 +154,22 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
 void AsynchronousReprojection::combineBuffers(const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
     const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture)
 {
+    //This runs in the offscreen context
+
     // This is where combination occurs
+
+    //I need to make a new VAO since they cannot be shared across contexts
+    //Luckily they don't use much data
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+
 
     // Make mask
     {
@@ -281,6 +296,11 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& lastRenderedCamer
         glUseProgram(0);
     }
 
-    //glFinish();
+    glDeleteVertexArrays(1, &VAO);
+    //glDeleteBuffers(1, &VBO);
+    //glDeleteBuffers(1, &EBO);
+
+
+    glFinish();
     currentBuffer++;
 }

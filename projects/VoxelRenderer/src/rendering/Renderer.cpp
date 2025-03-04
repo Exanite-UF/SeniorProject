@@ -18,6 +18,8 @@ void Renderer::offscreenRenderingFunc()
         glFinish();
         //std::cout << "DONE" << std::endl;
         swapWorkingBuffer();
+
+        
     }
 }
 
@@ -68,8 +70,6 @@ void Renderer::makeFramebuffers()
 
 void Renderer::swapDisplayBuffer()
 {
-    
-
     //If a newer frame exists, then swap the display buffer for the newest completed frame
     if(isNewerFrame){
 
@@ -77,13 +77,10 @@ void Renderer::swapDisplayBuffer()
         //It will unlock upon destruction
         std::scoped_lock lock(bufferLocks.display, bufferLocks.ready);
 
-        isNewerFrame = false;
+        
         std::swap(bufferMapping.display, bufferMapping.ready);
 
-        reprojection->combineBuffers(lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV, 
-            colorTextures[bufferMapping.ready], colorTextures[bufferMapping.display],
-            positionTextures[bufferMapping.ready], positionTextures[bufferMapping.display],
-            materialTextures[bufferMapping.display]);
+        isNewerFrame = false;
     }
 }
 
@@ -95,8 +92,15 @@ void Renderer::swapWorkingBuffer()
     //It will unlock upon destruction
     std::scoped_lock lock(bufferLocks.ready, bufferLocks.working);
 
-    isNewerFrame = true;
+    
     std::swap(bufferMapping.ready, bufferMapping.working);
+
+    reprojection->combineBuffers(lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV, 
+        colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
+        positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
+        materialTextures[bufferMapping.ready]);
+
+    isNewerFrame = true;
 }
 
 GLuint Renderer::getWorkingFramebuffer()
@@ -229,8 +233,6 @@ void Renderer::reproject()
 
     swapDisplayBuffer();
     reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, currentCameraFOV, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
-
-    
 }
 
 
