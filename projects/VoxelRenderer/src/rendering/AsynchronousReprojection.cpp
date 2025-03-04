@@ -281,6 +281,6 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& lastRenderedCamer
         glUseProgram(0);
     }
 
-    glFinish();
+    //glFinish();
     currentBuffer++;
 }

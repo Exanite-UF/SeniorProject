@@ -62,9 +62,9 @@ private:
     bool isNewerFrame = false;
 
     struct BufferLocks{
-        std::mutex display;
-        std::mutex ready;
-        std::mutex working;
+        std::recursive_mutex display;
+        std::recursive_mutex ready;
+        std::recursive_mutex working;
     } bufferLocks;
 
     std::array<GLuint, 3> colorTextures;

@@ -9,13 +9,14 @@ void Renderer::offscreenRenderingFunc()
 
     while(isRenderingOffscreen){
         //If the render resolution has changed, then the frame buffers need to be remade
-        //std::cout << isSizeDirtyThread << std::endl;
         if(isSizeDirtyThread){
             makeFramebuffers();
         }
 
 
         render(*scene, bounces);
+        glFinish();
+        //std::cout << "DONE" << std::endl;
         swapWorkingBuffer();
     }
 }
@@ -67,12 +68,15 @@ void Renderer::makeFramebuffers()
 
 void Renderer::swapDisplayBuffer()
 {
-    //This will block if it is unable to lock both the ready and working buffers
-    //It will unlock upon destruction
-    std::scoped_lock lock(bufferLocks.display, bufferLocks.ready);
+    
 
     //If a newer frame exists, then swap the display buffer for the newest completed frame
     if(isNewerFrame){
+
+        //This will block if it is unable to lock both the ready and working buffers
+        //It will unlock upon destruction
+        std::scoped_lock lock(bufferLocks.display, bufferLocks.ready);
+
         isNewerFrame = false;
         std::swap(bufferMapping.display, bufferMapping.ready);
 
@@ -104,7 +108,6 @@ GLuint Renderer::getWorkingFramebuffer()
     std::scoped_lock lock(bufferLocks.working);
 
     return framebuffers[bufferMapping.working];
-    //return 0;
 }
 
 
@@ -224,9 +227,10 @@ void Renderer::reproject()
     int width, height;
     glfwGetWindowSize(mainContext, &width, &height);
 
+    swapDisplayBuffer();
     reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, currentCameraFOV, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
 
-    swapDisplayBuffer();
+    
 }
 
 

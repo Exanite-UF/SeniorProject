@@ -58,8 +58,6 @@ int framesThisCycle1 = 0;
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
 
-std::mutex mtx;
-
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
@@ -214,6 +212,8 @@ void Program::run()
 
     renderer.setScene(scene);
     renderer.startOffscreenRendering();
+
+    auto start = std::chrono::high_resolution_clock::now();
 
 
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -459,12 +459,15 @@ void Program::run()
                 glDepthFunc(GL_GREATER);
 
                 renderer.pollCamera(*camera);
-                //renderer.reproject();
+                renderer.reproject();
 
                 ImGui::Render();
+                auto end = std::chrono::high_resolution_clock::now();
+                std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
+                start = end;
+
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
                 frameCount++;
-                // mtx.unlock();
             }
         }
         // Present
