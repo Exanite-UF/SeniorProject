@@ -42,8 +42,12 @@ void ExampleWorldGenerator::generateData()
 
 void ExampleWorldGenerator::showDebugMenu()
 {
-    if (ImGui::CollapsingHeader("Example World Generator (F7)"))
+    ImGui::PushID("ExampleWorldGenerator");
     {
-        ImGui::InputText("Material", &materialKey);
+        if (ImGui::CollapsingHeader("Example World Generator (F7)"))
+        {
+            ImGui::InputText("Material", &materialKey);
+        }
     }
+    ImGui::PopID();
 }

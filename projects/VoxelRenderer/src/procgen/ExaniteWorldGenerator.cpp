@@ -42,8 +42,12 @@ void ExaniteWorldGenerator::generateData()
 
 void ExaniteWorldGenerator::showDebugMenu()
 {
-    if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
+    ImGui::PushID("ExaniteWorldGenerator");
     {
-        ImGui::InputText("Material", &materialKey);
+        if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
+        {
+            ImGui::InputText("Material", &materialKey);
+        }
     }
+    ImGui::PopID();
 }
