@@ -2,6 +2,7 @@
 
 #include <src/procgen/WorldGenerator.h>
 
+// TODO: Idea: Reduce octaves for farther away positions ~ level of detail
 class OctaveNoiseWorldGenerator : public WorldGenerator
 {
 private:

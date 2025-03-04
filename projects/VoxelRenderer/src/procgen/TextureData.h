@@ -10,7 +10,7 @@ class TextureData
 {
 private:
     glm::ivec3 size;
-    std::vector<float> map;
+    std::vector<float> map; 
     
 public: 
     TextureData(glm::ivec3 inSize);
