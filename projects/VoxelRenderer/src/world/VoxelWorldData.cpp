@@ -24,11 +24,28 @@ void VoxelWorldData::setSize(glm::ivec3 size)
     flattenedMaterialMap.resize(size.x * size.y * size.z);
 }
 
+bool VoxelWorldData::getVoxelOccupancy(glm::ivec3 position) const
+{
+    // Calculate cell position and count
+    auto cellPosition = position >> 1;
+    auto cellCount = size >> 1;
+
+    // Calculate byte index of cell
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
+
+    // Calculate which bit to set
+    auto isOddPos = position & 1;
+    auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2);
+    auto bit = 1 << bitsShifted;
+
+    return occupancyMap[cellIndex] & bit != 0;
+}
+
 void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
 {
     // Calculate cell position and count
-    auto cellPosition = position / 2;
-    auto cellCount = size / 2;
+    auto cellPosition = position >> 1;
+    auto cellCount = size >> 1;
 
     // Calculate byte index of cell
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
@@ -46,6 +63,14 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
     {
         occupancyMap[cellIndex] &= ~bit;
     }
+}
+
+const std::shared_ptr<Material>& VoxelWorldData::getVoxelMaterial(glm::ivec3 position) const
+{
+    auto& materialManager = MaterialManager::getInstance();
+    auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
+
+    materialManager.getMaterialByIndex(flattenedMaterialMap[voxelIndex]);
 }
 
 void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material>& material)

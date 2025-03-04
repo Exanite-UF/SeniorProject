@@ -31,12 +31,12 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Material>> materialsByKey {};
 
     // ----- GPU data -----
-    // This maps mipped material ID to the index of the actual material
+    // This maps the palette ID to the index of the actual material
     // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
     // This corresponds to the data stored by materialMapBuffer
-    std::array<uint32_t, Constants::VoxelWorld::palette0Count> materialIdToIndexMap {};
+    std::array<uint32_t, Constants::VoxelWorld::palette0Count> paletteIdToMaterialIndexMap {};
 
-    // This is the materials0 array converted from the CPU Material class to the GPU MaterialData struct
+    // This is the materials array converted from the CPU Material class to the GPU MaterialData struct
     // This corresponds to the data stored by materialDataBuffer
     std::array<MaterialData, Constants::VoxelWorld::materialCount> materialData {};
 

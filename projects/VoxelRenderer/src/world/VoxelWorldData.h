@@ -26,7 +26,10 @@ public:
     [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(glm::ivec3 size);
 
+    [[nodiscard]] bool getVoxelOccupancy(glm::ivec3 position) const;
     void setVoxelOccupancy(glm::ivec3 position, bool isOccupied);
+
+    [[nodiscard]] const std::shared_ptr<Material>& getVoxelMaterial(glm::ivec3 position) const;
     void setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material>& material);
     void setVoxelMaterial(glm::ivec3 position, uint16_t materialIndex);
 
