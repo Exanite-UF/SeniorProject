@@ -1,6 +1,7 @@
 #include "VoxelWorldData.h"
 
 #include <src/utilities/Assert.h>
+#include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelWorldUtility.h>
 #include <stdexcept>
@@ -82,10 +83,9 @@ void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
 
     // Calculate which bit to set
-    auto oddX = position.x % 2;
-    auto oddY = position.y % 2;
-    auto oddZ = position.z % 2;
-    auto bit = 1 << (1 * oddX + 2 * oddY + 4 * oddZ);
+    auto isOddPos = position & 1;
+    auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2);
+    auto bit = 1 << bitsShifted;
 
     if (isOccupied)
     {
@@ -120,22 +120,23 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
     auto voxelPosition = position;
 
     // Cells correspond to 2x2x2 regions
-    auto cellCount = size / 2;
-    auto cellPosition = position / 2;
+    auto cellCount = size >> 1;
+    auto cellPosition = position >> 1;
+
+    // Note: The position/count calculations above can be done using a bitshift operation, but that apparently is slower
 
     // Iterate each mipmap level
     // Note that each mipmap level increases region size by 4 times
     for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
     {
         // Calculate uint index of cell
-        auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
-        cellIndex += materialMapIndices.at(mipMapI) / 4;
+        auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(mipMapI) / 4);
 
         // Calculate which set of 4-bits to set
-        auto oddX = voxelPosition.x % 2;
-        auto oddY = voxelPosition.y % 2;
-        auto oddZ = voxelPosition.z % 2;
-        auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
+        auto oddX = voxelPosition.x & 1;
+        auto oddY = voxelPosition.y & 1;
+        auto oddZ = voxelPosition.z & 1;
+        auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
 
         // Get value that should be stored for this voxel
         auto voxelValue = materialIdParts[mipMapI];
@@ -146,14 +147,16 @@ void VoxelWorldData::setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t mate
         cellData[cellIndex] |= voxelValue << bitsShifted;
 
         // Update region size
-        voxelPosition /= 4;
-        cellCount /= 4;
-        cellPosition /= 4;
+        voxelPosition >>= 2;
+        cellCount >>= 2;
+        cellPosition >>= 2;
     }
 }
 
 void VoxelWorldData::decodeMaterialMipMap()
 {
+    MeasureElapsedTimeScope scope("VoxelWorldData::decodeMaterialMipMap");
+
     // See setVoxelMipMappedMaterial for comments on how this works. The code is very similar.
 
     // TODO: Consider optimizing this. This currently runs in (w^3 * 3) time. Can improve to (w^3 + w^3 / 4^3 + w^3 / 4^6) time by iterating each mipmap once.
@@ -185,26 +188,26 @@ void VoxelWorldData::decodeMaterialMipMap()
                     cellIndex += materialMapIndices.at(mipMapI) / 4;
 
                     // Calculate which set of 4-bits to get
-                    auto oddX = x % 2;
-                    auto oddY = y % 2;
-                    auto oddZ = z % 2;
+                    auto oddX = x & 1;
+                    auto oddY = y & 1;
+                    auto oddZ = z & 1;
+                    auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
 
                     // Get value from cell and extract the 4 bit segment that we want
                     auto cellValue = reinterpret_cast<uint32_t*>(materialMap.data())[cellIndex];
-                    auto bitsShifted = 4 * (1 * oddX + 2 * oddY + 4 * oddZ);
                     auto voxelValue = cellValue & (0b1111 << bitsShifted);
 
                     // Store voxel value as part of result
                     materialMipMappedId |= (voxelValue >> bitsShifted) << (mipMapI * 4);
 
                     // Update region size
-                    voxelPosition /= 4;
-                    cellCount /= 4;
-                    cellPosition /= 4;
+                    voxelPosition >>= 2;
+                    cellCount >>= 2;
+                    cellPosition >>= 2;
                 }
 
-                setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
-                // setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialIndexByMipMappedId(materialMipMappedId));
+                // setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
+                setVoxelMaterial(glm::ivec3(x, y, z), materialManager.getMaterialIndexByMipMappedId(materialMipMappedId));
             }
         }
     }
@@ -212,6 +215,7 @@ void VoxelWorldData::decodeMaterialMipMap()
 
 void VoxelWorldData::encodeMaterialMipMap()
 {
+    MeasureElapsedTimeScope scope("VoxelWorldData::encodeMaterialMipMap");
     for (int z = 0; z < size.x; ++z)
     {
         for (int y = 0; y < size.x; ++y)

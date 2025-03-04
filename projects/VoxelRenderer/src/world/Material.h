@@ -64,14 +64,14 @@ struct MaterialData
 
 class Material : public NonCopyable
 {
-    // A material can be uniquely identified either by its index or its ID
+    // A material can be uniquely identified either by its index or its key
     // When serializing voxels, voxels should store the integer index to save space
-    // When serializing materials, the string ID should be saved
-    // At least one string ID to integer index mapping should be saved, either in the material file or in a separate file
+    // When serializing materials, the string key should be saved
+    // At least one string key to integer index mapping should be saved, either in the material file or in a separate file
 
 private:
     int16_t index = -1; // Index of the material in the material array
-    std::string id; // String ID
+    std::string key; // String key
 
 public:
     std::string name; // Display name
@@ -82,8 +82,10 @@ public:
     float roughness = 1;
     float metallic = 0;
 
+    std::vector<uint16_t> ids {};
+
     Material();
-    Material(uint16_t index, std::string id, std::string name = "UNNAMED");
+    Material(uint16_t index, const std::string& key, const std::string& name = "UNNAMED");
 
     // glm::vec3 color = glm::vec3(1, 1, 1);
 
@@ -93,5 +95,5 @@ public:
     // GLuint textureId = 0;
 
     [[nodiscard]] int16_t getIndex() const;
-    [[nodiscard]] const std::string& getId() const;
+    [[nodiscard]] const std::string& getKey() const;
 };
