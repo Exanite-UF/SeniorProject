@@ -8,35 +8,6 @@
 
 MaterialManager::MaterialManager()
 {
-    // Create palettes
-    paletteArrays = { &palettes0[0], &palettes1[0], &palettes2[0], &palettes3[0] };
-
-    for (int i = 0; i < palettes0.size(); ++i)
-    {
-        palettes0[i] = std::make_shared<MaterialPalette>();
-    }
-
-    for (int i = 0; i < palettes1.size(); ++i)
-    {
-        palettes1[i] = std::make_shared<MaterialPalette>();
-    }
-
-    for (int i = 0; i < palettes2.size(); ++i)
-    {
-        palettes2[i] = std::make_shared<MaterialPalette>();
-    }
-
-    for (int i = 0; i < palettes3.size(); ++i)
-    {
-        palettes3[i] = std::make_shared<MaterialPalette>();
-    }
-
-    // Add default palettes
-    palettes0[0]->addId(0);
-    palettes1[0]->addId(0);
-    palettes2[0]->addId(0);
-    palettes3[0]->addId(0);
-
     // Define custom materials
     {
         auto& material = createMaterial("dirt", "Dirt");

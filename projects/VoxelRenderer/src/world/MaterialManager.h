@@ -1,7 +1,5 @@
 #pragma once
 
-#include "MaterialPalette.h"
-
 #include <array>
 #include <memory>
 #include <unordered_set>
@@ -11,6 +9,7 @@
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/utilities/Singleton.h>
 #include <src/world/Material.h>
+#include <src/world/MaterialPaletteNode.h>
 #include <src/world/VoxelWorldData.h>
 
 class MaterialManager : public Singleton<MaterialManager>
@@ -25,18 +24,7 @@ private:
     // This stores all material definitions
     std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials {};
 
-    // These store the different material palette arrays
-    // 4096, 256, 16, 1 are the respective sizes of each array
-    // materials0 and materials4 don't exist the GPU representation of the materials
-    // These are used to make code more consistent and easier to write.
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::palette0Count> palettes0 {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::palette1Count> palettes1 {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::palette2Count> palettes2 {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::palette3Count> palettes3 {};
-
-    // Convenience array that stores pointers to the start positions of each palette array
-    // For internal use
-    std::array<std::shared_ptr<MaterialPalette>*, 4> paletteArrays {};
+    std::shared_ptr<MaterialPaletteNode> palettes = std::make_shared<MaterialPaletteNode>(3);
 
     // This maps material string key to the actual material
     // Speeds up getting materials by string key
