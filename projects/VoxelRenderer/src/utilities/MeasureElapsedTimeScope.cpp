@@ -12,6 +12,7 @@ MeasureElapsedTimeScope::MeasureElapsedTimeScope(const std::string& name)
 
 MeasureElapsedTimeScope::~MeasureElapsedTimeScope()
 {
-    auto elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
+    std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+    auto elapsedTime = std::chrono::duration<double>(now - start).count();
     Log::log("Elapsed time for scope '" + name + "': " + std::to_string(elapsedTime * 1000) + " ms");
 }
