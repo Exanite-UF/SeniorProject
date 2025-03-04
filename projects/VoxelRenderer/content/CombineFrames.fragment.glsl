@@ -1,7 +1,7 @@
 #version 460 core
 
-layout(binding = 0) uniform sampler2D oldColor;
-layout(binding = 1) uniform sampler2D oldPosition;
+layout(binding = 0) uniform sampler2D oldPosition;
+layout(binding = 1) uniform sampler2D oldColor;
 
 layout(binding = 2) uniform sampler2D newPosition;
 layout(binding = 3) uniform sampler2D newMaterial;

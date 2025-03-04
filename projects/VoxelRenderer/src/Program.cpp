@@ -52,6 +52,8 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 
+#include <src/rendering/Renderer.h>
+
 int framesThisCycle1 = 0;
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
@@ -124,47 +126,6 @@ Program::~Program()
     glfwTerminate();
 }
 
-// This will finish before continuing
-void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection)
-{
-    glDepthFunc(GL_ALWAYS);
-    // Resize resources
-    renderer.setResolution(renderResolution);
-    // reprojection.setSize(renderResolution);
-
-    // Clear
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Run voxel renderer
-    // mtx.lock();
-    renderer.prepareRayTraceFromCamera(*camera);
-    renderer.executePathTrace(scene.worlds, MaterialManager::getInstance(), 2);
-
-    renderer.asynchronousDisplay(reprojection); // This will finish before continuing
-}
-
-void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection, GLFWwindow* context, bool& isDone)
-{
-    glfwMakeContextCurrent(context);
-    auto start = std::chrono::high_resolution_clock::now();
-    while (!isDone)
-    {
-        glViewport(0, 0, renderResolution.x, renderResolution.y);
-        renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-        // glfwSwapBuffers(context);
-        framesThisCycle1++;
-
-        reprojection.swapBuffers();
-        renderer.lockAsynchronous();
-
-        // auto end = std::chrono::high_resolution_clock::now();
-        // while(std::chrono::duration<double>(end - start).count() < 1){
-        //     end = std::chrono::high_resolution_clock::now();
-        // }
-        // start = end;
-    }
-}
-
 void Program::run()
 {
     // Ensure preconditions are met
@@ -213,9 +174,14 @@ void Program::run()
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);
 
+
     // Create the renderer
-    VoxelRenderer renderer;
-    renderer.setRaysPerPixel(1);
+    Renderer renderer{window->glfwWindowHandle, offscreen_context};
+    renderer.setRenderResolution(window->size);
+
+
+    //VoxelRenderer renderer;
+    //renderer.setRaysPerPixel(1);
 
     // Engine time
     double totalElapsedTime = 0;
@@ -231,7 +197,6 @@ void Program::run()
     int frameCount = 0;
     int maxFrames = 0;
 
-    AsynchronousReprojection reprojection(window->size);
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
@@ -245,9 +210,11 @@ void Program::run()
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     bool isDone = false;
     glm::ivec2 renderResolution = window->size;
-    std::cout << offscreen_context << std::endl;
-    std::thread pathTraceThread;
-    pathTraceThread = std::thread(pathTraceLoop, std::ref(renderer), std::ref(renderResolution), camera, std::ref(scene), std::ref(reprojection), offscreen_context, std::ref(isDone));
+
+
+    renderer.setScene(scene);
+    renderer.startOffscreenRendering();
+
 
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
@@ -486,15 +453,14 @@ void Program::run()
             {
 
                 renderResolution = window->size;
-                reprojection.setSize(renderResolution);
+                renderer.setRenderResolution(renderResolution);
 
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glDepthFunc(GL_GREATER);
 
-                reprojection.combineBuffers();
-                renderer.unlockAsynchronous();
+                renderer.pollCamera(*camera);
+                //renderer.reproject();
 
-                reprojection.render(*camera);
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
                 frameCount++;
@@ -506,8 +472,7 @@ void Program::run()
     }
 
     isDone = true;
-    renderer.unlockAsynchronous();
-    pathTraceThread.join();
+    renderer.stopOffscreenRendering();
 }
 
 void Program::checkForContentFolder()

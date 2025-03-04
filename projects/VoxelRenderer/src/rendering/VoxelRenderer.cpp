@@ -70,6 +70,7 @@ void VoxelRenderer::handleDirtySizing()
 
 VoxelRenderer::VoxelRenderer()
 {
+
     prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
     executeRayTraceProgram = ShaderManager::getInstance().getComputeProgram(Content::executeRayTraceComputeShader);
     resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
@@ -105,7 +106,7 @@ void VoxelRenderer::setRaysPerPixel(int number)
     isSizingDirty = true;
 }
 
-void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLight)
+void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight)
 {
     handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
@@ -126,22 +127,13 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
         rayDirectionBuffer2.bind(1);
     }
 
-    // attentuationBuffer1.bind(2);
-    // accumulatedLightBuffer1.bind(3);
-    // attentuationBuffer2.bind(4);
-    // accumulatedLightBuffer2.bind(5);
 
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, raysPerPixel);
+        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(cameraPosition));
+        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(cameraRotation));
+        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), std::tan(cameraFOV * 0.5));
 
-        lastCameraPosition = camera.transform.getGlobalPosition();
-        glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(lastCameraPosition));
-
-        lastCameraRotation = camera.transform.getGlobalRotation();
-        glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(lastCameraRotation));
-
-        lastCameraFOV = camera.getHorizontalFov();
-        glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), lastCameraFOV);
         glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000000) / 1000000.f, (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -161,18 +153,11 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
         rayDirectionBuffer2.unbind();
     }
 
-    // attentuationBuffer1.unbind();
-    // accumulatedLightBuffer1.unbind();
-    // attentuationBuffer2.unbind();
-    // accumulatedLightBuffer2.unbind();
-
     resetHitInfo();
-
     resetVisualInfo(resetLight);
-    isFirstRay = true;
 }
 
-void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager)
+void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
@@ -198,6 +183,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     rayHitMiscBuffer.bind(6);
 
+    MaterialManager& materialManager = MaterialManager::getInstance();
     materialManager.getMaterialMapBuffer().bind(7); // This is a mapping from the material index to the material id
     materialManager.getMaterialDataBuffer().bind(8); // This binds the base data for each material
 
@@ -238,8 +224,6 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
             voxelWorld->bindBuffers(4, 5);
             {
                 glm::ivec3 voxelSize = voxelWorld->getSize();
-                // std::cout << voxelSize.x / 2 << " " << voxelSize.y / 2 << " " << voxelSize.z / 2 << std::endl;
-                // std::cout << voxelWorld.getMipMapStarts().size() << std::endl;
 
                 glUniform3i(glGetUniformLocation(fullCastProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
                 glUniform1ui(glGetUniformLocation(fullCastProgram, "mipMapTextureCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
@@ -281,15 +265,13 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
     glUseProgram(0);
 
     currentBuffer++;
-
-    isFirstRay = false;
 }
 
-void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager, int bounces)
+void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces)
 {
     for (int i = 0; i <= bounces; i++)
     {
-        executeRayTrace(worlds, MaterialManager::getInstance());
+        executeRayTrace(worlds, i == 0);
     }
 }
 
@@ -354,52 +336,8 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
     glUseProgram(0);
 }
 
-void VoxelRenderer::display(const Camera& camera, int frameCount)
+void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 3>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
-    glUseProgram(displayToWindowProgram);
-
-    if (currentBuffer % 2 == 0)
-    {
-        accumulatedLightBuffer1.bind(0);
-    }
-    else
-    {
-        accumulatedLightBuffer2.bind(0);
-    }
-
-    normalBuffer.bind(1);
-    positionBuffer.bind(2);
-
-    glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), size.x, size.y, raysPerPixel);
-    glUniform1i(glGetUniformLocation(displayToWindowProgram, "frameCount"), frameCount);
-
-    glUniform4fv(glGetUniformLocation(displayToWindowProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
-    glUniform3fv(glGetUniformLocation(displayToWindowProgram, "cameraPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
-
-    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
-    {
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-    }
-    glBindVertexArray(0);
-
-    if (currentBuffer % 2 == 0)
-    {
-        accumulatedLightBuffer1.unbind();
-    }
-    else
-    {
-        accumulatedLightBuffer2.unbind();
-    }
-
-    normalBuffer.unbind();
-    positionBuffer.unbind();
-
-    glUseProgram(0);
-}
-
-void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
-{
-    lockAsynchronous();
     glUseProgram(asynchronousDisplayProgram);
 
     if (currentBuffer % 2 == 0)
@@ -417,27 +355,20 @@ void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
 
     glUniform3i(glGetUniformLocation(asynchronousDisplayProgram, "resolution"), size.x, size.y, raysPerPixel);
 
-    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(lastCameraRotation));
-    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(lastCameraPosition));
+    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
+    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
-    GLuint framebuffer;
-    glGenFramebuffers(1, &framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, reprojection.getColorTexture(), 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, reprojection.getPositionTexture(), 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, reprojection.getMaterialTexture(), 0);
     glDepthFunc(GL_ALWAYS);
     {
-        const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-        glDrawBuffers(3, buffers);
+        glDrawBuffers(3, drawBuffers.data());
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteFramebuffers(1, &framebuffer);
 
     if (currentBuffer % 2 == 0)
     {
@@ -453,19 +384,4 @@ void VoxelRenderer::asynchronousDisplay(AsynchronousReprojection& reprojection)
     materialBuffer.unbind();
 
     glUseProgram(0);
-
-    reprojection.recordCameraTransform(lastCameraPosition, lastCameraRotation, lastCameraFOV);
-
-    glFinish(); // The assignment of the data before unlocking
-    unlockAsynchronous();
-}
-
-void VoxelRenderer::lockAsynchronous()
-{
-    asynchronousMtx.acquire();
-}
-
-void VoxelRenderer::unlockAsynchronous()
-{
-    asynchronousMtx.release();
 }

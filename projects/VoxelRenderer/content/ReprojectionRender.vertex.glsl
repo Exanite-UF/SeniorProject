@@ -1,7 +1,7 @@
 #version 460 core
 
 layout(location = 0) in vec3 aPos;
-layout(binding = 1) uniform sampler2D positionTexture;
+layout(binding = 0) uniform sampler2D positionTexture;
 
 uniform vec4 inverseCameraRotation;
 uniform vec3 cameraPosition;
