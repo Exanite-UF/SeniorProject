@@ -22,16 +22,21 @@ private:
     // Must be encoded before sending to the GPU
     std::vector<uint16_t> flattenedMaterialMap;
 
+    void setVoxelPartialMaterialId(glm::ivec3 position, uint8_t materialId, int level);
+    [[nodiscard]] uint8_t getVoxelPartialMaterialId(glm::ivec3 position, int level) const;
+
+    void setVoxelMippedMaterialId(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2);
+    [[nodiscard]] uint16_t getVoxelMippedMaterialId(glm::ivec3 position) const;
+
 public:
-    [[nodiscard]] const glm::ivec3& getSize();
+    [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(glm::ivec3 size);
 
     void setVoxelOccupancy(glm::ivec3 position, bool isOccupied);
-    void setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material> material);
-    void setVoxelMaterial(glm::ivec3 position, const uint16_t material);
-    void setVoxelMipMappedMaterial(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2);
+    void setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material>& material);
+    void setVoxelMaterial(glm::ivec3 position, uint16_t materialIndex);
 
-    void decodeMaterialMipMap();
+    void decodeMaterialMipMap(); // TODO: This bypasses change tracking
     void encodeMaterialMipMap();
 
     void copyFrom(VoxelWorld& world);
@@ -39,5 +44,5 @@ public:
 
     void clearOccupancy();
     void clearMaterials();
-    void clearMaterialMipMap();
+    void clearMaterialMipMap(); // TODO: This bypasses change tracking
 };

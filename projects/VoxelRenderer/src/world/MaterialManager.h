@@ -21,19 +21,19 @@ private:
     // ----- CPU -----
     // These arrays store different data, but are named materials# because they represent different layers of the material mipmaps
     std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials0 {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialId1Count> materials1 {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialId2Count> materials2 {};
+    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialMippedId1Count> materials1 {};
+    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialMippedId2Count> materials2 {};
 
     std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
 
     // ----- GPU -----
     // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
-    std::array<uint32_t, Constants::VoxelWorld::materialId0Count> materialMap {};
+    std::array<uint32_t, Constants::VoxelWorld::materialMippedId0Count> materialMap {};
 
     // Stores the GPU encoded material data
     std::array<MaterialData, Constants::VoxelWorld::materialCount> materialData {};
 
-    GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialId0Count);
+    GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialMippedId0Count);
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
 
     MaterialManager();
