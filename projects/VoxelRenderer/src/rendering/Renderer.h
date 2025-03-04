@@ -30,6 +30,8 @@ private:
     float overdrawFOV = 0;
     constexpr static float maxFov = 3.1415926589 * 0.9;
 
+    glm::vec2 reprojectionResolutionMultiplier = {1, 1};
+
 private:
     //Rendering Contexts
     GLFWwindow* offscreenContext = nullptr;

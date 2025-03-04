@@ -271,6 +271,8 @@ void Renderer::reproject(float fov)
     glfwGetWindowSize(mainContext, &width, &height);
 
     glViewport(0, 0, width, height);
+    
+    reprojectionResolutionMultiplier = {(float)width / renderResolution.x, (float)height / renderResolution.y};
 
     swapDisplayBuffer();
     reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
