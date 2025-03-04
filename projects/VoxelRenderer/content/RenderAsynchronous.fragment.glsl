@@ -83,9 +83,9 @@ void main()
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
     // normal is now in camera space
-    //(-1, 0, 0) toward the camera
-    //(0, -1, 0) to the right
-    //(0, 0, -1) down
+    //(1, 0, 0) away from the camera
+    //(0, 1, 0) to the left
+    //(0, 0, 1) up
 
     // Put this into a frame buffer (an actual framebuffer)
     // And apply an anisotropic blur using the normal
