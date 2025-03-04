@@ -177,9 +177,6 @@ void VoxelWorldData::decodeMaterialMipMap()
     MeasureElapsedTimeScope scope("VoxelWorldData::decodeMaterialMipMap");
 
     // See setVoxelMipMappedMaterial for comments on how this works. The code is very similar.
-
-    // TODO: Consider optimizing this. This currently runs in (w^3 * 3) time. Can improve to (w^3 + w^3 / 4^3 + w^3 / 4^6) time by iterating each mipmap once.
-    // Realistically, this function is called at most once per voxel world, if at all.
     auto& materialManager = MaterialManager::getInstance();
     for (int z = 0; z < size.x; ++z)
     {
