@@ -1,13 +1,17 @@
-#include "TextureDataSynthesizer.h"
+#pragma once
+
+#include "TextureOctaveNoiseSynthesizer.h"
 
 #include <PerlinNoise/PerlinNoise.hpp>
 
-TextureDataSynthesizer::TextureDataSynthesizer(float seed)
+TextureOctaveNoiseSynthesizer:: TextureOctaveNoiseSynthesizer(float seed, int octaves, float persistence) 
 {
     this->seed = seed;
+    this->octaves = octaves;
+    this->persistence = persistence;
 }
 
-void TextureDataSynthesizer::generateOctaveNoise(TextureData& textureData, int32_t octaves, float persistence)
+void TextureOctaveNoiseSynthesizer::generate(TextureData& textureData)
 {
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 

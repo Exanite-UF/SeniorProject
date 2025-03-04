@@ -11,8 +11,6 @@
 class TextureDataSynthesizer 
 {
     float seed;
-
 public:
-    TextureDataSynthesizer(float seed);
-    void generateOctaveNoise(TextureData& textureData, int32_t octaves, float persistence);
+    virtual void generate(TextureData& textureData) = 0;
 };

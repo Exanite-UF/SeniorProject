@@ -1,14 +1,14 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
-#include <src/procgen/TextureDataSynthesizer.h>
+#include <src/procgen/TextureOctaveNoiseSynthesizer.h>
 #include <src/world/VoxelWorldData.h>
 
 void OctaveNoiseWorldGenerator::generateData()
 {
     TextureData textureData({data.getSize().x, data.getSize().y, 1});
-    TextureDataSynthesizer textureDataSynthesizer(seed);
-    textureDataSynthesizer.generateOctaveNoise(textureData, octaves, persistence);
+    TextureOctaveNoiseSynthesizer textureDataSynthesizer(seed, octaves, persistence);
+    textureDataSynthesizer.generate(textureData);
 
     for (int x = 0; x < data.getSize().x; ++x)
     {
