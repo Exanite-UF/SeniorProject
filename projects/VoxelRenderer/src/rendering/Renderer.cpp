@@ -6,9 +6,16 @@
 void Renderer::offscreenRenderingFunc()
 {
     glfwMakeContextCurrent(offscreenContext);
+    auto lastFrame = std::chrono::steady_clock::now();
 
     while(isRenderingOffscreen){
-        //If the render resolution has changed, then the frame buffers need to be remade
+        //Spin lock until the min frame time has passed
+        auto now = std::chrono::steady_clock::now();
+        while(std::chrono::duration<double>(now - lastFrame).count() < minFrameTime){
+            now = std::chrono::steady_clock::now();
+        }
+        lastFrame = now;
+
         _render();
     }
 }
@@ -200,6 +207,17 @@ void Renderer::setBounces(const int& bounces)
 
 void Renderer::render(float fov)
 {
+    static auto lastFrame = std::chrono::steady_clock::now();
+
+    
+    //Spin lock until the min frame time has passed
+    auto now = std::chrono::steady_clock::now();
+    while(std::chrono::duration<double>(now - lastFrame).count() < minFrameTime){
+        now = std::chrono::steady_clock::now();
+    }
+
+    lastFrame = now;
+
     if(!isRenderingOffscreen){
         _render();
     }
@@ -299,4 +317,14 @@ int Renderer::getReprojectionCounter()
 void Renderer::resetReprojectionCounter()
 {
     reprojectionCount = 0;
+}
+
+void Renderer::setFPSLimit(float fps)
+{
+    minFrameTime = 1 / fps;
+}
+
+void Renderer::disableFPSLimit()
+{
+    minFrameTime = 0;
 }

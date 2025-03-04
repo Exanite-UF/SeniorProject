@@ -13,6 +13,7 @@
 #include <mutex>
 #include <thread>
 #include <memory>
+#include <chrono>
 
 #include <src/world/Camera.h>
 #include <src/world/Scene.h>
@@ -25,6 +26,8 @@ private:
     //Profiling
     int renderCount = 0;
     int reprojectionCount = 0;
+
+    float minFrameTime = 0;//This is used for framerate limiting
 
 private:
     //Rendering Contexts
@@ -134,4 +137,7 @@ public:
     
     int getReprojectionCounter();
     void resetReprojectionCounter();
+
+    void setFPSLimit(float fps);
+    void disableFPSLimit();
 };

@@ -168,9 +168,9 @@ void Program::run()
 
     camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
 
-    VoxelWorldData data {};
-    data.copyFrom(*voxelWorld);
 
+    VoxelWorldData data {};
+    data.copyFrom(*voxelWorld);    
 
     // Create the renderer
     Renderer renderer{window->glfwWindowHandle, offscreen_context};
@@ -317,6 +317,16 @@ void Program::run()
                 renderer.toggleAsynchronousReprojection();
             }
 
+            if (input->isKeyPressed(GLFW_KEY_H))
+            {
+                renderer.setFPSLimit(60);
+            }
+            if (input->isKeyPressed(GLFW_KEY_J))
+            {
+                renderer.disableFPSLimit();
+            }
+
+
             exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F6))
             {
@@ -444,7 +454,6 @@ void Program::run()
 
         // Render
         {
-            //renderer.setRenderResolution(window->size);
             renderer.setRenderResolution(window->size / 2);
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
