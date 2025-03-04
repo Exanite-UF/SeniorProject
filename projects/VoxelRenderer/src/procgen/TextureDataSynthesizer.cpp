@@ -11,12 +11,12 @@ void TextureDataSynthesizer::generateOctaveNoise(TextureData& textureData, int32
 {
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    for (int x = 0; x < textureData.size.x; ++x)
-    {
-        for (int y = 0; y < textureData.size.y; ++y)
+    for (int y = 0; y < textureData.getSize().y; y++)
+    { 
+        for (int x = 0; x < textureData.getSize().x; x++)
         {
-            float noise = perlinNoise.octave2D_01(((float)x) / textureData.size.x, ((float)y) / textureData.size.y, octaves, persistence);
-            textureData.set(noise, x, y);
+            float noise = perlinNoise.octave2D_01(((float)x) / textureData.getSize().x, ((float)y) / textureData.getSize().y, octaves, persistence);
+            textureData.set(static_cast<uint32_t>(noise), x, y);
         }
     }
 }

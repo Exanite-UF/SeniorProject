@@ -1,14 +1,23 @@
 #include "TextureData.h"
 
 
-TextureData::TextureData(glm::ivec3 size){
-    this->size = size;
+TextureData::TextureData(glm::ivec3 inSize)
+{
+    this->size = inSize;
+    this->map.resize(size.x * size.y * size.z, 0);
 }
 
-uint32_t TextureData::get(int x, int y, int z){
-    return map[x + y * size.x + z * size.y * size.x];
+uint32_t TextureData::get(int x, int y, int z)
+{
+    return this->map[x + y * size.x + z * size.y * size.x];
 }
 
-void TextureData::set(uint32_t value, int x, int y, int z){
-    map[x + y * size.x + z * size.y * size.x] = value;
+void TextureData::set(uint32_t value, int x, int y, int z)
+{
+    this->map[x + y * size.x + z * size.y * size.x] = value;
+}
+
+const glm::ivec3& TextureData::getSize()
+{
+    return size; 
 }

@@ -8,11 +8,14 @@
 // AKA Texture but that's already used. 
 class TextureData 
 {
-public:
+private:
     glm::ivec3 size;
     std::vector<uint32_t> map;
-
-    TextureData(glm::ivec3 size);
+    
+public: 
+    TextureData(glm::ivec3 inSize);
     uint32_t get(int x, int y, int z = 0);
     void set(uint32_t value, int x, int y, int z = 0);
+
+    const glm::ivec3& getSize();
 };
