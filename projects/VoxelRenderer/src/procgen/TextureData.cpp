@@ -7,12 +7,12 @@ TextureData::TextureData(glm::ivec3 inSize)
     this->map.resize(size.x * size.y * size.z, 0);
 }
 
-uint32_t TextureData::get(int x, int y, int z)
+float TextureData::get(int x, int y, int z)
 {
     return this->map[x + y * size.x + z * size.y * size.x];
 }
 
-void TextureData::set(uint32_t value, int x, int y, int z)
+void TextureData::set(float value, int x, int y, int z)
 {
     this->map[x + y * size.x + z * size.y * size.x] = value;
 }

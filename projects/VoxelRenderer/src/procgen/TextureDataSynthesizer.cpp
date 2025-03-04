@@ -16,7 +16,7 @@ void TextureDataSynthesizer::generateOctaveNoise(TextureData& textureData, int32
         for (int x = 0; x < textureData.getSize().x; x++)
         {
             float noise = perlinNoise.octave2D_01(((float)x) / textureData.getSize().x, ((float)y) / textureData.getSize().y, octaves, persistence);
-            textureData.set(static_cast<uint32_t>(noise), x, y);
+            textureData.set(noise, x, y);
         }
     }
 }

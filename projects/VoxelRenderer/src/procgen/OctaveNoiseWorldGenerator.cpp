@@ -6,7 +6,7 @@
 
 void OctaveNoiseWorldGenerator::generateData()
 {
-    TextureData textureData({data.getSize().x, data.getSize().y, 0});
+    TextureData textureData({data.getSize().x, data.getSize().y, 1});
     TextureDataSynthesizer textureDataSynthesizer(seed);
     textureDataSynthesizer.generateOctaveNoise(textureData, octaves, persistence);
 

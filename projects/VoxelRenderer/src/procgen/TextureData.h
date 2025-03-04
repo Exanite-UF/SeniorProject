@@ -10,12 +10,12 @@ class TextureData
 {
 private:
     glm::ivec3 size;
-    std::vector<uint32_t> map;
+    std::vector<float> map;
     
 public: 
     TextureData(glm::ivec3 inSize);
-    uint32_t get(int x, int y, int z = 0);
-    void set(uint32_t value, int x, int y, int z = 0);
+    float get(int x, int y, int z = 0);
+    void set(float value, int x, int y, int z = 0);
 
     const glm::ivec3& getSize();
 };
