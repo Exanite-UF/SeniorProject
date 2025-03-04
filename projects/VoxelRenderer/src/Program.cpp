@@ -34,6 +34,7 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/graphics/TextureManager.h>
+#include <src/procgen/ExampleWorldGenerator.h>
 #include <src/procgen/ExaniteWorldGenerator.h>
 #include <src/procgen/OctaveNoiseWorldGenerator.h>
 #include <src/procgen/WorldGenerator.h>
@@ -234,6 +235,7 @@ void Program::run()
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
+    ExampleWorldGenerator exampleWorldGenerator(worldSize);
     ExaniteWorldGenerator exaniteWorldGenerator(worldSize);
     OctaveNoiseWorldGenerator octaveWorldGenerator(worldSize);
 
@@ -352,9 +354,15 @@ void Program::run()
             }
 
             exaniteWorldGenerator.showDebugMenu();
-            if (input->isKeyPressed(GLFW_KEY_F7))
+            if (input->isKeyPressed(GLFW_KEY_F6))
             {
                 exaniteWorldGenerator.generate(*voxelWorld);
+            }
+
+            exampleWorldGenerator.showDebugMenu();
+            if (input->isKeyPressed(GLFW_KEY_F7))
+            {
+                exampleWorldGenerator.generate(*voxelWorld);
             }
 
             octaveWorldGenerator.showDebugMenu();

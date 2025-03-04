@@ -1,16 +1,16 @@
-#include "ExaniteWorldGenerator.h"
+#include "ExampleWorldGenerator.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_stdlib.h>
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 
-ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
+ExampleWorldGenerator::ExampleWorldGenerator(glm::ivec3 worldSize)
     : WorldGenerator(worldSize)
 {
 }
 
-void ExaniteWorldGenerator::generateData()
+void ExampleWorldGenerator::generateData()
 {
     auto& materialManager = MaterialManager::getInstance();
     std::shared_ptr<Material> material;
@@ -40,9 +40,9 @@ void ExaniteWorldGenerator::generateData()
     }
 }
 
-void ExaniteWorldGenerator::showDebugMenu()
+void ExampleWorldGenerator::showDebugMenu()
 {
-    if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
+    if (ImGui::CollapsingHeader("Example World Generator (F7)"))
     {
         ImGui::InputText("Material", &materialKey);
     }

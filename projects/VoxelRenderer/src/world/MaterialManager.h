@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MaterialPalette.h"
+
 #include <array>
 #include <memory>
 #include <vector>
@@ -8,23 +10,31 @@
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/utilities/Singleton.h>
 #include <src/world/Material.h>
+#include <src/world/VoxelWorldData.h>
 
 class MaterialManager : public Singleton<MaterialManager>
 {
     friend class Singleton;
+    friend class VoxelWorldData;
 
 private:
+    // ----- CPU -----
+    // These arrays store different data, but are named materials# because they represent different layers of the material mipmaps
+    std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials0 {};
+    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialId1Count> materials1 {};
+    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialId2Count> materials2 {};
+
+    std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
+
+    // ----- GPU -----
     // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
-    std::array<uint32_t, Constants::VoxelWorld::materialMapCount> materialMap {};
-    std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials {};
+    std::array<uint32_t, Constants::VoxelWorld::materialId0Count> materialMap {};
 
     // Stores the GPU encoded material data
     std::array<MaterialData, Constants::VoxelWorld::materialCount> materialData {};
 
-    GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialMapCount);
+    GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialId0Count);
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
-
-    std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
 
     MaterialManager();
 

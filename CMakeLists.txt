@@ -7,11 +7,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # This postfixes a "d" to shared library names in DEBUG mode
 set(CMAKE_DEBUG_POSTFIX d)
 
-## Check if Inter-Procedural Optimization (IPO) is supported by the compiler
+# Enable Inter-Procedural Optimization (IPO) if supported by the compiler
 #include(CheckIPOSupported)
 #check_ipo_supported(RESULT IS_IPO_SUPPORTED)
-#
-## Enable IPO if supported
 #if(IS_IPO_SUPPORTED)
 #    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 #endif()
