@@ -702,7 +702,7 @@ void attempt(ivec3 texelCoord)
         if (texelCoord.z == 0 && isFirstRay)
         {
             setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
-            setFirstHitMaterial(texelCoord, vec3(1, 0, 0)); // The skybox has a roughness of 1
+            setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
         }
     }
 

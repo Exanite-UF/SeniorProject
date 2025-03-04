@@ -41,6 +41,8 @@ Window::Window(GLFWwindow* shareContextWith)
     {
         glfwSetInputMode(glfwWindowHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
+
+    glfwSwapInterval(1);//Enable vsync
 }
 
 Window::~Window()

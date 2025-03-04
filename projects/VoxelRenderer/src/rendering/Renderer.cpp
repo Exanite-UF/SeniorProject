@@ -2,20 +2,12 @@
 
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 void Renderer::offscreenRenderingFunc()
 {
     glfwMakeContextCurrent(offscreenContext);
-    auto lastFrame = std::chrono::steady_clock::now();
-
     while(isRenderingOffscreen){
-        //Spin lock until the min frame time has passed
-        auto now = std::chrono::steady_clock::now();
-        while(std::chrono::duration<double>(now - lastFrame).count() < minFrameTime){
-            now = std::chrono::steady_clock::now();
-        }
-        lastFrame = now;
-
         _render();
     }
 }
@@ -92,7 +84,7 @@ void Renderer::swapWorkingBuffer()
     
     std::swap(bufferMapping.ready, bufferMapping.working);
 
-    reprojection->combineBuffers(lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV, 
+    reprojection->combineBuffers(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, 
         colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
         positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
         materialTextures[bufferMapping.ready]);
@@ -207,17 +199,6 @@ void Renderer::setBounces(const int& bounces)
 
 void Renderer::render(float fov)
 {
-    static auto lastFrame = std::chrono::steady_clock::now();
-
-    
-    //Spin lock until the min frame time has passed
-    auto now = std::chrono::steady_clock::now();
-    while(std::chrono::duration<double>(now - lastFrame).count() < minFrameTime){
-        now = std::chrono::steady_clock::now();
-    }
-
-    lastFrame = now;
-
     if(!isRenderingOffscreen){
         _render();
     }
@@ -235,15 +216,20 @@ void Renderer::_render()
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         std::scoped_lock lock(cameraMtx);
 
-        lastRenderedCameraPosition = currentCameraPosition;
-        lastRenderedCameraRotation = currentCameraRotation;
-        lastRenderedCameraFOV = currentCameraFOV;
-    
-        voxelRenderer->prepareRayTraceFromCamera(lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
+        lastRenderedPosition = currentCameraPosition;
+        lastRenderedRotation = currentCameraRotation;
+        lastRenderedFOV = currentCameraFOV;
+
+        if(isRenderingOffscreen){
+            lastRenderedFOV += overdrawFOV;
+            lastRenderedFOV = std::min(lastRenderedFOV, maxFov);
+        }
+
+        voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     
         voxelRenderer->executePathTrace(scene->worlds, bounces);
     
-        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
+        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }
     
 
@@ -319,12 +305,7 @@ void Renderer::resetReprojectionCounter()
     reprojectionCount = 0;
 }
 
-void Renderer::setFPSLimit(float fps)
+void Renderer::setAsynchronousOverdrawFOV(float extraFOV)
 {
-    minFrameTime = 1 / fps;
-}
-
-void Renderer::disableFPSLimit()
-{
-    minFrameTime = 0;
+    overdrawFOV = extraFOV;
 }

@@ -168,6 +168,7 @@ void Program::run()
 
     camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
 
+    
 
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);    
@@ -175,6 +176,7 @@ void Program::run()
     // Create the renderer
     Renderer renderer{window->glfwWindowHandle, offscreen_context};
     renderer.setRenderResolution({1024, 1024});//Render resolution can be set seperately from display resolution
+    renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
     //VoxelRenderer renderer;
     //renderer.setRaysPerPixel(1);
@@ -201,6 +203,8 @@ void Program::run()
 
     // IMGUI Menu
     bool showMenuGUI = false;
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
@@ -316,16 +320,6 @@ void Program::run()
             {
                 renderer.toggleAsynchronousReprojection();
             }
-
-            if (input->isKeyPressed(GLFW_KEY_H))
-            {
-                renderer.setFPSLimit(60);
-            }
-            if (input->isKeyPressed(GLFW_KEY_J))
-            {
-                renderer.disableFPSLimit();
-            }
-
 
             exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F6))
@@ -454,15 +448,20 @@ void Program::run()
 
         // Render
         {
-            renderer.setRenderResolution(window->size / 2);
+            renderer.setRenderResolution(window->size);
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glDepthFunc(GL_GREATER);
 
             renderer.pollCamera(*camera);
-            renderer.render(camera->getHorizontalFov() * 0.9);
-            //renderer.reproject(camera->getHorizontalFov() * 0.9);//You can reproject to a different fov
+            renderer.render();
 
+            auto end = std::chrono::high_resolution_clock::now();
+            if(std::chrono::duration<double>(end - start).count() > 1.1 / 60.){
+                std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
+            }
+            
+            start = end;
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             frameCount++;

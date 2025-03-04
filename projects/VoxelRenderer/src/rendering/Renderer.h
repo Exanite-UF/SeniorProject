@@ -27,7 +27,8 @@ private:
     int renderCount = 0;
     int reprojectionCount = 0;
 
-    float minFrameTime = 0;//This is used for framerate limiting
+    float overdrawFOV = 0;
+    constexpr static float maxFov = 3.1415926589 * 0.9;
 
 private:
     //Rendering Contexts
@@ -43,9 +44,9 @@ private:
 private:
     //Camera stuff
     std::mutex cameraMtx;
-    glm::vec3 lastRenderedCameraPosition;
-    glm::quat lastRenderedCameraRotation;
-    float lastRenderedCameraFOV;
+    glm::vec3 lastRenderedPosition;
+    glm::quat lastRenderedRotation;
+    float lastRenderedFOV;
 
     glm::vec3 currentCameraPosition;
     glm::quat currentCameraRotation;
@@ -140,4 +141,6 @@ public:
 
     void setFPSLimit(float fps);
     void disableFPSLimit();
+
+    void setAsynchronousOverdrawFOV(float extraFOV);
 };
