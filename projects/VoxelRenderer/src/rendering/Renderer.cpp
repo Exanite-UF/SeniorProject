@@ -17,8 +17,6 @@ void Renderer::offscreenRenderingFunc()
 
         render(*scene, bounces);
         swapWorkingBuffer();
-
-        glDepthFunc(GL_ALWAYS);
     }
 }
 
@@ -216,7 +214,7 @@ void Renderer::render(Scene& scene, const int& bounces)
     voxelRenderer->executePathTrace(scene.worlds, bounces);
 
     //getWorkingFramebuffer();
-    //voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
+    voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedCameraPosition, lastRenderedCameraRotation, lastRenderedCameraFOV);
 }
 
 void Renderer::reproject()
