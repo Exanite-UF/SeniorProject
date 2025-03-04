@@ -30,11 +30,11 @@ public:
     void setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material>& material);
     void setVoxelMaterial(glm::ivec3 position, uint16_t materialIndex);
 
-    [[nodiscard]] uint8_t getVoxelPartialMaterialId(glm::ivec3 position, int level) const;
-    void setVoxelPartialMaterialId(glm::ivec3 position, uint8_t materialId, int level); // TODO: This bypasses change tracking
+    [[nodiscard]] uint8_t getVoxelPartialPaletteId(glm::ivec3 position, int level) const;
+    void setVoxelPartialPaletteId(glm::ivec3 position, uint8_t partialPaletteId, int level); // TODO: This bypasses change tracking
 
-    [[nodiscard]] uint16_t getVoxelMippedMaterialId(glm::ivec3 position) const;
-    void setVoxelMippedMaterialId(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2); // TODO: This bypasses change tracking
+    [[nodiscard]] uint16_t getVoxelPaletteId(glm::ivec3 position) const;
+    void setVoxelPaletteId(glm::ivec3 position, uint8_t palette0, uint8_t palette1, uint8_t palette2); // TODO: This bypasses change tracking
 
     void decodeMaterialMipMap(); // TODO: This bypasses change tracking
     void encodeMaterialMipMap();

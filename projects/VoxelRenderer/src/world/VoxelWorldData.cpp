@@ -60,7 +60,7 @@ void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const uint16_t materi
     flattenedMaterialMap[voxelIndex] = materialIndex;
 }
 
-uint8_t VoxelWorldData::getVoxelPartialMaterialId(glm::ivec3 position, int level) const
+uint8_t VoxelWorldData::getVoxelPartialPaletteId(glm::ivec3 position, int level) const
 {
     // Voxels correspond to 1x1x1 regions
     // This won't always be the position of the original voxel because of mipmapping
@@ -87,7 +87,7 @@ uint8_t VoxelWorldData::getVoxelPartialMaterialId(glm::ivec3 position, int level
     return voxelValue;
 }
 
-void VoxelWorldData::setVoxelPartialMaterialId(glm::ivec3 position, uint8_t materialId, int level)
+void VoxelWorldData::setVoxelPartialPaletteId(glm::ivec3 position, uint8_t partialPaletteId, int level)
 {
     // Voxels correspond to 1x1x1 regions
     // This won't always be the position of the original voxel because of mipmapping
@@ -108,7 +108,7 @@ void VoxelWorldData::setVoxelPartialMaterialId(glm::ivec3 position, uint8_t mate
     auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
 
     // Get value that should be stored for this voxel
-    auto voxelValue = materialId;
+    auto voxelValue = partialPaletteId;
 
     // Set data
     auto cellData = reinterpret_cast<uint32_t*>(materialMap.data());
@@ -116,7 +116,7 @@ void VoxelWorldData::setVoxelPartialMaterialId(glm::ivec3 position, uint8_t mate
     cellData[cellIndex] |= voxelValue << bitsShifted;
 }
 
-uint16_t VoxelWorldData::getVoxelMippedMaterialId(glm::ivec3 position) const
+uint16_t VoxelWorldData::getVoxelPaletteId(glm::ivec3 position) const
 {
     // Each mipmapped material ID is 12 bits, separated into 4 bit parts
     // The least significant 4 bits represents the ID stored in the lowest/highest resolution mipmap layer
@@ -125,7 +125,7 @@ uint16_t VoxelWorldData::getVoxelMippedMaterialId(glm::ivec3 position) const
     // Set for each mipmap level
     for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
     {
-        auto partialId = getVoxelPartialMaterialId(position, mipMapI);
+        auto partialId = getVoxelPartialPaletteId(position, mipMapI);
 
         // Store partial ID as part of result
         result |= partialId << (mipMapI * 4);
@@ -134,16 +134,16 @@ uint16_t VoxelWorldData::getVoxelMippedMaterialId(glm::ivec3 position) const
     return result;
 }
 
-void VoxelWorldData::setVoxelMippedMaterialId(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2)
+void VoxelWorldData::setVoxelPaletteId(glm::ivec3 position, uint8_t palette0, uint8_t palette1, uint8_t palette2)
 {
     // Each mipmapped material ID is 12 bits, separated into 4 bit parts
     // material0 is the ID stored in the lowest/highest resolution mipmap layer
-    std::array materialIdParts = { material0, material1, material2 };
+    std::array materialIdParts = { palette0, palette1, palette2 };
 
     // Set for each mipmap level
     for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
     {
-        setVoxelPartialMaterialId(position, materialIdParts[mipMapI], mipMapI);
+        setVoxelPartialPaletteId(position, materialIdParts[mipMapI], mipMapI);
     }
 }
 
@@ -162,8 +162,8 @@ void VoxelWorldData::decodeMaterialMipMap()
         {
             for (int x = 0; x < size.x; ++x)
             {
-                uint16_t materialMippedId = getVoxelMippedMaterialId(glm::ivec3(x, y, z));
-                uint32_t materialIndex = materialManager.getMaterialIndexByMippedId(materialMippedId);
+                uint16_t materialMippedId = getVoxelPaletteId(glm::ivec3(x, y, z));
+                uint32_t materialIndex = materialManager.getMaterialIndexByPaletteId(materialMippedId);
 
                 // setVoxelMaterial(glm::ivec3(x, y, z), materialMipMappedId); // For debugging. This lets you see the mipMappedId.
                 setVoxelMaterial(glm::ivec3(x, y, z), materialIndex);
@@ -189,7 +189,7 @@ void VoxelWorldData::encodeMaterialMipMap()
                 auto material1 = (materialIndex & (0b1111 << 4)) >> 4;
                 auto material2 = (materialIndex & (0b1111 << 8)) >> 8;
 
-                setVoxelMippedMaterialId(glm::ivec3(x, y, z), material0, material1, material2);
+                setVoxelPaletteId(glm::ivec3(x, y, z), material0, material1, material2);
             }
         }
     }

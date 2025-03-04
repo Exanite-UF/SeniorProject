@@ -9,19 +9,33 @@
 MaterialManager::MaterialManager()
 {
     // Create palettes
-    for (int i = 0; i < materials1.size(); ++i)
+    paletteArrays = { &palettes0[0], &palettes1[0], &palettes2[0], &palettes3[0] };
+
+    for (int i = 0; i < palettes0.size(); ++i)
     {
-        materials1[i] = std::make_shared<MaterialPalette>();
+        palettes0[i] = std::make_shared<MaterialPalette>();
     }
 
-    for (int i = 0; i < materials2.size(); ++i)
+    for (int i = 0; i < palettes1.size(); ++i)
     {
-        materials2[i] = std::make_shared<MaterialPalette>();
+        palettes1[i] = std::make_shared<MaterialPalette>();
+    }
+
+    for (int i = 0; i < palettes2.size(); ++i)
+    {
+        palettes2[i] = std::make_shared<MaterialPalette>();
+    }
+
+    for (int i = 0; i < palettes3.size(); ++i)
+    {
+        palettes3[i] = std::make_shared<MaterialPalette>();
     }
 
     // Add default palettes
-    materials1[0]->addId(0);
-    materials2[0]->addId(0);
+    palettes0[0]->addId(0);
+    palettes1[0]->addId(0);
+    palettes2[0]->addId(0);
+    palettes3[0]->addId(0);
 
     // Define custom materials
     {
@@ -52,7 +66,7 @@ MaterialManager::MaterialManager()
     }
 
     // Generate placeholder materials
-    for (size_t i = createdMaterialCount; i < materials0.size(); i++)
+    for (size_t i = createdMaterialCount; i < materials.size(); i++)
     {
         auto& material = createMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
         if (i % 4 == 0)
@@ -89,30 +103,30 @@ MaterialManager::MaterialManager()
     updateGpuMaterialData();
 }
 
-uint32_t MaterialManager::getMaterialIndexByMippedId(uint16_t mippedId) const
+uint32_t MaterialManager::getMaterialIndexByPaletteId(uint16_t paletteId) const
 {
-    return materialIdToIndexMap[mippedId];
+    return materialIdToIndexMap[paletteId];
 }
 
-uint32_t MaterialManager::getMaterialIndexByMippedId(uint8_t material0, uint8_t material1, uint8_t material2) const
+uint32_t MaterialManager::getMaterialIndexByPaletteId(uint8_t palette0, uint8_t palette1, uint8_t palette2) const
 {
-    uint32_t id = ((material0 & 0b1111) << 0) | ((material1 & 0b1111) << 4) | ((material2 & 0b1111) << 8);
+    uint32_t id = ((palette0 & 0b1111) << 0) | ((palette1 & 0b1111) << 4) | ((palette2 & 0b1111) << 8);
     return materialIdToIndexMap[id];
 }
 
-const std::shared_ptr<Material>& MaterialManager::getMaterialByMippedId(uint16_t mipMapId)
+const std::shared_ptr<Material>& MaterialManager::getMaterialByPaletteId(uint16_t paletteId)
 {
-    return getMaterialByIndex(getMaterialIndexByMippedId(mipMapId));
+    return getMaterialByIndex(getMaterialIndexByPaletteId(paletteId));
 }
 
-const std::shared_ptr<Material>& MaterialManager::getMaterialByMippedId(uint8_t material0, uint8_t material1, uint8_t material2)
+const std::shared_ptr<Material>& MaterialManager::getMaterialByPaletteId(uint8_t palette0, uint8_t palette1, uint8_t palette2)
 {
-    return getMaterialByIndex(getMaterialIndexByMippedId(material0, material1, material2));
+    return getMaterialByIndex(getMaterialIndexByPaletteId(palette0, palette1, palette2));
 }
 
 const std::shared_ptr<Material>& MaterialManager::getMaterialByIndex(uint16_t index)
 {
-    return materials0[index];
+    return materials[index];
 }
 
 const std::shared_ptr<Material>& MaterialManager::getMaterialByKey(const std::string& key)
@@ -146,9 +160,9 @@ void MaterialManager::updateGpuMaterialData()
 {
     // Convert CPU material format to GPU material format
     // TODO: Optimize this to only convert changed materials
-    for (size_t i = 0; i < materials0.size(); i++)
+    for (size_t i = 0; i < materials.size(); i++)
     {
-        auto& material = materials0[i];
+        auto& material = materials[i];
         auto materialDataEntry = MaterialData();
         materialDataEntry.emission = material->emission;
         materialDataEntry.albedo = material->albedo;
@@ -166,7 +180,7 @@ void MaterialManager::updateGpuMaterialData()
 
 std::shared_ptr<Material>& MaterialManager::createMaterial(const std::string& key, const std::string& name)
 {
-    Assert::isTrue(createdMaterialCount < materials0.size(), "Failed to add material: Too many materials defined");
+    Assert::isTrue(createdMaterialCount < materials.size(), "Failed to add material: Too many materials defined");
 
     auto index = createdMaterialCount;
     createdMaterialCount++;
@@ -174,8 +188,8 @@ std::shared_ptr<Material>& MaterialManager::createMaterial(const std::string& ke
     auto material = std::make_shared<Material>(index, key);
     material->name = name;
 
-    materials0[index] = material;
+    materials[index] = material;
     materialsByKey.emplace(key, material);
 
-    return materials0[index];
+    return materials[index];
 }
