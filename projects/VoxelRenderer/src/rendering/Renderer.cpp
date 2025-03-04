@@ -1,20 +1,22 @@
 #include "Renderer.h"
 
+#include <algorithm>
 #include <iostream>
 #include <string>
-#include <algorithm>
 
 void Renderer::offscreenRenderingFunc()
 {
     glfwMakeContextCurrent(offscreenContext);
-    while(isRenderingOffscreen){
+    while (isRenderingOffscreen)
+    {
         _render();
     }
 }
 
 void Renderer::isOwningThreadCheck()
 {
-    if(std::this_thread::get_id() != owningThread){
+    if (std::this_thread::get_id() != owningThread)
+    {
         std::string message = "Tried to access the asynchronous framebuffer from a thread that does not own the framebuffer.";
         std::cout << message << std::endl;
         throw std::runtime_error(message);
@@ -33,16 +35,17 @@ Renderer::Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext)
 void Renderer::makeFramebuffers()
 {
     std::scoped_lock lock(bufferLocks.display, bufferLocks.ready, bufferLocks.working);
-    //std::cout << "H" << std::endl;
+    // std::cout << "H" << std::endl;
 
-    //Delete the three framebuffers
+    // Delete the three framebuffers
     glDeleteFramebuffers(3, framebuffers.data());
 
-    //Make the three framebuffers
+    // Make the three framebuffers
     glGenFramebuffers(3, framebuffers.data());
-    
-    //Set up the framebuffers
-    for(int i = 0; i < 3; i++){
+
+    // Set up the framebuffers
+    for (int i = 0; i < 3; i++)
+    {
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[i]);
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextures[i], 0);
@@ -55,19 +58,19 @@ void Renderer::makeFramebuffers()
     owningThread = std::this_thread::get_id();
     isSizeDirtyThread = false;
 
-    glViewport(0, 0, renderResolution.x, renderResolution.y);//Adjust the viewport of the offscreen context
+    glViewport(0, 0, renderResolution.x, renderResolution.y); // Adjust the viewport of the offscreen context
 }
 
 void Renderer::swapDisplayBuffer()
 {
-    //If a newer frame exists, then swap the display buffer for the newest completed frame
-    if(isNewerFrame){
+    // If a newer frame exists, then swap the display buffer for the newest completed frame
+    if (isNewerFrame)
+    {
 
-        //This will block if it is unable to lock both the ready and working buffers
-        //It will unlock upon destruction
+        // This will block if it is unable to lock both the ready and working buffers
+        // It will unlock upon destruction
         std::scoped_lock lock(bufferLocks.display, bufferLocks.ready);
 
-        
         std::swap(bufferMapping.display, bufferMapping.ready);
 
         isNewerFrame = false;
@@ -78,14 +81,13 @@ void Renderer::swapWorkingBuffer()
 {
     isOwningThreadCheck();
 
-    //This will block if it is unable to lock both the ready and working buffers
-    //It will unlock upon destruction
+    // This will block if it is unable to lock both the ready and working buffers
+    // It will unlock upon destruction
     std::scoped_lock lock(bufferLocks.ready, bufferLocks.working);
 
-    
     std::swap(bufferMapping.ready, bufferMapping.working);
 
-    reprojection->combineBuffers(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, 
+    reprojection->combineBuffers(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
         colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
         positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
         materialTextures[bufferMapping.ready]);
@@ -97,13 +99,12 @@ GLuint Renderer::getWorkingFramebuffer()
 {
     isOwningThreadCheck();
 
-    //This will block if it is unable to lock both the ready and working buffers
-    //It will unlock upon destruction
+    // This will block if it is unable to lock both the ready and working buffers
+    // It will unlock upon destruction
     std::scoped_lock lock(bufferLocks.working);
 
     return framebuffers[bufferMapping.working];
 }
-
 
 void Renderer::setRenderResolution(glm::ivec2 renderResolution)
 {
@@ -112,17 +113,17 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
         return;
     }
 
-    glFinish();//Ensure that all the current rendering tasks are done
-
+    glFinish(); // Ensure that all the current rendering tasks are done
 
     this->renderResolution = renderResolution;
 
-    //Lock all the buffers
+    // Lock all the buffers
     std::scoped_lock lock(bufferLocks.display, bufferLocks.ready, bufferLocks.working);
 
-    //std::cout << renderResolution.x << " " << renderResolution.y << std::endl;
-    //Remake all the render textures
-    for(int i = 0; i < 3; i++){
+    // std::cout << renderResolution.x << " " << renderResolution.y << std::endl;
+    // Remake all the render textures
+    for (int i = 0; i < 3; i++)
+    {
         // Create color texture
         glDeleteTextures(1, &colorTextures[i]);
         glGenTextures(1, &colorTextures[i]);
@@ -217,7 +218,8 @@ void Renderer::setBounces(const int& bounces)
 
 void Renderer::render(float fov)
 {
-    if(!isRenderingOffscreen){
+    if (!isRenderingOffscreen)
+    {
         _render();
     }
 
@@ -226,7 +228,8 @@ void Renderer::render(float fov)
 
 void Renderer::_render()
 {
-    if(isSizeDirtyThread){
+    if (isSizeDirtyThread)
+    {
         makeFramebuffers();
     }
 
@@ -238,32 +241,30 @@ void Renderer::_render()
         lastRenderedRotation = currentCameraRotation;
         lastRenderedFOV = currentCameraFOV;
 
-        if(isRenderingOffscreen){
+        if (isRenderingOffscreen)
+        {
             lastRenderedFOV += overdrawFOV;
             lastRenderedFOV = std::min(lastRenderedFOV, maxFov);
         }
 
         voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
-    
+
         voxelRenderer->executePathTrace(scene->worlds, bounces);
-    
+
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }
-    
 
     glFinish();
     swapWorkingBuffer();
     renderCount++;
 }
 
-
 void Renderer::reproject(float fov)
 {
     std::scoped_lock lock(cameraMtx, bufferLocks.display);
 
-    
-
-    if(fov < 0){
+    if (fov < 0)
+    {
         fov = currentCameraFOV;
     }
 
@@ -271,14 +272,13 @@ void Renderer::reproject(float fov)
     glfwGetWindowSize(mainContext, &width, &height);
 
     glViewport(0, 0, width, height);
-    
-    reprojectionResolutionMultiplier = {(float)width / renderResolution.x, (float)height / renderResolution.y};
+
+    reprojectionResolutionMultiplier = { (float)width / renderResolution.x, (float)height / renderResolution.y };
 
     swapDisplayBuffer();
     reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
     reprojectionCount++;
 }
-
 
 void Renderer::startAsynchronousReprojection()
 {
@@ -290,7 +290,8 @@ void Renderer::startAsynchronousReprojection()
 void Renderer::stopAsynchronousReprojection()
 {
     isRenderingOffscreen = false;
-    if(offscreenThread.joinable()){
+    if (offscreenThread.joinable())
+    {
         offscreenThread.join();
     }
     isSizeDirtyThread = true;
@@ -298,9 +299,12 @@ void Renderer::stopAsynchronousReprojection()
 
 void Renderer::toggleAsynchronousReprojection()
 {
-    if(isRenderingOffscreen){
+    if (isRenderingOffscreen)
+    {
         stopAsynchronousReprojection();
-    }else{
+    }
+    else
+    {
         startAsynchronousReprojection();
     }
 }
