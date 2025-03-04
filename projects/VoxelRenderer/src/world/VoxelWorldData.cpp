@@ -6,55 +6,6 @@
 #include <src/world/VoxelWorldUtility.h>
 #include <stdexcept>
 
-void VoxelWorldData::copyFrom(VoxelWorld& world)
-{
-    if (size != world.getSize())
-    {
-        setSize(world.getSize());
-    }
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-}
-
-void VoxelWorldData::writeTo(VoxelWorld& world)
-{
-    if (world.getSize() != size)
-    {
-        throw std::runtime_error("Target world does not have the same size");
-    }
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    world.updateMipMaps();
-}
-
-void VoxelWorldData::clearOccupancy()
-{
-    std::fill(occupancyMap.begin(), occupancyMap.end(), 0);
-}
-
-void VoxelWorldData::clearMaterials()
-{
-    std::fill(flattenedMaterialMap.begin(), flattenedMaterialMap.end(), 0);
-}
-
-void VoxelWorldData::clearMaterialMipMap()
-{
-    std::fill(materialMap.begin(), materialMap.end(), 0);
-}
-
 const glm::ivec3& VoxelWorldData::getSize() const
 {
     return size;
@@ -109,6 +60,33 @@ void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const uint16_t materi
     flattenedMaterialMap[voxelIndex] = materialIndex;
 }
 
+uint8_t VoxelWorldData::getVoxelPartialMaterialId(glm::ivec3 position, int level) const
+{
+    // Voxels correspond to 1x1x1 regions
+    // This won't always be the position of the original voxel because of mipmapping
+    // Each mipmap level increases region size by 4 times
+    auto voxelPosition = position >> (2 * level);
+
+    // Cells correspond to 2x2x2 regions
+    auto cellCount = size >> (2 * level + 1);
+    auto cellPosition = position >> (2 * level + 1);
+
+    // Calculate uint index of cell
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(level) >> 2);
+
+    // Calculate which set of 4-bits to get
+    auto oddX = voxelPosition.x & 1;
+    auto oddY = voxelPosition.y & 1;
+    auto oddZ = voxelPosition.z & 1;
+    auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
+
+    // Get value from cell and extract the 4 bit segment that we want
+    auto cellValue = reinterpret_cast<const uint32_t*>(materialMap.data())[cellIndex];
+    auto voxelValue = (cellValue & (0b1111 << bitsShifted)) >> bitsShifted;
+
+    return voxelValue;
+}
+
 void VoxelWorldData::setVoxelPartialMaterialId(glm::ivec3 position, uint8_t materialId, int level)
 {
     // Voxels correspond to 1x1x1 regions
@@ -138,46 +116,6 @@ void VoxelWorldData::setVoxelPartialMaterialId(glm::ivec3 position, uint8_t mate
     cellData[cellIndex] |= voxelValue << bitsShifted;
 }
 
-uint8_t VoxelWorldData::getVoxelPartialMaterialId(glm::ivec3 position, int level) const
-{
-    // Voxels correspond to 1x1x1 regions
-    // This won't always be the position of the original voxel because of mipmapping
-    // Each mipmap level increases region size by 4 times
-    auto voxelPosition = position >> (2 * level);
-
-    // Cells correspond to 2x2x2 regions
-    auto cellCount = size >> (2 * level + 1);
-    auto cellPosition = position >> (2 * level + 1);
-
-    // Calculate uint index of cell
-    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(level) >> 2);
-
-    // Calculate which set of 4-bits to get
-    auto oddX = voxelPosition.x & 1;
-    auto oddY = voxelPosition.y & 1;
-    auto oddZ = voxelPosition.z & 1;
-    auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
-
-    // Get value from cell and extract the 4 bit segment that we want
-    auto cellValue = reinterpret_cast<const uint32_t*>(materialMap.data())[cellIndex];
-    auto voxelValue = (cellValue & (0b1111 << bitsShifted)) >> bitsShifted;
-
-    return voxelValue;
-}
-
-void VoxelWorldData::setVoxelMippedMaterialId(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2)
-{
-    // Each mipmapped material ID is 12 bits, separated into 4 bit parts
-    // material0 is the ID stored in the lowest/highest resolution mipmap layer
-    std::array materialIdParts = { material0, material1, material2 };
-
-    // Set for each mipmap level
-    for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
-    {
-        setVoxelPartialMaterialId(position, materialIdParts[mipMapI], mipMapI);
-    }
-}
-
 uint16_t VoxelWorldData::getVoxelMippedMaterialId(glm::ivec3 position) const
 {
     // Each mipmapped material ID is 12 bits, separated into 4 bit parts
@@ -194,6 +132,19 @@ uint16_t VoxelWorldData::getVoxelMippedMaterialId(glm::ivec3 position) const
     }
 
     return result;
+}
+
+void VoxelWorldData::setVoxelMippedMaterialId(glm::ivec3 position, uint8_t material0, uint8_t material1, uint8_t material2)
+{
+    // Each mipmapped material ID is 12 bits, separated into 4 bit parts
+    // material0 is the ID stored in the lowest/highest resolution mipmap layer
+    std::array materialIdParts = { material0, material1, material2 };
+
+    // Set for each mipmap level
+    for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
+    {
+        setVoxelPartialMaterialId(position, materialIdParts[mipMapI], mipMapI);
+    }
 }
 
 void VoxelWorldData::decodeMaterialMipMap()
@@ -242,4 +193,53 @@ void VoxelWorldData::encodeMaterialMipMap()
             }
         }
     }
+}
+
+void VoxelWorldData::copyFrom(VoxelWorld& world)
+{
+    if (size != world.getSize())
+    {
+        setSize(world.getSize());
+    }
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void VoxelWorldData::writeTo(VoxelWorld& world)
+{
+    if (world.getSize() != size)
+    {
+        throw std::runtime_error("Target world does not have the same size");
+    }
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    world.updateMipMaps();
+}
+
+void VoxelWorldData::clearOccupancy()
+{
+    std::fill(occupancyMap.begin(), occupancyMap.end(), 0);
+}
+
+void VoxelWorldData::clearMaterials()
+{
+    std::fill(flattenedMaterialMap.begin(), flattenedMaterialMap.end(), 0);
+}
+
+void VoxelWorldData::clearMaterialMipMap()
+{
+    std::fill(materialMap.begin(), materialMap.end(), 0);
 }
