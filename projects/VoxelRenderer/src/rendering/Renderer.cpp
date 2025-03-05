@@ -4,7 +4,13 @@
 #include <iostream>
 #include <string>
 
+#include <src/Content.h>
+#include <src/graphics/ShaderManager.h>
 #include <src/windowing/Window.h>
+#include <src/graphics/GraphicsUtility.h>
+
+
+GLuint Renderer::drawTextureProgram;
 
 void Renderer::offscreenRenderingFunc()
 {
@@ -28,11 +34,15 @@ void Renderer::isOwningThreadCheck()
 
 Renderer::Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext)
 {
+
+    drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
+
     this->mainContext = mainContext;
     this->offscreenContext = offscreenContext;
 
     voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
     reprojection = std::unique_ptr<AsynchronousReprojection>(new AsynchronousReprojection());
+    postProcessing = std::unique_ptr<PostProcessing>(new PostProcessing());
 }
 
 void Renderer::makeFramebuffers()
@@ -226,7 +236,12 @@ void Renderer::render(float fov)
         _render();
     }
 
+
     reproject(fov);
+
+    postProcess();
+
+    finalDisplay();
 }
 
 void Renderer::_render()
@@ -264,23 +279,119 @@ void Renderer::_render()
 
 void Renderer::reproject(float fov)
 {
-    std::scoped_lock lock(cameraMtx, bufferLocks.display);
+    std::scoped_lock lock(cameraMtx, bufferLocks.display, outputLock);
 
     if (fov < 0)
     {
         fov = currentCameraFOV;
     }
 
+    //This repolling of the output size happens here, because things that use the result of the new data, don't actually need the new data, until the reprojection resolution changes.
     int width, height;
     glfwGetWindowSize(mainContext, &width, &height);
+
+    if(glm::ivec2(width, height) != outputResolution){
+        outputResolution = glm::ivec2(width, height);
+
+        makeOutputTextures();
+    }
 
     glViewport(0, 0, width, height);
 
     reprojectionResolutionMultiplier = { (float)width / renderResolution.x, (float)height / renderResolution.y };
 
     swapDisplayBuffer();
-    reprojection->render(glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display]);
+
+    //make the framebuffer
+    GLuint framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, outputColorTexture, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, outputPositionTexture, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, outputNormalTexture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //Do the render
+    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display]);
+
+    //Delete the framebuffer
+    glDeleteFramebuffers(1, &framebuffer);
+
     reprojectionCount++;
+}
+
+void Renderer::postProcess()
+{
+    std::scoped_lock lock(outputLock, bufferLocks.display);
+
+    //Do the post processing
+    postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture);
+}
+
+void Renderer::finalDisplay()
+{
+    std::scoped_lock lock(outputLock);
+
+    glUseProgram(drawTextureProgram);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, postProcessing->getOutputTexture());
+
+    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Renderer::makeOutputTextures()
+{
+    //Remake the color texture
+    glDeleteTextures(1, &outputColorTexture);
+    glGenTextures(1, &outputColorTexture);
+    glBindTexture(GL_TEXTURE_2D, outputColorTexture);
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    //Remake the position texture
+    glDeleteTextures(1, &outputPositionTexture);
+    glGenTextures(1, &outputPositionTexture);
+    glBindTexture(GL_TEXTURE_2D, outputPositionTexture);
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    //Remake the normal texture
+    glDeleteTextures(1, &outputNormalTexture);
+    glGenTextures(1, &outputNormalTexture);
+    glBindTexture(GL_TEXTURE_2D, outputNormalTexture);
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Renderer::startAsynchronousReprojection()

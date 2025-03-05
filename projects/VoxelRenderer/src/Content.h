@@ -36,4 +36,7 @@ public:
     constexpr static std::string_view makeMipMapComputeShader = "content/VoxelManipulation/MakeMipMap.compute.glsl";
     constexpr static std::string_view makeNoiseComputeShader = "content/VoxelManipulation/MakeNoise.compute.glsl";
     constexpr static std::string_view assignMaterialComputeShader = "content/VoxelManipulation/AssignMaterial.compute.glsl";
+
+
+    constexpr static std::string_view drawTextureFragmentShader = "content/DrawTexture.fragment.glsl";
 };
