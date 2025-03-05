@@ -4,9 +4,12 @@
 #include <iostream>
 #include <string>
 
+#include <src/windowing/Window.h>
+
 void Renderer::offscreenRenderingFunc()
 {
     glfwMakeContextCurrent(offscreenContext);
+
     while (isRenderingOffscreen)
     {
         _render();

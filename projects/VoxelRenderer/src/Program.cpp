@@ -174,7 +174,7 @@ void Program::run()
     // Create the renderer
     Renderer renderer { window->glfwWindowHandle, offscreen_context };
     renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
-    renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
+    //renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
     // VoxelRenderer renderer;
     // renderer.setRaysPerPixel(1);
@@ -252,7 +252,6 @@ void Program::run()
         // Update
         // TODO: This code should be moved into individual systems
         {
-            // mtx.lock();
             if (!inputManager->cursorEnteredThisFrame)
             {
                 auto mouseDelta = input->getMouseDelta();
@@ -453,8 +452,9 @@ void Program::run()
             glDepthFunc(GL_GREATER);
 
             renderer.pollCamera(*camera);
-            renderer.render();
-
+            renderer.render(camera->getHorizontalFov());
+            glFinish();
+            
             //auto end = std::chrono::high_resolution_clock::now();
             //if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
             //{
