@@ -174,7 +174,7 @@ void Program::run()
     // Create the renderer
     Renderer renderer { window->glfwWindowHandle, offscreen_context };
     renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
-    //renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
+    // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
     // VoxelRenderer renderer;
     // renderer.setRaysPerPixel(1);
@@ -454,13 +454,13 @@ void Program::run()
             renderer.pollCamera(*camera);
             renderer.render();
             glFinish();
-            
-            //auto end = std::chrono::high_resolution_clock::now();
-            //if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
+
+            // auto end = std::chrono::high_resolution_clock::now();
+            // if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
             //{
-            //     std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
-            // }
-            // start = end;
+            //      std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
+            //  }
+            //  start = end;
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
