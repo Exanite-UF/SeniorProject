@@ -25,7 +25,7 @@ GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
 GLuint VoxelRenderer::resetVisualInfoProgram;
 GLuint VoxelRenderer::fullCastProgram;
-GLuint VoxelRenderer::asynchronousDisplayProgram;
+GLuint VoxelRenderer::pathTraceToFramebufferProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -73,7 +73,7 @@ VoxelRenderer::VoxelRenderer()
     resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
     fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
 
-    asynchronousDisplayProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::renderAsynchronousFragmentShader);
+    pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader);
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
@@ -331,7 +331,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
 
 void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
-    glUseProgram(asynchronousDisplayProgram);
+    glUseProgram(pathTraceToFramebufferProgram);
 
     if (currentBuffer % 2 == 0)
     {
@@ -346,10 +346,10 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     positionBuffer.bind(2);
     materialBuffer.bind(3);
 
-    glUniform3i(glGetUniformLocation(asynchronousDisplayProgram, "resolution"), size.x, size.y, raysPerPixel);
+    glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, raysPerPixel);
 
-    glUniform4fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
-    glUniform3fv(glGetUniformLocation(asynchronousDisplayProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
+    glUniform4fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
+    glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 

@@ -60,7 +60,7 @@ private:
     static GLuint resetHitInfoProgram;
     static GLuint resetVisualInfoProgram;
     static GLuint fullCastProgram;
-    static GLuint asynchronousDisplayProgram;
+    static GLuint pathTraceToFramebufferProgram;
 
     glm::ivec2 size;
     int raysPerPixel = 0;
