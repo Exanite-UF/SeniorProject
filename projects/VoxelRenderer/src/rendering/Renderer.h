@@ -1,6 +1,7 @@
 #pragma once
 #include "AsynchronousReprojection.h"
 #include "VoxelRenderer.h"
+#include "PostProcessing.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -91,9 +92,19 @@ private:
 
     std::unique_ptr<VoxelRenderer> voxelRenderer = nullptr;
     std::unique_ptr<AsynchronousReprojection> reprojection = nullptr;
+    std::unique_ptr<PostProcessing> postProcessing = nullptr;
+
+    static GLuint drawTextureProgram;
 
     friend class VoxelRenderer;
     friend class AsynchronousReprojection;
+
+    //This is what the reprojection and post processes work on
+    std::recursive_mutex outputLock;
+    glm::ivec2 outputResolution;
+    GLuint outputColorTexture;
+    GLuint outputPositionTexture;
+    GLuint outputNormalTexture;
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure
@@ -101,6 +112,10 @@ private:
 
     void _render();
     void reproject(float fov = -1);
+    void postProcess();
+    void finalDisplay();//Actually displays the image to the screen;
+
+    void makeOutputTextures();
 
 public:
     Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext);

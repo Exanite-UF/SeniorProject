@@ -116,7 +116,8 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     }
 }
 
-void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const GLuint& colorTexture, const GLuint& positionTexture)
+void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
+    const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture)
 {
     glUseProgram(renderProgram);
 
@@ -126,6 +127,9 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, colorTexture);
 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+
     glUniform3fv(glGetUniformLocation(renderProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
     glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), cameraRotation.x, cameraRotation.y, cameraRotation.z, -cameraRotation.w);
     glUniform2i(glGetUniformLocation(renderProgram, "resolution"), reprojectionResolution.x, reprojectionResolution.y);
@@ -133,7 +137,14 @@ void AsynchronousReprojection::render(const glm::ivec2& reprojectionResolution, 
 
     glBindVertexArray(VAO);
     {
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        GLenum drawBuffers[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        glDrawBuffers(3, drawBuffers);
+
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     glBindVertexArray(0);
 
