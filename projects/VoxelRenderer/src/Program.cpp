@@ -146,7 +146,6 @@ void Program::run()
     // Load shader programs
     blitTextureGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFragmentShader);
     blitFramebufferGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFramebufferFragmentShader);
-    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
     assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);

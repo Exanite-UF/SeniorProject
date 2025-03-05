@@ -57,10 +57,7 @@ private:
 
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
-    static GLuint executeRayTraceProgram;
     static GLuint resetHitInfoProgram;
-    static GLuint displayToWindowProgram;
-    static GLuint BRDFProgram;
     static GLuint resetVisualInfoProgram;
     static GLuint fullCastProgram;
     static GLuint asynchronousDisplayProgram;

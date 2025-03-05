@@ -22,10 +22,7 @@
 #include <src/world/VoxelWorld.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
-GLuint VoxelRenderer::executeRayTraceProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
-GLuint VoxelRenderer::displayToWindowProgram;
-GLuint VoxelRenderer::BRDFProgram;
 GLuint VoxelRenderer::resetVisualInfoProgram;
 GLuint VoxelRenderer::fullCastProgram;
 GLuint VoxelRenderer::asynchronousDisplayProgram;
@@ -72,10 +69,7 @@ VoxelRenderer::VoxelRenderer()
 {
 
     prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
-    executeRayTraceProgram = ShaderManager::getInstance().getComputeProgram(Content::executeRayTraceComputeShader);
     resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
-    displayToWindowProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::displayToWindowFragmentShader);
-    BRDFProgram = ShaderManager::getInstance().getComputeProgram(Content::brdfComputeShader);
     resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
     fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
 
