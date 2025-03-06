@@ -187,16 +187,16 @@ void Program::run()
     //    float standardDeviation = 2;
     //    int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
     //    float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
-//
+////
     //    std::vector<float> kernel;
     //    float sharedCoefficient = lossCorrection / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
     //    for(int i = -kernelRadius; i <= kernelRadius; i++){
     //        float dist = i * i;
     //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
     //    }
-//
+////
     //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
-//
+////
     //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
     //    glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
     //};
@@ -205,16 +205,16 @@ void Program::run()
     //    float standardDeviation = 2;
     //    int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
     //    float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
-//
+////
     //    std::vector<float> kernel;
     //    float sharedCoefficient = 1 / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
     //    for(int i = -kernelRadius; i <= kernelRadius; i++){
     //        float dist = i * i;
     //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
     //    }
-//
+////
     //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
-//
+////
     //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
     //    glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
     //};
