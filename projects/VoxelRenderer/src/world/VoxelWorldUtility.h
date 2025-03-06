@@ -25,5 +25,5 @@ public:
     // The total layers is result.size() - 1
     //
     // The exact size of the returned array is Constants::VoxelWorld::materialMapLayerCount + 1
-    static std::array<uint32_t, Constants::VoxelWorld::materialMapLayerCount + 1> getMaterialMapIndices(glm::ivec3 size);
+    static std::array<uint32_t, Constants::VoxelWorld::paletteMapLayerCount + 1> getPaletteMapIndices(glm::ivec3 size);
 };

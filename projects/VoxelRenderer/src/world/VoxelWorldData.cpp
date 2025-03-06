@@ -18,10 +18,10 @@ void VoxelWorldData::setSize(glm::ivec3 size)
     occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
     occupancyMap.resize(occupancyMapIndices.at(1));
 
-    materialMapIndices = VoxelWorldUtility::getMaterialMapIndices(size);
-    materialMap.resize(materialMapIndices.at(materialMapIndices.size() - 1));
+    paletteMapIndices = VoxelWorldUtility::getPaletteMapIndices(size);
+    paletteMap.resize(paletteMapIndices.at(paletteMapIndices.size() - 1));
 
-    flattenedMaterialMap.resize(size.x * size.y * size.z);
+    materialMap.resize(size.x * size.y * size.z);
 }
 
 bool VoxelWorldData::getVoxelOccupancy(glm::ivec3 position) const
@@ -70,7 +70,7 @@ const std::shared_ptr<Material>& VoxelWorldData::getVoxelMaterial(glm::ivec3 pos
     auto& materialManager = MaterialManager::getInstance();
     auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
 
-    return materialManager.getMaterialByIndex(flattenedMaterialMap[voxelIndex]);
+    return materialManager.getMaterialByIndex(materialMap[voxelIndex]);
 }
 
 void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material>& material)
@@ -82,7 +82,7 @@ void VoxelWorldData::setVoxelMaterial(glm::ivec3 position, const uint16_t materi
 {
     // Each material ID is 16 bits, but we only use the lower 12 bits
     auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
-    flattenedMaterialMap[voxelIndex] = materialIndex;
+    materialMap[voxelIndex] = materialIndex;
 }
 
 uint8_t VoxelWorldData::getVoxelPartialPaletteId(glm::ivec3 position, int level) const
@@ -97,7 +97,7 @@ uint8_t VoxelWorldData::getVoxelPartialPaletteId(glm::ivec3 position, int level)
     auto cellPosition = position >> ((level << 1) + 1);
 
     // Calculate uint index of cell
-    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(level) >> 2);
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (paletteMapIndices.at(level) >> 2);
 
     // Calculate which set of 4-bits to get
     auto oddX = voxelPosition.x & 1;
@@ -106,7 +106,7 @@ uint8_t VoxelWorldData::getVoxelPartialPaletteId(glm::ivec3 position, int level)
     auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
 
     // Get value from cell and extract the 4 bit segment that we want
-    auto cellValue = reinterpret_cast<const uint32_t*>(materialMap.data())[cellIndex];
+    auto cellValue = reinterpret_cast<const uint32_t*>(paletteMap.data())[cellIndex];
     auto voxelValue = (cellValue & (0b1111 << bitsShifted)) >> bitsShifted;
 
     return voxelValue;
@@ -124,7 +124,7 @@ void VoxelWorldData::setVoxelPartialPaletteId(glm::ivec3 position, uint8_t parti
     auto cellPosition = position >> ((level << 1) + 1);
 
     // Calculate uint index of cell
-    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (materialMapIndices.at(level) >> 2);
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + (paletteMapIndices.at(level) >> 2);
 
     // Calculate which set of 4-bits to set
     auto oddX = voxelPosition.x & 1;
@@ -136,7 +136,7 @@ void VoxelWorldData::setVoxelPartialPaletteId(glm::ivec3 position, uint8_t parti
     auto voxelValue = partialPaletteId;
 
     // Set data
-    auto cellData = reinterpret_cast<uint32_t*>(materialMap.data());
+    auto cellData = reinterpret_cast<uint32_t*>(paletteMap.data());
     cellData[cellIndex] &= ~(0b1111 << bitsShifted);
     cellData[cellIndex] |= voxelValue << bitsShifted;
 }
@@ -148,7 +148,7 @@ uint16_t VoxelWorldData::getVoxelPaletteId(glm::ivec3 position) const
     uint16_t result = 0;
 
     // Set for each mipmap level
-    for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
+    for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::paletteMapLayerCount; ++mipMapI)
     {
         auto partialId = getVoxelPartialPaletteId(position, mipMapI);
 
@@ -166,13 +166,13 @@ void VoxelWorldData::setVoxelPaletteId(glm::ivec3 position, uint8_t palette0, ui
     std::array materialIdParts = { palette0, palette1, palette2 };
 
     // Set for each mipmap level
-    for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::materialMapLayerCount; ++mipMapI)
+    for (int mipMapI = 0; mipMapI < Constants::VoxelWorld::paletteMapLayerCount; ++mipMapI)
     {
         setVoxelPartialPaletteId(position, materialIdParts[mipMapI], mipMapI);
     }
 }
 
-void VoxelWorldData::decodeMaterialMipMap()
+void VoxelWorldData::decodePaletteMap()
 {
     MeasureElapsedTimeScope scope("VoxelWorldData::decodeMaterialMipMap");
 
@@ -194,7 +194,7 @@ void VoxelWorldData::decodeMaterialMipMap()
     }
 }
 
-void VoxelWorldData::encodeMaterialMipMap()
+void VoxelWorldData::encodePaletteMap()
 {
     MeasureElapsedTimeScope scope("VoxelWorldData::encodeMaterialMipMap");
 
@@ -224,9 +224,14 @@ void VoxelWorldData::encodeMaterialMipMap()
                     continue;
                 }
 
+                auto currentPaletteId = getVoxelPaletteId(glm::ivec3(x, y, z));
+                for (int i = 0; i < Constants::VoxelWorld::paletteMapLayerCount; ++i)
+                {
+                }
+
                 // TODO: This isn't meant to fully work. To properly encode the material mipmaps, we need a solver!
                 auto voxelIndex = x + size.x * (y + size.y * z);
-                auto paletteId = flattenedMaterialMap[voxelIndex]; // TODO: This is currently the material index
+                auto paletteId = materialMap[voxelIndex]; // TODO: This is currently the material index
 
                 // TODO: Calculate actual palette ID instead of using material index
                 auto palette0 = (paletteId & (0b1111 << 0)) >> 0;
@@ -253,7 +258,7 @@ void VoxelWorldData::copyFrom(VoxelWorld& world)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, paletteMapIndices.at(paletteMapIndices.size() - 1), paletteMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -269,23 +274,23 @@ void VoxelWorldData::writeTo(VoxelWorld& world)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMapIndices.at(materialMapIndices.size() - 1), materialMap.data());
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, paletteMapIndices.at(paletteMapIndices.size() - 1), paletteMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     world.updateMipMaps();
 }
 
-void VoxelWorldData::clearOccupancy()
+void VoxelWorldData::clearOccupancyMap()
 {
     std::fill(occupancyMap.begin(), occupancyMap.end(), 0);
 }
 
-void VoxelWorldData::clearMaterials()
-{
-    std::fill(flattenedMaterialMap.begin(), flattenedMaterialMap.end(), 0);
-}
-
-void VoxelWorldData::clearMaterialMipMap()
+void VoxelWorldData::clearMaterialMap()
 {
     std::fill(materialMap.begin(), materialMap.end(), 0);
+}
+
+void VoxelWorldData::clearPaletteMap()
+{
+    std::fill(paletteMap.begin(), paletteMap.end(), 0);
 }
