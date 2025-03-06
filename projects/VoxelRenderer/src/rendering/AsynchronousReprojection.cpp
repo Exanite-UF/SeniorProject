@@ -125,10 +125,10 @@ void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& repr
     glBindTexture(GL_TEXTURE_2D, positionTexture);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, colorTexture);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glBindTexture(GL_TEXTURE_2D, colorTexture);
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, materialTexture);
@@ -160,8 +160,8 @@ void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& repr
     glUseProgram(0);
 }
 
-void AsynchronousReprojection::combineBuffers(const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
-    const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture)
+void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
+    const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture)
 {
     // This runs in the offscreen context
 
@@ -185,6 +185,10 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& lastRenderedCamer
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, oldPositionTexture); // Old position
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, newNormalTexture);
+
 
         glUniform3fv(glGetUniformLocation(combineMaskProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
         glUniform4f(glGetUniformLocation(combineMaskProgram, "inverseCameraRotation"), lastRenderedCameraRotation.x, lastRenderedCameraRotation.y, lastRenderedCameraRotation.z, -lastRenderedCameraRotation.w);
@@ -223,29 +227,35 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& lastRenderedCamer
         glBindTexture(GL_TEXTURE_2D, oldPositionTexture); // Old position
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, oldColorTexture); // Old color
+        glBindTexture(GL_TEXTURE_2D, newNormalTexture);
 
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, newPositionTexture); // New position
+        glBindTexture(GL_TEXTURE_2D, oldColorTexture); // Old color
 
         glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, newPositionTexture); // New position
+
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, newMaterialTexture); // New material
 
         // Old frame count
         if (currentBuffer % 2 == 0)
         {
-            glActiveTexture(GL_TEXTURE4);
+            glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, frameCountTextures[0]);
         }
         else
         {
-            glActiveTexture(GL_TEXTURE4);
+            glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, frameCountTextures[1]);
         }
 
-        glActiveTexture(GL_TEXTURE5);
+        glActiveTexture(GL_TEXTURE6);
         glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
 
+        
+
+        glUniform3fv(glGetUniformLocation(combineProgram, "cameraMovement"), 1, glm::value_ptr(cameraMovement));
         glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
         glUniform4f(glGetUniformLocation(combineProgram, "inverseCameraRotation"), lastRenderedCameraRotation.x, lastRenderedCameraRotation.y, lastRenderedCameraRotation.z, -lastRenderedCameraRotation.w);
         glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
