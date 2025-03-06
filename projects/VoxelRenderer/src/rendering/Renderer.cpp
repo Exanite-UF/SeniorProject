@@ -101,10 +101,10 @@ void Renderer::swapWorkingBuffer()
 
     std::swap(bufferMapping.ready, bufferMapping.working);
 
-    reprojection->combineBuffers(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
+    reprojection->combineBuffers(lastRenderedPosition - olderRenderedPosition, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
         colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
         positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
-        materialTextures[bufferMapping.ready]);
+        materialTextures[bufferMapping.ready], normalTextures[bufferMapping.ready]);
 
     isNewerFrame = true;
 }
@@ -260,6 +260,7 @@ void Renderer::_render()
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         std::scoped_lock lock(cameraMtx);
 
+        olderRenderedPosition = lastRenderedPosition;
         lastRenderedPosition = currentCameraPosition;
         lastRenderedRotation = currentCameraRotation;
         lastRenderedFOV = currentCameraFOV;

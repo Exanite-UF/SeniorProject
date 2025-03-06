@@ -165,7 +165,9 @@ void Program::run()
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
-    camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
+    //camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
+    camera->transform.setGlobalPosition(glm::vec3(-118.012, 54.1353, 256.174));
+    //camera->rotation.x = glm::radians(45.0f);
 
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);
@@ -173,7 +175,8 @@ void Program::run()
     // Create the renderer
     Renderer renderer { window->glfwWindowHandle, offscreen_context };
     renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
-    // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
+    //renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
+
 
     // VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
@@ -297,6 +300,10 @@ void Program::run()
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
             auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
             Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
+            std::cout << camera->transform.getGlobalPosition().x << std::endl;
+            std::cout << camera->transform.getGlobalPosition().y << std::endl;
+            std::cout << camera->transform.getGlobalPosition().z << std::endl;
+
 
             fpsCycleTimer = 0;
             framesThisCycle = 0;

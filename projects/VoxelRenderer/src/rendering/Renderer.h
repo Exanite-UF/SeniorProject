@@ -47,6 +47,8 @@ private:
 
 private:
     // Camera stuff
+    glm::vec3 olderRenderedPosition;
+
     std::mutex cameraMtx;
     glm::vec3 lastRenderedPosition;
     glm::quat lastRenderedRotation;

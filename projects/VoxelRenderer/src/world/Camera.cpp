@@ -2,7 +2,7 @@
 
 float Camera::getHorizontalFov() const
 {
-    return glm::pi<float>() / 2;
+    return glm::pi<float>() / 2 * 1.5;
 }
 
 glm::vec3 Camera::getRightDirection() const
