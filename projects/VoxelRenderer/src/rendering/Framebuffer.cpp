@@ -6,6 +6,12 @@ Framebuffer::Framebuffer(glm::ivec2 size)
     setSize(size);
 }
 
+Framebuffer::~Framebuffer()
+{
+    glDeleteTextures(1, &colorTextureId);
+    glDeleteTextures(1, &depthTextureId);
+}
+
 glm::ivec2 Framebuffer::getSize()
 {
     return size;
@@ -21,6 +27,7 @@ void Framebuffer::setSize(glm::ivec2 size)
     this->size = size;
 
     // Create color texture
+    glDeleteTextures(1, &colorTextureId);
     glGenTextures(1, &colorTextureId);
     glBindTexture(GL_TEXTURE_2D, colorTextureId);
     {
@@ -34,6 +41,7 @@ void Framebuffer::setSize(glm::ivec2 size)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Create depth texture (this is a reverse z-buffer texture)
+    glDeleteTextures(1, &depthTextureId);
     glGenTextures(1, &depthTextureId);
     glBindTexture(GL_TEXTURE_2D, depthTextureId);
     {

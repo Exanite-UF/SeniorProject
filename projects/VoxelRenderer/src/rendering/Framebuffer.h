@@ -10,11 +10,12 @@ private:
     glm::ivec2 size;
 
 public:
-    GLuint framebufferId;
-    GLuint colorTextureId;
-    GLuint depthTextureId;
+    GLuint framebufferId = 0;
+    GLuint colorTextureId = 0;
+    GLuint depthTextureId = 0;
 
     Framebuffer(glm::ivec2 size);
+    ~Framebuffer();
 
     glm::ivec2 getSize();
     void setSize(glm::ivec2 size);
