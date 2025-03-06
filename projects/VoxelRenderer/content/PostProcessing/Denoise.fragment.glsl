@@ -29,7 +29,7 @@ void main()
 
     vec3 cameraSpacePosition = qtransform(vec4(cameraRotation.xyz, -cameraRotation.w), position - cameraPosition);
 
-    float stdev = material.x * ((cameraSpacePosition.x) * 0.02 + 0.1);
+    float stdev = material.x * ((cameraSpacePosition.x) * 0.002 + 0.01);
 
     if(stdev == 0){
         out_color = texelFetch(inputTexture, ivec2(gl_FragCoord.x, gl_FragCoord.y), 0);
@@ -54,7 +54,7 @@ void main()
     //return;
     // int(0.5 * resolution.x * ceil(neededDist / abs(cameraSpacePostion.x)));//How many pixels do we need to move to get to a distance 2 standard deviation away in world space
     
-    kernelSize = max(min(1000, kernelSize), 0);
+    kernelSize = max(min(10, kernelSize), 0);
 
     if(kernelSize == 0){
         out_color = texelFetch(inputTexture, ivec2(gl_FragCoord.x, gl_FragCoord.y), 0);
