@@ -17,3 +17,8 @@ MaterialPaletteNode::MaterialPaletteNode(int level, uint8_t childIndex, uint16_t
         }
     }
 }
+
+void MaterialPaletteNode::clear()
+{
+    materialIndices.clear();
+}
