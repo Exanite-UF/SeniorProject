@@ -11,7 +11,7 @@ layout(binding = 4) uniform sampler2D frameCount;
 layout(binding = 5) uniform sampler2D combineMask;
 
 in vec2 uv;
-in float distance;
+in float distance1;
 
 uniform ivec2 resolution;
 
@@ -26,7 +26,7 @@ void main()
     vec3 oldPos = texture(oldPosition, uv).xyz;
     vec3 newPos = texture(newPosition, localUV).xyz;
     float dist = length(newPos - oldPos);
-    frameCount /= 100 * (dist / distance) + 1;
+    frameCount /= 100 * (dist / distance1) + 1;
 
     frameCount *= texture(combineMask, localUV).x;
 

@@ -9,7 +9,7 @@ uniform ivec2 resolution;
 uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 
 out vec2 uv;
-out float distance;
+out float distance1;
 
 vec3 qtransform(vec4 q, vec3 v)
 {
@@ -24,7 +24,7 @@ void main()
     pos = qtransform(inverseCameraRotation, pos);
 
     pos = vec3(-pos.y, pos.z, pos.x);
-    distance = pos.z;
+    distance1 = pos.z;
 
     pos.y *= resolution.x / float(resolution.y); // Correct for aspect ratio
     pos.z *= horizontalFovTan;

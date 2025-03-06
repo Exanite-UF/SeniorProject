@@ -32,7 +32,7 @@ private:
     float overdrawFOV = 0;
     constexpr static float maxFov = 3.1415926589 * 0.9;
 
-    glm::vec2 reprojectionResolutionMultiplier = { 1, 1 };
+    glm::vec2 upscaleMultiplier = { 1, 1 };
 
 private:
     // Rendering Contexts
@@ -102,18 +102,20 @@ private:
     //This is what the reprojection and post processes work on
     std::recursive_mutex outputLock;
     glm::ivec2 outputResolution;
+    GLuint outputDepthTexture;
     GLuint outputColorTexture;
     GLuint outputPositionTexture;
     GLuint outputNormalTexture;
+    GLuint outputMaterialTexture;
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure
     void isOwningThreadCheck();
 
-    void _render();
-    void reproject(float fov = -1);
-    void postProcess();
-    void finalDisplay();//Actually displays the image to the screen;
+    void _render();//This is where all the rendering happens (The underscore is because a publicly facing function that wraps the entire rendering process exists)
+    void reproject(float fov = -1);//This is where reprojection occurs
+    void postProcess();//This is where post processing happens
+    void finalDisplay();//Actually displays the image to the screen. Must run after post processing
 
     void makeOutputTextures();
 
@@ -157,4 +159,15 @@ public:
     void disableFPSLimit();
 
     void setAsynchronousOverdrawFOV(float extraFOV);
+
+
+    std::shared_ptr<PostProcess> addPostProcessEffect(std::shared_ptr<PostProcess> effect);
+
+    glm::vec2 getUpscaleMultiplier();
+
+    glm::vec3 getCurrentCameraPosition();
+    glm::quat getCurrentCameraRotation();
+    float getCurrentCameraFOV();
+
+    glm::ivec2 getUpscaleResolution();
 };

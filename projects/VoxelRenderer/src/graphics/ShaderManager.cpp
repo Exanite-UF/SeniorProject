@@ -3,6 +3,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include "ShaderManager.h"
+
+#include <src/Content.h>
 
 ShaderManager::~ShaderManager()
 {
@@ -124,6 +127,10 @@ GLuint ShaderManager::getGraphicsProgram(const std::string_view& vertexShaderPat
     return program;
 }
 
+GLuint ShaderManager::getPostProcessProgram(const std::string_view& fragmentShaderPath)
+{
+    return getGraphicsProgram(Content::screenTriVertexShader, fragmentShaderPath);
+}
 GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPath)
 {
     // Use cached program if available
