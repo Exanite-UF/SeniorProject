@@ -52,6 +52,8 @@ public:
     GLuint getOutputTexture();
 
     void addPostProcessEffect(std::shared_ptr<PostProcess> effect);
+
+    bool hasAnyProcesses();
 };
 
 class PostProcess{

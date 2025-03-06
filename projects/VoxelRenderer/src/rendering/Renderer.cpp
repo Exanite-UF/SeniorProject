@@ -346,7 +346,10 @@ void Renderer::postProcess()
     std::scoped_lock lock(outputLock, bufferLocks.display);
 
     //Do the post processing
-    postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMaterialTexture);
+    if(postProcessing->hasAnyProcesses()){
+        postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMaterialTexture);
+    }
+    
 }
 
 void Renderer::finalDisplay()
@@ -356,7 +359,12 @@ void Renderer::finalDisplay()
     glUseProgram(drawTextureProgram);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, postProcessing->getOutputTexture());
+    if(postProcessing->hasAnyProcesses()){
+        glBindTexture(GL_TEXTURE_2D, postProcessing->getOutputTexture());
+    }else{
+        glBindTexture(GL_TEXTURE_2D, outputColorTexture);
+    }
+    
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     glDrawArrays(GL_TRIANGLES, 0, 3);
