@@ -28,14 +28,14 @@ void main()
     vec3 oldPos = texture(oldPosition, uv).xyz;
     vec3 newPos = texture(newPosition, localUV).xyz;
     float dist = length(newPos - oldPos);
-    frameCount /= 10 * (dist / distance1) + 1;//Distance traveled / distance from camera
+    frameCount /= 100 * (dist / distance1) + 1;//Distance traveled / distance from camera
 
     frameCount *= texture(combineMask, localUV).x;
 
     vec3 material = texture(newMaterial, localUV).xyz;
 
     float angleChange = atan(length(cameraMovement), distance1);
-    float a = 1000000 * 3.1415926589 * pow(1-material.x, 20) + 1;
+    float a = 1000000 * 3.1415926589 * pow(1-material.x, 15) + 1;
 
     //float temp = -pow(a, -1.57079632679);
 
