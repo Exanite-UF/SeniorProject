@@ -197,24 +197,48 @@ void VoxelWorldData::decodeMaterialMipMap()
 void VoxelWorldData::encodeMaterialMipMap()
 {
     MeasureElapsedTimeScope scope("VoxelWorldData::encodeMaterialMipMap");
+
+    auto& materialManager = MaterialManager::getInstance();
+    auto& palettes = materialManager.palettes;
+
+    // Reset material palettes
+    // TODO: Don't reset the material palettes each time
+    palettes->clear();
+    palettes->materialIndices.emplace(0);
+    palettes->children[0]->materialIndices.emplace(0);
+    palettes->children[0]->children[0]->materialIndices.emplace(0);
+    palettes->children[0]->children[0]->children[0]->materialIndices.emplace(0);
+
+    materialManager.paletteIdToMaterialIndexMap.fill(0);
+    materialManager.paletteIdToMaterialIndexMap[0] = 1;
+
     for (int z = 0; z < size.x; ++z)
     {
         for (int y = 0; y < size.x; ++y)
         {
             for (int x = 0; x < size.x; ++x)
             {
+                auto isOccupied = getVoxelOccupancy(glm::ivec3(x, y, z));
+                if (!isOccupied)
+                {
+                    continue;
+                }
+
                 // TODO: This isn't meant to fully work. To properly encode the material mipmaps, we need a solver!
-                auto materialIndexI = x + size.x * (y + size.y * z);
-                auto materialIndex = flattenedMaterialMap[materialIndexI];
+                auto voxelIndex = x + size.x * (y + size.y * z);
+                auto paletteId = flattenedMaterialMap[voxelIndex]; // TODO: This is currently the material index
 
-                auto material0 = (materialIndex & (0b1111 << 0)) >> 0;
-                auto material1 = (materialIndex & (0b1111 << 4)) >> 4;
-                auto material2 = (materialIndex & (0b1111 << 8)) >> 8;
+                // TODO: Calculate actual palette ID instead of using material index
+                auto palette0 = (paletteId & (0b1111 << 0)) >> 0;
+                auto palette1 = (paletteId & (0b1111 << 4)) >> 4;
+                auto palette2 = (paletteId & (0b1111 << 8)) >> 8;
 
-                setVoxelPaletteId(glm::ivec3(x, y, z), material0, material1, material2);
+                setVoxelPaletteId(glm::ivec3(x, y, z), palette0, palette1, palette2);
             }
         }
     }
+
+    materialManager.updateGpuMaterialData();
 }
 
 void VoxelWorldData::copyFrom(VoxelWorld& world)
