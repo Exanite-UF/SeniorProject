@@ -2,7 +2,7 @@
 
 #include <src/procgen/TextureDataSynthesizer.h>
 
-class TextureOctaveNoiseSynthesizer : TextureDataSynthesizer
+class TextureOctaveNoiseSynthesizer : public TextureDataSynthesizer
 {
 private:
     unsigned int seed;
@@ -12,4 +12,5 @@ private:
 public:
     TextureOctaveNoiseSynthesizer(unsigned int seed, int octaves, float persistence);
     void generate(TextureData& textureData) override;
+    void showDebugMenu() override;
 };

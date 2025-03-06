@@ -1,14 +1,12 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
-#include <src/procgen/OctaveNoiseWorldGenerator.h>
-#include <src/procgen/TextureOctaveNoiseSynthesizer.h>
+#include <src/procgen/TextureHeightmapWorldGenerator.h>
 #include <src/world/VoxelWorldData.h>
 
-void OctaveNoiseWorldGenerator::generateData()
+void TextureHeightmapWorldGenerator::generateData()
 {
     TextureData textureData({data.getSize().x, data.getSize().y, 1});
-    TextureOctaveNoiseSynthesizer textureDataSynthesizer(seed, octaves, persistence);
-    textureDataSynthesizer.generate(textureData);
+    textureDataSynthesizer->generate(textureData);
 
     for (int x = 0; x < data.getSize().x; ++x)
     {
@@ -26,14 +24,12 @@ void OctaveNoiseWorldGenerator::generateData()
     }
 }
 
-void OctaveNoiseWorldGenerator::showDebugMenu()
+void TextureHeightmapWorldGenerator::showDebugMenu()
 {
     // TODO: Testing. Once finalized, add to existing Imgui fields.
-    if (ImGui::CollapsingHeader("Octave Noise Generator (F8)"))
+    if (ImGui::CollapsingHeader("Texture-Heightmap World Generator (F8)"))
     {
-        ImGui::SliderFloat("Seed", &seed, 0, 100);
         ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
-        ImGui::SliderInt("Octaves", &octaves, 1, 100);
-        ImGui::SliderFloat("Persistence", &persistence, 0, 1);
+        textureDataSynthesizer->showDebugMenu();
     }
 }

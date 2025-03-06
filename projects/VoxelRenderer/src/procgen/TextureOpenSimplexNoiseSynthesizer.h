@@ -2,7 +2,7 @@
 
 #include <src/procgen/TextureDataSynthesizer.h>
 
-class TextureOpenSimplexNoiseSynthesizer : TextureDataSynthesizer
+class TextureOpenSimplexNoiseSynthesizer : public TextureDataSynthesizer
 {
 private:
     unsigned int seed;
@@ -10,4 +10,5 @@ private:
 public:
     TextureOpenSimplexNoiseSynthesizer(unsigned int seed);
     void generate(TextureData& textureData) override;
+    void showDebugMenu() override;
 };

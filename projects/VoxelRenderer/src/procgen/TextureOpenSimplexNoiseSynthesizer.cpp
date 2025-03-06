@@ -1,6 +1,7 @@
 #include <src/procgen/TextureOpenSimplexNoiseSynthesizer.h>
 
 #include <FastNoiseLite/FastNoiseLite.h>
+#include <imgui/imgui.h>
 
 TextureOpenSimplexNoiseSynthesizer::TextureOpenSimplexNoiseSynthesizer(unsigned int seed)
 {
@@ -20,5 +21,13 @@ void TextureOpenSimplexNoiseSynthesizer::generate(TextureData& textureData)
             float noise = simplexNoise.GetNoise((float)x, (float)y);
             textureData.set(noise, x, y);
         }
+    }
+}
+
+void TextureOpenSimplexNoiseSynthesizer::showDebugMenu()
+{
+    if (ImGui::CollapsingHeader("Open Simplex Noise Synthesizer"))
+    {
+        //ImGui::SliderInt("Seed", &seed, 0, 100);
     }
 }

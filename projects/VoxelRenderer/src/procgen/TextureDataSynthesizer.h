@@ -11,6 +11,8 @@
 class TextureDataSynthesizer 
 {
     float seed;
+
 public:
     virtual void generate(TextureData& textureData) = 0;
+    virtual void showDebugMenu() = 0;
 };
