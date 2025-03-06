@@ -261,3 +261,8 @@ void PostProcessing::addPostProcessEffect(std::shared_ptr<PostProcess> effect)
 {
     postProcesses.push_back(effect);
 }
+
+bool PostProcessing::hasAnyProcesses()
+{
+    return this->postProcesses.size() > 0;
+}
