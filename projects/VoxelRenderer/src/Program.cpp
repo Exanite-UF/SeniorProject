@@ -240,7 +240,7 @@ void Program::run()
     ExampleWorldGenerator exampleWorldGenerator(worldSize);
     ExaniteWorldGenerator exaniteWorldGenerator(worldSize);
 
-    unsigned int seed = 0;
+    int seed = 0;
     int octaves = 3;
     float persistence = 0.5;
     //auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);

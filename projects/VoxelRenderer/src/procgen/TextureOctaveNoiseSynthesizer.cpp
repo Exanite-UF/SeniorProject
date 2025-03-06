@@ -5,7 +5,7 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
 
-TextureOctaveNoiseSynthesizer::TextureOctaveNoiseSynthesizer(unsigned int seed, int octaves, float persistence) 
+TextureOctaveNoiseSynthesizer::TextureOctaveNoiseSynthesizer(int seed, int octaves, float persistence) 
 {
     this->seed = seed;
     this->octaves = octaves;
@@ -30,7 +30,7 @@ void TextureOctaveNoiseSynthesizer::showDebugMenu()
 {
     if (ImGui::CollapsingHeader("Octave Noise Synthesizer"))
     {
-        //ImGui::SliderInt("Seed", &seed, 0, 100);
+        ImGui::SliderInt("Seed", &seed, 0, 100);
         ImGui::SliderInt("Octaves", &octaves, 1, 100);
         ImGui::SliderFloat("Persistence", &persistence, 0, 1);
     }

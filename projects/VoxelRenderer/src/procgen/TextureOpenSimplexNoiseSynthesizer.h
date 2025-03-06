@@ -5,10 +5,10 @@
 class TextureOpenSimplexNoiseSynthesizer : public TextureDataSynthesizer
 {
 private:
-    unsigned int seed;
+    int seed;
 
 public:
-    TextureOpenSimplexNoiseSynthesizer(unsigned int seed);
+    TextureOpenSimplexNoiseSynthesizer(int seed);
     void generate(TextureData& textureData) override;
     void showDebugMenu() override;
 };

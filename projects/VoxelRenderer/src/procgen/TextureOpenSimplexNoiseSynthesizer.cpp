@@ -3,7 +3,7 @@
 #include <FastNoiseLite/FastNoiseLite.h>
 #include <imgui/imgui.h>
 
-TextureOpenSimplexNoiseSynthesizer::TextureOpenSimplexNoiseSynthesizer(unsigned int seed)
+TextureOpenSimplexNoiseSynthesizer::TextureOpenSimplexNoiseSynthesizer(int seed)
 {
     this->seed = seed;
 }
@@ -28,6 +28,6 @@ void TextureOpenSimplexNoiseSynthesizer::showDebugMenu()
 {
     if (ImGui::CollapsingHeader("Open Simplex Noise Synthesizer"))
     {
-        //ImGui::SliderInt("Seed", &seed, 0, 100);
+        ImGui::SliderInt("Seed", &seed, 0, 100);
     }
 }
