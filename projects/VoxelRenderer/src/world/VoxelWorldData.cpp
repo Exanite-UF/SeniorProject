@@ -38,7 +38,7 @@ bool VoxelWorldData::getVoxelOccupancy(glm::ivec3 position) const
     auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2);
     auto bit = 1 << bitsShifted;
 
-    return occupancyMap[cellIndex] & bit != 0;
+    return (occupancyMap[cellIndex] & bit) != 0;
 }
 
 void VoxelWorldData::setVoxelOccupancy(glm::ivec3 position, bool isOccupied)
