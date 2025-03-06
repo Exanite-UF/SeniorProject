@@ -35,7 +35,7 @@ void main()
     vec3 material = texture(newMaterial, localUV).xyz;
 
     float angleChange = atan(length(cameraMovement), distance1);
-    float a = 1000000 * 3.1415926589 * pow(1-material.x, 3) + 1;
+    float a = 1000000 * 3.1415926589 * pow(1-material.x, 20) + 1;
 
     //float temp = -pow(a, -1.57079632679);
 
