@@ -63,11 +63,11 @@ MaterialManager::MaterialManager()
     }
 
     // Generate placeholder material mappings
-    for (size_t i = 0; i < paletteIdToMaterialIndexMap.size(); i++)
+    for (size_t i = 0; i < materialIndexByPaletteId.size(); i++)
     {
         auto material = getMaterialByIndex(i % Constants::VoxelWorld::materialCount);
 
-        paletteIdToMaterialIndexMap[i] = material->getIndex();
+        materialIndexByPaletteId[i] = material->getIndex();
         material->ids.push_back(i);
     }
 
@@ -76,13 +76,13 @@ MaterialManager::MaterialManager()
 
 uint32_t MaterialManager::getMaterialIndexByPaletteId(uint16_t paletteId) const
 {
-    return paletteIdToMaterialIndexMap[paletteId];
+    return materialIndexByPaletteId[paletteId];
 }
 
 uint32_t MaterialManager::getMaterialIndexByPaletteId(uint8_t palette0, uint8_t palette1, uint8_t palette2) const
 {
     uint32_t id = ((palette0 & 0b1111) << 0) | ((palette1 & 0b1111) << 4) | ((palette2 & 0b1111) << 8);
-    return paletteIdToMaterialIndexMap[id];
+    return materialIndexByPaletteId[id];
 }
 
 const std::shared_ptr<Material>& MaterialManager::getMaterialByPaletteId(uint16_t paletteId)
@@ -117,9 +117,9 @@ bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_pt
     return true;
 }
 
-GraphicsBuffer<uint32_t>& MaterialManager::getMaterialMapBuffer()
+GraphicsBuffer<uint32_t>& MaterialManager::getMaterialIndicesByPaletteIdBuffer()
 {
-    return materialMapBuffer;
+    return materialIndicesByPaletteIdBuffer;
 }
 
 GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
@@ -145,7 +145,7 @@ void MaterialManager::updateGpuMaterialData()
     }
 
     // Write data to GPU
-    materialMapBuffer.readFrom(paletteIdToMaterialIndexMap);
+    materialIndicesByPaletteIdBuffer.readFrom(materialIndexByPaletteId);
     materialDataBuffer.readFrom(materialData);
 }
 

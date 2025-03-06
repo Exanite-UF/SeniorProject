@@ -24,28 +24,29 @@ private:
 
 public:
     [[nodiscard]] const glm::ivec3& getSize() const;
-    void setSize(glm::ivec3 size);
+    void setSize(const glm::ivec3& size);
 
-    [[nodiscard]] bool getVoxelOccupancy(glm::ivec3 position) const;
-    void setVoxelOccupancy(glm::ivec3 position, bool isOccupied);
+    [[nodiscard]] bool getVoxelOccupancy(const glm::ivec3& position) const;
+    void setVoxelOccupancy(const glm::ivec3& position, bool isOccupied);
 
     [[nodiscard]] const std::shared_ptr<Material>& getVoxelMaterial(glm::ivec3 position) const;
-    void setVoxelMaterial(glm::ivec3 position, const std::shared_ptr<Material>& material);
-    void setVoxelMaterial(glm::ivec3 position, uint16_t materialIndex);
+    void setVoxelMaterial(const glm::ivec3& position, const std::shared_ptr<Material>& material);
+    void setVoxelMaterial(const glm::ivec3& position, uint16_t materialIndex);
 
-    [[nodiscard]] uint8_t getVoxelPartialPaletteId(glm::ivec3 position, int level) const;
-    void setVoxelPartialPaletteId(glm::ivec3 position, uint8_t partialPaletteId, int level); // TODO: This bypasses change tracking
+    [[nodiscard]] uint8_t getVoxelPartialPaletteId(const glm::ivec3& position, int level) const;
+    void setVoxelPartialPaletteId(const glm::ivec3& position, uint8_t partialPaletteId, int level); // TODO: This bypasses change tracking
 
-    [[nodiscard]] uint16_t getVoxelPaletteId(glm::ivec3 position) const;
-    void setVoxelPaletteId(glm::ivec3 position, uint8_t palette0, uint8_t palette1, uint8_t palette2); // TODO: This bypasses change tracking
+    [[nodiscard]] uint16_t getVoxelPaletteId(const glm::ivec3& position) const;
+    void setVoxelPaletteId(const glm::ivec3& position, uint16_t paletteId); // TODO: This bypasses change tracking
+    void setVoxelPaletteId(const glm::ivec3& position, uint8_t palette0, uint8_t palette1, uint8_t palette2); // TODO: This bypasses change tracking
 
     void decodePaletteMap(); // TODO: This bypasses change tracking
     void encodePaletteMap();
 
-    void copyFrom(VoxelWorld& world);
-    void writeTo(VoxelWorld& world);
-
     void clearOccupancyMap();
     void clearMaterialMap();
     void clearPaletteMap(); // TODO: This bypasses change tracking
+
+    void copyFrom(VoxelWorld& world);
+    void writeTo(VoxelWorld& world);
 };

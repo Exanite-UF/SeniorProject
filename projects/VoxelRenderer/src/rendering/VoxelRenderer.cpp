@@ -198,7 +198,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     rayHitMiscBuffer.bind(6);
 
-    materialManager.getMaterialMapBuffer().bind(7); // This is a mapping from the material index to the material id
+    materialManager.getMaterialIndicesByPaletteIdBuffer().bind(7); // This is a mapping from the material index to the material id
     materialManager.getMaterialDataBuffer().bind(8); // This binds the base data for each material
 
     if (currentBuffer % 2 == 0)
@@ -266,7 +266,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     rayHitMiscBuffer.unbind();
 
-    materialManager.getMaterialMapBuffer().unbind();
+    materialManager.getMaterialIndicesByPaletteIdBuffer().unbind();
     materialManager.getMaterialDataBuffer().unbind();
 
     attentuationBuffer1.unbind();
