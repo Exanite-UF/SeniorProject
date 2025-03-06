@@ -228,7 +228,7 @@ void Program::run()
     //    glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
     //    glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
     //};
-//
+////
     //auto denoiseY = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
     //denoiseY->setUniforms = [&renderer](GLuint program){
     //    glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
