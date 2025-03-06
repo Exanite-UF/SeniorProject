@@ -21,4 +21,9 @@ MaterialPaletteNode::MaterialPaletteNode(int level, uint8_t childIndex, uint16_t
 void MaterialPaletteNode::clear()
 {
     materialIndices.clear();
+
+    for (uint8_t i = 0; i < children.size(); ++i)
+    {
+        children[i]->clear();
+    }
 }
