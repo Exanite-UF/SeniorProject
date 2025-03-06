@@ -14,6 +14,14 @@
 #include <glm/vec2.hpp>
 
 class PostProcess;
+class Renderer;
+
+
+//For all post processing shader, the following must be included in the fragment shader
+//layout(binding = 0) uniform sampler2D inputTexture;
+//out vec4 out_color;
+
+//Additionally all post processing shaders use ScreenTri.vertex.glsl for the vertex shader
 
 class PostProcessing{
 private:
@@ -29,16 +37,21 @@ private:
 
     int currentTexture = 0;
 
-    void applyProcess(std::size_t processID, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture);
+    void applyProcess(std::size_t processID, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
     
     void makeTextures();
 
-public:
     PostProcessing();
+
+    friend class Renderer;
+public:
     
-    void applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture);
+
+    void applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
 
     GLuint getOutputTexture();
+
+    void addPostProcessEffect(std::shared_ptr<PostProcess> effect);
 };
 
 class PostProcess{
@@ -53,22 +66,23 @@ private:
     GLenum colorTextureBinding;
     GLenum positionTextureBinding;
     GLenum normalTextureBinding;
+    GLenum materialTextureBinding;
 
-    void bindTextures(GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture);
+    void bindTextures(GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
     void unbindTextures();
 
-    void applyProcess(GLuint currentOutput, GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture);
+    void applyProcess(GLuint currentOutput, GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
 
     friend class PostProcessing;
 
     //This will throw upon finding duplicate bindings
     void preventDuplicateBindings();
 
-    PostProcess(GLuint program, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0);
+    PostProcess(GLuint program, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
 
 public:
 
-    static std::shared_ptr<PostProcess> makeNewPostProcess(std::string name, GLuint program, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0);
+    static std::shared_ptr<PostProcess> getPostProcess(std::string name, GLuint program = 0, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
 
     //Takes the program as input
     std::function<void(GLuint)> setUniforms = [](GLuint program){};

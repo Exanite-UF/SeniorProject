@@ -10,6 +10,7 @@
 #include <src/graphics/GraphicsUtility.h>
 
 
+
 GLuint Renderer::drawTextureProgram;
 
 void Renderer::offscreenRenderingFunc()
@@ -240,7 +241,7 @@ void Renderer::render(float fov)
         _render();
     }
 
-
+    glDepthFunc(GL_GREATER);
     reproject(fov);
 
     postProcess();
@@ -296,13 +297,14 @@ void Renderer::reproject(float fov)
 
     if(glm::ivec2(width, height) != outputResolution){
         outputResolution = glm::ivec2(width, height);
+        upscaleMultiplier = { (float)width / renderResolution.x, (float)height / renderResolution.y };
 
         makeOutputTextures();
     }
 
     glViewport(0, 0, width, height);
 
-    reprojectionResolutionMultiplier = { (float)width / renderResolution.x, (float)height / renderResolution.y };
+    
 
     swapDisplayBuffer();
 
@@ -320,8 +322,16 @@ void Renderer::reproject(float fov)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, outputNormalTexture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, outputMaterialTexture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, outputDepthTexture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     //Do the render
-    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display]);
+    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], materialTextures[bufferMapping.display]);
 
     //Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);
@@ -334,7 +344,7 @@ void Renderer::postProcess()
     std::scoped_lock lock(outputLock, bufferLocks.display);
 
     //Do the post processing
-    postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture);
+    postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMaterialTexture);
 }
 
 void Renderer::finalDisplay()
@@ -387,6 +397,36 @@ void Renderer::makeOutputTextures()
     glDeleteTextures(1, &outputNormalTexture);
     glGenTextures(1, &outputNormalTexture);
     glBindTexture(GL_TEXTURE_2D, outputNormalTexture);
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    //Remake the depth texture
+    glDeleteTextures(1, &outputDepthTexture);
+    glGenTextures(1, &outputDepthTexture);
+    glBindTexture(GL_TEXTURE_2D, outputDepthTexture);
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, this->outputResolution.x, this->outputResolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    
+
+    //Remake the material texture
+    glDeleteTextures(1, &outputMaterialTexture);
+    glGenTextures(1, &outputMaterialTexture);
+    glBindTexture(GL_TEXTURE_2D, outputMaterialTexture);
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -450,4 +490,35 @@ void Renderer::resetReprojectionCounter()
 void Renderer::setAsynchronousOverdrawFOV(float extraFOV)
 {
     overdrawFOV = extraFOV;
+}
+
+std::shared_ptr<PostProcess> Renderer::addPostProcessEffect(std::shared_ptr<PostProcess> effect)
+{
+    postProcessing->addPostProcessEffect(effect);
+    return effect;
+}
+
+glm::vec2 Renderer::getUpscaleMultiplier()
+{
+    return upscaleMultiplier;
+}
+
+glm::vec3 Renderer::getCurrentCameraPosition()
+{
+    return currentCameraPosition;
+}
+
+glm::quat Renderer::getCurrentCameraRotation()
+{
+    return currentCameraRotation;
+}
+
+float Renderer::getCurrentCameraFOV()
+{
+    return currentCameraFOV;
+}
+
+glm::ivec2 Renderer::getUpscaleResolution()
+{
+    return outputResolution;
 }
