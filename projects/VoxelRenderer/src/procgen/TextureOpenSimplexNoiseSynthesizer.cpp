@@ -1,6 +1,6 @@
 #include <src/procgen/TextureOpenSimplexNoiseSynthesizer.h>
 
-#include <external/extra/include/FastNoiseLite/FastNoiseLite.h>
+#include <FastNoiseLite/FastNoiseLite.h>
 
 TextureOpenSimplexNoiseSynthesizer::TextureOpenSimplexNoiseSynthesizer(unsigned int seed)
 {
@@ -17,7 +17,7 @@ void TextureOpenSimplexNoiseSynthesizer::generate(TextureData& textureData)
     {
         for(int x = 0; x < textureData.getSize().x; x++)
         {
-            float noise = simplexNoise.GetNoise(x,y);
+            float noise = simplexNoise.GetNoise((float)x, (float)y);
             textureData.set(noise, x, y);
         }
     }
