@@ -77,7 +77,7 @@ MaterialManager::MaterialManager()
         {
             material->emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
             material->albedo = material->emission;
-            material->emission *= 0.1;
+            material->emission *= 0.2;
             // material->emission = glm::vec3(1, 1, 1);
             // material->emission *= glm::vec3(0.1, 0.1, 0.1);
 
