@@ -4,7 +4,7 @@
 
 #include <PerlinNoise/PerlinNoise.hpp>
 
-TextureOctaveNoiseSynthesizer:: TextureOctaveNoiseSynthesizer(float seed, int octaves, float persistence) 
+TextureOctaveNoiseSynthesizer::TextureOctaveNoiseSynthesizer(unsigned int seed, int octaves, float persistence) 
 {
     this->seed = seed;
     this->octaves = octaves;
