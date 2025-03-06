@@ -51,16 +51,16 @@ void main()
     
 
 
-    pos2.xy *= temp + (temp - 1) / pos.z;
-    pos3.xy *= temp + (temp - 1) / pos.z;
+    pos2.xy *= temp + (temp - 1) / max(0, pos.z);
+    pos3.xy *= temp + (temp - 1) / max(0, pos.z);
 
     pos.xy = pos3.xy + pos2.xy;
 
-    vec3 normal = texture(normalTexture, aPos.xy).xyz;
-    normal = vec3(normal.y, normal.z, normal.x);
+    //vec3 normal = texture(normalTexture, aPos.xy).xyz;
+    //normal = vec3(normal.y, normal.z, normal.x);
 
-    float distFromSurface = abs(dot(normal, pos));
-    float distAlongSurface = length(cross(normal, pos));
+    //float distFromSurface = abs(dot(normal, pos));
+    //float distAlongSurface = length(cross(normal, pos));
 
 
     //float temp2 = length(cross(normalize(pos), normal));
