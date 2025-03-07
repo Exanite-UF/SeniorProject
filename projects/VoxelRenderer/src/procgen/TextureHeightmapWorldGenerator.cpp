@@ -5,7 +5,7 @@
 
 void TextureHeightmapWorldGenerator::generateData()
 {
-    TextureData textureData({data.getSize().x, data.getSize().y, 1});
+    TextureData textureData({ data.getSize().x, data.getSize().y, 1 });
     textureDataSynthesizer->generate(textureData);
 
     for (int x = 0; x < data.getSize().x; ++x)
@@ -27,9 +27,13 @@ void TextureHeightmapWorldGenerator::generateData()
 void TextureHeightmapWorldGenerator::showDebugMenu()
 {
     // TODO: Testing. Once finalized, add to existing Imgui fields.
-    if (ImGui::CollapsingHeader("Texture-Heightmap World Generator (F8)"))
+    ImGui::PushID("TextureHeightmapWorldGenerator");
     {
-        ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
-        textureDataSynthesizer->showDebugMenu();
+        if (ImGui::CollapsingHeader("Texture-Heightmap World Generator (F8)"))
+        {
+            ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
+            textureDataSynthesizer->showDebugMenu();
+        }
     }
+    ImGui::PopID();
 }

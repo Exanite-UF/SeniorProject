@@ -1,15 +1,15 @@
 #pragma once
 
-#include "MaterialPalette.h"
-
 #include <array>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/utilities/Singleton.h>
 #include <src/world/Material.h>
+#include <src/world/MaterialPaletteNode.h>
 #include <src/world/VoxelWorldData.h>
 
 class MaterialManager : public Singleton<MaterialManager>
@@ -18,38 +18,48 @@ class MaterialManager : public Singleton<MaterialManager>
     friend class VoxelWorldData;
 
 private:
-    // ----- CPU -----
-    // These arrays store different data, but are named materials# because they represent different layers of the material mipmaps
-    std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials0 {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialId1Count> materials1 {};
-    std::array<std::shared_ptr<MaterialPalette>, Constants::VoxelWorld::materialId2Count> materials2 {};
+    // ----- CPU data -----
+    // This tracks the number of created material definitions stored in the materials0 array
+    uint16_t createdMaterialCount = 0;
+    // This stores all material definitions
+    std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials {};
 
-    std::unordered_map<std::string, std::shared_ptr<Material>> materialsById {};
+    std::shared_ptr<MaterialPaletteNode> palettes = std::make_shared<MaterialPaletteNode>(3, 0, 0);
 
-    // ----- GPU -----
+    // This maps material string key to the actual material
+    // Speeds up getting materials by string key
+    std::unordered_map<std::string, std::shared_ptr<Material>> materialsByKey {};
+
+    // ----- GPU data -----
+    // This maps the palette ID to the index of the actual material
     // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
-    std::array<uint32_t, Constants::VoxelWorld::materialId0Count> materialMap {};
+    // This corresponds to the data stored by materialMapBuffer
+    std::array<uint32_t, Constants::VoxelWorld::palette0Count> materialIndexByPaletteId {};
 
-    // Stores the GPU encoded material data
+    // This is the materials array converted from the CPU Material class to the GPU MaterialData struct
+    // This corresponds to the data stored by materialDataBuffer
     std::array<MaterialData, Constants::VoxelWorld::materialCount> materialData {};
 
-    GraphicsBuffer<uint32_t> materialMapBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::materialId0Count);
+    GraphicsBuffer<uint32_t> materialIndicesByPaletteIdBuffer = GraphicsBuffer<uint32_t>(Constants::VoxelWorld::palette0Count);
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
 
     MaterialManager();
 
 public:
-    uint32_t getMaterialIndexByMipMappedId(uint16_t mipMapId) const;
-    uint32_t getMaterialIndexByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2) const;
+    uint32_t getMaterialIndexByPaletteId(uint16_t paletteId) const;
+    uint32_t getMaterialIndexByPaletteId(uint8_t palette0, uint8_t palette1, uint8_t palette2) const;
 
-    const std::shared_ptr<Material>& getMaterialByMipMappedId(uint16_t mipMapId);
-    const std::shared_ptr<Material>& getMaterialByMipMappedId(uint8_t material0, uint8_t material1, uint8_t material2);
+    const std::shared_ptr<Material>& getMaterialByPaletteId(uint16_t paletteId);
+    const std::shared_ptr<Material>& getMaterialByPaletteId(uint8_t palette0, uint8_t palette1, uint8_t palette2);
     const std::shared_ptr<Material>& getMaterialByIndex(uint16_t index);
-    const std::shared_ptr<Material>& getMaterialById(std::string id);
-    bool tryGetMaterialById(std::string id, std::shared_ptr<Material>& material);
+    const std::shared_ptr<Material>& getMaterialByKey(const std::string& key);
+    bool tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material);
 
-    GraphicsBuffer<uint32_t>& getMaterialMapBuffer();
+    GraphicsBuffer<uint32_t>& getMaterialIndicesByPaletteIdBuffer();
     GraphicsBuffer<MaterialData>& getMaterialDataBuffer();
 
     void updateGpuMaterialData();
+
+private:
+    std::shared_ptr<Material>& createMaterial(const std::string& key, const std::string& name);
 };
