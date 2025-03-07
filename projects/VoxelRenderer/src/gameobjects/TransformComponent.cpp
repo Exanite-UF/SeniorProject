@@ -143,6 +143,6 @@ void TransformComponent::multiplyGlobalScale(const glm::vec3& value)
 void TransformComponent::addChild(std::shared_ptr<GameObject> child)
 {
     children.push_back(child->getTransform());
-    
+
     child->getTransform()->parent = shared_from_this();
 }
