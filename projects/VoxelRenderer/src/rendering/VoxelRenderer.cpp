@@ -177,7 +177,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
     rayHitMiscBuffer.bind(6);
 
     MaterialManager& materialManager = MaterialManager::getInstance();
-    materialManager.getMaterialMapBuffer().bind(7); // This is a mapping from the material index to the material id
+    materialManager.getMaterialIndicesByPaletteIdBuffer().bind(7); // This is a mapping from the material index to the material id
     materialManager.getMaterialDataBuffer().bind(8); // This binds the base data for each material
 
     if (currentBuffer % 2 == 0)
@@ -208,7 +208,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
         glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
 
-        glUniform1ui(glGetUniformLocation(fullCastProgram, "materialMapSize"), Constants::VoxelWorld::materialId0Count);
+        glUniform1ui(glGetUniformLocation(fullCastProgram, "materialMapSize"), Constants::VoxelWorld::palette0Count);
         glUniform1ui(glGetUniformLocation(fullCastProgram, "materialCount"), Constants::VoxelWorld::materialCount);
         glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
@@ -243,7 +243,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     rayHitMiscBuffer.unbind();
 
-    materialManager.getMaterialMapBuffer().unbind();
+    materialManager.getMaterialIndicesByPaletteIdBuffer().unbind();
     materialManager.getMaterialDataBuffer().unbind();
 
     attentuationBuffer1.unbind();

@@ -14,7 +14,7 @@ void ExaniteWorldGenerator::generateData()
 {
     auto& materialManager = MaterialManager::getInstance();
     std::shared_ptr<Material> material;
-    if (!materialManager.tryGetMaterialById(materialKey, material))
+    if (!materialManager.tryGetMaterialByKey(materialKey, material))
     {
         material = materialManager.getMaterialByIndex(0);
         Log::log("Failed to find material with id '" + materialKey + "'. Using default material '" + material->getKey() + "' instead.");
@@ -42,8 +42,12 @@ void ExaniteWorldGenerator::generateData()
 
 void ExaniteWorldGenerator::showDebugMenu()
 {
-    if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
+    ImGui::PushID("ExaniteWorldGenerator");
     {
-        ImGui::InputText("Material", &materialKey);
+        if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
+        {
+            ImGui::InputText("Material", &materialKey);
+        }
     }
+    ImGui::PopID();
 }

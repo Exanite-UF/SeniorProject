@@ -13,12 +13,12 @@ void WorldGenerator::generate(VoxelWorld& voxelWorld)
 
     // TODO: Remove automatic copy, decode, encode when API has stabilized
     // data.copyFrom(voxelWorld);
-    // data.decodeMaterialMipMap();
-    data.clearOccupancy();
-    data.clearMaterials();
+    // data.decodePaletteMap();
+    data.clearOccupancyMap();
+    data.clearMaterialMap();
     {
         generateData();
     }
-    data.encodeMaterialMipMap();
+    data.encodePaletteMap();
     data.writeTo(voxelWorld);
 }

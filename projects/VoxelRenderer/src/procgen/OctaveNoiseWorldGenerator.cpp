@@ -26,11 +26,15 @@ void OctaveNoiseWorldGenerator::generateData()
 void OctaveNoiseWorldGenerator::showDebugMenu()
 {
     // TODO: Testing. Once finalized, add to existing Imgui fields.
-    if (ImGui::CollapsingHeader("Octave Noise Generator (F8)"))
+    ImGui::PushID("OctaveNoiseWorldGenerator");
     {
-        ImGui::SliderFloat("Seed", &seed, 0, 100);
-        ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
-        ImGui::SliderInt("Octaves", &octaves, 1, 100);
-        ImGui::SliderFloat("Persistence", &persistence, 0, 1);
+        if (ImGui::CollapsingHeader("Octave Noise Generator (F8)"))
+        {
+            ImGui::SliderFloat("Seed", &seed, 0, 100);
+            ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
+            ImGui::SliderInt("Octaves", &octaves, 1, 100);
+            ImGui::SliderFloat("Persistence", &persistence, 0, 1);
+        }
     }
+    ImGui::PopID();
 }

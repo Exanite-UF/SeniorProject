@@ -70,7 +70,7 @@ const GraphicsBuffer<uint8_t>& VoxelWorld::getMaterialMap()
     return materialMap;
 }
 
-std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> VoxelWorld::getMaterialMapIndices() const
+std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> VoxelWorld::getMaterialMapIndices() const
 {
     return materialMapIndices;
 }
@@ -165,7 +165,7 @@ void VoxelWorld::setSize(glm::ivec3 size)
     occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
 
-    materialMapIndices = VoxelWorldUtility::getMaterialMapIndices(size);
+    materialMapIndices = VoxelWorldUtility::getPaletteMapIndices(size);
     // std::cout <<"MATERIAL SIZE "<< materialMapIndices[materialMapIndices.size() - 1] << std::endl;
     this->materialMap.setSize(materialMapIndices[materialMapIndices.size() - 1]);
 }

@@ -20,7 +20,7 @@ std::vector<uint32_t> VoxelWorldUtility::getOccupancyMapIndices(glm::ivec3 size)
 
     std::vector<uint32_t> indices(layerCount + 1);
 
-    // This should be the exact number of bytes that the occupancy map and all its mip maps take up
+    // This should be the exact number of bytes that the occupancy map and all its mipmaps take up
     uint64_t totalByteCount = 0;
     for (int i = 0; i < layerCount; i++)
     {
@@ -35,11 +35,11 @@ std::vector<uint32_t> VoxelWorldUtility::getOccupancyMapIndices(glm::ivec3 size)
     return indices;
 }
 
-std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> VoxelWorldUtility::getMaterialMapIndices(glm::ivec3 size)
+std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> VoxelWorldUtility::getPaletteMapIndices(glm::ivec3 size)
 {
-    std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> indices;
+    std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> indices;
 
-    // This should be the exact number of bytes that the material map and all its mip maps take up
+    // This should be the exact number of bytes that the palette map and all its mipmaps take up
     std::uint64_t totalByteCount = 0;
     for (int i = 0; i < 3; i++)
     {
