@@ -1,7 +1,7 @@
 #pragma once
 #include "AsynchronousReprojection.h"
-#include "VoxelRenderer.h"
 #include "PostProcessing.h"
+#include "VoxelRenderer.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -101,7 +101,7 @@ private:
     friend class VoxelRenderer;
     friend class AsynchronousReprojection;
 
-    //This is what the reprojection and post processes work on
+    // This is what the reprojection and post processes work on
     std::recursive_mutex outputLock;
     glm::ivec2 outputResolution;
     GLuint outputDepthTexture;
@@ -114,10 +114,10 @@ private:
     // Will crash on failure
     void isOwningThreadCheck();
 
-    void _render();//This is where all the rendering happens (The underscore is because a publicly facing function that wraps the entire rendering process exists)
-    void reproject(float fov = -1);//This is where reprojection occurs
-    void postProcess();//This is where post processing happens
-    void finalDisplay();//Actually displays the image to the screen. Must run after post processing
+    void _render(); // This is where all the rendering happens (The underscore is because a publicly facing function that wraps the entire rendering process exists)
+    void reproject(float fov = -1); // This is where reprojection occurs
+    void postProcess(); // This is where post processing happens
+    void finalDisplay(); // Actually displays the image to the screen. Must run after post processing
 
     void makeOutputTextures();
 
@@ -162,7 +162,6 @@ public:
     void disableFPSLimit();
 
     void setAsynchronousOverdrawFOV(float extraFOV);
-
 
     std::shared_ptr<PostProcess> addPostProcessEffect(std::shared_ptr<PostProcess> effect);
 

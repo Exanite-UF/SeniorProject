@@ -143,7 +143,7 @@ void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& repr
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        GLenum drawBuffers[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
+        GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers(4, drawBuffers);
 
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
@@ -188,7 +188,6 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, c
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, newNormalTexture);
-
 
         glUniform3fv(glGetUniformLocation(combineMaskProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
         glUniform4f(glGetUniformLocation(combineMaskProgram, "inverseCameraRotation"), lastRenderedCameraRotation.x, lastRenderedCameraRotation.y, lastRenderedCameraRotation.z, -lastRenderedCameraRotation.w);
@@ -252,8 +251,6 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, c
 
         glActiveTexture(GL_TEXTURE6);
         glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
-
-        
 
         glUniform3fv(glGetUniformLocation(combineProgram, "cameraMovement"), 1, glm::value_ptr(cameraMovement));
         glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));

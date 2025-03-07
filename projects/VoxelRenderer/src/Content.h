@@ -31,11 +31,10 @@ public:
     constexpr static std::string_view makeNoiseComputeShader = "content/VoxelManipulation/MakeNoise.compute.glsl";
     constexpr static std::string_view assignMaterialComputeShader = "content/VoxelManipulation/AssignMaterial.compute.glsl";
 
-    //Misc
+    // Misc
     constexpr static std::string_view drawTextureFragmentShader = "content/DrawTexture.fragment.glsl";
 
-
-    //Post Processing
+    // Post Processing
     constexpr static std::string_view applyKernelLineFragmentShader = "content/PostProcessing/ApplyKernelLine.fragment.glsl";
 
     constexpr static std::string_view denoiseShader = "content/PostProcessing/Denoise.fragment.glsl";
