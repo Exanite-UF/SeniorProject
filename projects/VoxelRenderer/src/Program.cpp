@@ -300,9 +300,6 @@ void Program::run()
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
             auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
             Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
-            std::cout << camera->transform.getGlobalPosition().x << std::endl;
-            std::cout << camera->transform.getGlobalPosition().y << std::endl;
-            std::cout << camera->transform.getGlobalPosition().z << std::endl;
 
 
             fpsCycleTimer = 0;
