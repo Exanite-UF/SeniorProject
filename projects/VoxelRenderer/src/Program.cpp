@@ -165,8 +165,8 @@ void Program::run()
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
-    //camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
-    camera->transform.setGlobalPosition(glm::vec3(-118.012, 54.1353, 256.174));
+    camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
+    //camera->transform.setGlobalPosition(glm::vec3(-118.012, 54.1353, 256.174));
     //camera->rotation.x = glm::radians(45.0f);
 
     VoxelWorldData data {};
