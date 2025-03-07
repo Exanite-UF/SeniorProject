@@ -4,5 +4,4 @@
 // Temporary while learning CGAL, unsure if should keep as wrapper.
 class Point
 {
-
 };

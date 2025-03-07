@@ -1,7 +1,6 @@
 #pragma once
 
-// Used to create primitive shapes or splines with equations 
+// Used to create primitive shapes or splines with equations
 class ShapeUtility
 {
-
 };

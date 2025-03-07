@@ -1,6 +1,5 @@
 #include "TextureData.h"
 
-
 TextureData::TextureData(glm::ivec3 inSize)
 {
     this->size = inSize;
@@ -19,5 +18,5 @@ void TextureData::set(float value, int x, int y, int z)
 
 const glm::ivec3& TextureData::getSize()
 {
-    return size; 
+    return size;
 }

@@ -8,15 +8,15 @@ TextureOpenSimplexNoiseSynthesizer::TextureOpenSimplexNoiseSynthesizer(int seed)
     this->seed = seed;
 }
 
-void TextureOpenSimplexNoiseSynthesizer::generate(TextureData& textureData) 
+void TextureOpenSimplexNoiseSynthesizer::generate(TextureData& textureData)
 {
     FastNoiseLite simplexNoise;
     simplexNoise.SetSeed(seed);
     simplexNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
 
-    for(int y = 0; y < textureData.getSize().y; y++)
+    for (int y = 0; y < textureData.getSize().y; y++)
     {
-        for(int x = 0; x < textureData.getSize().x; x++)
+        for (int x = 0; x < textureData.getSize().x; x++)
         {
             float noise = simplexNoise.GetNoise((float)x, (float)y);
             textureData.set(noise, x, y);

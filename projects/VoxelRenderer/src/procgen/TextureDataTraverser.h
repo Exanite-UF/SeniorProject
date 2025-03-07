@@ -7,5 +7,4 @@
 // A* implementation seems intuitive for single destination
 class TextureDataTraverser
 {
-    
 };

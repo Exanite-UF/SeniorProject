@@ -5,7 +5,7 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
 
-TextureOctaveNoiseSynthesizer::TextureOctaveNoiseSynthesizer(int seed, int octaves, float persistence) 
+TextureOctaveNoiseSynthesizer::TextureOctaveNoiseSynthesizer(int seed, int octaves, float persistence)
 {
     this->seed = seed;
     this->octaves = octaves;
@@ -17,7 +17,7 @@ void TextureOctaveNoiseSynthesizer::generate(TextureData& textureData)
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
     for (int y = 0; y < textureData.getSize().y; y++)
-    { 
+    {
         for (int x = 0; x < textureData.getSize().x; x++)
         {
             float noise = perlinNoise.octave2D_01(((float)x) / textureData.getSize().x, ((float)y) / textureData.getSize().y, octaves, persistence);

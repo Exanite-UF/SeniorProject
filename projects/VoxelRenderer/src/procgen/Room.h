@@ -4,5 +4,4 @@
 // Unsure how the implementation will work here.
 class Room
 {
-
 };

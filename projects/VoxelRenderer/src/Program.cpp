@@ -36,9 +36,9 @@
 #include <src/graphics/TextureManager.h>
 #include <src/procgen/ExampleWorldGenerator.h>
 #include <src/procgen/ExaniteWorldGenerator.h>
+#include <src/procgen/TextureHeightmapWorldGenerator.h>
 #include <src/procgen/TextureOctaveNoiseSynthesizer.h>
 #include <src/procgen/TextureOpenSimplexNoiseSynthesizer.h>
-#include <src/procgen/TextureHeightmapWorldGenerator.h>
 #include <src/procgen/WorldGenerator.h>
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/Framebuffer.h>
@@ -243,7 +243,7 @@ void Program::run()
     int seed = 0;
     int octaves = 3;
     float persistence = 0.5;
-    //auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
+    // auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
     TextureHeightmapWorldGenerator octaveWorldGenerator(worldSize, openSimplexSynthesizer);
 

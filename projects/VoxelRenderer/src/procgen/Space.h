@@ -5,5 +5,4 @@
 // Inspiration was minecraft concentric circles to place The End portal structures across map.
 class Space
 {
-
 };
