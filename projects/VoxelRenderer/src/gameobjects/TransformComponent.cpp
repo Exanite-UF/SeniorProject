@@ -3,18 +3,16 @@
 TransformComponent::TransformComponent(std::shared_ptr<GameObject> gameObject)
     : Component(gameObject)
 {
-    // used preexisting transform class
-    transform = new Transform();
 }
 
-TransformComponent::~TransformComponent()
+void TransformComponent::onDestroy()
 {
-    delete transform;
-    onDestroy();
-    gameObject.reset();
-}
+    Component::onDestroy();
 
-void TransformComponent::destroy()
-{
-    // not sure if transform needs a destory, might make it virtual
+    // Destroy all children GameObjects
+    // Note that this is very different from destroying just the TransformComponent
+    for (int i = 0; i < children.size(); ++i)
+    {
+        children[i]->gameObject->destroy();
+    }
 }

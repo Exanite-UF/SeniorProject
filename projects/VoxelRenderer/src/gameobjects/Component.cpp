@@ -7,11 +7,24 @@ Component::Component(std::shared_ptr<GameObject> parent)
 
 Component::~Component()
 {
-    onDestroy();
-    gameObject.reset();
+    destroy();
 }
 
 void Component::destroy()
 {
-    // Depends on specific component, will figure out soon
+    if (isDestroyed)
+    {
+        return;
+    }
+
+    isDestroyed = true;
+
+    onDestroy();
+
+    gameObject.reset();
+}
+
+bool Component::isAlive() const
+{
+    return !isDestroyed;
 }

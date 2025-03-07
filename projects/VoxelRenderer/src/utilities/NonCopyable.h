@@ -4,6 +4,8 @@
 class NonCopyable
 {
 public:
+    virtual ~NonCopyable() = default;
+
     // Allow creation
     NonCopyable() = default;
 
