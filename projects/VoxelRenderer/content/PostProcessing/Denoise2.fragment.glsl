@@ -23,22 +23,25 @@ void main()
     vec3 normal = texelFetch(normalTexture, ivec2(gl_FragCoord.xy), 0).xyz;
     vec3 material = texelFetch(materialTexture, ivec2(gl_FragCoord.xy), 0).xyz;
 
-
     vec4 sum = vec4(0);
     float total = 0;
 
     int kernelSize = 5;
-    for(int i = -kernelSize; i <= kernelSize; i++){
-        for(int j = -kernelSize; j <= kernelSize; j++){
+    for (int i = -kernelSize; i <= kernelSize; i++)
+    {
+        for (int j = -kernelSize; j <= kernelSize; j++)
+        {
             vec3 samplePosition = texelFetch(positionTexture, ivec2(gl_FragCoord.x + i, gl_FragCoord.y + j), 0).xyz;
             vec3 sampleNormal = texelFetch(normalTexture, ivec2(gl_FragCoord.x + i, gl_FragCoord.y + j), 0).xyz;
             vec3 sampleMaterial = texelFetch(materialTexture, ivec2(gl_FragCoord.x + i, gl_FragCoord.y + j), 0).xyz;
 
-            if(!all(equal(normal, sampleNormal))){
+            if (!all(equal(normal, sampleNormal)))
+            {
                 continue;
             }
 
-            if(!all(equal(material, sampleMaterial))){
+            if (!all(equal(material, sampleMaterial)))
+            {
                 continue;
             }
 
@@ -49,5 +52,5 @@ void main()
         }
     }
 
-    out_color = sum / total;//texelFetch(inputTexture, ivec2(gl_FragCoord.xy), 0);
+    out_color = sum / total; // texelFetch(inputTexture, ivec2(gl_FragCoord.xy), 0);
 }

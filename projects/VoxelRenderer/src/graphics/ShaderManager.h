@@ -41,5 +41,4 @@ public:
     // Loads, compiles, and links a compute shader into a compute program
     // Output is cached
     GLuint getComputeProgram(const std::string_view& computeShaderPath);
-
 };

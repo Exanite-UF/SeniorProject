@@ -5,11 +5,9 @@
 #include <string>
 
 #include <src/Content.h>
+#include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/windowing/Window.h>
-#include <src/graphics/GraphicsUtility.h>
-
-
 
 GLuint Renderer::drawTextureProgram;
 
@@ -20,7 +18,7 @@ void Renderer::offscreenRenderingFunc()
     while (isRenderingOffscreen)
     {
         _render();
-        //std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }
 }
 
@@ -289,11 +287,12 @@ void Renderer::reproject(float fov)
         fov = currentCameraFOV;
     }
 
-    //This repolling of the output size happens here, because things that use the result of the new data, don't actually need the new data, until the reprojection resolution changes.
+    // This repolling of the output size happens here, because things that use the result of the new data, don't actually need the new data, until the reprojection resolution changes.
     int width, height;
     glfwGetWindowSize(mainContext, &width, &height);
 
-    if(glm::ivec2(width, height) != outputResolution){
+    if (glm::ivec2(width, height) != outputResolution)
+    {
         outputResolution = glm::ivec2(width, height);
         upscaleMultiplier = { (float)width / renderResolution.x, (float)height / renderResolution.y };
 
@@ -302,11 +301,9 @@ void Renderer::reproject(float fov)
 
     glViewport(0, 0, width, height);
 
-    
-
     swapDisplayBuffer();
 
-    //make the framebuffer
+    // make the framebuffer
     GLuint framebuffer;
     glGenFramebuffers(1, &framebuffer);
 
@@ -328,10 +325,10 @@ void Renderer::reproject(float fov)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, outputDepthTexture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    //Do the render
+    // Do the render
     reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], materialTextures[bufferMapping.display]);
 
-    //Delete the framebuffer
+    // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);
 
     reprojectionCount++;
@@ -341,11 +338,11 @@ void Renderer::postProcess()
 {
     std::scoped_lock lock(outputLock, bufferLocks.display);
 
-    //Do the post processing
-    if(postProcessing->hasAnyProcesses()){
+    // Do the post processing
+    if (postProcessing->hasAnyProcesses())
+    {
         postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMaterialTexture);
     }
-    
 }
 
 void Renderer::finalDisplay()
@@ -355,12 +352,14 @@ void Renderer::finalDisplay()
     glUseProgram(drawTextureProgram);
 
     glActiveTexture(GL_TEXTURE0);
-    if(postProcessing->hasAnyProcesses()){
+    if (postProcessing->hasAnyProcesses())
+    {
         glBindTexture(GL_TEXTURE_2D, postProcessing->getOutputTexture());
-    }else{
+    }
+    else
+    {
         glBindTexture(GL_TEXTURE_2D, outputColorTexture);
     }
-    
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -371,7 +370,7 @@ void Renderer::finalDisplay()
 
 void Renderer::makeOutputTextures()
 {
-    //Remake the color texture
+    // Remake the color texture
     glDeleteTextures(1, &outputColorTexture);
     glGenTextures(1, &outputColorTexture);
     glBindTexture(GL_TEXTURE_2D, outputColorTexture);
@@ -385,7 +384,7 @@ void Renderer::makeOutputTextures()
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    //Remake the position texture
+    // Remake the position texture
     glDeleteTextures(1, &outputPositionTexture);
     glGenTextures(1, &outputPositionTexture);
     glBindTexture(GL_TEXTURE_2D, outputPositionTexture);
@@ -399,7 +398,7 @@ void Renderer::makeOutputTextures()
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    //Remake the normal texture
+    // Remake the normal texture
     glDeleteTextures(1, &outputNormalTexture);
     glGenTextures(1, &outputNormalTexture);
     glBindTexture(GL_TEXTURE_2D, outputNormalTexture);
@@ -413,7 +412,7 @@ void Renderer::makeOutputTextures()
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    //Remake the depth texture
+    // Remake the depth texture
     glDeleteTextures(1, &outputDepthTexture);
     glGenTextures(1, &outputDepthTexture);
     glBindTexture(GL_TEXTURE_2D, outputDepthTexture);
@@ -427,9 +426,7 @@ void Renderer::makeOutputTextures()
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    
-
-    //Remake the material texture
+    // Remake the material texture
     glDeleteTextures(1, &outputMaterialTexture);
     glGenTextures(1, &outputMaterialTexture);
     glBindTexture(GL_TEXTURE_2D, outputMaterialTexture);
