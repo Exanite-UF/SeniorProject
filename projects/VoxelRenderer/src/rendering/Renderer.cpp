@@ -196,9 +196,13 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
     isNewerFrame = false;
     reprojection->setSize(renderResolution);
     voxelRenderer->setResolution(renderResolution);
-    voxelRenderer->setRaysPerPixel(1);
 
     isSizeDirtyThread = true;
+}
+
+void Renderer::setRaysPerPixel(int number)
+{
+    voxelRenderer->setRaysPerPixel(number);
 }
 
 void Renderer::pollCamera(const Camera& camera)

@@ -121,6 +121,7 @@ public:
     GLuint getWorkingFramebuffer();
 
     void setRenderResolution(glm::ivec2 renderResolution);
+    void setRaysPerPixel(int number);
 
     void pollCamera(const Camera& camera);
     void setScene(Scene& scene);

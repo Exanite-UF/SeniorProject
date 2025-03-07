@@ -176,7 +176,7 @@ void Program::run()
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
     // VoxelRenderer renderer;
-    // renderer.setRaysPerPixel(1);
+    renderer.setRaysPerPixel(2);
 
     // Engine time
     double totalElapsedTime = 0;
