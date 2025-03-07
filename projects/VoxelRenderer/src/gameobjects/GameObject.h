@@ -3,10 +3,9 @@
 #include <memory>
 #include <vector>
 
+#include <src/gameobjects/Component.h>
+#include <src/gameobjects/TransformComponent.h>
 #include <src/utilities/NonCopyable.h>
-
-class Component;
-class TransformComponent;
 
 class GameObject : public NonCopyable, public std::enable_shared_from_this<GameObject>
 {
@@ -17,7 +16,7 @@ private:
 
 public:
     GameObject();
-    ~GameObject();
+    ~GameObject() override;
 
     std::vector<std::shared_ptr<Component>> components {};
 
@@ -26,6 +25,8 @@ public:
 
     template <typename T>
     std::shared_ptr<T> getComponent();
+
+    std::shared_ptr<TransformComponent>& getTransform();
 
     // Calls destroy on all the components in the list
     void destroy();

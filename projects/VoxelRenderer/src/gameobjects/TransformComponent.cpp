@@ -1,9 +1,6 @@
 #include "TransformComponent.h"
 
-TransformComponent::TransformComponent(std::shared_ptr<GameObject> gameObject)
-    : Component(gameObject)
-{
-}
+#include <src/gameobjects/GameObject.h>
 
 void TransformComponent::onDestroy()
 {

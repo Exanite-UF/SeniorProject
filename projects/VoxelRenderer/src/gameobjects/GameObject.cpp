@@ -2,7 +2,6 @@
 
 GameObject::GameObject()
 {
-    transform = addComponent<TransformComponent>(shared_from_this());
 }
 
 GameObject::~GameObject()
@@ -35,6 +34,16 @@ std::shared_ptr<T> GameObject::getComponent()
     }
 
     return nullptr;
+}
+
+std::shared_ptr<TransformComponent>& GameObject::getTransform()
+{
+    if (!transform)
+    {
+        transform = addComponent<TransformComponent>();
+    }
+
+    return transform;
 }
 
 void GameObject::destroy()

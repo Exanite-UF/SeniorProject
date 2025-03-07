@@ -2,11 +2,14 @@
 
 #include <memory>
 
-#include <src/gameobjects/GameObject.h>
 #include <src/utilities/NonCopyable.h>
+
+class GameObject;
 
 class Component : public NonCopyable
 {
+    friend class GameObject;
+
 protected:
     bool isDestroyed = false;
 
@@ -23,7 +26,7 @@ protected:
 public:
     std::shared_ptr<GameObject> gameObject;
 
-    explicit Component(std::shared_ptr<GameObject> parent);
+    explicit Component();
     ~Component() override;
 
     void destroy();

@@ -1,8 +1,7 @@
 #include "Component.h"
 
-Component::Component(std::shared_ptr<GameObject> parent)
+Component::Component()
 {
-    this->gameObject = parent;
 }
 
 Component::~Component()

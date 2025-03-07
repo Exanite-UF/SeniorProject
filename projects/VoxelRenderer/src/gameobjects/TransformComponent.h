@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 #include <src/gameobjects/Component.h>
-#include <src/gameobjects/GameObject.h>
 #include <src/world/Transform.h>
 
 class TransformComponent : public Component
@@ -19,8 +18,6 @@ class TransformComponent : public Component
 
 public:
     std::vector<std::shared_ptr<TransformComponent>> children {};
-
-    explicit TransformComponent(std::shared_ptr<GameObject> parent);
 
     void onDestroy() override;
 };
