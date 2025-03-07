@@ -6,12 +6,13 @@
 #include <glm/vec2.hpp>
 #include <src/utilities/NonCopyable.h>
 
-#include <src/world/Transform.h>
+#include <src/gameobjects/Component.h>
 
-class Camera : NonCopyable
+class Camera : public Component, NonCopyable
 {
 public:
-    Transform transform;
+
+    // TODO: Migrate the camera transforms into it's gameobject's transforms
     glm::vec2 rotation = glm::vec2(0);
 
     float moveSpeed = 32;

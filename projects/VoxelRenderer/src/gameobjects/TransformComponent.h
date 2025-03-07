@@ -1,8 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/vec3.hpp>
 #include <src/gameobjects/Component.h>
-#include <src/world/Transform.h>
 
 class TransformComponent : public Component, public std::enable_shared_from_this<TransformComponent>
 {
