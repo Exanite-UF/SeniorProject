@@ -31,6 +31,7 @@
 
 #include <src/Content.h>
 #include <src/Program.h>
+#include <src/gameobjects/GameObject.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/graphics/TextureManager.h>
@@ -200,6 +201,11 @@ void Program::run()
     auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
     // Create the scene
+    std::shared_ptr<GameObject> root = std::make_shared<GameObject>();
+    std::shared_ptr<GameObject> child = std::make_shared<GameObject>();
+    root->getTransform()->children.push_back(child->getTransform());
+
+    // Create the scene (old)
     Scene scene {};
     auto& camera = scene.camera;
 
