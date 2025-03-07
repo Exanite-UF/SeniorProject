@@ -203,11 +203,7 @@ void Program::run()
     // Create the scene
     std::shared_ptr<GameObject> root = std::make_shared<GameObject>();
     std::shared_ptr<GameObject> child = std::make_shared<GameObject>();
-    root->getTransform()->children.push_back(child->getTransform());
-    child->getTransform()->parent = root->getTransform();
-
-    // TODO: Improve API
-    // root->getTransform()->addChild(child);
+    root->getTransform()->addChild(child);
 
     // Create the scene (old)
     Scene scene {};

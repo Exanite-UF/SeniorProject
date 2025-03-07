@@ -4,7 +4,7 @@
 #include <src/gameobjects/Component.h>
 #include <src/world/Transform.h>
 
-class TransformComponent : public Component
+class TransformComponent : public Component, public std::enable_shared_from_this<TransformComponent>
 {
 private:
     glm::vec3 position = glm::vec3(0, 0, 0);
@@ -43,4 +43,6 @@ public:
     void addGlobalRotation(const glm::quat& value);
     void setGlobalScale(const glm::vec3& value);
     void multiplyGlobalScale(const glm::vec3& value);
+
+    void addChild(std::shared_ptr<GameObject> child);
 };
