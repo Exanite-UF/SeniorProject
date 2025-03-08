@@ -8,6 +8,7 @@ class TextureHeightmapWorldGenerator : public WorldGenerator
 {
 private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
+    std::shared_ptr<TextureData> textureData;
     float baseHeight = 100;
 
     void generateData() override;

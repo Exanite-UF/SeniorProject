@@ -1,18 +1,22 @@
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
 #include <PerlinNoise/PerlinNoise.hpp>
+#include <memory>
 #include <imgui/imgui.h>
 #include <src/world/VoxelWorldData.h>
+#include <src/procgen/PrintUtility.h>
 
 void TextureHeightmapWorldGenerator::generateData()
 {
-    TextureData textureData({ data.getSize().x, data.getSize().y, 1 });
+    glm::ivec3 size = { data.getSize().x, data.getSize().y, 1 };
+    this->textureData = std::make_shared<TextureData>(size);
+    //TextureData textureData({ data.getSize().x, data.getSize().y, 1 });
     textureDataSynthesizer->generate(textureData);
 
     for (int x = 0; x < data.getSize().x; ++x)
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {
-            float noise = textureData.get(x, y);
+            float noise = textureData->get(x, y);
             int offset = (int)(baseHeight + (noise * data.getSize().z));
             int height = glm::min(data.getSize().z, offset);
 
@@ -33,6 +37,10 @@ void TextureHeightmapWorldGenerator::showDebugMenu()
         {
             ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
             textureDataSynthesizer->showDebugMenu();
+            if(ImGui::Button("Print Texture"))
+            {
+                PrintUtility::printTexture(textureData, textureDataSynthesizer->mapperTo01(), "output_texture.ppm");
+            }
         }
     }
     ImGui::PopID();

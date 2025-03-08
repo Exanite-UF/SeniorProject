@@ -12,16 +12,16 @@ TextureOctaveNoiseSynthesizer::TextureOctaveNoiseSynthesizer(int seed, int octav
     this->persistence = persistence;
 }
 
-void TextureOctaveNoiseSynthesizer::generate(TextureData& textureData)
+void TextureOctaveNoiseSynthesizer::generate(std::shared_ptr<TextureData>& textureData)
 {
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    for (int y = 0; y < textureData.getSize().y; y++)
+    for (int y = 0; y < textureData->getSize().y; y++)
     {
-        for (int x = 0; x < textureData.getSize().x; x++)
+        for (int x = 0; x < textureData->getSize().x; x++)
         {
-            float noise = perlinNoise.octave2D_01(((float)x) / textureData.getSize().x, ((float)y) / textureData.getSize().y, octaves, persistence);
-            textureData.set(noise, x, y);
+            float noise = perlinNoise.octave2D_01(((float)x) / textureData->getSize().x, ((float)y) / textureData->getSize().y, octaves, persistence);
+            textureData->set(noise, x, y);
         }
     }
 }
@@ -34,4 +34,9 @@ void TextureOctaveNoiseSynthesizer::showDebugMenu()
         ImGui::SliderInt("Octaves", &octaves, 1, 100);
         ImGui::SliderFloat("Persistence", &persistence, 0, 1);
     }
+}
+
+std::function<float(float)> TextureOctaveNoiseSynthesizer::mapperTo01() 
+{
+    return [](float sample) { return sample; };
 }

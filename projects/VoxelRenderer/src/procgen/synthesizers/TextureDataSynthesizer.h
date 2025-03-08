@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <src/procgen/data/TextureData.h>
+#include <functional>
 
 // Generate 2D or 3D textures (may need to be split)
 // Many different types of noise all representable as textures (ex. Perlin, Gaussian)
@@ -13,6 +14,7 @@ class TextureDataSynthesizer
     float seed;
 
 public:
-    virtual void generate(TextureData& textureData) = 0;
+    virtual void generate(std::shared_ptr<TextureData>& textureData) = 0;
     virtual void showDebugMenu() = 0;
+    virtual std::function<float(float)> mapperTo01() = 0;
 };
