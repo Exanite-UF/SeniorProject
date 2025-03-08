@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include <src/utilities/NonCopyable.h>
-#include <src/gameobjects/TransformComponent.h>
 #include <src/gameobjects/GameObject.h>
+#include <src/gameobjects/TransformComponent.h>
+#include <src/utilities/NonCopyable.h>
 
 class GameObject;
 
