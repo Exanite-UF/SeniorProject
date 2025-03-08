@@ -24,6 +24,9 @@ protected:
     virtual void onDestroy() { }
 
 public:
+    // TODO: This should be private
+    // TODO: Add getTransform
+    // TODO: Add getGameObject
     std::shared_ptr<GameObject> gameObject;
 
     explicit Component();
