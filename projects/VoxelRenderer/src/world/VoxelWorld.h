@@ -21,7 +21,7 @@ private:
     std::vector<GLuint> occupancyMapIndices; // The start indices of the occupancy map in bytes. The max size of this vector is defined by Constants::VoxelWorld::maxOccupancyMapLayerCount
 
     GraphicsBuffer<uint8_t> materialMap; // This stores the voxel material data
-    std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> materialMapIndices; // There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
+    std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> materialMapIndices; // There are 3 levels of the material data (This means the minimum size of a voxel world is 32 across)
 
     double currentNoiseTime = 0; // This variable is used to determine the "seed" used by the random functions in the make noise shader
     GLuint makeNoiseComputeProgram = 0; // TODO: Consider moving makeNoise to a world generator class
@@ -45,7 +45,7 @@ public:
     [[nodiscard]] std::vector<GLuint> getOccupancyMapIndices() const;
 
     [[nodiscard]] const GraphicsBuffer<uint8_t>& getMaterialMap();
-    [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::materialMapLayerCount + 1> getMaterialMapIndices() const;
+    [[nodiscard]] std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> getMaterialMapIndices() const;
 
     void updateMipMaps(); // This runs the make mip map shader
 

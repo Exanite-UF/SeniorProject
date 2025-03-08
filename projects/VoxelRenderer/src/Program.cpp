@@ -23,6 +23,7 @@
 #include <CGAL/Distance_2/Point_2_Point_2.h>
 
 #include <chrono>
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <mutex>
@@ -37,11 +38,11 @@
 #include <src/graphics/TextureManager.h>
 #include <src/procgen/ExampleWorldGenerator.h>
 #include <src/procgen/ExaniteWorldGenerator.h>
-#include <src/procgen/OctaveNoiseWorldGenerator.h>
+#include <src/procgen/TextureHeightmapWorldGenerator.h>
+#include <src/procgen/TextureOctaveNoiseSynthesizer.h>
+#include <src/procgen/TextureOpenSimplexNoiseSynthesizer.h>
 #include <src/procgen/WorldGenerator.h>
-#include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/Framebuffer.h>
-#include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
@@ -53,11 +54,11 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 
-int framesThisCycle1 = 0;
+#include <src/rendering/PostProcessing.h>
+#include <src/rendering/Renderer.h>
+
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
-
-std::mutex mtx;
 
 void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -125,47 +126,6 @@ Program::~Program()
     glfwTerminate();
 }
 
-// This will finish before continuing
-void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<GameObject> camera, GameObject& scene, AsynchronousReprojection& reprojection)
-{
-    glDepthFunc(GL_ALWAYS);
-    // Resize resources
-    renderer.setResolution(renderResolution);
-    // reprojection.setSize(renderResolution);
-
-    // Clear
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Run voxel renderer
-    // mtx.lock();
-    renderer.prepareRayTraceFromCamera(*camera);
-    renderer.executePathTrace(scene.getComponent<Scene>()->worlds, MaterialManager::getInstance(), 2);
-
-    renderer.asynchronousDisplay(reprojection); // This will finish before continuing
-}
-
-void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<GameObject>& camera, GameObject& scene, AsynchronousReprojection& reprojection, GLFWwindow* context, bool& isDone)
-{
-    glfwMakeContextCurrent(context);
-    auto start = std::chrono::high_resolution_clock::now();
-    while (!isDone)
-    {
-        glViewport(0, 0, renderResolution.x, renderResolution.y);
-        renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-        // glfwSwapBuffers(context);
-        framesThisCycle1++;
-
-        reprojection.swapBuffers();
-        renderer.lockAsynchronous();
-
-        // auto end = std::chrono::high_resolution_clock::now();
-        // while(std::chrono::duration<double>(end - start).count() < 1){
-        //     end = std::chrono::high_resolution_clock::now();
-        // }
-        // start = end;
-    }
-}
-
 void Program::run()
 {
     // Ensure preconditions are met
@@ -189,7 +149,6 @@ void Program::run()
     // Load shader programs
     blitTextureGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFragmentShader);
     blitFramebufferGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFramebufferFragmentShader);
-    raymarcherGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::raymarcherFragmentShader);
     makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
     makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
     assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
@@ -229,8 +188,138 @@ void Program::run()
     data.copyFrom(*voxelWorld);
 
     // Create the renderer
-    VoxelRenderer renderer;
+    Renderer renderer { window->glfwWindowHandle, offscreen_context };
+    renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
+    // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
+
+    // VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
+
+    // auto blurX = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+    // blurX->setUniforms = [&renderer](GLuint program){
+    //     float standardDeviation = 2;
+    //     int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
+    //     float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
+    ////
+    //    std::vector<float> kernel;
+    //    float sharedCoefficient = lossCorrection / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
+    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
+    //        float dist = i * i;
+    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
+    //    }
+    ////
+    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
+    ////
+    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
+    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
+    //};
+    // auto blurY = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+    // blurY->setUniforms = [&renderer](GLuint program){
+    //    float standardDeviation = 2;
+    //    int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
+    //    float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
+    ////
+    //    std::vector<float> kernel;
+    //    float sharedCoefficient = 1 / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
+    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
+    //        float dist = i * i;
+    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
+    //    }
+    ////
+    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
+    ////
+    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
+    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
+    //};
+
+    // auto denoiseX = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+    // denoiseX->setUniforms = [&renderer](GLuint program){
+    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
+    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+    // };
+    ////
+    // auto denoiseY = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+    // denoiseY->setUniforms = [&renderer](GLuint program){
+    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
+    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+    // };
+
+    // auto denoise = renderer.addPostProcessEffect(PostProcess::getPostProcess("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+    // denoise->setUniforms = [&renderer](GLuint program){
+    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+    // };
+
+    // auto blurX = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+    // blurX->setUniforms = [&renderer](GLuint program){
+    //     float standardDeviation = 2;
+    //     int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
+    //     float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
+    ////
+    //    std::vector<float> kernel;
+    //    float sharedCoefficient = lossCorrection / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
+    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
+    //        float dist = i * i;
+    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
+    //    }
+    ////
+    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
+    ////
+    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
+    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
+    //};
+    // auto blurY = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+    // blurY->setUniforms = [&renderer](GLuint program){
+    //    float standardDeviation = 2;
+    //    int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
+    //    float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
+    ////
+    //    std::vector<float> kernel;
+    //    float sharedCoefficient = 1 / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
+    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
+    //        float dist = i * i;
+    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
+    //    }
+    ////
+    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
+    ////
+    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
+    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
+    //};
+
+    // auto denoiseX = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+    // denoiseX->setUniforms = [&renderer](GLuint program){
+    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
+    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+    // };
+    ////
+    // auto denoiseY = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+    // denoiseY->setUniforms = [&renderer](GLuint program){
+    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
+    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+    // };
+
+    // auto denoise = renderer.addPostProcessEffect(PostProcess::getPostProcess("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+    // denoise->setUniforms = [&renderer](GLuint program){
+    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+    // };
 
     // Engine time
     double totalElapsedTime = 0;
@@ -238,7 +327,6 @@ void Program::run()
 
     // Fps counter
     float fpsCycleTimer = 0;
-    int framesThisCycle = 0;
     float currentFPS = 0;
     float averagedDeltaTime = 0;
 
@@ -246,30 +334,27 @@ void Program::run()
     int frameCount = 0;
     int maxFrames = 0;
 
-    AsynchronousReprojection reprojection(window->size);
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
     ExampleWorldGenerator exampleWorldGenerator(worldSize);
     ExaniteWorldGenerator exaniteWorldGenerator(worldSize);
-    OctaveNoiseWorldGenerator octaveWorldGenerator(worldSize);
+
+    int seed = 0;
+    int octaves = 3;
+    float persistence = 0.5;
+    // auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
+    auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
+    TextureHeightmapWorldGenerator octaveWorldGenerator(worldSize, openSimplexSynthesizer);
 
     // IMGUI Menu
     bool showMenuGUI = false;
 
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    bool isDone = false;
-    glm::ivec2 renderResolution = window->size;
-    std::cout << offscreen_context << std::endl;
-    std::thread pathTraceThread;
-    pathTraceThread = std::thread(pathTraceLoop, std::ref(renderer), std::ref(renderResolution), std::ref(camera), std::ref(scene), std::ref(reprojection), offscreen_context, std::ref(isDone));
+    // auto start = std::chrono::high_resolution_clock::now();
 
-    /*
-    std::thread pathTraceThread([&]() {
-        pathTraceLoop(renderer, renderResolution, camera, scene, reprojection, context, isDone);
-    });
-    */
-    
+    renderer.setScene(scene);
+    renderer.startAsynchronousReprojection();
+
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
@@ -281,18 +366,24 @@ void Program::run()
 
         // Fps counter
         fpsCycleTimer += deltaTime;
-        framesThisCycle++;
         if (fpsCycleTimer > 1)
         {
+            int framesThisCycle = renderer.getReprojectionCounter();
+            renderer.resetReprojectionCounter();
             currentFPS = framesThisCycle / fpsCycleTimer;
             averagedDeltaTime = fpsCycleTimer / framesThisCycle;
 
+            int framesThisCycle1 = renderer.getRenderCounter();
+            renderer.resetRenderCounter();
             currentFPS1 = framesThisCycle1 / fpsCycleTimer;
             averagedDeltaTime1 = fpsCycleTimer / framesThisCycle1;
 
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
             auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
             Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
+            std::cout << camera->getTransform()->getGlobalPosition().x << std::endl;
+            std::cout << camera->getTransform()->getGlobalPosition().y << std::endl;
+            std::cout << camera->getTransform()->getGlobalPosition().z << std::endl;
 
             fpsCycleTimer = 0;
             framesThisCycle = 0;
@@ -312,17 +403,15 @@ void Program::run()
         // Update
         // TODO: This code should be moved into individual systems
         {
-            // mtx.lock();
             if (!inputManager->cursorEnteredThisFrame)
             {
                 auto mouseDelta = input->getMouseDelta();
-                
 
                 cameraComponent->rotation.y -= mouseDelta.x * cameraComponent->mouseSensitivity;
                 cameraComponent->rotation.x += mouseDelta.y * cameraComponent->mouseSensitivity;
                 cameraComponent->rotation.x = glm::clamp(cameraComponent->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
 
-                
+
                 camera->getTransform()->setGlobalRotation(glm::angleAxis(cameraComponent->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(cameraComponent->rotation.x, glm::vec3(0, 1, 0)));
             }
             else
@@ -374,6 +463,11 @@ void Program::run()
             if (input->isKeyPressed(GLFW_KEY_F5))
             {
                 data.copyFrom(*voxelWorld);
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_G))
+            {
+                renderer.toggleAsynchronousReprojection();
             }
 
             exaniteWorldGenerator.showDebugMenu();
@@ -487,13 +581,14 @@ void Program::run()
                     ImGui::Text("\tF - Toggle Fullscreen");
                     ImGui::Text("\tQ - Toggle Mouse Input");
                     ImGui::Text("\tT - Change Noise Type");
+                    ImGui::Text("\tG - Toggle Reprojection");
                     ImGui::Text("\tMouse Scroll - Change Move Speed");
                     ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
                     ImGui::Text("\nCamera Position");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
                     ImGui::Text("\nCamera Look Direction");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
-                    ImGui::Text("\nFPS: %.2f", currentFPS);
+                    ImGui::Text("\nFPS: %.2f | %.2f", currentFPS, currentFPS1);
                     ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
                 }
                 ImGui::End();
@@ -503,34 +598,31 @@ void Program::run()
 
         // Render
         {
-            // Render to offscreen texture
+            renderer.setRenderResolution(window->size);
 
-            // renderPathTrace(renderer, renderResolution, camera, scene, reprojection);
-            {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glDepthFunc(GL_GREATER);
 
-                renderResolution = window->size;
-                reprojection.setSize(renderResolution);
+            renderer.pollCamera(*camera);
+            renderer.render();
+            glFinish();
 
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                glDepthFunc(GL_GREATER);
+            // auto end = std::chrono::high_resolution_clock::now();
+            // if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
+            //{
+            //      std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
+            //  }
+            //  start = end;
 
-                reprojection.combineBuffers();
-                renderer.unlockAsynchronous();
-
-                reprojection.render(*camera);
-                ImGui::Render();
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-                frameCount++;
-                // mtx.unlock();
-            }
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            frameCount++;
         }
         // Present
         glfwSwapBuffers(window->glfwWindowHandle);
     }
 
-    isDone = true;
-    renderer.unlockAsynchronous();
-    pathTraceThread.join();
+    renderer.stopAsynchronousReprojection();
 }
 
 void Program::checkForContentFolder()

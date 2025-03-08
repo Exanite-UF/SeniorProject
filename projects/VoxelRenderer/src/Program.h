@@ -38,7 +38,7 @@ public:
     bool isWorkload = false; // View toggle
     bool isRand2 = true; // Noise type toggle
     float fillAmount = 0.6;
-    bool remakeNoise = false;
+    bool remakeNoise = true;
 
     GLuint blitTextureGraphicsProgram;
     GLuint blitFramebufferGraphicsProgram;
