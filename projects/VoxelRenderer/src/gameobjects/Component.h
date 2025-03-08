@@ -35,8 +35,8 @@ public:
     void destroy();
     void update();
 
-    std::shared_ptr<TransformComponent> getTransform();
-    std::shared_ptr<GameObject> getGameObject();
+    std::shared_ptr<TransformComponent>& getTransform();
+    std::shared_ptr<GameObject>& getGameObject();
 
     bool isAlive() const;
 };

@@ -23,12 +23,12 @@ void Component::destroy()
     gameObject.reset();
 }
 
-std::shared_ptr<TransformComponent> Component::getTransform()
+std::shared_ptr<TransformComponent>& Component::getTransform()
 {
-    return gameObject ? gameObject->getTransform() : nullptr;
+    return gameObject->getTransform();
 }
 
-std::shared_ptr<GameObject> Component::getGameObject()
+std::shared_ptr<GameObject>& Component::getGameObject()
 {
     return gameObject;
 }
