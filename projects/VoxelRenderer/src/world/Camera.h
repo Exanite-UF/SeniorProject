@@ -11,7 +11,6 @@
 class Camera : public Component
 {
 public:
-
     // For Input
     glm::vec2 rotation = glm::vec2(0);
 
@@ -21,4 +20,4 @@ public:
     [[nodiscard]] float getHorizontalFov() const;
 };
 
-//TODO: FIX ANY/ALL REFERENCES TO CAMERA
+// TODO: FIX ANY/ALL REFERENCES TO CAMERA
