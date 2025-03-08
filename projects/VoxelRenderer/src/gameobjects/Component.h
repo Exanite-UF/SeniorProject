@@ -3,6 +3,8 @@
 #include <memory>
 
 #include <src/utilities/NonCopyable.h>
+#include <src/gameobjects/TransformComponent.h>
+#include <src/gameobjects/GameObject.h>
 
 class GameObject;
 
@@ -23,17 +25,18 @@ protected:
     virtual void onCreate() { }
     virtual void onDestroy() { }
 
-public:
-    // TODO: This should be private
-    // TODO: Add getTransform
-    // TODO: Add getGameObject
+private:
     std::shared_ptr<GameObject> gameObject;
 
+public:
     explicit Component();
     ~Component() override;
 
     void destroy();
     void update();
+
+    std::shared_ptr<TransformComponent> getTransform();
+    std::shared_ptr<GameObject> getGameObject();
 
     bool isAlive() const;
 };

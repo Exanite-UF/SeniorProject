@@ -23,6 +23,16 @@ void Component::destroy()
     gameObject.reset();
 }
 
+std::shared_ptr<TransformComponent> Component::getTransform()
+{
+    return gameObject ? gameObject->getTransform() : nullptr;
+}
+
+std::shared_ptr<GameObject> Component::getGameObject()
+{
+    return gameObject;
+}
+
 bool Component::isAlive() const
 {
     return !isDestroyed;
