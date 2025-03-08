@@ -21,7 +21,7 @@ protected:
     virtual void onUpdate() { }
 
     virtual void onCreate() { }
-    virtual void onDestroy() { } 
+    virtual void onDestroy() { }
 
 public:
     std::shared_ptr<GameObject> gameObject;

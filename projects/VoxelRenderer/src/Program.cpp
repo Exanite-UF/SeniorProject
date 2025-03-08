@@ -159,14 +159,12 @@ void Program::run()
     auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
     auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
-
     // Create the scene gameobject, add trasnform, add scene component
     std::shared_ptr<GameObject> scene = std::make_shared<GameObject>();
     scene->addTransform(std::make_shared<TransformComponent>());
     scene->addComponent<Scene>();
 
     auto sceneComponent = scene->getComponent<Scene>();
-
 
     // Create the camera gameobject, add transform, add cam component
     std::shared_ptr<GameObject> camera = std::make_shared<GameObject>();
@@ -175,14 +173,13 @@ void Program::run()
 
     auto cameraComponent = camera->getComponent<Camera>();
 
-
     glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
     auto& voxelWorld = sceneComponent->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
     camera->getTransform()->setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
-    //camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
+    // camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
 
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);
@@ -410,7 +407,6 @@ void Program::run()
                 cameraComponent->rotation.y -= mouseDelta.x * cameraComponent->mouseSensitivity;
                 cameraComponent->rotation.x += mouseDelta.y * cameraComponent->mouseSensitivity;
                 cameraComponent->rotation.x = glm::clamp(cameraComponent->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
-
 
                 camera->getTransform()->setGlobalRotation(glm::angleAxis(cameraComponent->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(cameraComponent->rotation.x, glm::vec3(0, 1, 0)));
             }

@@ -45,7 +45,7 @@ public:
 
     void setGlobalRotation(const glm::quat& value);
     void addGlobalRotation(const glm::quat& value);
-    
+
     void setGlobalScale(const glm::vec3& value);
     void multiplyGlobalScale(const glm::vec3& value);
 
