@@ -84,5 +84,5 @@ public:
     static std::shared_ptr<PostProcess> getPostProcess(std::string name, GLuint program = 0, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
 
     // Takes the program as input
-    std::function<void(GLuint)> setUniforms = [](GLuint program) {};
+    std::function<void(GLuint)> setUniforms = [](GLuint program) { };
 };

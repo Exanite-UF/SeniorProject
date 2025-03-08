@@ -28,8 +28,6 @@ public:
     template <typename T>
     std::shared_ptr<T> getComponent();
 
-    void addTransform(std::shared_ptr<TransformComponent> transform_);
-
     std::shared_ptr<TransformComponent>& getTransform();
 
     // Calls destroy on all the components in the list
