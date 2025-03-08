@@ -6,6 +6,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <src/world/Camera.h>
+#include <src/gameobjects/GameObject.h>
 
 #include <mutex>
 #include <vector>
@@ -57,7 +58,7 @@ public:
     glm::ivec2 getSize();
     void setSize(glm::ivec2 size);
 
-    void render(const Camera& camera);
+    void render(GameObject& camera);
 
     void recordCameraTransform(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 

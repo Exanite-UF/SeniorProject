@@ -6,21 +6,19 @@
 #include <glm/vec2.hpp>
 #include <src/utilities/NonCopyable.h>
 
-#include <src/gameobjects/Component.h>
+#include <src/gameobjects/TransformComponent.h> // maybe replace with component
 
-class Camera : public Component, NonCopyable
+class Camera : public Component
 {
 public:
 
-    // TODO: Migrate the camera transforms into it's gameobject's transforms
+    // For Input
     glm::vec2 rotation = glm::vec2(0);
 
     float moveSpeed = 32;
     float mouseSensitivity = 0.002;
 
     [[nodiscard]] float getHorizontalFov() const;
-
-    [[nodiscard]] glm::vec3 getRightDirection() const;
-    [[nodiscard]] glm::vec3 getForwardDirection() const;
-    [[nodiscard]] glm::vec3 getUpDirection() const;
 };
+
+//TODO: FIX ANY/ALL REFERENCES TO CAMERA

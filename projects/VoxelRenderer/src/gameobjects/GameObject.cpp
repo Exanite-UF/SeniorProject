@@ -1,9 +1,5 @@
 #include "GameObject.h"
 
-GameObject::GameObject()
-{
-}
-
 GameObject::~GameObject()
 {
     destroy();
@@ -34,6 +30,14 @@ std::shared_ptr<T> GameObject::getComponent()
     }
 
     return nullptr;
+}
+
+void GameObject::addTransform(std::shared_ptr<TransformComponent> transform_)
+{
+    if (!transform)
+    {
+        transform = transform_;
+    }
 }
 
 std::shared_ptr<TransformComponent>& GameObject::getTransform()

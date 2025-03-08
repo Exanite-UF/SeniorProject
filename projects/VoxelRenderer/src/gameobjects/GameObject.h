@@ -3,9 +3,11 @@
 #include <memory>
 #include <vector>
 
-#include <src/gameobjects/Component.h>
 #include <src/gameobjects/TransformComponent.h>
 #include <src/utilities/NonCopyable.h>
+
+// Component Types
+#include <src/world/Camera.h>
 
 class GameObject : public NonCopyable, public std::enable_shared_from_this<GameObject>
 {
@@ -15,7 +17,7 @@ private:
     std::shared_ptr<TransformComponent> transform {};
 
 public:
-    GameObject();
+    GameObject() = default;
     ~GameObject() override;
 
     std::vector<std::shared_ptr<Component>> components {};
@@ -25,6 +27,8 @@ public:
 
     template <typename T>
     std::shared_ptr<T> getComponent();
+
+    void addTransform(std::shared_ptr<TransformComponent> transform_);
 
     std::shared_ptr<TransformComponent>& getTransform();
 

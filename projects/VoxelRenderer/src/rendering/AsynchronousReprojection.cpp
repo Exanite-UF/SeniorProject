@@ -282,7 +282,7 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void AsynchronousReprojection::render(const Camera& camera)
+void AsynchronousReprojection::render(GameObject& camera)
 {
     glUseProgram(renderProgram);
 
@@ -306,15 +306,15 @@ void AsynchronousReprojection::render(const Camera& camera)
         glBindTexture(GL_TEXTURE_2D, positionTextureId1);
     }
 
-    glm::vec3 deltaPos = camera.transform.getGlobalPosition(); // - lastCameraPosition;
-    glm::quat deltaRot = camera.transform.getGlobalRotation(); // * glm::inverse(lastCameraRotation);
+    glm::vec3 deltaPos = camera.getTransform()->getGlobalPosition(); // - lastCameraPosition;
+    glm::quat deltaRot = camera.getTransform()->getGlobalRotation(); // * glm::inverse(lastCameraRotation);
 
     // std::cout << deltaPos.x << " " << deltaPos.y << " " << deltaPos.z << std::endl;
 
     glUniform3f(glGetUniformLocation(renderProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
     glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
     glUniform2i(glGetUniformLocation(renderProgram, "resolution"), size.x, size.y);
-    glUniform1f(glGetUniformLocation(renderProgram, "horizontalFovTan"), camera.getHorizontalFov());
+    glUniform1f(glGetUniformLocation(renderProgram, "horizontalFovTan"), camera.getComponent<Camera>()->getHorizontalFov());
 
     glBindVertexArray(VAO);
     {

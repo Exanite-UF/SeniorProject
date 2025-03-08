@@ -33,15 +33,19 @@ public:
 
     void setLocalPosition(const glm::vec3& value);
     void addLocalPosition(const glm::vec3& value);
+
     void setLocalRotation(const glm::quat& value);
     void addLocalRotation(const glm::quat& value);
+
     void setLocalScale(const glm::vec3& value);
     void multiplyLocalScale(const glm::vec3& value);
 
     void setGlobalPosition(const glm::vec3& value);
     void addGlobalPosition(const glm::vec3& value);
+
     void setGlobalRotation(const glm::quat& value);
     void addGlobalRotation(const glm::quat& value);
+    
     void setGlobalScale(const glm::vec3& value);
     void multiplyGlobalScale(const glm::vec3& value);
 

@@ -105,7 +105,7 @@ void VoxelRenderer::setRaysPerPixel(int number)
     isSizingDirty = true;
 }
 
-void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLight)
+void VoxelRenderer::prepareRayTraceFromCamera(GameObject& camera, bool resetLight)
 {
     handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
@@ -134,13 +134,13 @@ void VoxelRenderer::prepareRayTraceFromCamera(const Camera& camera, bool resetLi
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, raysPerPixel);
 
-        lastCameraPosition = camera.transform.getGlobalPosition();
+        lastCameraPosition = camera.getTransform()->getGlobalPosition();
         glUniform3fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camPosition"), 1, glm::value_ptr(lastCameraPosition));
 
-        lastCameraRotation = camera.transform.getGlobalRotation();
+        lastCameraRotation = camera.getTransform()->getGlobalRotation();
         glUniform4fv(glGetUniformLocation(prepareRayTraceFromCameraProgram, "camRotation"), 1, glm::value_ptr(lastCameraRotation));
 
-        lastCameraFOV = camera.getHorizontalFov();
+        lastCameraFOV = camera.getComponent<Camera>()->getHorizontalFov();
         glUniform1f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "horizontalFovTan"), lastCameraFOV);
         glUniform2f(glGetUniformLocation(prepareRayTraceFromCameraProgram, "jitter"), (rand() % 1000000) / 1000000.f, (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
@@ -354,7 +354,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
     glUseProgram(0);
 }
 
-void VoxelRenderer::display(const Camera& camera, int frameCount)
+void VoxelRenderer::display(GameObject& camera, int frameCount)
 {
     glUseProgram(displayToWindowProgram);
 
@@ -373,8 +373,8 @@ void VoxelRenderer::display(const Camera& camera, int frameCount)
     glUniform3i(glGetUniformLocation(displayToWindowProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(displayToWindowProgram, "frameCount"), frameCount);
 
-    glUniform4fv(glGetUniformLocation(displayToWindowProgram, "cameraRotation"), 1, glm::value_ptr(camera.transform.getGlobalRotation()));
-    glUniform3fv(glGetUniformLocation(displayToWindowProgram, "cameraPosition"), 1, glm::value_ptr(camera.transform.getGlobalPosition()));
+    glUniform4fv(glGetUniformLocation(displayToWindowProgram, "cameraRotation"), 1, glm::value_ptr(camera.getTransform()->getGlobalRotation()));
+    glUniform3fv(glGetUniformLocation(displayToWindowProgram, "cameraPosition"), 1, glm::value_ptr(camera.getTransform()->getGlobalPosition()));
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     {

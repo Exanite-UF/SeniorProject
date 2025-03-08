@@ -126,7 +126,7 @@ Program::~Program()
 }
 
 // This will finish before continuing
-void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection)
+void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<GameObject> camera, GameObject& scene, AsynchronousReprojection& reprojection)
 {
     glDepthFunc(GL_ALWAYS);
     // Resize resources
@@ -139,12 +139,12 @@ void renderPathTrace(VoxelRenderer& renderer, glm::ivec2& renderResolution, std:
     // Run voxel renderer
     // mtx.lock();
     renderer.prepareRayTraceFromCamera(*camera);
-    renderer.executePathTrace(scene.worlds, MaterialManager::getInstance(), 2);
+    renderer.executePathTrace(scene.getComponent<Scene>()->worlds, MaterialManager::getInstance(), 2);
 
     renderer.asynchronousDisplay(reprojection); // This will finish before continuing
 }
 
-void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<Camera> camera, Scene& scene, AsynchronousReprojection& reprojection, GLFWwindow* context, bool& isDone)
+void pathTraceLoop(VoxelRenderer& renderer, glm::ivec2& renderResolution, std::shared_ptr<GameObject>& camera, GameObject& scene, AsynchronousReprojection& reprojection, GLFWwindow* context, bool& isDone)
 {
     glfwMakeContextCurrent(context);
     auto start = std::chrono::high_resolution_clock::now();
@@ -200,21 +200,30 @@ void Program::run()
     auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
     auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
-    // Create the scene
-    std::shared_ptr<GameObject> root = std::make_shared<GameObject>();
-    std::shared_ptr<GameObject> child = std::make_shared<GameObject>();
-    root->getTransform()->addChild(child);
 
-    // Create the scene (old)
-    Scene scene {};
-    auto& camera = scene.camera;
+    // Create the scene gameobject, add trasnform, add scene component
+    std::shared_ptr<GameObject> scene = std::make_shared<GameObject>();
+    scene->addTransform(std::make_shared<TransformComponent>());
+    scene->addComponent<Scene>();
+
+    auto sceneComponent = scene->getComponent<Scene>();
+
+
+    // Create the camera gameobject, add transform, add cam component
+    std::shared_ptr<GameObject> camera = std::make_shared<GameObject>();
+    camera->addTransform(std::make_shared<TransformComponent>());
+    camera->addComponent<Camera>();
+
+    auto cameraComponent = camera->getComponent<Camera>();
+
 
     glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
-    auto& voxelWorld = scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
+    auto& voxelWorld = sceneComponent->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
     // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
-    camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
+    camera->getTransform()->setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
+    //camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
 
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);
@@ -253,8 +262,14 @@ void Program::run()
     glm::ivec2 renderResolution = window->size;
     std::cout << offscreen_context << std::endl;
     std::thread pathTraceThread;
-    pathTraceThread = std::thread(pathTraceLoop, std::ref(renderer), std::ref(renderResolution), camera, std::ref(scene), std::ref(reprojection), offscreen_context, std::ref(isDone));
+    pathTraceThread = std::thread(pathTraceLoop, std::ref(renderer), std::ref(renderResolution), std::ref(camera), std::ref(scene), std::ref(reprojection), offscreen_context, std::ref(isDone));
 
+    /*
+    std::thread pathTraceThread([&]() {
+        pathTraceLoop(renderer, renderResolution, camera, scene, reprojection, context, isDone);
+    });
+    */
+    
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->glfwWindowHandle))
     {
@@ -301,50 +316,52 @@ void Program::run()
             if (!inputManager->cursorEnteredThisFrame)
             {
                 auto mouseDelta = input->getMouseDelta();
+                
 
-                camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
-                camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
-                camera->rotation.x = glm::clamp(camera->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
+                cameraComponent->rotation.y -= mouseDelta.x * cameraComponent->mouseSensitivity;
+                cameraComponent->rotation.x += mouseDelta.y * cameraComponent->mouseSensitivity;
+                cameraComponent->rotation.x = glm::clamp(cameraComponent->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
 
-                camera->transform.setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+                
+                camera->getTransform()->setGlobalRotation(glm::angleAxis(cameraComponent->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(cameraComponent->rotation.x, glm::vec3(0, 1, 0)));
             }
             else
             {
                 inputManager->cursorEnteredThisFrame = false;
             }
 
-            auto cameraRightMoveDirection = camera->getRightDirection();
-            auto cameraForwardMoveDirection = camera->getForwardDirection();
-            auto cameraUpMoveDirection = camera->getUpDirection();
+            auto cameraRightMoveDirection = camera->getTransform()->getRightDirection();
+            auto cameraForwardMoveDirection = camera->getTransform()->getForwardDirection();
+            auto cameraUpMoveDirection = camera->getTransform()->getUpDirection();
 
             if (input->isKeyHeld(GLFW_KEY_A))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraRightMoveDirection);
+                camera->getTransform()->addGlobalPosition(static_cast<float>(deltaTime * cameraComponent->moveSpeed) * -cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_D))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraRightMoveDirection);
+                camera->getTransform()->addGlobalPosition(static_cast<float>(deltaTime * cameraComponent->moveSpeed) * +cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_W))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraForwardMoveDirection);
+                camera->getTransform()->addGlobalPosition(static_cast<float>(deltaTime * cameraComponent->moveSpeed) * +cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_S))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraForwardMoveDirection);
+                camera->getTransform()->addGlobalPosition(static_cast<float>(deltaTime * cameraComponent->moveSpeed) * -cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_SPACE))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraUpMoveDirection);
+                camera->getTransform()->addGlobalPosition(static_cast<float>(deltaTime * cameraComponent->moveSpeed) * +cameraUpMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
+                camera->getTransform()->addGlobalPosition(static_cast<float>(deltaTime * cameraComponent->moveSpeed) * -cameraUpMoveDirection);
             }
 
             // mtx.unlock();
@@ -438,7 +455,7 @@ void Program::run()
             }
             else
             {
-                camera->moveSpeed *= pow(1.1, input->getMouseScroll().y);
+                cameraComponent->moveSpeed *= pow(1.1, input->getMouseScroll().y);
             }
 
             // F3 Debug Menu
@@ -454,8 +471,8 @@ void Program::run()
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
                 {
-                    auto cameraPosition = camera->transform.getGlobalPosition();
-                    auto cameraLookDirection = camera->transform.getForwardDirection();
+                    auto cameraPosition = camera->getTransform()->getGlobalPosition();
+                    auto cameraLookDirection = camera->getTransform()->getForwardDirection();
 
                     ImGui::SetWindowFontScale(1.5f);
                     ImGui::Text("Voxel Rendering Project\n");

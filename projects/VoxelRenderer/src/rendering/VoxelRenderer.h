@@ -85,7 +85,7 @@ public:
     void setResolution(glm::ivec2 size);
     void setRaysPerPixel(int number);
 
-    void prepareRayTraceFromCamera(const Camera& camera, bool resetLight = true);
+    void prepareRayTraceFromCamera(GameObject& camera, bool resetLight = true);
 
     void resetHitInfo();
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true);
@@ -94,7 +94,7 @@ public:
 
     void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, MaterialManager& materialManager, int bounces);
 
-    void display(const Camera& camera, int frameCount);
+    void display(GameObject& camera, int frameCount);
 
     void asynchronousDisplay(AsynchronousReprojection& reprojection);
     void lockAsynchronous();
