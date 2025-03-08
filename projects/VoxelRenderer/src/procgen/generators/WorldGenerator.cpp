@@ -1,4 +1,4 @@
-#include <src/procgen/WorldGenerator.h>
+#include <src/procgen/generators/WorldGenerator.h>
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelWorldData.h>
 

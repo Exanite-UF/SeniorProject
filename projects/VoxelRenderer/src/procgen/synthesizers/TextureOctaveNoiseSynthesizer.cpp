@@ -1,6 +1,6 @@
 #pragma once
 
-#include <src/procgen/TextureOctaveNoiseSynthesizer.h>
+#include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>

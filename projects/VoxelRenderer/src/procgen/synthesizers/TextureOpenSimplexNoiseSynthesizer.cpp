@@ -1,4 +1,4 @@
-#include <src/procgen/TextureOpenSimplexNoiseSynthesizer.h>
+#include <src/procgen/synthesizers/TextureOpenSimplexNoiseSynthesizer.h>
 
 #include <FastNoiseLite/FastNoiseLite.h>
 #include <imgui/imgui.h>

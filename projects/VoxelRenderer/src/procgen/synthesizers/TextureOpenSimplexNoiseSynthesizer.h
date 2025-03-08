@@ -1,6 +1,6 @@
 #pragma once
 
-#include <src/procgen/TextureDataSynthesizer.h>
+#include <src/procgen/synthesizers/TextureDataSynthesizer.h>
 
 class TextureOpenSimplexNoiseSynthesizer : public TextureDataSynthesizer
 {

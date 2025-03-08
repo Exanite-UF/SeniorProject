@@ -1,7 +1,7 @@
 #pragma once
 
-#include <src/procgen/TextureDataSynthesizer.h>
-#include <src/procgen/WorldGenerator.h>
+#include <src/procgen/synthesizers/TextureDataSynthesizer.h>
+#include <src/procgen/generators/WorldGenerator.h>
 
 // TODO: Idea: Reduce octaves for farther away positions ~ level of detail
 class TextureHeightmapWorldGenerator : public WorldGenerator

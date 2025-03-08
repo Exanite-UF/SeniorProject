@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <src/procgen/TextureData.h>
+#include <src/procgen/data/TextureData.h>
 
 // Generate 2D or 3D textures (may need to be split)
 // Many different types of noise all representable as textures (ex. Perlin, Gaussian)
