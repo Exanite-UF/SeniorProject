@@ -18,7 +18,7 @@ void TextureOpenSimplexNoiseSynthesizer::generate(std::shared_ptr<TextureData>& 
     {
         for (int x = 0; x < textureData->getSize().x; x++)
         {
-            float noise = simplexNoise.GetNoise((float)x, (float)y);
+            float noise = (simplexNoise.GetNoise((float)x, (float)y) + 1) * 0.5f;
             textureData->set(noise, x, y);
         }
     }
@@ -34,5 +34,5 @@ void TextureOpenSimplexNoiseSynthesizer::showDebugMenu()
 
 std::function<float(float)> TextureOpenSimplexNoiseSynthesizer::mapperTo01() 
 {
-    return [](float sample) { return (sample + 1)/2; };
+    return [](float sample) { return sample; };
 }
