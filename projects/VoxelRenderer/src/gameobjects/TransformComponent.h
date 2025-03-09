@@ -23,9 +23,7 @@ private:
     std::shared_ptr<TransformComponent> parent {};
     std::vector<std::shared_ptr<TransformComponent>> children {};
 
-
 public:
-
     [[nodiscard]] const std::shared_ptr<TransformComponent>& getParent() const;
     [[nodiscard]] const std::vector<std::shared_ptr<TransformComponent>>& getChildren() const;
 
@@ -45,7 +43,6 @@ public:
 
     [[nodiscard]] const glm::mat4& getLocalTransform() const;
     [[nodiscard]] const glm::mat4& getGlobalTransform() const;
-
 
     void setLocalPosition(const glm::vec3& value);
     void addLocalPosition(const glm::vec3& value);
