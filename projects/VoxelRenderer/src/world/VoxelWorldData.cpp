@@ -277,7 +277,7 @@ void VoxelWorldData::encodePaletteMap()
                 }
 
                 // Check if the palette has remaining space
-                if (paletteNodeStack[currentNodeStackIndex]->materialIndices.size() < Constants::VoxelWorld::palettesPerRegion)
+                if (!paletteNodeStack[currentNodeStackIndex]->isFull())
                 {
                     // If the current palette has remaining space, add it to the palette
                     for (const auto& node : paletteNodeStack)
