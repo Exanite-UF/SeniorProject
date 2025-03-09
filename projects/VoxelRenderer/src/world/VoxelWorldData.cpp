@@ -267,6 +267,8 @@ void VoxelWorldData::encodePaletteMap()
                     paletteNodeStack[currentNodeStackIndex] = currentPaletteNode;
                 }
 
+                // TODO: This should be part of the region solving loop
+                // TODO: Start of region solving loop
                 // Check if palette contains desired material
                 auto voxelIndex = x + size.x * (y + size.y * z);
                 auto materialIndex = materialMap[voxelIndex];
@@ -285,12 +287,22 @@ void VoxelWorldData::encodePaletteMap()
                         node->materialIndices.emplace(materialIndex);
                     }
 
+                    // TODO: This code expects a palette0
                     materialManager.materialIndexByPaletteId[paletteNodeStack[currentNodeStackIndex]->id] = materialIndex;
                 }
                 else
                 {
+                    // TODO: Use a loop
+                    // currentNodeStackIndex--;
+
                     // Otherwise, we try to change palettes
                     // This needs knowledge of the 4x4x4 and 16x16x16 regions
+
+                    // If a palette1 or palette2 is CHANGED, then we need to re-solve the region
+                    // Adding a new child palette does not require re-solving
+
+                    // Conclusion: It's best to implement region solving first
+                    // The currently implemented approach is ideal for incremental changes, but not great for solving the entire chunk
 
                     // Likely incorrect:
                     // Go up a level and repeat
@@ -300,6 +312,8 @@ void VoxelWorldData::encodePaletteMap()
                 }
 
                 // TODO: Implement modifying/changing palettes
+
+                // TODO: End of region solving loop
 
                 setVoxelPaletteId(glm::ivec3(x, y, z), paletteNodeStack[currentNodeStackIndex]->id);
             }
