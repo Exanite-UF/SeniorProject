@@ -20,10 +20,14 @@ private:
     void updateTransform() const;
     void markDirty();
 
-public:
-    // TODO: Make these private and add getter methods
     std::shared_ptr<TransformComponent> parent {};
     std::vector<std::shared_ptr<TransformComponent>> children {};
+
+
+public:
+
+    [[nodiscard]] const std::shared_ptr<TransformComponent>& getParent() const;
+    [[nodiscard]] const std::vector<std::shared_ptr<TransformComponent>>& getChildren() const;
 
     void onDestroy() override;
 

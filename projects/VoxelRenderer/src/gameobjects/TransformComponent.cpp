@@ -2,6 +2,16 @@
 
 #include <src/gameobjects/GameObject.h>
 
+const std::shared_ptr<TransformComponent>& TransformComponent::getParent() const
+{
+    return parent;
+}
+
+const std::vector<std::shared_ptr<TransformComponent>>& TransformComponent::getChildren() const
+{
+    return children;
+}
+
 void TransformComponent::updateTransform() const
 {
     if (!isDirty)
