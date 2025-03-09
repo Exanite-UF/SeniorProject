@@ -19,9 +19,7 @@ void TransformComponent::updateTransform() const
         return;
     }
 
-    localTransform = glm::translate(glm::mat4(1.0f), position) *
-    glm::mat4_cast(rotation) *
-    glm::scale(glm::mat4(1.0f), scale);
+    localTransform = glm::translate(glm::mat4(1.0f), position) * glm::mat4_cast(rotation) * glm::scale(glm::mat4(1.0f), scale);
 
     if (parent)
     {
@@ -44,7 +42,6 @@ void TransformComponent::markDirty()
         child->markDirty();
     }
 }
-
 
 void TransformComponent::onDestroy()
 {
@@ -96,7 +93,7 @@ glm::vec3 TransformComponent::getGlobalPosition() const
 
 glm::quat TransformComponent::getGlobalRotation() const
 {
-    //Rotation order might be incorrect need to check
+    // Rotation order might be incorrect need to check
     return (parent != nullptr) ? (parent->getGlobalRotation() * rotation) : rotation;
 }
 
@@ -116,8 +113,6 @@ const glm::mat4& TransformComponent::getGlobalTransform() const
     updateTransform();
     return globalTransform;
 }
-
-
 
 void TransformComponent::setLocalPosition(const glm::vec3& value)
 {
