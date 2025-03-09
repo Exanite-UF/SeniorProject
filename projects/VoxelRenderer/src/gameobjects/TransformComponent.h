@@ -12,6 +12,14 @@ private:
     glm::quat rotation = glm::quat(1, 0, 0, 0);
     glm::vec3 scale = glm::vec3(1, 1, 1);
 
+    mutable glm::mat4 localTransform = glm::mat4(1.0f);
+    mutable glm::mat4 globalTransform = glm::mat4(1.0f);
+    mutable bool isDirty = true;
+
+    // Helpers
+    void updateTransform() const;
+    void markDirty();
+
 public:
     // TODO: Make these private and add getter methods
     std::shared_ptr<TransformComponent> parent {};
@@ -30,6 +38,10 @@ public:
     [[nodiscard]] glm::vec3 getGlobalPosition() const;
     [[nodiscard]] glm::quat getGlobalRotation() const;
     [[nodiscard]] glm::vec3 getGlobalScale() const;
+
+    [[nodiscard]] const glm::mat4& getLocalTransform() const;
+    [[nodiscard]] const glm::mat4& getGlobalTransform() const;
+
 
     void setLocalPosition(const glm::vec3& value);
     void addLocalPosition(const glm::vec3& value);
