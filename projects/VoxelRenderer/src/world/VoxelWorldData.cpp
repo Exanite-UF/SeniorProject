@@ -250,33 +250,42 @@ void VoxelWorldData::encodePaletteMap()
 
                 // Find currently used palette
                 auto currentPaletteId = getVoxelPaletteId(glm::ivec3(x, y, z));
-                auto currentPaletteNode = palettes;
-                std::vector paletteNodeStack { currentPaletteNode }; // TODO: Optimize
+
+                // Find palette corresponding to palette ID
+                int currentNodeStackIndex = 0;
+                std::shared_ptr<MaterialPaletteNode> paletteNodeStack[Constants::VoxelWorld::paletteMapLayerCount + 1];
+                paletteNodeStack[0] = palettes;
+
                 for (int i = 0; i < Constants::VoxelWorld::paletteMapLayerCount; ++i)
                 {
                     auto bitsShifted = 8 - (i << 2);
                     auto partialPaletteId = (currentPaletteId & (0b1111) << bitsShifted) >> bitsShifted;
-                    currentPaletteNode = currentPaletteNode->children[partialPaletteId];
-                    paletteNodeStack.push_back(currentPaletteNode);
+
+                    auto& currentPaletteNode = paletteNodeStack[currentNodeStackIndex]->children[partialPaletteId];
+
+                    currentNodeStackIndex++;
+                    paletteNodeStack[currentNodeStackIndex] = currentPaletteNode;
                 }
 
+                // Check if palette contains desired material
                 auto voxelIndex = x + size.x * (y + size.y * z);
                 auto materialIndex = materialMap[voxelIndex];
-                if (currentPaletteNode->materialIndices.contains(materialIndex))
+                if (paletteNodeStack[currentNodeStackIndex]->materialIndices.contains(materialIndex))
                 {
                     // If current palette contains the desired material, then we can move on
                     continue;
                 }
 
-                if (currentPaletteNode->materialIndices.size() < 16)
+                // Check if the palette has remaining space
+                if (paletteNodeStack[currentNodeStackIndex]->materialIndices.size() < Constants::VoxelWorld::palettesPerRegion)
                 {
                     // If the current palette has remaining space, add it to the palette
-                    for (auto node : paletteNodeStack)
+                    for (const auto& node : paletteNodeStack)
                     {
                         node->materialIndices.emplace(materialIndex);
                     }
 
-                    materialManager.materialIndexByPaletteId[currentPaletteNode->id] = materialIndex;
+                    materialManager.materialIndexByPaletteId[paletteNodeStack[currentNodeStackIndex]->id] = materialIndex;
                 }
                 else
                 {
@@ -292,7 +301,7 @@ void VoxelWorldData::encodePaletteMap()
 
                 // TODO: Implement modifying/changing palettes
 
-                setVoxelPaletteId(glm::ivec3(x, y, z), currentPaletteNode->id);
+                setVoxelPaletteId(glm::ivec3(x, y, z), paletteNodeStack[currentNodeStackIndex]->id);
             }
         }
     }
