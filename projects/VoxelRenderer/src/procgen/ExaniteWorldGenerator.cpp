@@ -23,8 +23,6 @@ void ExaniteWorldGenerator::generateData()
     // Track base material index
     uint16_t baseMaterialIndex = 0;
 
-    // For every 16x16x16 region
-    // Give every region a unique set of materials (each region takes 256 materials)
     for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
     {
         for (int palette2YI = 0; palette2YI < palette2RegionCount.y; ++palette2YI)
@@ -32,8 +30,7 @@ void ExaniteWorldGenerator::generateData()
             for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
             {
                 // The code inside this block represents a 16x16x16 region
-                // Iterate through each 16x16x4 layer and set each layer in a pattern similar to palette0 below
-                // Every 16x16x4 layer will look like this from the top:
+                // Set the materials in each 16x16x4 layer in the following pattern (16 total will be used):
                 // 00114455
                 // 00114455
                 // 22336677
@@ -46,7 +43,6 @@ void ExaniteWorldGenerator::generateData()
                         for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
                         {
                             int16_t materialOffset1 = (((palette1YI >> 1) & 1) << 1) | (((palette1XI >> 1) & 1) << 0);
-                            // int16_t materialOffset1 = 0;
 
                             // The code inside this block represents a 4x4x4 region
                             // Set the materials in each 4x4x1 layer in the following pattern (4 total will be used):
