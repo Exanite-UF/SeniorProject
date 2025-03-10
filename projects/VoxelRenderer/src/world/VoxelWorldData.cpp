@@ -37,7 +37,7 @@ bool VoxelWorldData::getVoxelOccupancy(const glm::ivec3& position) const
 
     // Calculate which bit to set
     auto isOddPos = position & 1;
-    auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2);
+    auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
     auto bit = 1 << bitsShifted;
 
     return (occupancyMap[cellIndex] & bit) != 0;
@@ -54,7 +54,7 @@ void VoxelWorldData::setVoxelOccupancy(const glm::ivec3& position, bool isOccupi
 
     // Calculate which bit to set
     auto isOddPos = position & 1;
-    auto bitsShifted = (isOddPos.x << 0) | (isOddPos.y << 1) | (isOddPos.z << 2);
+    auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
     auto bit = 1 << bitsShifted;
 
     if (isOccupied)
@@ -105,7 +105,7 @@ uint8_t VoxelWorldData::getVoxelPartialPaletteId(const glm::ivec3& position, int
     auto oddX = voxelPosition.x & 1;
     auto oddY = voxelPosition.y & 1;
     auto oddZ = voxelPosition.z & 1;
-    auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
+    auto bitsShifted = ((oddZ << 2) | (oddY << 1) | (oddX << 0)) << 2;
 
     // Get value from cell and extract the 4 bit segment that we want
     auto cellValue = reinterpret_cast<const uint32_t*>(paletteMap.data())[cellIndex];
@@ -132,7 +132,7 @@ void VoxelWorldData::setVoxelPartialPaletteId(const glm::ivec3& position, uint8_
     auto oddX = voxelPosition.x & 1;
     auto oddY = voxelPosition.y & 1;
     auto oddZ = voxelPosition.z & 1;
-    auto bitsShifted = ((oddX << 0) | (oddY << 1) | (oddZ << 2)) << 2;
+    auto bitsShifted = ((oddZ << 2) | (oddY << 1) | (oddX << 0)) << 2;
 
     // Get value that should be stored for this voxel
     auto voxelValue = partialPaletteId;
