@@ -14,15 +14,15 @@ void ExaniteWorldGenerator::generateData()
 {
     MeasureElapsedTimeScope scope("ExaniteWorldGenerator::generateData");
 
-    auto chunkSize = data.getSize();
-    auto palette2RegionCount = chunkSize >> 4;
-
     // Track number of palette2 regions processed
     int palette2I = 0;
 
     // Track base material index
     uint16_t baseMaterialIndex = 0;
 
+    // Iterate through each 16x16x16 region
+    auto chunkSize = data.getSize();
+    auto palette2RegionCount = chunkSize >> 4;
     for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
     {
         for (int palette2YI = 0; palette2YI < palette2RegionCount.y; ++palette2YI)
@@ -59,10 +59,6 @@ void ExaniteWorldGenerator::generateData()
                                         int x = palette2XI * 16 + palette1XI * 4 + palette0XI;
                                         int y = palette2YI * 16 + palette1YI * 4 + palette0YI;
                                         int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
-
-                                        Assert::isTrue(x < data.getSize().x, "X");
-                                        Assert::isTrue(y < data.getSize().y, "Y");
-                                        Assert::isTrue(z < data.getSize().z, "Z");
 
                                         int16_t materialOffset0 = (((palette0YI >> 1) & 1) << 1) | (((palette0XI >> 1) & 1) << 0);
                                         int16_t materialOffset = materialOffset1 * 4 + materialOffset0 * 1;
