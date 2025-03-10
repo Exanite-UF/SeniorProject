@@ -36,6 +36,24 @@ MaterialManager::MaterialManager()
         material->roughness = 1;
     }
 
+    {
+        auto& material = createMaterial("yellow_light", "Yellow Light");
+        material->albedo = glm::vec3(1);
+        material->emission = ColorUtility::srgbToLinear("#ffff00");
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
+        auto& material = createMaterial("green_light", "Green Light");
+        material->albedo = glm::vec3(1);
+        material->emission = ColorUtility::srgbToLinear("#00ff00");
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
     // Generate placeholder materials
     for (size_t i = createdMaterialCount; i < materials.size(); i++)
     {
