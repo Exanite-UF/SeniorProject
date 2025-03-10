@@ -14,6 +14,9 @@ void ExaniteWorldGenerator::generateData()
 {
     MeasureElapsedTimeScope scope("ExaniteWorldGenerator::generateData");
 
+    // This needs at minimum a 32x32x64 world to represent all possible palettes
+    // This is because we have 16 unique palette2s and each palette2 is 16x16x16
+
     // Iterate through each 16x16x16 region
     auto chunkSize = data.getSize();
     auto palette2RegionCount = chunkSize >> 4;
