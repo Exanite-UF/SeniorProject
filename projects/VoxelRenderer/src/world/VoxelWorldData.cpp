@@ -77,10 +77,17 @@ const std::shared_ptr<Material>& VoxelWorldData::getVoxelMaterial(glm::ivec3 pos
 
 void VoxelWorldData::setVoxelMaterial(const glm::ivec3& position, const std::shared_ptr<Material>& material)
 {
-    setVoxelMaterial(position, material->getIndex());
+    setVoxelMaterialIndex(position, material->getIndex());
 }
 
-void VoxelWorldData::setVoxelMaterial(const glm::ivec3& position, const uint16_t materialIndex)
+uint16_t VoxelWorldData::getVoxelMaterialIndex(glm::ivec3 position) const
+{
+    // Each material ID is 16 bits, but we only use the lower 12 bits
+    auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
+    return materialMap[voxelIndex];
+}
+
+void VoxelWorldData::setVoxelMaterialIndex(const glm::ivec3& position, const uint16_t materialIndex)
 {
     // Each material ID is 16 bits, but we only use the lower 12 bits
     auto voxelIndex = position.x + size.x * (position.y + size.y * position.z);
@@ -204,7 +211,7 @@ void VoxelWorldData::decodePaletteMap()
                 uint16_t paletteId = getVoxelPaletteId(glm::ivec3(x, y, z));
                 uint32_t materialIndex = materialManager.getMaterialIndexByPaletteId(paletteId);
 
-                setVoxelMaterial(glm::ivec3(x, y, z), materialIndex);
+                setVoxelMaterialIndex(glm::ivec3(x, y, z), materialIndex);
             }
         }
     }
@@ -324,8 +331,7 @@ void VoxelWorldData::encodePaletteMap()
                 // TODO: This should be part of the region solving loop
                 // TODO: Start of region solving loop
                 // Check if palette contains desired material
-                auto voxelIndex = x + size.x * (y + size.y * z);
-                auto materialIndex = materialMap[voxelIndex];
+                auto materialIndex = getVoxelMaterialIndex(glm::ivec3(x, y, z));
                 if (paletteNodeStack[currentNodeStackIndex]->materialIndices.contains(materialIndex))
                 {
                     // If current palette contains the desired material, then we can move on

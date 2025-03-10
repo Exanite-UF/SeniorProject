@@ -31,7 +31,9 @@ public:
 
     [[nodiscard]] const std::shared_ptr<Material>& getVoxelMaterial(glm::ivec3 position) const;
     void setVoxelMaterial(const glm::ivec3& position, const std::shared_ptr<Material>& material);
-    void setVoxelMaterial(const glm::ivec3& position, uint16_t materialIndex);
+
+    [[nodiscard]] uint16_t getVoxelMaterialIndex(glm::ivec3 position) const;
+    void setVoxelMaterialIndex(const glm::ivec3& position, uint16_t materialIndex);
 
     [[nodiscard]] uint8_t getVoxelPartialPaletteId(const glm::ivec3& position, int level) const;
     void setVoxelPartialPaletteId(const glm::ivec3& position, uint8_t partialPaletteId, int level); // TODO: This bypasses change tracking
