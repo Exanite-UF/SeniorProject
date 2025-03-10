@@ -288,9 +288,10 @@ void VoxelWorldData::encodePaletteMap()
         }
     }
 
-    for (int z = 0; z < size.x; ++z)
+    // Incremental solver
+    for (int z = 0; z < size.z; ++z)
     {
-        for (int y = 0; y < size.x; ++y)
+        for (int y = 0; y < size.y; ++y)
         {
             for (int x = 0; x < size.x; ++x)
             {
