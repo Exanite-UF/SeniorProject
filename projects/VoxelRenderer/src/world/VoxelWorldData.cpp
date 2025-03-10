@@ -240,9 +240,8 @@ void VoxelWorldData::encodePaletteMap()
         materialManager.materialIndexByPaletteId.fill(0);
     }
 
-    // TODO: For debugging
+    // Region-based solver
     std::set<uint16_t> usedMaterials3 {};
-
     auto palette2RegionCount = size >> 4;
     for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
     {
@@ -251,8 +250,6 @@ void VoxelWorldData::encodePaletteMap()
             for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
             {
                 // The code inside this block represents a 16x16x16 region
-
-                // TODO: For debugging
                 std::set<uint16_t> usedMaterials2 {};
 
                 for (int palette1ZI = 0; palette1ZI < 4; ++palette1ZI)
@@ -262,8 +259,6 @@ void VoxelWorldData::encodePaletteMap()
                         for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
                         {
                             // The code inside this block represents a 4x4x4 region
-
-                            // TODO: For debugging
                             std::set<uint16_t> usedMaterials1 {};
 
                             for (int palette0ZI = 0; palette0ZI < 4; ++palette0ZI)
@@ -276,7 +271,15 @@ void VoxelWorldData::encodePaletteMap()
                                         int y = palette2YI * 16 + palette1YI * 4 + palette0YI;
                                         int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
 
+                                        auto isOccupied = getVoxelOccupancy(glm::ivec3(x, y, z));
+                                        if (!isOccupied)
+                                        {
+                                            // Ignore unoccupied voxels
+                                            continue;
+                                        }
+
                                         // TODO: For debugging
+                                        // Count materials used
                                         auto& material = getVoxelMaterial(glm::ivec3(x, y, z));
                                         usedMaterials3.emplace(material->getIndex());
                                         usedMaterials2.emplace(material->getIndex());
