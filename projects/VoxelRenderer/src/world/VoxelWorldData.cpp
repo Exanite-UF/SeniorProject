@@ -195,9 +195,9 @@ void VoxelWorldData::decodePaletteMap()
     MeasureElapsedTimeScope scope("VoxelWorldData::decodeMaterialMipMap");
 
     auto& materialManager = MaterialManager::getInstance();
-    for (int z = 0; z < size.x; ++z)
+    for (int z = 0; z < size.z; ++z)
     {
-        for (int y = 0; y < size.x; ++y)
+        for (int y = 0; y < size.y; ++y)
         {
             for (int x = 0; x < size.x; ++x)
             {
