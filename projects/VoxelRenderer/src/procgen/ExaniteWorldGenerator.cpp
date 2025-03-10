@@ -62,11 +62,6 @@ void ExaniteWorldGenerator::generateData()
                                         int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
 
                                         int materialIndex = materialOffset2 + materialOffset1 + materialOffset0;
-                                        if (materialIndex >= 16)
-                                        {
-                                            continue;
-                                        }
-
                                         data.setVoxelMaterial(glm::ivec3(x, y, z), materialIndex % 512);
                                     }
                                 }
