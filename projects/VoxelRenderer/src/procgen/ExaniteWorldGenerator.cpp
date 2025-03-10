@@ -29,27 +29,29 @@ void ExaniteWorldGenerator::generateData()
         {
             for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
             {
-                // The code inside this block represents a 16x16x16 region
-                // Set the materials in each 16x16x4 layer in the following pattern (16 total will be used):
+                // The code inside this block represents a 16x16x16 region (256 materials will be used)
+                // Set the materials in each 16x16x4 layer in the following pattern (16 materials will be used):
                 // 00114455
                 // 00114455
                 // 22336677
                 // 22336677
                 // ...4 more rows
+
+                baseMaterialIndex = ((palette2ZI & 1) * 256) + palette2I % 8;
                 for (int palette1ZI = 0; palette1ZI < 4; ++palette1ZI)
                 {
                     for (int palette1YI = 0; palette1YI < 4; ++palette1YI)
                     {
                         for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
                         {
-                            int16_t materialOffset1 = (((palette1YI >> 1) & 1) << 1) | (((palette1XI >> 1) & 1) << 0);
+                            // The code inside this block represents a 4x4x4 region (16 materials will be used)
+                            // Set the materials in each 4x4x1 layer in the following pattern (4 materials will be used):
+                            // 0011
+                            // 0011
+                            // 2233
+                            // 2233
 
-                            // The code inside this block represents a 4x4x4 region
-                            // Set the materials in each 4x4x1 layer in the following pattern (4 total will be used):
-                            // 0011
-                            // 0011
-                            // 2233
-                            // 2233
+                            int16_t materialOffset1 = 64 * palette1ZI + 16 * ((((palette1YI >> 1) & 1) << 1) | (((palette1XI >> 1) & 1) << 0));
                             for (int palette0ZI = 0; palette0ZI < 4; ++palette0ZI)
                             {
                                 for (int palette0YI = 0; palette0YI < 4; ++palette0YI)
@@ -60,22 +62,19 @@ void ExaniteWorldGenerator::generateData()
                                         int y = palette2YI * 16 + palette1YI * 4 + palette0YI;
                                         int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
 
-                                        int16_t materialOffset0 = (((palette0YI >> 1) & 1) << 1) | (((palette0XI >> 1) & 1) << 0);
-                                        int16_t materialOffset = materialOffset1 * 4 + materialOffset0 * 1;
+                                        int16_t materialOffset0 = 4 * palette0ZI + ((((palette0YI >> 1) & 1) << 1) | (((palette0XI >> 1) & 1) << 0));
+                                        int16_t materialOffset = materialOffset1 + materialOffset0;
                                         int16_t materialIndex = baseMaterialIndex + materialOffset;
 
                                         data.setVoxelMaterial(glm::ivec3(x, y, z), materialIndex % 512);
                                     }
                                 }
-
-                                baseMaterialIndex += 4;
                             }
                         }
                     }
                 }
 
                 palette2I++;
-                baseMaterialIndex = ((palette2I & 1) * 256) + palette2I % 8;
             }
         }
     }
