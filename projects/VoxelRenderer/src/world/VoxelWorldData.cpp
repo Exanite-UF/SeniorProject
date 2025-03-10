@@ -215,22 +215,29 @@ void VoxelWorldData::encodePaletteMap()
     MeasureElapsedTimeScope scope("VoxelWorldData::encodeMaterialMipMap");
 
     // TODO: Refactor. This currently hardcodes the entire encoding process
-
     auto& materialManager = MaterialManager::getInstance();
     auto& palettes = materialManager.palettes;
 
     // TODO: For debugging. Don't reset the material palettes
-    // Reset material palettes
-    palettes->clear();
-    palettes->materialIndices.emplace(0);
-    palettes->children[0]->materialIndices.emplace(0);
-    palettes->children[0]->children[0]->materialIndices.emplace(0);
-    palettes->children[0]->children[0]->children[0]->materialIndices.emplace(0);
+    {
+        // Reset palette map
+        clearPaletteMap();
 
-    materialManager.materialIndexByPaletteId.fill(0);
+        // Reset material palettes
+        palettes->clear();
+        palettes->materialIndices.emplace(0);
+        palettes->children[0]->materialIndices.emplace(0);
+        palettes->children[0]->children[0]->materialIndices.emplace(0);
+        palettes->children[0]->children[0]->children[0]->materialIndices.emplace(0);
+
+        materialManager.materialIndexByPaletteId.fill(0);
+    }
+
+    auto palette1RegionCount = size >> 2;
+    auto palette2RegionCount = size >> 4;
 
     // TODO: For debugging.
-    std::set<uint32_t> uniqueIndices {};
+    std::set<uint16_t> uniqueMaterialIndices {};
 
     for (int z = 0; z < size.x; ++z)
     {
@@ -246,7 +253,7 @@ void VoxelWorldData::encodePaletteMap()
                 }
 
                 // TODO: For debugging
-                uniqueIndices.emplace(materialMap[x + size.x * (y + size.y * z)]);
+                uniqueMaterialIndices.emplace(materialMap[x + size.x * (y + size.y * z)]);
 
                 // Find currently used palette
                 auto currentPaletteId = getVoxelPaletteId(glm::ivec3(x, y, z));
@@ -308,16 +315,21 @@ void VoxelWorldData::encodePaletteMap()
                     // Go up a level and repeat
                     // Once we successfully add a material to the palette, we need to add the material id downwards and update the mapping
 
-                    Log::log("TODO: Change palettes");
+                    auto breakpointChangePalettes = 1; // TODO: Used for debugging
                 }
 
                 // TODO: Implement modifying/changing palettes
 
                 // TODO: End of region solving loop
 
-                setVoxelPaletteId(glm::ivec3(x, y, z), paletteNodeStack[currentNodeStackIndex]->id);
+                setVoxelPaletteId(glm::ivec3(x, y, z), materialIndex);
             }
         }
+    }
+
+    for (int i = 0; i < 16; ++i)
+    {
+        materialManager.materialIndexByPaletteId[i] = i % 16;
     }
 
     materialManager.updateGpuMaterialData();
