@@ -1,8 +1,8 @@
 #include "ExaniteWorldGenerator.h"
 
 #include <imgui/imgui.h>
-#include <imgui/imgui_stdlib.h>
-#include <src/utilities/Log.h>
+#include <src/utilities/Assert.h>
+#include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
 
 ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
@@ -12,30 +12,90 @@ ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
 
 void ExaniteWorldGenerator::generateData()
 {
-    auto& materialManager = MaterialManager::getInstance();
-    std::shared_ptr<Material> material;
-    if (!materialManager.tryGetMaterialByKey(materialKey, material))
-    {
-        material = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find material with id '" + materialKey + "'. Using default material '" + material->getKey() + "' instead.");
-    }
+    MeasureElapsedTimeScope scope("ExaniteWorldGenerator::generateData");
 
-    for (int x = 0; x < data.getSize().x; ++x)
+    auto chunkSize = data.getSize();
+    auto palette2RegionCount = chunkSize >> 4;
+
+    // Track number of palette2 regions processed
+    int palette2I = 0;
+
+    // Track base material index
+    uint16_t baseMaterialIndex = 0;
+
+    // For every 16x16x16 region
+    // Give every region a unique set of materials (each region takes 256 materials)
+    for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
     {
-        for (int y = 0; y < data.getSize().y; ++y)
+        for (int palette2YI = 0; palette2YI < palette2RegionCount.y; ++palette2YI)
         {
-            for (int z = 0; z < data.getSize().y; ++z)
+            for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
             {
-                data.setVoxelMaterial(glm::ivec3(x, y, z), material);
+                // The code inside this block represents a 16x16x16 region
+                // Iterate through each 16x16x4 layer and set each layer in a pattern similar to palette0 below
+                // Every 16x16x4 layer will look like this from the top:
+                // 00114455
+                // 00114455
+                // 22336677
+                // 22336677
+                // ...4 more rows
+                for (int palette1ZI = 0; palette1ZI < 4; ++palette1ZI)
+                {
+                    for (int palette1YI = 0; palette1YI < 4; ++palette1YI)
+                    {
+                        for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
+                        {
+                            int16_t materialOffset1 = (((palette1YI >> 1) & 1) << 1) | (((palette1XI >> 1) & 1) << 0);
+                            // int16_t materialOffset1 = 0;
+
+                            // The code inside this block represents a 4x4x4 region
+                            // Set the materials in each 4x4x1 layer in the following pattern (4 total will be used):
+                            // 0011
+                            // 0011
+                            // 2233
+                            // 2233
+                            for (int palette0ZI = 0; palette0ZI < 4; ++palette0ZI)
+                            {
+                                for (int palette0YI = 0; palette0YI < 4; ++palette0YI)
+                                {
+                                    for (int palette0XI = 0; palette0XI < 4; ++palette0XI)
+                                    {
+                                        int x = palette2XI * 16 + palette1XI * 4 + palette0XI;
+                                        int y = palette2YI * 16 + palette1YI * 4 + palette0YI;
+                                        int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
+
+                                        Assert::isTrue(x < data.getSize().x, "X");
+                                        Assert::isTrue(y < data.getSize().y, "Y");
+                                        Assert::isTrue(z < data.getSize().z, "Z");
+
+                                        int16_t materialOffset0 = (((palette0YI >> 1) & 1) << 1) | (((palette0XI >> 1) & 1) << 0);
+                                        int16_t materialOffset = materialOffset1 * 4 + materialOffset0 * 1;
+                                        int16_t materialIndex = baseMaterialIndex + materialOffset;
+
+                                        data.setVoxelMaterial(glm::ivec3(x, y, z), materialIndex % 512);
+                                    }
+                                }
+
+                                baseMaterialIndex += 4;
+                            }
+                        }
+                    }
+                }
+
+                palette2I++;
+                baseMaterialIndex = ((palette2I & 1) * 256) + palette2I % 8;
             }
         }
     }
 
-    for (int x = 0; x < data.getSize().x; ++x)
+    for (int z = 0; z < data.getSize().z; ++z)
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {
-            data.setVoxelOccupancy(glm::ivec3(x, y, 0), true);
+            for (int x = 0; x < data.getSize().x; ++x)
+            {
+                data.setVoxelOccupancy(glm::ivec3(x, y, z), true);
+            }
         }
     }
 }
@@ -46,7 +106,7 @@ void ExaniteWorldGenerator::showDebugMenu()
     {
         if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
         {
-            ImGui::InputText("Material", &materialKey);
+            ImGui::Text("This generator is used to test material palette solving");
         }
     }
     ImGui::PopID();
