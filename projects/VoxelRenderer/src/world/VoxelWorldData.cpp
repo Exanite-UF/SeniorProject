@@ -218,7 +218,7 @@ void VoxelWorldData::encodePaletteMap()
     auto& materialManager = MaterialManager::getInstance();
     auto& palettes = materialManager.palettes;
 
-    // TODO: For debugging. Don't reset the material palettes
+    // TODO: For debugging
     {
         // Reset palette map
         clearPaletteMap();
@@ -233,11 +233,60 @@ void VoxelWorldData::encodePaletteMap()
         materialManager.materialIndexByPaletteId.fill(0);
     }
 
-    auto palette1RegionCount = size >> 2;
-    auto palette2RegionCount = size >> 4;
+    // TODO: For debugging
+    std::set<uint16_t> usedMaterials3 {};
 
-    // TODO: For debugging.
-    std::set<uint16_t> uniqueMaterialIndices {};
+    auto palette2RegionCount = size >> 4;
+    for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
+    {
+        for (int palette2YI = 0; palette2YI < palette2RegionCount.y; ++palette2YI)
+        {
+            for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
+            {
+                // The code inside this block represents a 16x16x16 region
+
+                // TODO: For debugging
+                std::set<uint16_t> usedMaterials2 {};
+
+                for (int palette1ZI = 0; palette1ZI < 4; ++palette1ZI)
+                {
+                    for (int palette1YI = 0; palette1YI < 4; ++palette1YI)
+                    {
+                        for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
+                        {
+                            // The code inside this block represents a 4x4x4 region
+
+                            // TODO: For debugging
+                            std::set<uint16_t> usedMaterials1 {};
+
+                            for (int palette0ZI = 0; palette0ZI < 4; ++palette0ZI)
+                            {
+                                for (int palette0YI = 0; palette0YI < 4; ++palette0YI)
+                                {
+                                    for (int palette0XI = 0; palette0XI < 4; ++palette0XI)
+                                    {
+                                        int x = palette2XI * 16 + palette1XI * 4 + palette0XI;
+                                        int y = palette2YI * 16 + palette1YI * 4 + palette0YI;
+                                        int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
+
+                                        // TODO: For debugging
+                                        auto& material = getVoxelMaterial(glm::ivec3(x, y, z));
+                                        usedMaterials3.emplace(material->getIndex());
+                                        usedMaterials2.emplace(material->getIndex());
+                                        usedMaterials1.emplace(material->getIndex());
+                                    }
+                                }
+                            }
+
+                            Assert::isTrue(usedMaterials1.size() <= 16, "Too many materials in a single palette1");
+                        }
+                    }
+                }
+
+                Assert::isTrue(usedMaterials2.size() <= 256, "Too many materials in a single palette2");
+            }
+        }
+    }
 
     for (int z = 0; z < size.x; ++z)
     {
@@ -251,9 +300,6 @@ void VoxelWorldData::encodePaletteMap()
                     // Ignore unoccupied voxels
                     continue;
                 }
-
-                // TODO: For debugging
-                uniqueMaterialIndices.emplace(materialMap[x + size.x * (y + size.y * z)]);
 
                 // Find currently used palette
                 auto currentPaletteId = getVoxelPaletteId(glm::ivec3(x, y, z));
@@ -315,7 +361,7 @@ void VoxelWorldData::encodePaletteMap()
                     // Go up a level and repeat
                     // Once we successfully add a material to the palette, we need to add the material id downwards and update the mapping
 
-                    auto breakpointChangePalettes = 1; // TODO: Used for debugging
+                    auto breakpointChangePalettes = 1; // TODO: For debugging
                 }
 
                 // TODO: Implement modifying/changing palettes
@@ -327,6 +373,7 @@ void VoxelWorldData::encodePaletteMap()
         }
     }
 
+    // TODO: For debugging
     for (int i = 0; i < 16; ++i)
     {
         materialManager.materialIndexByPaletteId[i] = i % 16;
