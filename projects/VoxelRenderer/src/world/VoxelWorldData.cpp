@@ -260,9 +260,15 @@ void VoxelWorldData::encodePaletteMap()
     // 2. If the set from P has enough space, add the materials from the set from R to P
     // 3. If at any time we loop through all sets in P and fail to merge the set from R into a set from P, then we must make a new palette2
     //
-    // Warning: If R contains more than 16 sets, then merging will always fail
+    // (Edit: This is false; some sets can be merged) Warning: If R contains more than 16 sets, then merging will always fail
     // Not sure if it is better to attempt a best-attempt merge or to immediately start a new palette
+    //
     // In any case, some materials must be discarded
+    // To figure out which materials to be discarded, we need to count the number of times a material is used
+    // This requires a data structure similar to a multiset. This is already implemented in MaterialPaletteNode using a std::unordered_map (not a std::multiset because that's slower).
+    // We can then figure out which materials are used the "least" and remove those materials from R until R contains 16 or less sets.
+    //
+    // What defines the material that is used the least? And should it be tracked per region1 or per region2?
 
     // Region-based solver
     MaterialPaletteNodeStack stack(palettes);
