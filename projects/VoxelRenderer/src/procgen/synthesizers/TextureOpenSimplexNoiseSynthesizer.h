@@ -11,5 +11,5 @@ public:
     TextureOpenSimplexNoiseSynthesizer(int seed);
     void generate(std::shared_ptr<TextureData>& textureData) override;
     void showDebugMenu() override;
-    std::function<float(float)> mapperTo01() override; 
+    std::function<float(float)> mapperTo01() override;
 };

@@ -10,7 +10,7 @@ GLuint AsynchronousReprojection::renderProgram;
 GLuint AsynchronousReprojection::combineProgram;
 GLuint AsynchronousReprojection::combineMaskProgram;
 
-void AsynchronousReprojection::generateMesh()
+void AsynchronousReprojection::generateMesh(const glm::ivec2& size)
 {
     vertices.resize(size.x * size.y * 3);
     indices.resize((size.x - 1) * (size.y - 1) * 2 * 3); // number of squares -> number of triangle -> number of edges
@@ -62,7 +62,7 @@ void AsynchronousReprojection::generateMesh()
     glBindVertexArray(0);
 }
 
-AsynchronousReprojection::AsynchronousReprojection(glm::ivec2 size)
+AsynchronousReprojection::AsynchronousReprojection()
 {
     renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader);
     combineProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::combineReprojectionFragmentShader);
@@ -71,49 +71,6 @@ AsynchronousReprojection::AsynchronousReprojection(glm::ivec2 size)
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-
-    setSize(size);
-}
-
-GLuint AsynchronousReprojection::getColorTexture() const
-{
-    if (currentFrameBuffer % 2 == 0)
-    {
-        return colorTextureId1;
-    }
-    else
-    {
-        return colorTextureId2;
-    }
-}
-
-GLuint AsynchronousReprojection::getPositionTexture() const
-{
-    if (currentFrameBuffer % 2 == 0)
-    {
-        return positionTextureId1;
-    }
-    else
-    {
-        return positionTextureId2;
-    }
-}
-
-GLuint AsynchronousReprojection::getMaterialTexture() const
-{
-    if (currentFrameBuffer % 2 == 0)
-    {
-        return materialTextureId1;
-    }
-    else
-    {
-        return materialTextureId2;
-    }
-}
-
-glm::ivec2 AsynchronousReprojection::getSize()
-{
-    return size;
 }
 
 void AsynchronousReprojection::setSize(glm::ivec2 size)
@@ -123,148 +80,11 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
         return;
     }
 
-    glFinish();
-
     this->size = size;
 
-    generateMesh();
+    generateMesh(size);
 
-    // Create textures 1
-    {
-        // Create color texture
-        glDeleteTextures(1, &colorTextureId1);
-        glGenTextures(1, &colorTextureId1);
-        glBindTexture(GL_TEXTURE_2D, colorTextureId1);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Create position texture
-        glDeleteTextures(1, &positionTextureId1);
-        glGenTextures(1, &positionTextureId1);
-        glBindTexture(GL_TEXTURE_2D, positionTextureId1);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, size.x, size.y, 0, GL_RGB, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Create material texture
-        glDeleteTextures(1, &materialTextureId1);
-        glGenTextures(1, &materialTextureId1);
-        glBindTexture(GL_TEXTURE_2D, materialTextureId1);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, size.x, size.y, 0, GL_RGB, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    // Create textures 2
-    {
-        // Create color texture
-        glDeleteTextures(1, &colorTextureId2);
-        glGenTextures(1, &colorTextureId2);
-        glBindTexture(GL_TEXTURE_2D, colorTextureId2);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Create position texture
-        glDeleteTextures(1, &positionTextureId2);
-        glGenTextures(1, &positionTextureId2);
-        glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, size.x, size.y, 0, GL_RGB, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Create material texture
-        glDeleteTextures(1, &materialTextureId2);
-        glGenTextures(1, &materialTextureId2);
-        glBindTexture(GL_TEXTURE_2D, materialTextureId2);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, size.x, size.y, 0, GL_RGB, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    // Create frame count texture
-    glDeleteTextures(1, &frameCountTextureID1);
-    glGenTextures(1, &frameCountTextureID1);
-    glBindTexture(GL_TEXTURE_2D, frameCountTextureID1);
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, size.x, size.y, 0, GL_RG, GL_FLOAT, nullptr);
-    }
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDeleteTextures(1, &frameCountTextureID2);
-    glGenTextures(1, &frameCountTextureID2);
-    glBindTexture(GL_TEXTURE_2D, frameCountTextureID2);
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, size.x, size.y, 0, GL_RG, GL_FLOAT, nullptr);
-    }
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    // Make combine mask texture
+    // Create mask texture
     glDeleteTextures(1, &combineMaskTextureID);
     glGenTextures(1, &combineMaskTextureID);
     glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
@@ -274,57 +94,60 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, size.x, size.y, 0, GL_RG, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, this->size.x, this->size.y, 0, GL_RED, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    for (int i = 0; i < 2; i++)
+    {
+        // Create frame counter textures
+        glDeleteTextures(1, &frameCountTextures[i]);
+        glGenTextures(1, &frameCountTextures[i]);
+        glBindTexture(GL_TEXTURE_2D, frameCountTextures[i]);
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, this->size.x, this->size.y, 0, GL_RED, GL_FLOAT, nullptr);
+        }
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }
 
-void AsynchronousReprojection::render(const Camera& camera)
+void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
+    const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& materialTexture)
 {
     glUseProgram(renderProgram);
 
-    // std::cout << currentFrameBuffer << std::endl;
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, positionTexture);
 
-    // These use the opposite buffer that the get function returns
-    if (currentFrameBuffer % 2 == 0)
-    {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, colorTextureId2);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-    }
-    else
-    {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, colorTextureId1);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, colorTexture);
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, positionTextureId1);
-    }
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, materialTexture);
 
-    glm::vec3 deltaPos = camera.transform.getGlobalPosition(); // - lastCameraPosition;
-    glm::quat deltaRot = camera.transform.getGlobalRotation(); // * glm::inverse(lastCameraRotation);
-
-    // std::cout << deltaPos.x << " " << deltaPos.y << " " << deltaPos.z << std::endl;
-
-    glUniform3f(glGetUniformLocation(renderProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
-    glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
-    glUniform2i(glGetUniformLocation(renderProgram, "resolution"), size.x, size.y);
-    glUniform1f(glGetUniformLocation(renderProgram, "horizontalFovTan"), camera.getHorizontalFov());
+    glUniform3fv(glGetUniformLocation(renderProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
+    glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), cameraRotation.x, cameraRotation.y, cameraRotation.z, -cameraRotation.w);
+    glUniform2i(glGetUniformLocation(renderProgram, "resolution"), reprojectionResolution.x, reprojectionResolution.y);
+    glUniform1f(glGetUniformLocation(renderProgram, "horizontalFovTan"), std::tan(cameraFOV * 0.5));
 
     glBindVertexArray(VAO);
     {
-        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glPointSize(3);//I don't know why the points need to be this large
-        // glDrawArrays(GL_POINTS, 0, vertices.size());
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+        glDrawBuffers(4, drawBuffers);
+
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-        // glBindBuffer(GL_ARRAY_BUFFER, 0);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     glBindVertexArray(0);
 
@@ -337,58 +160,39 @@ void AsynchronousReprojection::render(const Camera& camera)
     glUseProgram(0);
 }
 
-void AsynchronousReprojection::recordCameraTransform(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
+void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
+    const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture)
 {
-    lastCameraPosition = cameraPosition;
-    lastCameraRotation = cameraRotation;
-    lastCameraFOV = cameraFOV;
-}
+    // This runs in the offscreen context
 
-void AsynchronousReprojection::swapBuffers()
-{
-    currentFrameBuffer++;
-}
-
-void AsynchronousReprojection::combineBuffers()
-{
-    static int oldBuffer = 0;
-    if (oldBuffer == currentFrameBuffer)
-    {
-        return;
-    }
     // This is where combination occurs
+
+    // I need to make a new VAO since they cannot be shared across contexts
+    // Luckily they don't use much data
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
 
     // Make mask
     {
         glUseProgram(combineMaskProgram);
 
-        if (currentFrameBuffer % 2 == 1)
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, colorTextureId2);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, oldPositionTexture); // Old position
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-        }
-        else
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, colorTextureId1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, newNormalTexture);
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId1);
-        }
-
-        glm::vec3 deltaPos = lastCameraPosition; // camera.transform.getGlobalPosition();// - lastCameraPosition;
-        glm::quat deltaRot = lastCameraRotation; // camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
-
-        // glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
-        // glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
-
-        glUniform3f(glGetUniformLocation(combineMaskProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
-        glUniform4f(glGetUniformLocation(combineMaskProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
+        glUniform3fv(glGetUniformLocation(combineMaskProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
+        glUniform4f(glGetUniformLocation(combineMaskProgram, "inverseCameraRotation"), lastRenderedCameraRotation.x, lastRenderedCameraRotation.y, lastRenderedCameraRotation.z, -lastRenderedCameraRotation.w);
         glUniform2i(glGetUniformLocation(combineMaskProgram, "resolution"), size.x, size.y);
-        glUniform1f(glGetUniformLocation(combineMaskProgram, "horizontalFovTan"), lastCameraFOV);
+        glUniform1f(glGetUniformLocation(combineMaskProgram, "horizontalFovTan"), std::tan(lastRenderedCameraFOV * 0.5));
 
         // Need to render to a custom framebuffer, that switches its render target every time
         GLuint framebuffer;
@@ -399,16 +203,9 @@ void AsynchronousReprojection::combineBuffers()
 
         glBindVertexArray(VAO);
         {
-            // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glPointSize(3); // I don't know why the points need to be this large
             glDrawArrays(GL_POINTS, 0, vertices.size());
-
-            // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-
-            // glBindBuffer(GL_ARRAY_BUFFER, 0);
-            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
         glBindVertexArray(0);
 
@@ -418,118 +215,71 @@ void AsynchronousReprojection::combineBuffers()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
         glUseProgram(0);
-        // glMemoryBarrier(GL_ALL_BARRIER_BITS);
     }
 
     // Combine
     {
         glUseProgram(combineProgram);
 
-        // Bind old data
-        if (currentFrameBuffer % 2 == 1)
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, colorTextureId2);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, oldPositionTexture); // Old position
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId2);
-        }
-        else
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, colorTextureId1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, newNormalTexture);
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId1);
-        }
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, oldColorTexture); // Old color
 
-        // Bind new data
-        if (currentFrameBuffer % 2 == 1)
-        {
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId1); // Used to reject old data
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, newPositionTexture); // New position
 
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, materialTextureId1); // Used to reject old data
-        }
-        else
-        {
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, positionTextureId2); // Used to reject old data
-
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, materialTextureId2); // Used to reject old data
-        }
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, newMaterialTexture); // New material
 
         // Old frame count
-        if (currentFrameBuffer % 2 == 1)
+        if (currentBuffer % 2 == 0)
         {
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, frameCountTextureID2);
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, frameCountTextures[0]);
         }
         else
         {
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, frameCountTextureID1);
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, frameCountTextures[1]);
         }
 
-        glActiveTexture(GL_TEXTURE5);
+        glActiveTexture(GL_TEXTURE6);
         glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
 
-        // Set uniform data
-        glm::vec3 deltaPos = lastCameraPosition; // camera.transform.getGlobalPosition();// - lastCameraPosition;
-        glm::quat deltaRot = lastCameraRotation; // camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
-        // glm::vec3 deltaPos = camera.transform.getGlobalPosition();// - lastCameraPosition;
-        // glm::quat deltaRot = camera.transform.getGlobalRotation();// * glm::inverse(lastCameraRotation);
-
-        glUniform3f(glGetUniformLocation(combineProgram, "cameraPosition"), deltaPos.x, deltaPos.y, deltaPos.z);
-        glUniform4f(glGetUniformLocation(combineProgram, "inverseCameraRotation"), deltaRot.x, deltaRot.y, deltaRot.z, -deltaRot.w);
+        glUniform3fv(glGetUniformLocation(combineProgram, "cameraMovement"), 1, glm::value_ptr(cameraMovement));
+        glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
+        glUniform4f(glGetUniformLocation(combineProgram, "inverseCameraRotation"), lastRenderedCameraRotation.x, lastRenderedCameraRotation.y, lastRenderedCameraRotation.z, -lastRenderedCameraRotation.w);
         glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
-
-        glUniform1f(glGetUniformLocation(combineProgram, "horizontalFovTan"), lastCameraFOV);
+        glUniform1f(glGetUniformLocation(combineProgram, "horizontalFovTan"), std::tan(lastRenderedCameraFOV * 0.5));
 
         // Need to render to a custom framebuffer, that switches its render target every time
         GLuint framebuffer;
         glGenFramebuffers(1, &framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         // Bind new data
-        if (currentFrameBuffer % 2 == 1)
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, newColorTexture, 0);
+        if (currentBuffer % 2 == 0)
         {
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextureId1, 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextures[1], 0);
         }
         else
         {
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextureId2, 0);
-        }
-
-        // New frame count
-        if (currentFrameBuffer % 2 == 1)
-        {
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextureID1, 0);
-        }
-        else
-        {
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextureID2, 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextures[0], 0);
         }
 
         glBindVertexArray(VAO);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         {
-            // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
             glDrawBuffers(2, buffers);
             glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-
-            // glBindBuffer(GL_ARRAY_BUFFER, 0);
-            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
         glDisable(GL_BLEND);
         glBindVertexArray(0);
@@ -558,6 +308,8 @@ void AsynchronousReprojection::combineBuffers()
         glUseProgram(0);
     }
 
+    glDeleteVertexArrays(1, &VAO);
+
     glFinish();
-    oldBuffer = currentFrameBuffer;
+    currentBuffer++;
 }

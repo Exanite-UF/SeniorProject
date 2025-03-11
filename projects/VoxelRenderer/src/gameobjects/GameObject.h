@@ -1,18 +1,35 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include <src/gameobjects/Component.h>
+#include <src/gameobjects/TransformComponent.h>
 #include <src/utilities/NonCopyable.h>
 
-class GameObject : public NonCopyable
+class GameObject : public NonCopyable, public std::enable_shared_from_this<GameObject>
 {
-    // std::vector<std::shared_ptr<Components>> components;
+private:
+    bool isDestroyed = false;
 
-    // components.at(0) should be the built-in TransformComponent
+    std::shared_ptr<TransformComponent> transform {};
 
-    // template <class T>
-    // getComponent<T>
-    // addComponent<T>
+public:
+    GameObject();
+    ~GameObject() override;
 
-    // gameObject.destroy()
-    // component.destroy()
-    // destroy() should respect the transform hierarchy
+    std::vector<std::shared_ptr<Component>> components {};
+
+    template <typename T, typename... Args>
+    std::shared_ptr<T> addComponent(Args&&... args);
+
+    template <typename T>
+    std::shared_ptr<T> getComponent();
+
+    std::shared_ptr<TransformComponent>& getTransform();
+
+    // Calls destroy on all the components in the list
+    void destroy();
+
+    bool isAlive() const;
 };

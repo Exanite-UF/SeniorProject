@@ -1,7 +1,7 @@
 #pragma once
 
-#include <src/procgen/synthesizers/TextureDataSynthesizer.h>
 #include <memory>
+#include <src/procgen/synthesizers/TextureDataSynthesizer.h>
 
 class TextureOctaveNoiseSynthesizer : public TextureDataSynthesizer
 {
@@ -14,5 +14,5 @@ public:
     TextureOctaveNoiseSynthesizer(int seed, int octaves, float persistence);
     void generate(std::shared_ptr<TextureData>& textureData) override;
     void showDebugMenu() override;
-    std::function<float(float)> mapperTo01() override; 
+    std::function<float(float)> mapperTo01() override;
 };

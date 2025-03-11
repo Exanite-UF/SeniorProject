@@ -5,3 +5,4 @@ IndentCaseLabels: true
 InsertNewlineAtEOF: true
 NamespaceIndentation: All
 AllowShortLambdasOnASingleLine: Empty
+SpaceInEmptyBlock: false

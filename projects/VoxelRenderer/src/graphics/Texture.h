@@ -11,12 +11,12 @@
 class Texture : public NonCopyable
 {
 private:
-    GLuint textureId;
-    GLuint64 bindlessHandle;
+    GLuint textureId = 0;
+    GLuint64 bindlessHandle = 0;
 
-    glm::ivec2 size;
+    glm::ivec2 size {};
 
-    TextureType type;
+    TextureType type {};
 
 public:
     explicit Texture(GLuint textureId, TextureType type, glm::ivec2 size);

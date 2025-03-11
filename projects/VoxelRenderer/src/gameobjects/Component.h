@@ -1,24 +1,36 @@
 #pragma once
 
+#include <memory>
+
 #include <src/utilities/NonCopyable.h>
+
+class GameObject;
 
 class Component : public NonCopyable
 {
-    // std::shared_ptr<GameObject> gameObject;
-    // GameObject*, I think we want to use a raw pointer to avoid the circular reference counter issue.
-    // Also, it makes sense that the GameObjects owns the lifecycle of the Components it has.
+    friend class GameObject;
 
-    // void destroy();
+protected:
+    bool isDestroyed = false;
 
-    // Might not need:
-    // virtual void onCreate(); - Similar to constructor, but we call these on the next update
-    // virtual void onDestroy(); - Similar to destructor, but called right before
-
-    // Definitely need:
-    // virtual void onUpdate();
-
-    // Paired calls:
+    // Certain calls are paired
+    // If the first event in the pair is called, the second needs to be eventually called:
     // constructor + destructor
     // onCreate + onDestroy
-    // If the first event in the pair is called, the second needs to be eventually called.
+
+    virtual void onUpdate() {}
+
+    virtual void onCreate() {}
+    virtual void onDestroy() {}
+
+public:
+    std::shared_ptr<GameObject> gameObject;
+
+    explicit Component();
+    ~Component() override;
+
+    void destroy();
+    void update();
+
+    bool isAlive() const;
 };

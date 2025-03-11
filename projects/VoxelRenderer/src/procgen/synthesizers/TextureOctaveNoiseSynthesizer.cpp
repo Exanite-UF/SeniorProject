@@ -1,5 +1,3 @@
-#pragma once
-
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 
 #include <PerlinNoise/PerlinNoise.hpp>
@@ -36,7 +34,10 @@ void TextureOctaveNoiseSynthesizer::showDebugMenu()
     }
 }
 
-std::function<float(float)> TextureOctaveNoiseSynthesizer::mapperTo01() 
+std::function<float(float)> TextureOctaveNoiseSynthesizer::mapperTo01()
 {
-    return [](float sample) { return sample; };
+    return [](float sample)
+    {
+        return sample;
+    };
 }

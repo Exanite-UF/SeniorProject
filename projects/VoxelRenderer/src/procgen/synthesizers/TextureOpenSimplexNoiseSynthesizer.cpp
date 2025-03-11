@@ -32,7 +32,10 @@ void TextureOpenSimplexNoiseSynthesizer::showDebugMenu()
     }
 }
 
-std::function<float(float)> TextureOpenSimplexNoiseSynthesizer::mapperTo01() 
+std::function<float(float)> TextureOpenSimplexNoiseSynthesizer::mapperTo01()
 {
-    return [](float sample) { return sample; };
+    return [](float sample)
+    {
+        return sample;
+    };
 }

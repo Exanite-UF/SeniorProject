@@ -33,6 +33,11 @@ public:
     // Output is cached
     GLuint getGraphicsProgram(const std::string_view& vertexShaderPath, const std::string_view& fragmentShaderPath);
 
+    // Loads, compiles, and links vertex and fragment shaders into a graphics program
+    // Output is cached
+    // Forces ScreenTri.vertex.glsl to be used as the vertex shader
+    GLuint getPostProcessProgram(const std::string_view& fragmentShaderPath);
+
     // Loads, compiles, and links a compute shader into a compute program
     // Output is cached
     GLuint getComputeProgram(const std::string_view& computeShaderPath);

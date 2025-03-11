@@ -7,36 +7,29 @@
 #include <glm/vec3.hpp>
 #include <src/world/Camera.h>
 
+#include <array>
 #include <mutex>
 #include <vector>
+
+#include "Renderer.h"
 
 // I should probably use a framebuffer, but this needs a custom framebuffer
 class AsynchronousReprojection
 {
 private:
-    glm::ivec2 size;
-    GLuint colorTextureId1;
-    GLuint positionTextureId1;
-    GLuint materialTextureId1; // Used to combine frames
-
-    GLuint colorTextureId2;
-    GLuint positionTextureId2;
-    GLuint materialTextureId2;
-
-    GLuint frameCountTextureID1;
-    GLuint frameCountTextureID2;
-
-    GLuint combineMaskTextureID;
-
-    int currentFrameBuffer = 0; // This is the framebuffer that the VoxelRenderer renders to
-
-    glm::quat lastCameraRotation;
-    glm::vec3 lastCameraPosition;
-    float lastCameraFOV;
-
     static GLuint renderProgram;
     static GLuint combineProgram;
     static GLuint combineMaskProgram;
+
+    int currentBuffer = 0;
+
+    // These textures are only used by Asynchronous Reprojection when combining frames
+    // As such it only needs old and new versions
+    std::array<GLuint, 2> frameCountTextures;
+
+    GLuint combineMaskTextureID;
+
+    glm::ivec2 size; // The size of the offscreen render
 
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
@@ -45,24 +38,22 @@ private:
     GLuint VBO;
     GLuint EBO;
 
-    void generateMesh();
+    void generateMesh(const glm::ivec2& size);
+
+    AsynchronousReprojection(); // This is only supposed to be ran by Renderer
+
+    friend class Renderer;
 
 public:
-    AsynchronousReprojection(glm::ivec2 size);
+    void setSize(glm::ivec2 size);
 
     GLuint getColorTexture() const;
     GLuint getPositionTexture() const;
     GLuint getMaterialTexture() const;
 
-    glm::ivec2 getSize();
-    void setSize(glm::ivec2 size);
+    void render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
+        const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& materialTexture);
 
-    void render(const Camera& camera);
-
-    void recordCameraTransform(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
-
-    // Uses the mutex to prevent the path tracing from starting until the temporal accumulation is done
-    void swapBuffers();
-
-    void combineBuffers();
+    void combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
+        const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture);
 };

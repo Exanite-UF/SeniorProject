@@ -1,6 +1,7 @@
 #include "MaterialPaletteNode.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include <src/Constants.h>
 
@@ -16,6 +17,13 @@ MaterialPaletteNode::MaterialPaletteNode(int level, uint8_t childIndex, uint16_t
             children.emplace_back(std::make_shared<MaterialPaletteNode>(level - 1, i, id));
         }
     }
+
+    maxMaterialIndices = std::pow(Constants::VoxelWorld::palettesPerRegion, level);
+}
+
+bool MaterialPaletteNode::isFull()
+{
+    return materialIndices.size() >= maxMaterialIndices;
 }
 
 void MaterialPaletteNode::clear()
