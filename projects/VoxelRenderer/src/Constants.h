@@ -21,28 +21,7 @@ public:
         // 10 means that the max chunk size is 2^10 = 4096.
         static constexpr uint8_t maxOccupancyMapLayerCount = 10; // 1 base layer + 9 mipmap layers
 
-        // The max number of mip levels in our palette map.
-        static constexpr uint8_t paletteMapLayerCount = 3;
-
-        // The max number of material IDs. Material IDs are first mapped to indices representing material instances.
-        // This is equivalent to 2^12 or 2^(3*4). This is because we have 4 bits per material mip level, and we have 3 mip levels.
-        static constexpr uint32_t palette0Count = 4096;
-
-        // This is equivalent to 2^8.
-        static constexpr uint32_t palette1Count = 256;
-
-        // This is equivalent to 2^4.
-        static constexpr uint32_t palette2Count = 16;
-
-        // This is a fake material palette layer used to make code easier to write.
-        // This is equivalent to 2^0.
-        static constexpr uint32_t palette3Count = 1;
-
         // The max number of material instances.
-        static constexpr uint32_t materialCount = 512;
-
-        // The max number of materials or palettes per material palette region.
-        // This is equivalent to 2^4. This is because we have 4 bits per material mip level.
-        static constexpr uint32_t palettesPerRegion = 16;
+        static constexpr uint32_t materialCount = pow(2, 16);
     };
 };

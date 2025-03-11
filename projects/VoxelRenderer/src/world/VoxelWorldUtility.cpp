@@ -34,22 +34,3 @@ std::vector<uint32_t> VoxelWorldUtility::getOccupancyMapIndices(glm::ivec3 size)
 
     return indices;
 }
-
-std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> VoxelWorldUtility::getPaletteMapIndices(glm::ivec3 size)
-{
-    std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> indices;
-
-    // This should be the exact number of bytes that the palette map and all its mipmaps take up
-    std::uint64_t totalByteCount = 0;
-    for (int i = 0; i < 3; i++)
-    {
-        std::uint64_t divisor = (1 << (2 * i));
-        divisor = divisor * divisor * divisor; // Cube the divisor
-        indices[i] = totalByteCount;
-        totalByteCount += 4 * size.x * size.y * size.z / 8 / divisor;
-    }
-
-    indices[indices.size() - 1] = totalByteCount;
-
-    return indices;
-}

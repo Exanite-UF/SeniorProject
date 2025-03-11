@@ -92,27 +92,6 @@ MaterialManager::MaterialManager()
     updateGpuMaterialData();
 }
 
-uint32_t MaterialManager::getMaterialIndexByPaletteId(uint16_t paletteId) const
-{
-    return materialIndexByPaletteId[paletteId];
-}
-
-uint32_t MaterialManager::getMaterialIndexByPaletteId(uint8_t palette0, uint8_t palette1, uint8_t palette2) const
-{
-    uint32_t id = ((palette0 & 0b1111) << 0) | ((palette1 & 0b1111) << 4) | ((palette2 & 0b1111) << 8);
-    return materialIndexByPaletteId[id];
-}
-
-const std::shared_ptr<Material>& MaterialManager::getMaterialByPaletteId(uint16_t paletteId)
-{
-    return getMaterialByIndex(getMaterialIndexByPaletteId(paletteId));
-}
-
-const std::shared_ptr<Material>& MaterialManager::getMaterialByPaletteId(uint8_t palette0, uint8_t palette1, uint8_t palette2)
-{
-    return getMaterialByIndex(getMaterialIndexByPaletteId(palette0, palette1, palette2));
-}
-
 const std::shared_ptr<Material>& MaterialManager::getMaterialByIndex(uint16_t index)
 {
     return materials[index];
@@ -133,11 +112,6 @@ bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_pt
 
     material = entry->second;
     return true;
-}
-
-GraphicsBuffer<uint32_t>& MaterialManager::getMaterialIndicesByPaletteIdBuffer()
-{
-    return materialIndicesByPaletteIdBuffer;
 }
 
 GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
@@ -163,7 +137,6 @@ void MaterialManager::updateGpuMaterialData()
     }
 
     // Write data to GPU
-    materialIndicesByPaletteIdBuffer.readFrom(materialIndexByPaletteId);
     materialDataBuffer.readFrom(materialData);
 }
 
