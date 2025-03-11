@@ -31,7 +31,7 @@ void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool 
     updateMipMaps();
 
     // This calls a shader that hard codes the material values (it is non-essential)
-    assignMaterial(0);
+    assignMaterial();
 
     // Updating noise after generating makes the initial generation independent to framerate
     this->currentNoiseTime += deltaTime;
@@ -126,21 +126,21 @@ void VoxelWorld::updateMipMaps()
     glUseProgram(0);
 }
 
-void VoxelWorld::assignMaterial(int level)
+void VoxelWorld::assignMaterial()
 {
     glUseProgram(assignMaterialComputeProgram);
 
     this->materialMap.bind(0);
 
-    int sizeX = this->size.x / 2 / (1 << (2 * level)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
-    int sizeY = this->size.y / 2 / (1 << (2 * level));
-    int sizeZ = this->size.z / 2 / (1 << (2 * level));
+    int sizeX = this->size.x / 2 / (1 << 2);
+    int sizeY = this->size.y / 2 / (1 << 2);
+    int sizeZ = this->size.z / 2 / (1 << 2);
 
     GLuint workGroupsX = (sizeX + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (sizeY + 8 - 1) / 8;
     GLuint workGroupsZ = (sizeZ + 8 - 1) / 8;
 
-    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "cellCount"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
+    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "voxelCount"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 

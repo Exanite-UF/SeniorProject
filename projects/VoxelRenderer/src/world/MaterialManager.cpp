@@ -53,7 +53,7 @@ MaterialManager::MaterialManager()
     }
 
     // Generate placeholder materials
-    for (size_t i = createdMaterialCount; i < materials.size(); i++)
+    for (size_t i = materials.size(); i < Constants::VoxelWorld::maxMaterialCount; i++)
     {
         auto& material = createMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
         if (i % 4 == 0)
@@ -103,9 +103,9 @@ bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_pt
     return true;
 }
 
-GraphicsBuffer<MaterialData>& MaterialManager::getMaterialDataBuffer()
+GraphicsBuffer<MaterialDefinition>& MaterialManager::getMaterialDefinitionsBuffer()
 {
-    return materialDataBuffer;
+    return materialDefinitionsBuffer;
 }
 
 void MaterialManager::updateGpuMaterialData()
@@ -116,7 +116,7 @@ void MaterialManager::updateGpuMaterialData()
     for (size_t i = 0; i < materials.size(); i++)
     {
         auto& material = materials[i];
-        auto materialDataEntry = MaterialData();
+        auto materialDataEntry = MaterialDefinition();
         materialDataEntry.emission = material->emission;
         materialDataEntry.albedo = material->albedo;
         materialDataEntry.metallicAlbedo = material->metallicAlbedo;
@@ -127,21 +127,17 @@ void MaterialManager::updateGpuMaterialData()
     }
 
     // Write data to GPU
-    materialDataBuffer.readFrom(materialData);
+    materialDefinitionsBuffer.readFrom(materialData);
 }
 
 std::shared_ptr<Material>& MaterialManager::createMaterial(const std::string& key, const std::string& name)
 {
-    Assert::isTrue(createdMaterialCount < materials.size(), "Failed to add material: Too many materials defined");
+    Assert::isTrue(materials.size() < Constants::VoxelWorld::maxMaterialCount, "Failed to add material: Too many materials defined");
 
-    auto index = createdMaterialCount;
-    createdMaterialCount++;
-
-    auto material = std::make_shared<Material>(index, key);
+    auto& material = materials.emplace_back(std::make_shared<Material>(materials.size(), key));
     material->name = name;
 
-    materials[index] = material;
     materialsByKey.emplace(key, material);
 
-    return materials[index];
+    return material;
 }

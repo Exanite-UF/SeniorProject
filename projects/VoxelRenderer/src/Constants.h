@@ -22,6 +22,6 @@ public:
         static constexpr uint8_t maxOccupancyMapLayerCount = 10; // 1 base layer + 9 mipmap layers
 
         // The max number of material definitions
-        static constexpr uint32_t materialCount = 65536;
+        static constexpr uint32_t maxMaterialCount = 65536;
     };
 };

@@ -16,8 +16,6 @@ class MaterialManager : public Singleton<MaterialManager>
 
 private:
     // ----- CPU data -----
-    // This tracks the number of created material definitions stored in the materials0 array
-    uint16_t createdMaterialCount = 0;
     // This stores all material definitions
     std::vector<std::shared_ptr<Material>> materials {};
 
@@ -27,10 +25,10 @@ private:
 
     // This is the materials array converted from the CPU Material class to the GPU MaterialData struct
     // This corresponds to the data stored by materialDataBuffer
-    std::vector<MaterialData> materialData {};
+    std::vector<MaterialDefinition> materialData {};
 
     // ----- GPU data -----
-    GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
+    GraphicsBuffer<MaterialDefinition> materialDefinitionsBuffer = GraphicsBuffer<MaterialDefinition>(Constants::VoxelWorld::maxMaterialCount);
 
     MaterialManager();
 
@@ -39,7 +37,7 @@ public:
     const std::shared_ptr<Material>& getMaterialByKey(const std::string& key);
     bool tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material);
 
-    GraphicsBuffer<MaterialData>& getMaterialDataBuffer();
+    GraphicsBuffer<MaterialDefinition>& getMaterialDefinitionsBuffer();
 
     void updateGpuMaterialData();
 

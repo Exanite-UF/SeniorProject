@@ -2,8 +2,8 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-// Padded to 32 bytes long
-struct MaterialProperties
+// Padded to 32 bytes long (alignment of 16)
+struct MaterialDefinition
 {
     vec3 emission;
     float padding0;
@@ -159,14 +159,10 @@ void setHitDist(ivec3 coord, float value)
     hitMisc[index + 1] = value;
 }
 
-layout(std430, binding = 7) restrict buffer MaterialIndexer
-{
-    uint materialIndexer[]; // This maps from the material index from the ray cast to the index of an actual material
-};
 // Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 8) restrict buffer MaterialBases
+layout(std430, binding = 8) restrict buffer MaterialDefinitions
 {
-    MaterialProperties materialBases[]; // This is the base colors of the materials
+    MaterialDefinition materialDefinitions[];
 };
 
 layout(std430, binding = 9) restrict buffer AttenuationIn
@@ -635,7 +631,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
-    MaterialProperties voxelMaterial = materialBases[materialID]; // This is the base value of the material
+    MaterialProperties voxelMaterial = materialDefinitions[materialID]; // This is the base value of the material
 
     // Multiply in the texture values
     /*

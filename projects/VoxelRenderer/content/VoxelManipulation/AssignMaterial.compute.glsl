@@ -1,23 +1,21 @@
 #version 460 core
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+layout(local_size_x = 4, local_size_y = 8, local_size_z = 8) in;
 
 layout(std430, binding = 0) buffer MaterialMap
 {
     uint materialMap[];
 };
 
-uniform ivec3 cellCount; //(xSize, ySize, zSize) size of the texture being set (Not the number of voxels, it is the number of cells)
-uniform uint materialStartIndex;
+uniform ivec3 voxelCount;
 
 void main()
 {
-    ivec3 cellPosition = ivec3(gl_GlobalInvocationID.xyz);
-    int index = (cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z)) + int(materialStartIndex / 4);
+    ivec3 voxelPosition = ivec3(gl_GlobalInvocationID.xyz);
+    voxelPosition.x *= 2; // We set 2 voxels along the x-axis each time due to material IDs being 16-bits and GLSL only being able to address 32-bits
 
-    // The original AssignMaterial shader had the effect of setting all indices to 0x00f0ccaa
-    // materialMap[index] = index;
-    materialMap[index] = 0x00f0ccaa;
-    // materialMap[index] = 0x76543210;
-    // materialMap[index] = 0x01234567;
+    int i16Index = (cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z));
+    int i32Index = i16Index / 2;
+
+    materialMap[i32Index] = (1 << 16) || (2 << 0); // TODO: Set more materials than just 2
 }
