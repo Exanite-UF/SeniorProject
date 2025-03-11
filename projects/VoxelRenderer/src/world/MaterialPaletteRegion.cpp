@@ -1,1 +1,0 @@
-#include "MaterialPaletteRegion.h"

@@ -1,8 +1,8 @@
 #include "ExaniteWorldGenerator.h"
 
 #include <imgui/imgui.h>
-#include <imgui/imgui_stdlib.h>
-#include <src/utilities/Log.h>
+#include <src/utilities/Assert.h>
+#include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
 
 ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
@@ -12,30 +12,54 @@ ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
 
 void ExaniteWorldGenerator::generateData()
 {
-    auto& materialManager = MaterialManager::getInstance();
-    std::shared_ptr<Material> material;
-    if (!materialManager.tryGetMaterialByKey(materialKey, material))
-    {
-        material = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find material with id '" + materialKey + "'. Using default material '" + material->getKey() + "' instead.");
-    }
+    MeasureElapsedTimeScope scope("ExaniteWorldGenerator::generateData");
 
-    for (int x = 0; x < data.getSize().x; ++x)
+    // Iterate through each 16x16x16 region
+    auto chunkCount = data.getSize() >> 4;
+    for (int chunkZI = 0; chunkZI < chunkCount.z; ++chunkZI)
     {
-        for (int y = 0; y < data.getSize().y; ++y)
+        for (int chunkYI = 0; chunkYI < chunkCount.y; ++chunkYI)
         {
-            for (int z = 0; z < data.getSize().y; ++z)
+            for (int chunkXI = 0; chunkXI < chunkCount.x; ++chunkXI)
             {
-                data.setVoxelMaterial(glm::ivec3(x, y, z), material);
+                // The code inside this block represents a 16x16x16 region
+                for (int zI = 0; zI < 16; ++zI)
+                {
+                    for (int yI = 0; yI < 16; ++yI)
+                    {
+                        for (int xI = 0; xI < 16; ++xI)
+                        {
+                            // The code inside this block represents a single voxel
+                            glm::ivec3 size2 = data.getSize() >> 4;
+
+                            glm::ivec3 position0 = glm::ivec3(chunkXI * 16 + xI, chunkYI * 16 + yI, chunkZI * 16 + zI);
+                            glm::ivec3 position1 = position0 >> 2;
+                            glm::ivec3 position2 = position0 >> 4;
+
+                            int materialBits0 = ((position0.z & 1) << 2) | ((position0.y & 1) << 1) | ((position0.x & 1) << 0);
+                            int materialBits1 = ((position1.z & 1) << 2) | ((position1.y & 1) << 1) | ((position1.x & 1) << 0);
+                            int materialBits2 = ((position2.z & 1) << 2) | ((position2.y & 1) << 1) | ((position2.x & 1) << 0);
+
+                            int materialOffset = position2.x + size2.x * (position2.y + size2.y * position2.z);
+
+                            int materialIndex = ((materialBits2 << 6) | (materialBits1 << 3) | (materialBits0 << 0)) + materialOffset;
+
+                            data.setVoxelMaterialIndex(position0, materialIndex % Constants::VoxelWorld::maxMaterialCount);
+                        }
+                    }
+                }
             }
         }
     }
 
-    for (int x = 0; x < data.getSize().x; ++x)
+    for (int z = 0; z < data.getSize().z; ++z)
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {
-            data.setVoxelOccupancy(glm::ivec3(x, y, 0), true);
+            for (int x = 0; x < data.getSize().x; ++x)
+            {
+                data.setVoxelOccupancy(glm::ivec3(x, y, z), true);
+            }
         }
     }
 }
@@ -46,7 +70,7 @@ void ExaniteWorldGenerator::showDebugMenu()
     {
         if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
         {
-            ImGui::InputText("Material", &materialKey);
+            ImGui::Text("This generator is used to test material palette solving");
         }
     }
     ImGui::PopID();

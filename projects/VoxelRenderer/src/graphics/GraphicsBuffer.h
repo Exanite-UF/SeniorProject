@@ -17,13 +17,12 @@ template <typename T>
 class GraphicsBuffer : public NonCopyable
 {
 private:
-    // TODO: Consider removing this and the associated bind/unbind methods
-    int bindLocation;
+    int bindLocation = 0;
 
     uint64_t elementCount = 0;
 
 public:
-    GLuint bufferId;
+    GLuint bufferId = 0;
 
     GraphicsBuffer();
     explicit GraphicsBuffer(uint64_t elementCount);

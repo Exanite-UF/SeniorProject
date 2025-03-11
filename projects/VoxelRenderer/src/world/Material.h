@@ -40,7 +40,7 @@
 // However, this increases complexity, and direct storage of mipmapped material IDs to disk should be implemented first.
 
 // TODO: Probably move this to the rendering folder
-struct MaterialData
+struct MaterialDefinition
 {
     glm::vec3 emission;
     float padding0;
