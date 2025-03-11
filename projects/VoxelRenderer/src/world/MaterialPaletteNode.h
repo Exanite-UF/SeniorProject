@@ -19,7 +19,7 @@ public:
     // Child index is at most 16 = 2^4
     MaterialPaletteNode(int level, uint8_t childIndex, uint16_t parentId);
 
-    bool isFull();
+    bool isFull() const;
 
     void clear();
 };

@@ -21,7 +21,7 @@ MaterialPaletteNode::MaterialPaletteNode(int level, uint8_t childIndex, uint16_t
     maxMaterialIndices = std::pow(Constants::VoxelWorld::palettesPerRegion, level);
 }
 
-bool MaterialPaletteNode::isFull()
+bool MaterialPaletteNode::isFull() const
 {
     return materialIndices.size() >= maxMaterialIndices;
 }
