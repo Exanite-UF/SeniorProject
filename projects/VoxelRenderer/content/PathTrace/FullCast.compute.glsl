@@ -18,9 +18,9 @@ struct MaterialDefinition
     float padding4;
 };
 
-uniform ivec3 voxelResolution; //(xSize, ySize, zSize) size of the texture (not the size of the voxel world)
-uniform uint mipMapTextureCount;
-uniform uint mipMapStartIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
+uniform ivec3 cellCount;
+uniform uint occupancyMapLayerCount;
+uniform uint occupancyMapIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
 uniform uint materialStartIndices[3];
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
@@ -29,7 +29,6 @@ uniform vec4 voxelWorldRotation; // This is a quaternion
 uniform vec3 voxelWorldScale; // Size of a voxel
 
 uniform uint materialMapSize;
-uniform uint materialCount;
 uniform float random; // This is used to make non-deterministic randomness
 
 uniform bool isFirstRay;
@@ -91,8 +90,8 @@ layout(std430, binding = 4) buffer OccupancyMap
 // coord is a cell coord
 uint getOccupancyByte(ivec3 coord, int mipMapTexture)
 {
-    ivec3 tempRes = voxelResolution / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
-    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(mipMapStartIndices[mipMapTexture]);
+    ivec3 tempRes = cellCount / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
+    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(occupancyMapIndices[mipMapTexture]);
     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
 
@@ -104,30 +103,14 @@ layout(std430, binding = 5) buffer MaterialMap
     uint materialMap[];
 };
 
-// Coord is a voxel coord
-uint getMaterial(ivec3 coord)
+uint getMaterialIndex(ivec3 voxelPosition)
 {
-    uint result = 0;
-    for (int level = 0; level < 3; level++)
-    {
-        ivec3 tempCoord = coord / (1 << (2 * level));
-        ivec3 cellCoord = tempCoord / 2;
+    ivec3 voxelCount = cellCount * 2;
+    int i16Index = voxelPosition.x + voxelCount.x * (voxelPosition.y + voxelCount.y * voxelPosition.z);
+    int i32Index = i16Index / 2;
+    int bitsShifted = (i16Index & 1) * 16;
 
-        ivec3 p2 = tempCoord & 1; // Modulus 2 the voxel coordinate using a bitmask
-
-        ivec3 tempRes = voxelResolution / (1 << (2 * level)); // get the resolution of the requested level
-        int index = cellCoord.x + tempRes.x * (cellCoord.y + tempRes.y * cellCoord.z) + int(materialStartIndices[level] / 4);
-
-        // 4 bits are used for a single material and these bits are stored within an uint, so the index of the cell is the index of the uint
-
-        // These grab the 4 bits we want from the uint
-        uint cellValue = materialMap[index];
-        uint bitsShifted = ((p2.x << 0) | (p2.y << 1) | (p2.z << 2)) << 2;
-        uint voxelValue = cellValue & (0xf << bitsShifted);
-        result |= (voxelValue >> bitsShifted) << (level * 4);
-    }
-
-    return result;
+    return (materialMap[i32Index] & (0xffff << bitsShifted)) >> bitsShifted;
 }
 
 layout(std430, binding = 6) buffer HitMisc
@@ -160,12 +143,12 @@ void setHitDist(ivec3 coord, float value)
 }
 
 // Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 8) restrict buffer MaterialDefinitions
+layout(std430, binding = 7) restrict buffer MaterialDefinitions
 {
     MaterialDefinition materialDefinitions[];
 };
 
-layout(std430, binding = 9) restrict buffer AttenuationIn
+layout(std430, binding = 8) restrict buffer AttenuationIn
 {
     float attenuationIn[];
 };
@@ -177,12 +160,12 @@ vec3 getPriorAttenuation(ivec3 coord)
     return vec3(attenuationIn[index + 0], attenuationIn[index + 1], attenuationIn[index + 2]);
 }
 
-layout(std430, binding = 10) restrict buffer AccumulatedLightIn
+layout(std430, binding = 9) restrict buffer AccumulatedLightIn
 {
     float accumulatedLightIn[];
 };
 
-layout(std430, binding = 11) restrict buffer AttenuationOut
+layout(std430, binding = 10) restrict buffer AttenuationOut
 {
     float attenuationOut[];
 };
@@ -196,7 +179,7 @@ void setAttenuation(ivec3 coord, vec3 value)
     attenuationOut[2 + index] = value.z;
 }
 
-layout(std430, binding = 12) restrict buffer AccumulatedLightOut
+layout(std430, binding = 11) restrict buffer AccumulatedLightOut
 {
     float accumulatedLightOut[];
 };
@@ -209,7 +192,7 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
-layout(std430, binding = 13) buffer FirstHitNormal
+layout(std430, binding = 12) buffer FirstHitNormal
 {
     float firstHitNormal[];
 };
@@ -222,7 +205,7 @@ void setFirstHitNormal(ivec3 coord, vec3 value)
     firstHitNormal[2 + index] = value.z;
 }
 
-layout(std430, binding = 14) buffer FirstHitPosition
+layout(std430, binding = 13) buffer FirstHitPosition
 {
     float firstHitPosition[];
 };
@@ -235,7 +218,7 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[2 + index] = value.z;
 }
 
-layout(std430, binding = 15) buffer FirstHitMaterial
+layout(std430, binding = 14) buffer FirstHitMaterial
 {
     float firstHitMaterial[];
 };
@@ -311,7 +294,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     ivec3 sRayDir = ivec3(1.5 * rayDir / abs(rayDir)); // This is the sign of the ray direction (1.5 is for numerical stability)
     vec3 iRayDir = 1 / rayDir;
 
-    ivec3 size = 2 * voxelResolution; // This is the size of the voxel volume
+    ivec3 size = 2 * cellCount; // This is the size of the voxel volume
 
     vec3 rayStart = rayPos;
 
@@ -355,7 +338,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         int count = 0;
         // The <= is correct
-        for (int i = 0; i <= mipMapTextureCount; i++)
+        for (int i = 0; i <= occupancyMapLayerCount; i++)
         {
             ivec3 p2 = (p >> (2 * i)) & 1;
             uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
@@ -377,7 +360,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
                 // uvec3 c2 = uvec3(greaterThan(l2.rgb & k2, uvec3(0))); // uvec3(l2.r & k2 > 0, l2.g & k2 > 0, l2.b & k2 > 0);
                 // uvec3 c3 = uvec3(greaterThan(l3.rgb & k3, uvec3(0))); // uvec3(l3.r & k3 > 0, l3.g & k3 > 0, l3.b & k3 > 0);
                 // hit.material = c1.r + (1 << 1) * c1.g + (1 << 2) * c1.b + (1 << 3) * c2.r + (1 << 4) * c2.g + (1 << 5) * c2.b + (1 << 6) * c3.r + (1 << 7) * c3.g + (1 << 8) * c3.b;
-                hit.material = getMaterial(p); // TODO: Set the material correctly
+                hit.material = getMaterialIndex(p); // TODO: Set the material correctly
                 break;
             }
         }
@@ -410,7 +393,7 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
 {
     vec3 rayPos = startPos;
 
-    vec3 voxelWorldSize = 2. * voxelResolution;
+    vec3 voxelWorldSize = 2. * cellCount;
 
     // Transform the ray position to voxel space
     rayPos -= voxelWorldPosition; // Find position relative to the voxel world
@@ -538,7 +521,7 @@ vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal)
     }
 }
 
-vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
+vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
 {
     vec3 halfway = normalize(-view + light); // This is used by several things
 
@@ -565,7 +548,7 @@ vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
     return microfacetComponent * fresnelComponent * geometricComponent * albedo / abs(4 * dotOfViewAndNormal * dotOfLightAndNormal);
 }
 
-vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialProperties voxelMaterial)
+vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
 {
 
     vec3 halfway = normalize(-view + light); // This is used by several things
@@ -607,7 +590,6 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     // float dist = getHitDist(texelCoord); // Distance that the ray cast covered
     vec3 normal = hit.normal; // The normal direction of the hit
 
-    uint materialID = materialIndexer[hit.material]; // Get the material index of the hit, and map it to an actual material
     // Find the uv coordinate for the texture
     // It is based on the hit location in voxel space
     // vec3 voxelPosition = hit.voxelHitLocation;
@@ -631,7 +613,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
-    MaterialProperties voxelMaterial = materialDefinitions[materialID]; // This is the base value of the material
+    MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
 
     // Multiply in the texture values
     /*
