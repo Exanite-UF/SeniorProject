@@ -748,6 +748,11 @@ void Program::runLateStartupTests()
 
         Assert::isTrue(maxShaderBlockSize >= Constants::VoxelWorld::maxMaterialCount * sizeof(MaterialDefinition), "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store all material definitions");
         Assert::isTrue(maxShaderBlockSize >= 2 * 256 * 256 * 512, "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store material map for a voxel world (chunk) of size 256x256x512, where each voxel takes 2 bytes");
+
+        if (maxShaderBlockSize >= 2 * 512 * 512 * 512)
+        {
+            Log::log("512x512x512 sized voxel worlds (chunks) are supported on this device!");
+        }
     }
 
     {
