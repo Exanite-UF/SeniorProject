@@ -177,27 +177,26 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
     rayHitMiscBuffer.bind(6);
 
     MaterialManager& materialManager = MaterialManager::getInstance();
-    materialManager.getMaterialIndicesByPaletteIdBuffer().bind(7); // This is a mapping from the material index to the material id
-    materialManager.getMaterialDataBuffer().bind(8); // This binds the base data for each material
+    materialManager.getMaterialDefinitionsBuffer().bind(7); // This binds the material definitions for each material
 
     if (currentBuffer % 2 == 0)
     {
-        attentuationBuffer1.bind(9); // Input
-        accumulatedLightBuffer1.bind(10); // Input
-        attentuationBuffer2.bind(11); // Output
-        accumulatedLightBuffer2.bind(12); // Output
+        attentuationBuffer1.bind(8); // Input
+        accumulatedLightBuffer1.bind(9); // Input
+        attentuationBuffer2.bind(10); // Output
+        accumulatedLightBuffer2.bind(11); // Output
     }
     else
     {
-        attentuationBuffer1.bind(11); // Output
-        accumulatedLightBuffer1.bind(12); // Output
-        attentuationBuffer2.bind(9); // Input
-        accumulatedLightBuffer2.bind(10); // Input
+        attentuationBuffer1.bind(10); // Output
+        accumulatedLightBuffer1.bind(11); // Output
+        attentuationBuffer2.bind(8); // Input
+        accumulatedLightBuffer2.bind(9); // Input
     }
 
-    normalBuffer.bind(13);
-    positionBuffer.bind(14);
-    materialBuffer.bind(15);
+    normalBuffer.bind(12);
+    positionBuffer.bind(13);
+    materialBuffer.bind(14);
 
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -205,11 +204,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
         GLuint workGroupsZ = raysPerPixel;
 
         glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), size.x, size.y, raysPerPixel);
-
         glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
-
-        glUniform1ui(glGetUniformLocation(fullCastProgram, "materialMapSize"), Constants::VoxelWorld::palette0Count);
-        glUniform1ui(glGetUniformLocation(fullCastProgram, "materialCount"), Constants::VoxelWorld::materialCount);
         glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
         for (auto& voxelWorld : worlds)
@@ -218,10 +213,9 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
             {
                 glm::ivec3 voxelSize = voxelWorld->getSize();
 
-                glUniform3i(glGetUniformLocation(fullCastProgram, "voxelResolution"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(fullCastProgram, "mipMapTextureCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "mipMapStartIndices"), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "materialStartIndices"), voxelWorld->getMaterialMapIndices().size() - 1, voxelWorld->getMaterialMapIndices().data());
+                glUniform3i(glGetUniformLocation(fullCastProgram, "cellCount"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
+                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
 
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
                 glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
@@ -243,8 +237,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
     rayHitMiscBuffer.unbind();
 
-    materialManager.getMaterialIndicesByPaletteIdBuffer().unbind();
-    materialManager.getMaterialDataBuffer().unbind();
+    materialManager.getMaterialDefinitionsBuffer().unbind();
 
     attentuationBuffer1.unbind();
     accumulatedLightBuffer1.unbind();

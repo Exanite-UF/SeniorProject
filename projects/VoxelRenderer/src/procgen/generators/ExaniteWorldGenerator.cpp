@@ -14,61 +14,37 @@ void ExaniteWorldGenerator::generateData()
 {
     MeasureElapsedTimeScope scope("ExaniteWorldGenerator::generateData");
 
-    // This needs at minimum a 32x32x64 world to represent all possible palettes
-    // This is because we have 16 unique palette2s and each palette2 is 16x16x16
-
     // Iterate through each 16x16x16 region
-    auto chunkSize = data.getSize();
-    auto palette2RegionCount = chunkSize >> 4;
-    for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
+    auto chunkCount = data.getSize() >> 4;
+    for (int chunkZI = 0; chunkZI < chunkCount.z; ++chunkZI)
     {
-        for (int palette2YI = 0; palette2YI < palette2RegionCount.y; ++palette2YI)
+        for (int chunkYI = 0; chunkYI < chunkCount.y; ++chunkYI)
         {
-            for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
+            for (int chunkXI = 0; chunkXI < chunkCount.x; ++chunkXI)
             {
-                auto materialOffset2 = (((palette2ZI >> 1) & 1) * 256) + (((palette2ZI & 1) << 2) | ((palette2YI & 1) << 1) | ((palette2XI & 1) << 0));
-
-                // The code inside this block represents a 16x16x16 region (256 materials will be used per region)
-                // Set the materials in each 16x16x4 layer in the following pattern (64 materials will be used per layer):
-                // 00114455
-                // 00114455
-                // 22336677
-                // 22336677
-                // ...4 more rows
-                for (int palette1ZI = 0; palette1ZI < 4; ++palette1ZI)
+                // The code inside this block represents a 16x16x16 region
+                for (int zI = 0; zI < 16; ++zI)
                 {
-                    for (int palette1YI = 0; palette1YI < 4; ++palette1YI)
+                    for (int yI = 0; yI < 16; ++yI)
                     {
-                        for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
+                        for (int xI = 0; xI < 16; ++xI)
                         {
-                            int xyRegion1 = (((palette1YI >> 1) & 1) << 1) | (((palette1XI >> 1) & 1) << 0);
-                            int materialOffset1 = 64 * palette1ZI + 16 * xyRegion1;
+                            // The code inside this block represents a single voxel
+                            glm::ivec3 size2 = data.getSize() >> 4;
 
-                            // The code inside this block represents a 4x4x4 region (16 materials will be used per region)
-                            // Set the materials in each 4x4x1 layer in the following pattern (4 materials will be used per layer):
-                            // 0011
-                            // 0011
-                            // 2233
-                            // 2233
-                            for (int palette0ZI = 0; palette0ZI < 4; ++palette0ZI)
-                            {
-                                for (int palette0YI = 0; palette0YI < 4; ++palette0YI)
-                                {
-                                    for (int palette0XI = 0; palette0XI < 4; ++palette0XI)
-                                    {
-                                        int xyRegion0 = (((palette0YI >> 1) & 1) << 1) | (((palette0XI >> 1) & 1) << 0);
-                                        int materialOffset0 = 4 * palette0ZI + 1 * xyRegion0;
+                            glm::ivec3 position0 = glm::ivec3(chunkXI * 16 + xI, chunkYI * 16 + yI, chunkZI * 16 + zI);
+                            glm::ivec3 position1 = position0 >> 2;
+                            glm::ivec3 position2 = position0 >> 4;
 
-                                        // The code inside this block represents a single voxel
-                                        int x = palette2XI * 16 + palette1XI * 4 + palette0XI;
-                                        int y = palette2YI * 16 + palette1YI * 4 + palette0YI;
-                                        int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
+                            int materialBits0 = ((position0.z & 1) << 2) | ((position0.y & 1) << 1) | ((position0.x & 1) << 0);
+                            int materialBits1 = ((position1.z & 1) << 2) | ((position1.y & 1) << 1) | ((position1.x & 1) << 0);
+                            int materialBits2 = ((position2.z & 1) << 2) | ((position2.y & 1) << 1) | ((position2.x & 1) << 0);
 
-                                        int materialIndex = materialOffset2 + materialOffset1 + materialOffset0;
-                                        data.setVoxelMaterialIndex(glm::ivec3(x, y, z), materialIndex % 512);
-                                    }
-                                }
-                            }
+                            int materialOffset = position2.x + size2.x * (position2.y + size2.y * position2.z);
+
+                            int materialIndex = ((materialBits2 << 6) | (materialBits1 << 3) | (materialBits0 << 0)) + materialOffset;
+
+                            data.setVoxelMaterialIndex(position0, materialIndex % Constants::VoxelWorld::maxMaterialCount);
                         }
                     }
                 }
