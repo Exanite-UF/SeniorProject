@@ -8,6 +8,7 @@
 MaterialPaletteNode::MaterialPaletteNode(int level, uint8_t childIndex, uint16_t parentId)
 {
     this->level = level;
+    this->childIndex = childIndex;
     id = (parentId << 4) | childIndex;
 
     if (level > 0)

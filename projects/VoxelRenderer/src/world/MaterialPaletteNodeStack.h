@@ -20,6 +20,7 @@ public:
     void push(const std::shared_ptr<MaterialPaletteNode>& node);
     void pop();
 
+    int getCount() const;
     int getCurrentIndex();
     std::shared_ptr<MaterialPaletteNode>& getCurrent();
 

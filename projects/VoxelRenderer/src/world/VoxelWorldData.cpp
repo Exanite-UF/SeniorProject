@@ -242,7 +242,8 @@ void VoxelWorldData::encodePaletteMap()
     }
 
     // Region-based solver
-    std::set<uint16_t> usedMaterials3 {};
+    MaterialPaletteNodeStack stack(palettes);
+    std::set<uint16_t> usedMaterialsSet3 {};
     auto palette2RegionCount = size >> 4;
     for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
     {
@@ -251,7 +252,9 @@ void VoxelWorldData::encodePaletteMap()
             for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
             {
                 // The code inside this block represents a 16x16x16 region
-                std::set<uint16_t> usedMaterials2 {};
+                std::set<uint16_t> usedMaterialsSet2 {};
+                glm::ivec3 voxelPosition2 = glm::ivec3(palette2XI * 16, palette2YI * 16, palette2ZI * 16);
+                stack.push(stack.getCurrent()->children[getVoxelPartialPaletteId(voxelPosition2, 2)]);
 
                 for (int palette1ZI = 0; palette1ZI < 4; ++palette1ZI)
                 {
@@ -260,46 +263,165 @@ void VoxelWorldData::encodePaletteMap()
                         for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
                         {
                             // The code inside this block represents a 4x4x4 region
-                            std::set<uint16_t> usedMaterials1 {};
+                            std::set<uint16_t> usedMaterialsSet1 {};
+                            glm::ivec3 voxelPosition1 = voxelPosition2 + glm::ivec3(palette1XI * 4, palette1YI * 4, palette1ZI * 4);
+                            stack.push(stack.getCurrent()->children[getVoxelPartialPaletteId(voxelPosition1, 1)]);
 
+                            // Get materials used
                             for (int palette0ZI = 0; palette0ZI < 4; ++palette0ZI)
                             {
                                 for (int palette0YI = 0; palette0YI < 4; ++palette0YI)
                                 {
                                     for (int palette0XI = 0; palette0XI < 4; ++palette0XI)
                                     {
-                                        int x = palette2XI * 16 + palette1XI * 4 + palette0XI;
-                                        int y = palette2YI * 16 + palette1YI * 4 + palette0YI;
-                                        int z = palette2ZI * 16 + palette1ZI * 4 + palette0ZI;
-
-                                        auto isOccupied = getVoxelOccupancy(glm::ivec3(x, y, z));
+                                        glm::ivec3 voxelPosition0 = voxelPosition1 + glm::ivec3(palette0XI, palette0YI, palette0ZI);
+                                        auto isOccupied = getVoxelOccupancy(voxelPosition0);
                                         if (!isOccupied)
                                         {
                                             // Ignore unoccupied voxels
                                             continue;
                                         }
 
-                                        // TODO: For debugging
                                         // Count materials used
-                                        auto& material = getVoxelMaterial(glm::ivec3(x, y, z));
-                                        usedMaterials3.emplace(material->getIndex());
-                                        usedMaterials2.emplace(material->getIndex());
-                                        usedMaterials1.emplace(material->getIndex());
+                                        auto& material = getVoxelMaterial(voxelPosition0);
+                                        usedMaterialsSet3.emplace(material->getIndex());
+                                        usedMaterialsSet2.emplace(material->getIndex());
+                                        usedMaterialsSet1.emplace(material->getIndex());
                                     }
                                 }
                             }
 
+                            Assert::isTrue(usedMaterialsSet1.size() <= 16, "Too many materials in a single palette1");
+
                             // We now have a list of materials used in a 4x4x4 region
                             // We will need to figure out if the palette has enough space
                             // This is done by seeing how many of these materials are in the currently used palette
-                            std::vector usedMaterials1Vec(usedMaterials1.begin(), usedMaterials1.end());
+                            std::vector usedMaterialsList1(usedMaterialsSet1.begin(), usedMaterialsSet1.end());
 
-                            Assert::isTrue(usedMaterials1.size() <= 16, "Too many materials in a single palette1");
+                            // Count number of materials that need to be added to the current palette
+                            int materialsToAddCount = 0;
+                            for (int i = 0; i < usedMaterialsList1.size(); ++i)
+                            {
+                                auto materialIndex = usedMaterialsList1[i];
+                                if (!stack.getCurrent()->materialIndices.contains(materialIndex))
+                                {
+                                    materialsToAddCount++;
+                                }
+                            }
+
+                            // Check if the current palette can fit that many materials
+                            if (stack.getCurrent()->materialIndices.size() + materialsToAddCount > stack.getCurrent()->maxMaterialIndices)
+                            {
+                                // This means the current palette does not have enough space
+                                // TODO
+                                Assert::isTrue(false, "Not supported yet");
+                            }
+
+                            // Begin setting material palettes
+                            // We can do this naively because we are guaranteed to have enough space due to the previous code
+                            for (int palette0ZI = 0; palette0ZI < 4; ++palette0ZI)
+                            {
+                                for (int palette0YI = 0; palette0YI < 4; ++palette0YI)
+                                {
+                                    for (int palette0XI = 0; palette0XI < 4; ++palette0XI)
+                                    {
+                                        glm::ivec3 voxelPosition0 = voxelPosition1 + glm::ivec3(palette0XI, palette0YI, palette0ZI);
+                                        auto isOccupied = getVoxelOccupancy(voxelPosition0);
+                                        if (!isOccupied)
+                                        {
+                                            // Ignore unoccupied voxels
+                                            continue;
+                                        }
+
+                                        Assert::isTrue(stack.getCount() == 3, "Expected 3 nodes on stack");
+                                        stack.push(stack.getCurrent()->children[getVoxelPartialPaletteId(voxelPosition1, 0)]);
+                                        {
+                                            // Get desired material
+                                            auto materialIndex = getVoxelMaterialIndex(voxelPosition0);
+
+                                            // Check if the currently used palette contains desired material
+                                            if (stack.getCurrent()->materialIndices.contains(materialIndex))
+                                            {
+                                                // If current palette contains the desired material, then we can move on
+                                                Assert::isTrue(stack.getCount() == 4, "Expected 4 nodes on stack");
+                                                stack.pop();
+                                                continue;
+                                            }
+
+                                            // Check if the palette has remaining space
+                                            if (stack.getCurrent()->isFull())
+                                            {
+                                                // The current palette won't work since it is both full and does not contain the desired material
+                                                // Therefore, we need to look for another palette0 in the parent palette1
+                                                // Note: This is guaranteed to succeed
+
+                                                stack.pop();
+
+                                                // We first check if the material is already in the palette1
+                                                auto& currentPalette1 = stack.getCurrent();
+                                                if (currentPalette1->materialIndices.contains(materialIndex))
+                                                {
+                                                    // We search for the palette0 that already has the material
+                                                    for (auto child : currentPalette1->children)
+                                                    {
+                                                        if (child->materialIndices.contains(materialIndex))
+                                                        {
+                                                            stack.push(child);
+
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    Assert::isTrue(stack.getCount() == 4, "Expected 4 nodes on stack");
+
+                                                    // Update palette map to use this palette
+                                                    setVoxelPaletteId(voxelPosition0, stack.getCurrent()->id);
+                                                }
+                                                else
+                                                {
+                                                    // We find an empty palette0 to use and add the desired material to it
+                                                    for (auto child : currentPalette1->children)
+                                                    {
+                                                        if (!child->isFull())
+                                                        {
+                                                            stack.push(child);
+
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    Assert::isTrue(stack.getCount() == 4, "Expected 4 nodes on stack");
+
+                                                    for (const auto& node : stack.getNodes())
+                                                    {
+                                                        node->materialIndices.emplace(materialIndex);
+                                                    }
+
+                                                    // Register new palette-material mapping
+                                                    materialManager.materialIndexByPaletteId[stack.getCurrent()->id] = materialIndex;
+
+                                                    // Update palette map to use this palette
+                                                    setVoxelPaletteId(voxelPosition0, stack.getCurrent()->id);
+                                                }
+                                            }
+                                        }
+
+                                        Assert::isTrue(stack.getCount() == 4, "Expected 4 nodes on stack");
+                                        stack.pop();
+                                    }
+                                }
+                            }
+
+                            Assert::isTrue(stack.getCount() == 3, "Expected 3 nodes on stack");
+                            stack.pop();
                         }
                     }
                 }
 
-                Assert::isTrue(usedMaterials2.size() <= 256, "Too many materials in a single palette2");
+                Assert::isTrue(usedMaterialsSet2.size() <= 256, "Too many materials in a single palette2");
+
+                Assert::isTrue(stack.getCount() == 2, "Expected 2 nodes on stack");
+                stack.pop();
             }
         }
     }

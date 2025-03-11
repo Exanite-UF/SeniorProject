@@ -11,6 +11,7 @@ class MaterialPaletteNode : public NonCopyable
 public:
     int level;
     uint16_t id;
+    uint8_t childIndex;
     int maxMaterialIndices;
 
     std::vector<std::shared_ptr<MaterialPaletteNode>> children {};

@@ -14,7 +14,7 @@ bool MaterialPaletteNodeStack::canPush() const
 
 bool MaterialPaletteNodeStack::canPop() const
 {
-    return currentIndex > 1;
+    return currentIndex > 0;
 }
 
 void MaterialPaletteNodeStack::push(const std::shared_ptr<MaterialPaletteNode>& node)
@@ -33,6 +33,11 @@ void MaterialPaletteNodeStack::pop()
     currentIndex--;
 }
 
+int MaterialPaletteNodeStack::getCount() const
+{
+    return currentIndex + 1;
+}
+
 std::shared_ptr<MaterialPaletteNode>& MaterialPaletteNodeStack::getCurrent()
 {
     return stack[currentIndex];
@@ -40,5 +45,5 @@ std::shared_ptr<MaterialPaletteNode>& MaterialPaletteNodeStack::getCurrent()
 
 std::span<std::shared_ptr<MaterialPaletteNode>> MaterialPaletteNodeStack::getNodes()
 {
-    return std::span(stack).subspan(0, currentIndex);
+    return std::span(stack).subspan(0, getCount());
 }
