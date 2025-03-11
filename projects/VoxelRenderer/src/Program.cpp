@@ -753,6 +753,10 @@ void Program::runLateStartupTests()
         {
             Log::log("512x512x512 sized voxel worlds (chunks) are supported on this device!");
         }
+        else
+        {
+            Log::log("512x512x512 sized voxel worlds (chunks) are NOT supported on this device!");
+        }
     }
 
     {
