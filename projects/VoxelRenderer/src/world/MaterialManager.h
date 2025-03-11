@@ -19,22 +19,17 @@ private:
     // This tracks the number of created material definitions stored in the materials0 array
     uint16_t createdMaterialCount = 0;
     // This stores all material definitions
-    std::array<std::shared_ptr<Material>, Constants::VoxelWorld::materialCount> materials {};
+    std::vector<std::shared_ptr<Material>> materials {};
 
     // This maps material string key to the actual material
     // Speeds up getting materials by string key
     std::unordered_map<std::string, std::shared_ptr<Material>> materialsByKey {};
 
-    // ----- GPU data -----
-    // This maps the palette ID to the index of the actual material
-    // This uses uint32_t instead of uint16_t since the GPU can only address individual uint32s
-    // This corresponds to the data stored by materialMapBuffer
-    std::array<uint32_t, Constants::VoxelWorld::palette0Count> materialIndexByPaletteId {};
-
     // This is the materials array converted from the CPU Material class to the GPU MaterialData struct
     // This corresponds to the data stored by materialDataBuffer
-    std::array<MaterialData, Constants::VoxelWorld::materialCount> materialData {};
+    std::vector<MaterialData> materialData {};
 
+    // ----- GPU data -----
     GraphicsBuffer<MaterialData> materialDataBuffer = GraphicsBuffer<MaterialData>(Constants::VoxelWorld::materialCount);
 
     MaterialManager();

@@ -11,31 +11,11 @@ void WorldGenerator::generate(VoxelWorld& voxelWorld)
 {
     MeasureElapsedTimeScope scope("WorldGenerator::generate");
 
-    // For usual usage:
+    // data.copyFrom(voxelWorld);
+    data.clearOccupancyMap();
+    data.clearMaterialMap();
     {
-        // TODO: Remove automatic copy, decode, encode when API has stabilized
-        // data.copyFrom(voxelWorld);
-        // data.decodePaletteMap();
-        data.clearOccupancyMap();
-        data.clearMaterialMap();
-        {
-            generateData();
-        }
-        data.encodePaletteMap();
-        data.writeTo(voxelWorld);
+        generateData();
     }
-
-    // // TODO: For debugging
-    // // To passthrough GPU data
-    // {
-    //     data.copyFrom(voxelWorld);
-    //     data.decodePaletteMap();
-    //     // data.clearOccupancyMap();
-    //     // data.clearMaterialMap();
-    //     {
-    //         // generateData();
-    //     }
-    //     data.encodePaletteMap();
-    //     data.writeTo(voxelWorld);
-    // }
+    data.writeTo(voxelWorld);
 }

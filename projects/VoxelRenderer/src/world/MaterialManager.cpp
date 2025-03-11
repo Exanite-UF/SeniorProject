@@ -1,7 +1,5 @@
 #include "MaterialManager.h"
 
-#include <array>
-#include <cmath>
 #include <span>
 #include <src/utilities/Assert.h>
 #include <src/utilities/ColorUtility.h>
@@ -80,15 +78,6 @@ MaterialManager::MaterialManager()
         material->roughness = (rand() % 1000) / 1000.0;
     }
 
-    // Generate placeholder material mappings
-    for (size_t i = 0; i < materialIndexByPaletteId.size(); i++)
-    {
-        auto material = getMaterialByIndex(i % Constants::VoxelWorld::materialCount);
-
-        materialIndexByPaletteId[i] = material->getIndex();
-        material->ids.push_back(i);
-    }
-
     updateGpuMaterialData();
 }
 
@@ -123,6 +112,7 @@ void MaterialManager::updateGpuMaterialData()
 {
     // Convert CPU material format to GPU material format
     // TODO: Optimize this to only convert changed materials
+    materialData.resize(materials.size());
     for (size_t i = 0; i < materials.size(); i++)
     {
         auto& material = materials[i];
