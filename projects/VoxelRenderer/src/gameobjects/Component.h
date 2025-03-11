@@ -18,10 +18,10 @@ protected:
     // constructor + destructor
     // onCreate + onDestroy
 
-    virtual void onUpdate() { }
+    virtual void onUpdate() {}
 
-    virtual void onCreate() { }
-    virtual void onDestroy() { }
+    virtual void onCreate() {}
+    virtual void onDestroy() {}
 
 public:
     std::shared_ptr<GameObject> gameObject;

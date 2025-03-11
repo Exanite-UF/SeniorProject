@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <glm/gtc/integer.hpp>
+
 #include <src/graphics/GraphicsUtility.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldUtility.h>
@@ -21,18 +22,18 @@ VoxelWorld::VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint m
     };
 
     setSize(size);
-    generateOccupancyAndMipMapsAndMaterials(0, true, 0.6);
+
+    // Generates initial occupancy map data (non-essential)
+    generateNoiseOccupancyMapAndMipMaps(0, true, 0.6);
+
+    // Generates initial material map (non-essential)
+    generatePlaceholderMaterialMap();
 }
 
-void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateNoiseOccupancyMapAndMipMaps(double deltaTime, bool isRand2, float fillAmount)
 {
-    generateOccupancyUsingNoise(currentNoiseTime, isRand2, fillAmount);
+    generateNoiseOccupancyMap(currentNoiseTime, isRand2, fillAmount);
     updateMipMaps();
-
-    // This calls a shader that hard codes the material values (it is non-essential)
-    assignMaterial(0);
-    assignMaterial(1);
-    assignMaterial(2);
 
     // Updating noise after generating makes the initial generation independent to framerate
     this->currentNoiseTime += deltaTime;
@@ -65,17 +66,12 @@ std::vector<GLuint> VoxelWorld::getOccupancyMapIndices() const
     return occupancyMapIndices;
 }
 
-const GraphicsBuffer<uint8_t>& VoxelWorld::getMaterialMap()
+const GraphicsBuffer<uint16_t>& VoxelWorld::getMaterialMap()
 {
     return materialMap;
 }
 
-std::array<GLuint, Constants::VoxelWorld::paletteMapLayerCount + 1> VoxelWorld::getMaterialMapIndices() const
-{
-    return materialMapIndices;
-}
-
-void VoxelWorld::generateOccupancyUsingNoise(double noiseTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateNoiseOccupancyMap(double noiseTime, bool isRand2, float fillAmount)
 {
     glUseProgram(makeNoiseComputeProgram);
 
@@ -110,7 +106,6 @@ void VoxelWorld::updateMipMaps()
 
     for (int i = 0; i < occupancyMapIndices.size() - 1; i++)
     {
-        // TODO: Use ivec3 here
         int sizeX = this->size.x / 2 / (1 << (2 * i)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
         int sizeY = this->size.y / 2 / (1 << (2 * i));
         int sizeZ = this->size.z / 2 / (1 << (2 * i));
@@ -133,22 +128,17 @@ void VoxelWorld::updateMipMaps()
     glUseProgram(0);
 }
 
-void VoxelWorld::assignMaterial(int level)
+void VoxelWorld::generatePlaceholderMaterialMap()
 {
     glUseProgram(assignMaterialComputeProgram);
 
     this->materialMap.bind(0);
 
-    int sizeX = this->size.x / 2 / (1 << (2 * level)); // This needs the size of the previous mipmap (The divisions to this: voxel size -> size of first texture -> size of previous mipmap)
-    int sizeY = this->size.y / 2 / (1 << (2 * level));
-    int sizeZ = this->size.z / 2 / (1 << (2 * level));
+    GLuint workGroupsX = (size.x + 4 - 1) / 4; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
+    GLuint workGroupsZ = (size.z + 8 - 1) / 8;
 
-    GLuint workGroupsX = (sizeX + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (sizeY + 8 - 1) / 8;
-    GLuint workGroupsZ = (sizeZ + 8 - 1) / 8;
-
-    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "cellCount"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
-    glUniform1ui(glGetUniformLocation(assignMaterialComputeProgram, "materialStartIndex"), materialMapIndices[level]); // Pass in the resolution of the previous mip map texture
+    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "voxelCount"), size.x, size.y, size.z); // Pass in the resolution of the previous mip map texture
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -165,7 +155,5 @@ void VoxelWorld::setSize(glm::ivec3 size)
     occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
 
-    materialMapIndices = VoxelWorldUtility::getPaletteMapIndices(size);
-    // std::cout <<"MATERIAL SIZE "<< materialMapIndices[materialMapIndices.size() - 1] << std::endl;
-    this->materialMap.setSize(materialMapIndices[materialMapIndices.size() - 1]);
+    this->materialMap.setSize(size.x * size.y * size.z);
 }
