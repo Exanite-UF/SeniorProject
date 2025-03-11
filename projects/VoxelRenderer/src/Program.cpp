@@ -725,7 +725,7 @@ void Program::runLateStartupTests()
     }
 
     {
-        // Verify shader storage block size is large enough
+        // Log compute shader max work group sizes
         glm::ivec3 workgroupSizes;
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &workgroupSizes.x);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workgroupSizes.y);
@@ -739,6 +739,15 @@ void Program::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
         Log::log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+    }
+
+    {
+        // Verify shader storage block size is large enough to store buffers needed by renderer
+        GLint maxShaderBlockSize;
+        glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxShaderBlockSize);
+
+        Assert::isTrue(maxShaderBlockSize >= Constants::VoxelWorld::maxMaterialCount * sizeof(MaterialDefinition), "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store all material definitions");
+        Assert::isTrue(maxShaderBlockSize >= 2 * 256 * 256 * 512, "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store material map for a voxel world (chunk) of size 256x256x512, where each voxel takes 2 bytes");
     }
 
     {
