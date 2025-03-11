@@ -5,6 +5,7 @@
 #include <src/utilities/Log.h>
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
+#include <src/world/MaterialPaletteNodeStack.h>
 #include <src/world/VoxelWorldUtility.h>
 #include <stdexcept>
 
@@ -288,6 +289,11 @@ void VoxelWorldData::encodePaletteMap()
                                 }
                             }
 
+                            // We now have a list of materials used in a 4x4x4 region
+                            // We will need to figure out if the palette has enough space
+                            // This is done by seeing how many of these materials are in the currently used palette
+                            std::vector usedMaterials1Vec(usedMaterials1.begin(), usedMaterials1.end());
+
                             Assert::isTrue(usedMaterials1.size() <= 16, "Too many materials in a single palette1");
                         }
                     }
@@ -316,42 +322,36 @@ void VoxelWorldData::encodePaletteMap()
                 auto currentPaletteId = getVoxelPaletteId(glm::ivec3(x, y, z));
 
                 // Find palette corresponding to palette ID
-                int currentNodeStackIndex = 0;
-                std::shared_ptr<MaterialPaletteNode> paletteNodeStack[Constants::VoxelWorld::paletteMapLayerCount + 1];
-                paletteNodeStack[0] = palettes;
-
+                MaterialPaletteNodeStack stack(palettes);
                 for (int i = 0; i < Constants::VoxelWorld::paletteMapLayerCount; ++i)
                 {
                     auto bitsShifted = 8 - (i << 2);
                     auto partialPaletteId = (currentPaletteId & (0b1111) << bitsShifted) >> bitsShifted;
 
-                    auto& currentPaletteNode = paletteNodeStack[currentNodeStackIndex]->children[partialPaletteId];
-
-                    currentNodeStackIndex++;
-                    paletteNodeStack[currentNodeStackIndex] = currentPaletteNode;
+                    stack.push(stack.getCurrent()->children[partialPaletteId]);
                 }
 
                 // TODO: This should be part of the region solving loop
                 // TODO: Start of region solving loop
                 // Check if palette contains desired material
                 auto materialIndex = getVoxelMaterialIndex(glm::ivec3(x, y, z));
-                if (paletteNodeStack[currentNodeStackIndex]->materialIndices.contains(materialIndex))
+                if (stack.getCurrent()->materialIndices.contains(materialIndex))
                 {
                     // If current palette contains the desired material, then we can move on
                     continue;
                 }
 
                 // Check if the palette has remaining space
-                if (!paletteNodeStack[currentNodeStackIndex]->isFull())
+                if (!stack.getCurrent()->isFull())
                 {
                     // If the current palette has remaining space, add it to the palette
-                    for (const auto& node : paletteNodeStack)
+                    for (const auto& node : stack.getNodes())
                     {
                         node->materialIndices.emplace(materialIndex);
                     }
 
                     // TODO: This code expects a palette0
-                    materialManager.materialIndexByPaletteId[paletteNodeStack[currentNodeStackIndex]->id] = materialIndex;
+                    materialManager.materialIndexByPaletteId[stack.getCurrent()->id] = materialIndex;
                 }
                 else
                 {
