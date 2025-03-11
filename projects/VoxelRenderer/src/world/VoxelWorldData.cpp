@@ -241,6 +241,29 @@ void VoxelWorldData::encodePaletteMap()
         materialManager.materialIndexByPaletteId.fill(0);
     }
 
+    // To figure out whether we can use a palette2, we need to see if the region2's desired materials can fit in the palette2
+    // A palette2 is a set of sets of material indices. We'll call this a set^2.
+    // A region2 is made up of region1s, each having a set of materials. This is effectively another set^2 of material indices.
+    // The exact order of the sets don't matter, we just need to know if the desired set^2 of materials can be merged with the existing set^2 of materials
+    //
+    // However, we shouldn't modify the real data until we confirm that the two set^2s can be merged successfully.
+    // Otherwise, we waste a lot of palettes (we solve them, then just drop them) or spend a lot of time tracking and undoing our operations.
+    //
+    // Whichever way we decide to verify that the two set^2s can be merged must also be used when we actually merge them
+    // This means having two very similar blocks of code
+    //
+    // The algorithm is as follows:
+    // Build a set^2 P for the current palette2, with each palette1's materials being a set within the set
+    // Build a set^2 R for the region2's desired materials, with each region1's desired materials being a set within the set
+    // For each set in R, merge with a set in P by doing the following:
+    // 1. Loop through each set in P and calculate the number of materials that need to be added
+    // 2. If the set from P has enough space, add the materials from the set from R to P
+    // 3. If at any time we loop through all sets in P and fail to merge the set from R into a set from P, then we must make a new palette2
+    //
+    // Warning: If R contains more than 16 sets, then merging will always fail
+    // Not sure if it is better to attempt a best-attempt merge or to immediately start a new palette
+    // In any case, some materials must be discarded
+
     // Region-based solver
     MaterialPaletteNodeStack stack(palettes);
     std::unordered_set<uint16_t> usedMaterialsSet3 {};
