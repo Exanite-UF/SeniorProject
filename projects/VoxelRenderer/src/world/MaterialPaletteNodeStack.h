@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <span>
 #include <src/Constants.h>
 #include <src/world/MaterialPaletteNode.h>
 
