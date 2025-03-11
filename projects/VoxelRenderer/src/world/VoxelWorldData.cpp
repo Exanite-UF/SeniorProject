@@ -233,10 +233,10 @@ void VoxelWorldData::encodePaletteMap()
 
         // Reset material palettes
         palettes->clear();
-        palettes->materialIndices.emplace(0);
-        palettes->children[0]->materialIndices.emplace(0);
-        palettes->children[0]->children[0]->materialIndices.emplace(0);
-        palettes->children[0]->children[0]->children[0]->materialIndices.emplace(0);
+        palettes->addMaterialIndex(0);
+        palettes->children[0]->addMaterialIndex(0);
+        palettes->children[0]->children[0]->addMaterialIndex(0);
+        palettes->children[0]->children[0]->children[0]->addMaterialIndex(0);
 
         materialManager.materialIndexByPaletteId.fill(0);
     }
@@ -303,14 +303,14 @@ void VoxelWorldData::encodePaletteMap()
                             for (int i = 0; i < usedMaterialsList1.size(); ++i)
                             {
                                 auto materialIndex = usedMaterialsList1[i];
-                                if (!stack.getCurrent()->materialIndices.contains(materialIndex))
+                                if (!stack.getCurrent()->hasMaterialIndex(materialIndex))
                                 {
                                     materialsToAddCount++;
                                 }
                             }
 
                             // Check if the current palette can fit that many materials
-                            if (stack.getCurrent()->materialIndices.size() + materialsToAddCount > stack.getCurrent()->maxMaterialIndices)
+                            if (stack.getCurrent()->getMaterialIndexCount() + materialsToAddCount > stack.getCurrent()->getMaxMaterialIndexCount())
                             {
                                 // This means the current palette does not have enough space
                                 // TODO
@@ -340,7 +340,7 @@ void VoxelWorldData::encodePaletteMap()
                                             auto materialIndex = getVoxelMaterialIndex(voxelPosition0);
 
                                             // Check if the currently used palette contains desired material
-                                            if (stack.getCurrent()->materialIndices.contains(materialIndex))
+                                            if (stack.getCurrent()->hasMaterialIndex(materialIndex))
                                             {
                                                 // If current palette contains the desired material, then we can move on
                                                 Assert::isTrue(stack.getCount() == 4, "Expected 4 nodes on stack");
@@ -359,12 +359,12 @@ void VoxelWorldData::encodePaletteMap()
 
                                                 // We first check if the material is already in the palette1
                                                 auto& currentPalette1 = stack.getCurrent();
-                                                if (currentPalette1->materialIndices.contains(materialIndex))
+                                                if (currentPalette1->hasMaterialIndex(materialIndex))
                                                 {
                                                     // We search for the palette0 that already has the material
                                                     for (auto child : currentPalette1->children)
                                                     {
-                                                        if (child->materialIndices.contains(materialIndex))
+                                                        if (child->hasMaterialIndex(materialIndex))
                                                         {
                                                             stack.push(child);
 
@@ -394,7 +394,7 @@ void VoxelWorldData::encodePaletteMap()
 
                                                     for (const auto& node : stack.getNodes())
                                                     {
-                                                        node->materialIndices.emplace(materialIndex);
+                                                        node->addMaterialIndex(materialIndex);
                                                     }
 
                                                     // Register new palette-material mapping
@@ -457,7 +457,7 @@ void VoxelWorldData::encodePaletteMap()
                 // TODO: Start of region solving loop
                 // Check if palette contains desired material
                 auto materialIndex = getVoxelMaterialIndex(glm::ivec3(x, y, z));
-                if (stack.getCurrent()->materialIndices.contains(materialIndex))
+                if (stack.getCurrent()->hasMaterialIndex(materialIndex))
                 {
                     // If current palette contains the desired material, then we can move on
                     continue;
@@ -469,7 +469,7 @@ void VoxelWorldData::encodePaletteMap()
                     // If the current palette has remaining space, add it to the palette
                     for (const auto& node : stack.getNodes())
                     {
-                        node->materialIndices.emplace(materialIndex);
+                        node->addMaterialIndex(materialIndex);
                     }
 
                     // TODO: This code expects a palette0

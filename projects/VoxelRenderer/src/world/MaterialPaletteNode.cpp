@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 #include <src/Constants.h>
 
@@ -19,12 +20,51 @@ MaterialPaletteNode::MaterialPaletteNode(int level, uint8_t childIndex, uint16_t
         }
     }
 
-    maxMaterialIndices = std::pow(Constants::VoxelWorld::palettesPerRegion, level);
+    maxMaterialIndexCount = std::pow(Constants::VoxelWorld::palettesPerRegion, level);
+}
+
+void MaterialPaletteNode::addMaterialIndex(uint16_t materialIndex)
+{
+    auto entry = materialIndices.insert({ materialIndex, 0 });
+
+    // entry is a pair(inserted_entry, is_success)
+    // Therefore, to increment the count, we have to increment the inserted_entry's second value
+    entry.first->second++;
+}
+
+void MaterialPaletteNode::removeMaterialIndex(uint16_t materialIndex)
+{
+    auto entry = materialIndices.find(materialIndex);
+    if (entry == materialIndices.end())
+    {
+        throw std::runtime_error("Failed to find material index to remove");
+    }
+
+    entry->second--;
+    if (entry->second <= 0)
+    {
+        materialIndices.erase(entry);
+    }
+}
+
+bool MaterialPaletteNode::hasMaterialIndex(uint16_t materialIndex)
+{
+    return materialIndices.contains(materialIndex);
+}
+
+size_t MaterialPaletteNode::getMaterialIndexCount()
+{
+    return materialIndices.size();
+}
+
+size_t MaterialPaletteNode::getMaxMaterialIndexCount()
+{
+    return maxMaterialIndexCount;
 }
 
 bool MaterialPaletteNode::isFull() const
 {
-    return materialIndices.size() >= maxMaterialIndices;
+    return materialIndices.size() >= maxMaterialIndexCount;
 }
 
 void MaterialPaletteNode::clear()
