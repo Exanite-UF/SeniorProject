@@ -36,5 +36,5 @@ void main()
     int i16Index = (voxelPosition.x + voxelCount.x * (voxelPosition.y + voxelCount.y * voxelPosition.z));
     int i32Index = i16Index / 2;
 
-    materialMap[i32Index] = (1 << 16) | (2 << 0); // TODO: Set more materials than just 2
+    materialMap[i32Index] = (1 << 16) | (2 << 0); // TODO: Create a more interesting pattern
 }

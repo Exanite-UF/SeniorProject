@@ -132,15 +132,11 @@ void VoxelWorld::assignMaterial()
 
     this->materialMap.bind(0);
 
-    int sizeX = this->size.x / 2 / (1 << 2);
-    int sizeY = this->size.y / 2 / (1 << 2);
-    int sizeZ = this->size.z / 2 / (1 << 2);
+    GLuint workGroupsX = (size.x + 4 - 1) / 4; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
+    GLuint workGroupsZ = (size.z + 8 - 1) / 8;
 
-    GLuint workGroupsX = (sizeX + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (sizeY + 8 - 1) / 8;
-    GLuint workGroupsZ = (sizeZ + 8 - 1) / 8;
-
-    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "voxelCount"), sizeX, sizeY, sizeZ); // Pass in the resolution of the previous mip map texture
+    glUniform3i(glGetUniformLocation(assignMaterialComputeProgram, "voxelCount"), size.x, size.y, size.z); // Pass in the resolution of the previous mip map texture
 
     glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
