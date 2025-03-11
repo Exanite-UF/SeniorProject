@@ -243,7 +243,7 @@ void VoxelWorldData::encodePaletteMap()
 
     // Region-based solver
     MaterialPaletteNodeStack stack(palettes);
-    std::set<uint16_t> usedMaterialsSet3 {};
+    std::unordered_set<uint16_t> usedMaterialsSet3 {};
     auto palette2RegionCount = size >> 4;
     for (int palette2ZI = 0; palette2ZI < palette2RegionCount.z; ++palette2ZI)
     {
@@ -252,7 +252,7 @@ void VoxelWorldData::encodePaletteMap()
             for (int palette2XI = 0; palette2XI < palette2RegionCount.x; ++palette2XI)
             {
                 // The code inside this block represents a 16x16x16 region
-                std::set<uint16_t> usedMaterialsSet2 {};
+                std::unordered_set<uint16_t> usedMaterialsSet2 {};
                 glm::ivec3 voxelPosition2 = glm::ivec3(palette2XI * 16, palette2YI * 16, palette2ZI * 16);
                 stack.push(stack.getCurrent()->children[getVoxelPartialPaletteId(voxelPosition2, 2)]);
 
@@ -263,7 +263,7 @@ void VoxelWorldData::encodePaletteMap()
                         for (int palette1XI = 0; palette1XI < 4; ++palette1XI)
                         {
                             // The code inside this block represents a 4x4x4 region
-                            std::set<uint16_t> usedMaterialsSet1 {};
+                            std::unordered_set<uint16_t> usedMaterialsSet1 {};
                             glm::ivec3 voxelPosition1 = voxelPosition2 + glm::ivec3(palette1XI * 4, palette1YI * 4, palette1ZI * 4);
                             stack.push(stack.getCurrent()->children[getVoxelPartialPaletteId(voxelPosition1, 1)]);
 
