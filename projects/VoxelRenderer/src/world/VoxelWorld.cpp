@@ -22,16 +22,18 @@ VoxelWorld::VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint m
     };
 
     setSize(size);
-    generateOccupancyAndMipMapsAndMaterials(0, true, 0.6);
+
+    // Generates initial occupancy map data (non-essential)
+    generateNoiseOccupancyMapAndMipMaps(0, true, 0.6);
+
+    // Generates initial material map (non-essential)
+    generatePlaceholderMaterialMap();
 }
 
-void VoxelWorld::generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateNoiseOccupancyMapAndMipMaps(double deltaTime, bool isRand2, float fillAmount)
 {
-    generateOccupancyUsingNoise(currentNoiseTime, isRand2, fillAmount);
+    generateNoiseOccupancyMap(currentNoiseTime, isRand2, fillAmount);
     updateMipMaps();
-
-    // This calls a shader that hard codes the material values (it is non-essential)
-    assignMaterial();
 
     // Updating noise after generating makes the initial generation independent to framerate
     this->currentNoiseTime += deltaTime;
@@ -69,7 +71,7 @@ const GraphicsBuffer<uint16_t>& VoxelWorld::getMaterialMap()
     return materialMap;
 }
 
-void VoxelWorld::generateOccupancyUsingNoise(double noiseTime, bool isRand2, float fillAmount)
+void VoxelWorld::generateNoiseOccupancyMap(double noiseTime, bool isRand2, float fillAmount)
 {
     glUseProgram(makeNoiseComputeProgram);
 
@@ -126,7 +128,7 @@ void VoxelWorld::updateMipMaps()
     glUseProgram(0);
 }
 
-void VoxelWorld::assignMaterial()
+void VoxelWorld::generatePlaceholderMaterialMap()
 {
     glUseProgram(assignMaterialComputeProgram);
 

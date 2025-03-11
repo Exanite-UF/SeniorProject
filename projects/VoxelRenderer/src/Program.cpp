@@ -449,7 +449,7 @@ void Program::run()
 
             if (input->isKeyHeld(GLFW_KEY_E))
             {
-                voxelWorld->generateOccupancyAndMipMapsAndMaterials(deltaTime, isRand2, fillAmount);
+                voxelWorld->generateNoiseOccupancyMapAndMipMaps(deltaTime, isRand2, fillAmount);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F5))
@@ -488,7 +488,7 @@ void Program::run()
             if (remakeNoise)
             {
                 // The noise time should not be incremented here
-                voxelWorld->generateOccupancyAndMipMapsAndMaterials(0, isRand2, fillAmount);
+                voxelWorld->generateNoiseOccupancyMapAndMipMaps(0, isRand2, fillAmount);
                 remakeNoise = false;
             }
 

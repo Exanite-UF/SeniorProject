@@ -27,8 +27,8 @@ private:
     GLuint makeMipMapComputeProgram = 0;
     GLuint assignMaterialComputeProgram = 0; // TODO: Consider moving assignMaterial to a world generator class
 
-    void generateOccupancyUsingNoise(double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
-    void assignMaterial(); // This runs the assign material shader
+    void generateNoiseOccupancyMap(double noiseTime, bool isRand2, float fillAmount); // This runs the make noise shader
+    void generatePlaceholderMaterialMap(); // This runs the assign material shader
 
     void setSize(glm::ivec3 size);
 
@@ -49,9 +49,9 @@ public:
 
     // isRand2 = Noise type toggle
     // TODO: Yes, this is a really long name. No, I do not like it, but I'm not sure what else to call it.
-    void generateOccupancyAndMipMapsAndMaterials(double deltaTime, bool isRand2, float fillAmount);
+    void generateNoiseOccupancyMapAndMipMaps(double deltaTime, bool isRand2, float fillAmount);
 
-    // generateFromNoise also needs to bind textures. So calling this and then generateOccupancyAndMipMapsAndMaterials will result in some of the textures that this functions binds being unbound
+    // generateNoiseOccupancyMap also needs to bind textures. So calling this and then generateNoiseOccupancyMapAndMipMaps will result in some of the textures that this functions binds being unbound
     void bindBuffers(int occupancyMapIndex = 0, int materialMapIndex = 1);
     void unbindBuffers() const;
 };
