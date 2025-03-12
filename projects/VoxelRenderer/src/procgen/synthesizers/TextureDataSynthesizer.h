@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <src/procgen/data/TextureData.h>
 
 // Generate 2D or 3D textures (may need to be split)

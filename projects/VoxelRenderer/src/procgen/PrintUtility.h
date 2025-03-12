@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <src/procgen/data/TextureData.h>
 
 class PrintUtility
