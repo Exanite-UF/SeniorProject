@@ -32,6 +32,7 @@ uniform uint materialMapSize;
 uniform float random; // This is used to make non-deterministic randomness
 
 uniform bool isFirstRay;
+uniform uint worldNumber;
 
 layout(std430, binding = 0) buffer RayPosition
 {
@@ -230,6 +231,18 @@ void setFirstHitMaterial(ivec3 coord, vec3 value)
     firstHitMaterial[1 + index] = value.y;
     firstHitMaterial[2 + index] = value.z;
 }
+
+layout(std430, binding = 15) buffer ShouldCastMask
+{
+    readonly uint showCastMask[];
+};
+
+bool shouldCast(ivec3 coord){
+    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 1, axis order is x y z
+    return (showCastMask[index] & (1 << (worldNumber % 32))) != 0;
+}
+
+
 
 struct RayHit
 {
@@ -655,36 +668,14 @@ float sunBrightness = 5;
 
 void attempt(ivec3 texelCoord)
 {
+    //if(!shouldCast(texelCoord)){
+    //    return;
+    //}
+
     vec3 startPos = getRayPosition(texelCoord);
     vec3 rayDir = normalize(getRayDirection(texelCoord));
     float currentDepth = getHitDist(texelCoord);
-    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
-
-    // If the depth to beat is infinity, then that means that the ray is currently missing everything
-    // As such the attentuation will need to be 0, and the accumulated light should not change
-    if (isinf(currentDepth))
-    {
-        if (dot(rayDir, sunDir) > sunSize)
-        {
-            //changeLightAccumulation(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
-        }
-        else if (dot(rayDir, vec3(0, 0, 1)) > 0)
-        {
-            //changeLightAccumulation(texelCoord, 1 * vec3(40, 77, 222) / 255 * attentuation);
-        }
-        else
-        {
-            //changeLightAccumulation(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attentuation);
-        }
-        //setAttenuation(texelCoord, vec3(0));
-        if (texelCoord.z == 0 && isFirstRay)
-        {
-            //setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
-            //setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
-            //setFirstHitNormal(texelCoord, rayDir); // The skybox has a roughness of 0
-        }
-    }
-
+    
     RayHit hit = rayCast(texelCoord, startPos, rayDir, currentDepth);
 
     // If it is not the nearest, then it should do nothing
@@ -698,9 +689,9 @@ void attempt(ivec3 texelCoord)
     {
         setFirstHitNormal(texelCoord, hit.normal);
         setFirstHitPosition(texelCoord, hit.hitLocation);
-        // setFirstHitPosition(texelCoord, vec3(hit.material));
     }
 
+    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
     BRDF(texelCoord, hit, rayDir, attentuation);
 }
 

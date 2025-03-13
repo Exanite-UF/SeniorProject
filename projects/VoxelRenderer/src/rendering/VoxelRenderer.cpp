@@ -220,6 +220,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
                 glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
+                glUniform1ui(glGetUniformLocation(fullCastProgram, "worldNumber"), 0);
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
@@ -291,12 +292,25 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
 {
     glUseProgram(resetVisualInfoProgram);
 
-    attentuationBuffer1.bind(0);
-    accumulatedLightBuffer1.bind(1);
-    attentuationBuffer2.bind(2);
-    accumulatedLightBuffer2.bind(3);
-    normalBuffer.bind(4);
-    positionBuffer.bind(5);
+    // bind rayStart info
+    if (currentBuffer % 2 == 0)
+    {
+        rayStartBuffer1.bind(0); // Input
+        rayDirectionBuffer1.bind(1); // Input
+    }
+    else
+    {
+        rayStartBuffer2.bind(0); // Input
+        rayDirectionBuffer2.bind(1); // Input
+    }
+
+    attentuationBuffer1.bind(2);
+    accumulatedLightBuffer1.bind(3);
+    attentuationBuffer2.bind(4);
+    accumulatedLightBuffer2.bind(5);
+    normalBuffer.bind(6);
+    positionBuffer.bind(7);
+    materialBuffer.bind(8);
 
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (size.y + 8 - 1) / 8;
@@ -305,6 +319,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
     glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttenuation);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "currentBuffer"), currentBuffer % 2 == 0);
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -313,12 +328,26 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
+
+    if (currentBuffer % 2 == 0)
+    {
+        rayStartBuffer1.unbind();
+        rayDirectionBuffer1.unbind();
+    }
+    else
+    {
+        rayStartBuffer2.unbind();
+        rayDirectionBuffer2.unbind();
+    }
+
+
     attentuationBuffer1.unbind();
     accumulatedLightBuffer1.unbind();
     attentuationBuffer2.unbind();
     accumulatedLightBuffer2.unbind();
     normalBuffer.unbind();
     positionBuffer.unbind();
+    materialBuffer.unbind();
 
     glUseProgram(0);
 }
