@@ -180,7 +180,6 @@ void TransformComponent::setGlobalRotation(const glm::quat& value)
         localRotation = value * parent->getGlobalRotation();
     }
 
-    (parent != nullptr) ? (localRotation = value * parent->getGlobalRotation()) : (localRotation = value);
     updateTransform();
 }
 
