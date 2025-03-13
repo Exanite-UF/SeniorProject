@@ -1,8 +1,10 @@
 #pragma once
 
-#include <src/utilities/NonCopyable.h>
+#include <GL/glew.h>
 
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
+
+#include <src/utilities/NonCopyable.h>
 
 class GlfwContext : public NonCopyable
 {
@@ -26,6 +28,7 @@ public:
     ~GlfwContext() override;
 
     void makeContextCurrent() const;
+    void present();
 
     GLFWwindow* getGlfwWindowHandle();
 };

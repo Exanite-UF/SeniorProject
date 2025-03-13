@@ -1,6 +1,14 @@
 #pragma once
 
+#include <GL/glew.h>
+
 #include <GLFW/glfw3.h>
+
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+#include <imgui/imgui_stdlib.h>
+
 #include <glm/common.hpp>
 #include <glm/vec2.hpp>
 #include <memory>
@@ -48,8 +56,10 @@ public:
     explicit Window(GlfwContext* shareWith = nullptr);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
+    ~Window();
 
     void update();
+    void present();
 
     void setFullscreen();
     void setWindowed();

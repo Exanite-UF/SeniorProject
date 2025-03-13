@@ -1,6 +1,5 @@
 #include <stdexcept>
 
-#include "Window.h"
 #include <src/windowing/Window.h>
 
 Window::Window(GlfwContext* shareWith)
@@ -10,7 +9,6 @@ Window::Window(GlfwContext* shareWith)
     registerGlfwCallbacks();
 
     // Initialize state
-    glfwSwapInterval(0); // Disable vsync
     glfwGetWindowPos(glfwWindowHandle, &lastWindowedPosition.x, &lastWindowedPosition.y);
     glfwGetWindowSize(glfwWindowHandle, &lastWindowedSize.x, &lastWindowedSize.y);
 
@@ -22,10 +20,33 @@ Window::Window(GlfwContext* shareWith)
     }
 
     glfwSwapInterval(1); // Enable vsync
+
+    // Init IMGUI
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+    ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
+    ImGui_ImplOpenGL3_Init();
+}
+
+Window::~Window()
+{
+    // Shutdown IMGUI
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void Window::update()
 {
+    // Update IMGUI
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
     glfwPollEvents();
     glfwGetWindowSize(glfwWindowHandle, &size.x, &size.y);
 
@@ -35,6 +56,14 @@ void Window::update()
     cursorPosEvent.flush();
     scrollEvent.flush();
     cursorEnterEvent.flush();
+}
+
+void Window::present()
+{
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    glfwSwapBuffers(glfwWindowHandle);
 }
 
 void Window::onWindowSize(GLFWwindow* window, int width, int height)

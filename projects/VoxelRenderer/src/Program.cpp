@@ -1,6 +1,4 @@
 #include <imgui/imgui.h>
-#include <imgui/imgui_impl_glfw.h>
-#include <imgui/imgui_impl_opengl3.h>
 #include <imgui/imgui_stdlib.h>
 
 #include <Jolt/Jolt.h>
@@ -76,25 +74,13 @@ Program::Program()
     offscreenContext = std::make_shared<GlfwContext>();
     window = std::make_shared<Window>(offscreenContext.get());
 
-    inputManager = std::make_shared<InputManager>(window);
+    window->makeContextCurrent();
 
-    // Init IMGUI
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-    ImGui_ImplGlfw_InitForOpenGL(window->getGlfwWindowHandle(), true);
-    ImGui_ImplOpenGL3_Init();
+    inputManager = std::make_shared<InputManager>(window);
 }
 
 Program::~Program()
 {
-    // Shutdown IMGUI
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
     // Shutdown GLFW
     glfwTerminate();
 }
@@ -350,12 +336,6 @@ void Program::run()
             framesThisCycle1 = 0;
         }
 
-        // Update IMGUI
-        ImGuiIO& io = ImGui::GetIO();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
         // Update systems
         window->update();
         inputManager->update();
@@ -548,7 +528,7 @@ void Program::run()
                     ImGui::Text("\nCamera Look Direction");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
                     ImGui::Text("\nFPS: %.2f | %.2f", currentFPS, currentFPS1);
-                    ImGui::Text("\nWindow Resolution: %.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
+                    ImGui::Text("\nWindow Resolution: %.0f x %.0f", window->size.x, window->size.y);
                 }
                 ImGui::End();
                 ImGui::PopStyleColor();
@@ -566,12 +546,11 @@ void Program::run()
             renderer.render();
             glFinish();
 
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             frameCount++;
         }
+
         // Present
-        glfwSwapBuffers(window->getGlfwWindowHandle());
+        window->present();
     }
 
     renderer.stopAsynchronousReprojection();
