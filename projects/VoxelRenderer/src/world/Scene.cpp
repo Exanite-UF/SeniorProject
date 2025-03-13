@@ -1,1 +1,1 @@
-#include "Scene.h"
+#include <src/world/SceneComponent.h>

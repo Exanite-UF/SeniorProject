@@ -2,6 +2,34 @@
 
 #include <src/gameobjects/GameObject.h>
 
+const std::shared_ptr<TransformComponent>& TransformComponent::getParent() const
+{
+    return parent;
+}
+
+const std::vector<std::shared_ptr<TransformComponent>>& TransformComponent::getChildren() const
+{
+    return children;
+}
+
+void TransformComponent::updateTransform() const
+{
+    auto localTransform = glm::translate(glm::mat4(1.0f), localPosition) * glm::mat4_cast(localRotation) * glm::scale(glm::mat4(1.0f), localScale);
+
+    if (parent)
+    {
+        globalTransform = parent->getGlobalTransform() * localTransform;
+        globalRotation = parent->getGlobalRotation() * localRotation;
+    }
+    else
+    {
+        globalTransform = localTransform;
+        globalRotation = localRotation;
+    }
+
+    inverseGlobalTransform = glm::inverse(globalTransform);
+}
+
 void TransformComponent::onDestroy()
 {
     Component::onDestroy();
@@ -10,23 +38,23 @@ void TransformComponent::onDestroy()
     // Note that this is very different from destroying just the TransformComponent
     for (int i = 0; i < children.size(); ++i)
     {
-        children[i]->gameObject->destroy();
+        children[i]->getGameObject()->destroy();
     }
 }
 
 const glm::vec3& TransformComponent::getLocalPosition() const
 {
-    return position;
+    return localPosition;
 }
 
 const glm::quat& TransformComponent::getLocalRotation() const
 {
-    return rotation;
+    return localRotation;
 }
 
 const glm::vec3& TransformComponent::getLocalScale() const
 {
-    return scale;
+    return localScale;
 }
 
 glm::vec3 TransformComponent::getRightDirection() const
@@ -44,103 +72,125 @@ glm::vec3 TransformComponent::getForwardDirection() const
     return getGlobalRotation() * glm::vec3(1, 0, 0);
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
 glm::vec3 TransformComponent::getGlobalPosition() const
 {
-    return position;
+    return glm::vec3(globalTransform[3]);
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
 glm::quat TransformComponent::getGlobalRotation() const
 {
-    return rotation;
+    return globalRotation;
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
-glm::vec3 TransformComponent::getGlobalScale() const
+glm::vec3 TransformComponent::getLossyGlobalScale() const
 {
-    return scale;
+    // Decompose matrix: https://math.stackexchange.com/questions/237369/given-this-transformation-matrix-how-do-i-decompose-it-into-translation-rotati
+    glm::vec3 x = globalTransform[0];
+    glm::vec3 y = globalTransform[1];
+    glm::vec3 z = globalTransform[2];
+
+    return glm::vec3(glm::length(x), glm::length(y), glm::length(z));
+}
+
+const glm::mat4& TransformComponent::getGlobalTransform() const
+{
+    return globalTransform;
+}
+
+const glm::mat4& TransformComponent::getInverseGlobalTransform() const
+{
+    return inverseGlobalTransform;
 }
 
 void TransformComponent::setLocalPosition(const glm::vec3& value)
 {
-    position = value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    localPosition = value;
+    updateTransform();
 }
 
 void TransformComponent::addLocalPosition(const glm::vec3& value)
 {
-    position += value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    localPosition += value;
+    updateTransform();
 }
 
 void TransformComponent::setLocalRotation(const glm::quat& value)
 {
-    rotation = value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    localRotation = value;
+    updateTransform();
 }
 
 void TransformComponent::addLocalRotation(const glm::quat& value)
 {
-    rotation = value * rotation;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    localRotation = value * localRotation;
+    updateTransform();
 }
 
 void TransformComponent::setLocalScale(const glm::vec3& value)
 {
-    scale = value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    localScale = value;
+    updateTransform();
 }
 
 void TransformComponent::multiplyLocalScale(const glm::vec3& value)
 {
-    scale *= value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    localScale *= value;
+    updateTransform();
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
 void TransformComponent::setGlobalPosition(const glm::vec3& value)
 {
-    position = value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        setLocalPosition(value);
+    }
+    else
+    {
+        setLocalPosition(parent->getGlobalTransform() * glm::vec4(value, 1));
+    }
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
 void TransformComponent::addGlobalPosition(const glm::vec3& value)
 {
-    position += value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        addLocalPosition(value);
+    }
+    else
+    {
+        setLocalPosition(parent->getGlobalTransform() * glm::vec4(getGlobalPosition() + value, 1));
+    }
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
 void TransformComponent::setGlobalRotation(const glm::quat& value)
 {
-    rotation = value;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        setLocalRotation(value);
+    }
+    else
+    {
+        setLocalRotation(value * parent->getGlobalRotation());
+    }
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
 void TransformComponent::addGlobalRotation(const glm::quat& value)
 {
-    rotation = value * rotation;
-    // TODO: Propagate transform changes to children or mark self as dirty
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        addLocalRotation(value);
+    }
+    else
+    {
+        setLocalRotation(value * localRotation * parent->getGlobalRotation());
+    }
 }
 
-// TODO: This currently does the same as the local version. Needs a proper implementation.
-void TransformComponent::setGlobalScale(const glm::vec3& value)
-{
-    scale = value;
-    // TODO: Propagate transform changes to children or mark self as dirty
-}
-
-// TODO: This currently does the same as the local version. Needs a proper implementation.
-void TransformComponent::multiplyGlobalScale(const glm::vec3& value)
-{
-    scale *= value;
-    // TODO: Propagate transform changes to children or mark self as dirty
-}
-
-void TransformComponent::addChild(std::shared_ptr<GameObject> child)
+void TransformComponent::addChild(const std::shared_ptr<GameObject>& child)
 {
     children.push_back(child->getTransform());
 

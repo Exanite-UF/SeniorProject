@@ -5,7 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <src/world/Camera.h>
+#include <src/world/CameraComponent.h>
 
 #include <array>
 #include <mutex>

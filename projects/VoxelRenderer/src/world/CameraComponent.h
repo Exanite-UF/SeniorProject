@@ -6,12 +6,12 @@
 #include <glm/vec2.hpp>
 #include <src/utilities/NonCopyable.h>
 
-#include <src/world/Transform.h>
+#include <src/gameobjects/TransformComponent.h> // maybe replace with component
 
-class Camera : NonCopyable
+class CameraComponent : public Component
 {
 public:
-    Transform transform;
+    // For Input
     glm::vec2 rotation = glm::vec2(0);
 
     float moveSpeed = 32;
@@ -19,7 +19,7 @@ public:
 
     [[nodiscard]] float getHorizontalFov() const;
 
-    [[nodiscard]] glm::vec3 getRightDirection() const;
-    [[nodiscard]] glm::vec3 getForwardDirection() const;
-    [[nodiscard]] glm::vec3 getUpDirection() const;
+    [[nodiscard]] glm::vec3 getRightMoveDirection() const;
+    [[nodiscard]] glm::vec3 getForwardMoveDirection() const;
+    [[nodiscard]] glm::vec3 getUpMoveDirection() const;
 };

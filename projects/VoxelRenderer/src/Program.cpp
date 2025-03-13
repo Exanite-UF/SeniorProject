@@ -51,7 +51,7 @@
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
-#include <src/world/Scene.h>
+#include <src/world/SceneComponent.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 
@@ -160,23 +160,19 @@ void Program::run()
     auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
     auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
-    // Create the scene
-    std::shared_ptr<GameObject> root = std::make_shared<GameObject>();
-    std::shared_ptr<GameObject> child = std::make_shared<GameObject>();
-    root->getTransform()->addChild(child);
+    // Create the Scene GameObject
+    auto sceneObject = GameObject::create();
+    auto scene = sceneObject->addComponent<SceneComponent>();
 
-    // Create the scene (old)
-    Scene scene {};
-    auto& camera = scene.camera;
+    // Create the Camera GameObject
+    auto cameraObject = GameObject::create();
+    auto camera = cameraObject->addComponent<CameraComponent>();
+    auto cameraTransform = camera->getTransform();
 
-    glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
-    auto& voxelWorld = scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
-    // scene.worlds.emplace_back(makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram);
-    // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
+    auto worldSize = glm::ivec3(512, 512, 512);
+    auto& voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
 
-    camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
-    // camera->transform.setGlobalPosition(glm::vec3(-118.012, 54.1353, 256.174));
-    // camera->rotation.x = glm::radians(45.0f);
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
 
     VoxelWorldData data {};
     data.copyFrom(*voxelWorld);
@@ -344,8 +340,6 @@ void Program::run()
     // IMGUI Menu
     bool showMenuGUI = false;
 
-    // auto start = std::chrono::high_resolution_clock::now();
-
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
 
@@ -375,9 +369,9 @@ void Program::run()
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
             auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
             Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
-            std::cout << camera->transform.getGlobalPosition().x << std::endl;
-            std::cout << camera->transform.getGlobalPosition().y << std::endl;
-            std::cout << camera->transform.getGlobalPosition().z << std::endl;
+            // std::cout << cameraTransform->getGlobalPosition().x << std::endl;
+            // std::cout << cameraTransform->getGlobalPosition().y << std::endl;
+            // std::cout << cameraTransform->getGlobalPosition().z << std::endl;
 
             fpsCycleTimer = 0;
             framesThisCycle = 0;
@@ -405,45 +399,45 @@ void Program::run()
                 camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
                 camera->rotation.x = glm::clamp(camera->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
 
-                camera->transform.setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+                cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
             else
             {
                 inputManager->cursorEnteredThisFrame = false;
             }
 
-            auto cameraRightMoveDirection = camera->getRightDirection();
-            auto cameraForwardMoveDirection = camera->getForwardDirection();
-            auto cameraUpMoveDirection = camera->getUpDirection();
+            auto cameraRightMoveDirection = camera->getRightMoveDirection();
+            auto cameraForwardMoveDirection = camera->getForwardMoveDirection();
+            auto cameraUpMoveDirection = camera->getUpMoveDirection();
 
             if (input->isKeyHeld(GLFW_KEY_A))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraRightMoveDirection);
+                cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_D))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraRightMoveDirection);
+                cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraRightMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_W))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraForwardMoveDirection);
+                cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_S))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraForwardMoveDirection);
+                cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraForwardMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_SPACE))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraUpMoveDirection);
+                cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * +cameraUpMoveDirection);
             }
 
             if (input->isKeyHeld(GLFW_KEY_LEFT_SHIFT))
             {
-                camera->transform.addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
+                cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
             }
 
             // mtx.unlock();
@@ -558,8 +552,8 @@ void Program::run()
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
                 {
-                    auto cameraPosition = camera->transform.getGlobalPosition();
-                    auto cameraLookDirection = camera->transform.getForwardDirection();
+                    auto cameraPosition = cameraTransform->getGlobalPosition();
+                    auto cameraLookDirection = cameraTransform->getForwardDirection();
 
                     ImGui::SetWindowFontScale(1.5f);
                     ImGui::Text("Voxel Rendering Project\n");
@@ -596,16 +590,9 @@ void Program::run()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glDepthFunc(GL_GREATER);
 
-            renderer.pollCamera(*camera);
+            renderer.pollCamera(camera);
             renderer.render();
             glFinish();
-
-            // auto end = std::chrono::high_resolution_clock::now();
-            // if (std::chrono::duration<double>(end - start).count() > 1.1 / 60.)
-            //{
-            //      std::cout << std::chrono::duration<double>(end - start).count() * 1000 << std::endl;
-            //  }
-            //  start = end;
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
