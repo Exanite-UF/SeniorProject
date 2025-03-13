@@ -9,8 +9,14 @@
 
 #include "GlfwContext.h"
 
+int GlfwContext::nextId = 0;
+
 GlfwContext::GlfwContext(bool isWindow, GlfwContext* shareWith)
 {
+    // Set ID for debugging
+    id = nextId;
+    nextId++;
+
     // Configure GLFW and OpenGL
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -51,7 +57,7 @@ GlfwContext::~GlfwContext()
     glfwDestroyWindow(glfwWindowHandle);
 }
 
-void GlfwContext::makeContextCurrent()
+void GlfwContext::makeContextCurrent() const
 {
     // Set the Window's OpenGL context to be used on the current thread
     glfwMakeContextCurrent(glfwWindowHandle);
@@ -64,8 +70,10 @@ void GlfwContext::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GL
         return;
     }
 
+    auto self = reinterpret_cast<const GlfwContext*>(userParam);
+
     std::string messageStr(message, length);
-    Log::log(messageStr);
+    Log::log("[" + std::to_string(self->id) + "] " + messageStr);
 }
 
 GLFWwindow* GlfwContext::getGlfwWindowHandle()
