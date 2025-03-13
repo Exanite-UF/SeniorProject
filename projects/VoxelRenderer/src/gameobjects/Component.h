@@ -2,11 +2,10 @@
 
 #include <memory>
 
-#include <src/gameobjects/GameObject.h>
-#include <src/gameobjects/TransformComponent.h>
 #include <src/utilities/NonCopyable.h>
 
 class GameObject;
+class TransformComponent;
 
 class Component : public NonCopyable
 {
@@ -16,9 +15,12 @@ protected:
     bool isDestroyed = false;
 
     // Certain calls are paired
-    // If the first event in the pair is called, the second needs to be eventually called:
+    // If the first event in the pair is called, the second will eventually called:
     // constructor + destructor
     // onCreate + onDestroy
+
+    Component();
+    ~Component() override;
 
     virtual void onUpdate() {}
 
@@ -27,11 +29,9 @@ protected:
 
 private:
     std::shared_ptr<GameObject> gameObject;
+    std::shared_ptr<TransformComponent> transform;
 
 public:
-    explicit Component();
-    ~Component() override;
-
     void destroy();
     void update();
 

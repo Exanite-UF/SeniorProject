@@ -89,7 +89,7 @@ private:
     std::array<GLuint, 3> materialTextures;
 
 private:
-    Scene* scene = nullptr;
+    std::shared_ptr<Scene> scene = nullptr;
     int bounces = 2;
 
     std::unique_ptr<VoxelRenderer> voxelRenderer = nullptr;
@@ -142,8 +142,8 @@ public:
     void setRenderResolution(glm::ivec2 renderResolution);
     void setRaysPerPixel(int number);
 
-    void pollCamera(const Camera& camera);
-    void setScene(Scene& scene);
+    void pollCamera(const std::shared_ptr<Camera>& camera);
+    void setScene(const std::shared_ptr<Scene>& scene);
     void setBounces(const int& bounces);
 
     void render(float fov = -1);

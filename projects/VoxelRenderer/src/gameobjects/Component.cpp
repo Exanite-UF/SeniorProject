@@ -1,5 +1,7 @@
 #include "Component.h"
 
+Component::Component() = default;
+
 Component::~Component()
 {
     destroy();
@@ -17,11 +19,12 @@ void Component::destroy()
     onDestroy();
 
     gameObject.reset();
+    transform.reset();
 }
 
 std::shared_ptr<TransformComponent>& Component::getTransform()
 {
-    return gameObject->getTransform();
+    return transform;
 }
 
 std::shared_ptr<GameObject>& Component::getGameObject()

@@ -18,6 +18,8 @@ public:
     float mouseSensitivity = 0.002;
 
     [[nodiscard]] float getHorizontalFov() const;
-};
 
-// TODO: FIX ANY/ALL REFERENCES TO CAMERA
+    [[nodiscard]] glm::vec3 getRightMoveDirection() const;
+    [[nodiscard]] glm::vec3 getForwardMoveDirection() const;
+    [[nodiscard]] glm::vec3 getUpMoveDirection() const;
+};

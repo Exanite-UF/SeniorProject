@@ -160,11 +160,11 @@ void Program::run()
     auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
 
     // Create the Scene GameObject
-    auto sceneObject = std::make_shared<GameObject>();
+    auto sceneObject = GameObject::create();
     auto scene = sceneObject->addComponent<Scene>();
 
     // Create the Camera GameObject
-    auto cameraObject = std::make_shared<GameObject>();
+    auto cameraObject = GameObject::create();
     auto camera = cameraObject->addComponent<Camera>();
 
     auto worldSize = glm::ivec3(512, 512, 512);
@@ -338,7 +338,7 @@ void Program::run()
     // IMGUI Menu
     bool showMenuGUI = false;
 
-    renderer.setScene(*scene);
+    renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
 
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -588,7 +588,7 @@ void Program::run()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glDepthFunc(GL_GREATER);
 
-            renderer.pollCamera(*camera);
+            renderer.pollCamera(camera);
             renderer.render();
             glFinish();
 
