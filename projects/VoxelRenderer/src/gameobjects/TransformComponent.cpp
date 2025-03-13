@@ -14,12 +14,7 @@ const std::vector<std::shared_ptr<TransformComponent>>& TransformComponent::getC
 
 void TransformComponent::updateTransform() const
 {
-    if (!isDirty)
-    {
-        return;
-    }
-
-    localTransform = glm::translate(glm::mat4(1.0f), position) * glm::mat4_cast(rotation) * glm::scale(glm::mat4(1.0f), scale);
+    auto localTransform = glm::translate(glm::mat4(1.0f), localPosition) * glm::mat4_cast(localRotation) * glm::scale(glm::mat4(1.0f), localScale);
 
     if (parent)
     {
@@ -30,17 +25,7 @@ void TransformComponent::updateTransform() const
         globalTransform = localTransform;
     }
 
-    isDirty = false;
-}
-
-void TransformComponent::markDirty()
-{
-    isDirty = true;
-
-    for (auto& child : children)
-    {
-        child->markDirty();
-    }
+    inverseGlobalTransform = glm::inverse(globalTransform);
 }
 
 void TransformComponent::onDestroy()
@@ -57,17 +42,17 @@ void TransformComponent::onDestroy()
 
 const glm::vec3& TransformComponent::getLocalPosition() const
 {
-    return position;
+    return localPosition;
 }
 
 const glm::quat& TransformComponent::getLocalRotation() const
 {
-    return rotation;
+    return localRotation;
 }
 
 const glm::vec3& TransformComponent::getLocalScale() const
 {
-    return scale;
+    return localScale;
 }
 
 glm::vec3 TransformComponent::getRightDirection() const
@@ -87,106 +72,132 @@ glm::vec3 TransformComponent::getForwardDirection() const
 
 glm::vec3 TransformComponent::getGlobalPosition() const
 {
-    // Recursively obtains global position
-    return (parent != nullptr) ? (position + parent->getGlobalPosition()) : position;
+    return glm::vec3(globalTransform[3]);
 }
 
 glm::quat TransformComponent::getGlobalRotation() const
 {
-    // Rotation order might be incorrect need to check
-    return (parent != nullptr) ? (parent->getGlobalRotation() * rotation) : rotation;
+    return globalRotation;
 }
 
-glm::vec3 TransformComponent::getGlobalScale() const
+glm::vec3 TransformComponent::getLossyGlobalScale() const
 {
-    return (parent != nullptr) ? (scale * parent->getGlobalScale()) : scale;
-}
+    // Decompose matrix: https://math.stackexchange.com/questions/237369/given-this-transformation-matrix-how-do-i-decompose-it-into-translation-rotati
+    glm::vec3 x = globalTransform[0];
+    glm::vec3 y = globalTransform[1];
+    glm::vec3 z = globalTransform[2];
 
-const glm::mat4& TransformComponent::getLocalTransform() const
-{
-    updateTransform();
-    return localTransform;
+    return glm::vec3(x.length(), y.length(), z.length());
 }
 
 const glm::mat4& TransformComponent::getGlobalTransform() const
 {
-    updateTransform();
     return globalTransform;
+}
+
+const glm::mat4& TransformComponent::getInverseGlobalTransform() const
+{
+    return inverseGlobalTransform;
 }
 
 void TransformComponent::setLocalPosition(const glm::vec3& value)
 {
-    position = value;
-    markDirty();
+    localPosition = value;
+    updateTransform();
 }
 
 void TransformComponent::addLocalPosition(const glm::vec3& value)
 {
-    position += value;
-    markDirty();
+    localPosition += value;
+    updateTransform();
 }
 
 void TransformComponent::setLocalRotation(const glm::quat& value)
 {
-    rotation = value;
-    markDirty();
+    localRotation = value;
+    updateTransform();
 }
 
 void TransformComponent::addLocalRotation(const glm::quat& value)
 {
-    rotation = value * rotation;
-    markDirty();
+    localRotation = value * localRotation;
+    updateTransform();
 }
 
 void TransformComponent::setLocalScale(const glm::vec3& value)
 {
-    scale = value;
-    markDirty();
+    localScale = value;
+    updateTransform();
 }
 
 void TransformComponent::multiplyLocalScale(const glm::vec3& value)
 {
-    scale *= value;
-    markDirty();
+    localScale *= value;
+    updateTransform();
 }
 
 void TransformComponent::setGlobalPosition(const glm::vec3& value)
 {
-    (parent != nullptr) ? (position = value + parent->getGlobalPosition()) : (position = value);
-    markDirty();
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        setLocalPosition(value);
+    }
+    else
+    {
+        localPosition = value + parent->getGlobalPosition();
+    }
+
+    updateTransform();
 }
 
 void TransformComponent::addGlobalPosition(const glm::vec3& value)
 {
-    (parent != nullptr) ? (position += value + parent->getGlobalPosition()) : (position += value);
-    markDirty();
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        addLocalPosition(value);
+    }
+    else
+    {
+        localPosition += value + parent->getGlobalPosition();
+    }
+
+    updateTransform();
 }
 
 void TransformComponent::setGlobalRotation(const glm::quat& value)
 {
-    (parent != nullptr) ? (rotation = value * parent->getGlobalRotation()) : (rotation = value);
-    markDirty();
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        setLocalRotation(value);
+    }
+    else
+    {
+        localRotation = value * parent->getGlobalRotation();
+    }
+
+    (parent != nullptr) ? (localRotation = value * parent->getGlobalRotation()) : (localRotation = value);
+    updateTransform();
 }
 
 void TransformComponent::addGlobalRotation(const glm::quat& value)
 {
-    (parent != nullptr) ? (rotation = value * parent->getGlobalRotation() * rotation) : (rotation = value * rotation);
-    markDirty();
+    // TODO: Verify
+    if (parent == nullptr)
+    {
+        addLocalRotation(value);
+    }
+    else
+    {
+        localRotation = value * localRotation * parent->getGlobalRotation();
+    }
+
+    updateTransform();
 }
 
-void TransformComponent::setGlobalScale(const glm::vec3& value)
-{
-    (parent != nullptr) ? (scale = value * parent->getGlobalScale()) : (scale = value);
-    markDirty();
-}
-
-void TransformComponent::multiplyGlobalScale(const glm::vec3& value)
-{
-    (parent != nullptr) ? (scale *= value * parent->getGlobalScale()) : (scale *= value);
-    markDirty();
-}
-
-void TransformComponent::addChild(std::shared_ptr<GameObject> child)
+void TransformComponent::addChild(const std::shared_ptr<GameObject>& child)
 {
     children.push_back(child->getTransform());
 

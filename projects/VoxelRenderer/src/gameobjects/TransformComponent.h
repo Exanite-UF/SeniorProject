@@ -8,20 +8,18 @@
 class TransformComponent : public Component, public std::enable_shared_from_this<TransformComponent>
 {
 private:
-    glm::vec3 position = glm::vec3(0, 0, 0);
-    glm::quat rotation = glm::quat(1, 0, 0, 0);
-    glm::vec3 scale = glm::vec3(1, 1, 1);
-
-    mutable glm::mat4 localTransform = glm::mat4(1.0f);
-    mutable glm::mat4 globalTransform = glm::mat4(1.0f);
-    mutable bool isDirty = true;
-
-    // Helpers
-    void updateTransform() const;
-    void markDirty();
-
     std::shared_ptr<TransformComponent> parent {};
     std::vector<std::shared_ptr<TransformComponent>> children {};
+
+    glm::vec3 localPosition = glm::vec3(0, 0, 0);
+    glm::quat localRotation = glm::quat(1, 0, 0, 0);
+    glm::vec3 localScale = glm::vec3(1, 1, 1);
+
+    mutable glm::quat globalRotation = glm::quat(1, 0, 0, 0);
+    mutable glm::mat4 globalTransform = glm::mat4(1);
+    mutable glm::mat4 inverseGlobalTransform = glm::mat4(1);
+
+    void updateTransform() const;
 
 public:
     [[nodiscard]] const std::shared_ptr<TransformComponent>& getParent() const;
@@ -39,10 +37,10 @@ public:
 
     [[nodiscard]] glm::vec3 getGlobalPosition() const;
     [[nodiscard]] glm::quat getGlobalRotation() const;
-    [[nodiscard]] glm::vec3 getGlobalScale() const;
+    [[nodiscard]] glm::vec3 getLossyGlobalScale() const;
 
-    [[nodiscard]] const glm::mat4& getLocalTransform() const;
     [[nodiscard]] const glm::mat4& getGlobalTransform() const;
+    [[nodiscard]] const glm::mat4& getInverseGlobalTransform() const;
 
     void setLocalPosition(const glm::vec3& value);
     void addLocalPosition(const glm::vec3& value);
@@ -59,8 +57,5 @@ public:
     void setGlobalRotation(const glm::quat& value);
     void addGlobalRotation(const glm::quat& value);
 
-    void setGlobalScale(const glm::vec3& value);
-    void multiplyGlobalScale(const glm::vec3& value);
-
-    void addChild(std::shared_ptr<GameObject> child);
+    void addChild(const std::shared_ptr<GameObject>& child);
 };
