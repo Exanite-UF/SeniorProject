@@ -12,7 +12,7 @@ class Component : public NonCopyable
     friend class GameObject;
 
 protected:
-    bool isDestroyed = false;
+    bool isAlive = true;
 
     // Certain calls are paired
     // If the first event in the pair is called, the second will eventually called:
@@ -38,5 +38,6 @@ public:
     std::shared_ptr<TransformComponent>& getTransform();
     std::shared_ptr<GameObject>& getGameObject();
 
-    bool isAlive() const;
+    bool getIsAlive() const;
+    void assertIsAlive() const;
 };

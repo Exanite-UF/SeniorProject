@@ -10,17 +10,14 @@ class TransformComponent;
 
 class GameObject : public NonCopyable, public std::enable_shared_from_this<GameObject>
 {
-    friend class std::shared_ptr<GameObject>;
-
 private:
-    bool isDestroyed = false;
+    bool isAlive = true;
 
     std::shared_ptr<TransformComponent> transform {};
     std::vector<std::shared_ptr<Component>> components {};
 
-    GameObject();
-
 public:
+    GameObject();
     ~GameObject() override;
 
     static std::shared_ptr<GameObject> create();
@@ -35,12 +32,15 @@ public:
 
     void destroy();
 
-    bool isAlive() const;
+    bool getIsAlive() const;
+    void assertIsAlive() const;
 };
 
 template <typename T, typename... Args>
 std::shared_ptr<T> GameObject::addComponent(Args&&... args)
 {
+    assertIsAlive();
+
     std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
     components.push_back(component);
 
@@ -57,6 +57,8 @@ std::shared_ptr<T> GameObject::addComponent(Args&&... args)
 template <typename T>
 std::shared_ptr<T> GameObject::getComponent()
 {
+    assertIsAlive();
+
     for (const auto& component : components)
     {
         std::shared_ptr<T> castedComponent = std::dynamic_pointer_cast<T>(component);

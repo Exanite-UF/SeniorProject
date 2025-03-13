@@ -1,5 +1,7 @@
 #include "Component.h"
 
+#include <src/utilities/Assert.h>
+
 Component::Component() = default;
 
 Component::~Component()
@@ -9,30 +11,35 @@ Component::~Component()
 
 void Component::destroy()
 {
-    if (isDestroyed)
-    {
-        return;
-    }
-
-    isDestroyed = true;
+    assertIsAlive();
 
     onDestroy();
 
+    isAlive = false;
     gameObject.reset();
     transform.reset();
 }
 
 std::shared_ptr<TransformComponent>& Component::getTransform()
 {
+    assertIsAlive();
+
     return transform;
 }
 
 std::shared_ptr<GameObject>& Component::getGameObject()
 {
+    assertIsAlive();
+
     return gameObject;
 }
 
-bool Component::isAlive() const
+bool Component::getIsAlive() const
 {
-    return !isDestroyed;
+    return isAlive;
+}
+
+void Component::assertIsAlive() const
+{
+    Assert::isTrue(isAlive, "Component has been destroyed");
 }
