@@ -58,6 +58,7 @@ private:
     // These are compute shaders that are used to render
     static GLuint prepareRayTraceFromCameraProgram;
     static GLuint resetHitInfoProgram;
+    static GLuint afterCastProgram;
     static GLuint resetVisualInfoProgram;
     static GLuint fullCastProgram;
     static GLuint pathTraceToFramebufferProgram;
@@ -77,6 +78,8 @@ private:
 
     friend class Renderer;
 
+    void afterCast();
+
 public:
     void setResolution(glm::ivec2 size);
     void setRaysPerPixel(int number);
@@ -84,7 +87,8 @@ public:
     void prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight = true);
 
     void resetHitInfo();
-    void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true);
+    
+    void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
 
     void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay);
 

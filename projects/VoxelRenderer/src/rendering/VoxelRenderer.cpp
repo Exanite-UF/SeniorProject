@@ -26,6 +26,7 @@ GLuint VoxelRenderer::resetHitInfoProgram;
 GLuint VoxelRenderer::resetVisualInfoProgram;
 GLuint VoxelRenderer::fullCastProgram;
 GLuint VoxelRenderer::pathTraceToFramebufferProgram;
+GLuint VoxelRenderer::afterCastProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -72,10 +73,41 @@ VoxelRenderer::VoxelRenderer()
     resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
     resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
     fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
+    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader);
 
     pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader);
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
+}
+
+void VoxelRenderer::afterCast()
+{
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
+    GLuint workGroupsZ = raysPerPixel;
+
+    // Reset the hit info
+    glUseProgram(afterCastProgram);
+
+    rayHitMiscBuffer.bind(0);
+    attentuationBuffer1.bind(1);
+    attentuationBuffer2.bind(2);
+
+    glUniform3i(glGetUniformLocation(afterCastProgram, "resolution"), size.x, size.y, raysPerPixel);
+    glUniform1i(glGetUniformLocation(afterCastProgram, "currentBuffer"), currentBuffer % 2 == 0);
+
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    rayHitMiscBuffer.unbind();
+    attentuationBuffer1.unbind();
+    attentuationBuffer2.unbind();
+
+    glUseProgram(0);
 }
 
 void VoxelRenderer::setResolution(glm::ivec2 size)
@@ -147,7 +179,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     }
 
     resetHitInfo();
-    resetVisualInfo(resetLight);
+    resetVisualInfo(resetLight, true, true, resetLight);
 }
 
 void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay)
@@ -224,7 +256,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-                //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
             voxelWorld->unbindBuffers();
         }
@@ -259,7 +291,8 @@ void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& w
     for (int i = 0; i <= bounces; i++)
     {
         executeRayTrace(worlds, i == 0);
-        resetHitInfo();
+        afterCast();
+        resetVisualInfo(false, false, false, true);
     }
 }
 
@@ -288,7 +321,7 @@ void VoxelRenderer::resetHitInfo()
     glUseProgram(0);
 }
 
-void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
+void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool resetFirstHit, bool drawSkyBox)
 {
     glUseProgram(resetVisualInfoProgram);
 
@@ -319,6 +352,8 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
     glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttenuation);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetFirstHit"), resetFirstHit);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "drawSkybox"), drawSkyBox);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "currentBuffer"), currentBuffer % 2 == 0);
 
     {

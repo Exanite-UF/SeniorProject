@@ -5,7 +5,9 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform bool resetLight;
+uniform bool drawSkybox;
 uniform bool resetAttentuation;
+uniform bool resetFirstHit;
 uniform bool currentBuffer;
 
 
@@ -89,19 +91,43 @@ void setAttenuation(ivec3 coord, vec3 value)
     priorAttenuation2[2 + index] = value.z;
 }
 
+vec3 getAttenuation(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
+    if(currentBuffer){
+        return vec3(priorAttenuation1[index + 0], priorAttenuation1[index + 1], priorAttenuation1[index + 2]);
+    }else{
+        return vec3(priorAttenuation2[index + 0], priorAttenuation2[index + 1], priorAttenuation2[index + 2]);
+    }
+    
+}
+
 void setLightAccumulation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    int temp = currentBuffer ? 1 : 0;
-    int temp2 = 1 - temp;
 
-    accumulatedLight1[0 + index] = value.x * temp2;
-    accumulatedLight1[1 + index] = value.y * temp2;
-    accumulatedLight1[2 + index] = value.z * temp2;
+    accumulatedLight1[0 + index] = value.x;
+    accumulatedLight1[1 + index] = value.y;
+    accumulatedLight1[2 + index] = value.z;
 
-    accumulatedLight2[0 + index] = value.x * temp;
-    accumulatedLight2[1 + index] = value.y * temp;
-    accumulatedLight2[2 + index] = value.z * temp;
+    accumulatedLight2[0 + index] = value.x;
+    accumulatedLight2[1 + index] = value.y;
+    accumulatedLight2[2 + index] = value.z;
+}
+
+void setSkyBox(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+
+    if(!currentBuffer){
+        accumulatedLight1[0 + index] = accumulatedLight2[0 + index] + value.x;
+        accumulatedLight1[1 + index] = accumulatedLight2[1 + index] + value.y;
+        accumulatedLight1[2 + index] = accumulatedLight2[2 + index] + value.z;
+    }else{
+        accumulatedLight2[0 + index] = accumulatedLight1[0 + index] + value.x;
+        accumulatedLight2[1 + index] = accumulatedLight1[1 + index] + value.y;
+        accumulatedLight2[2 + index] = accumulatedLight1[2 + index] + value.z;
+    }
 }
 
 void setFirstHitNormal(ivec3 coord, vec3 value)
@@ -134,34 +160,41 @@ void main()
     
     //setAttenuation(texelCoord, vec3(0));
 
+    if(resetLight){
+        setLightAccumulation(texelCoord, vec3(0));
+    }
 
     if (resetAttentuation)
     {
         setAttenuation(texelCoord, vec3(1));
     }
 
-    if (resetLight)
-    {
-        if (dot(rayDir, sunDir) > sunSize)
-        {
-            setLightAccumulation(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1));
-        }
-        else if (dot(rayDir, vec3(0, 0, 1)) > 0)
-        {
-            setLightAccumulation(texelCoord, 1 * vec3(40, 77, 222) / 255);
-        }
-        else
-        {
-            setLightAccumulation(texelCoord, 0.1 * vec3(61, 150, 11) / 255);
-        }
-    }
 
-    if (texelCoord.z == 0)
+    if (resetFirstHit && texelCoord.z == 0)
     {
         setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
         setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
         setFirstHitNormal(texelCoord, rayDir); // The skybox has a roughness of 0
     }
+
+    if (drawSkybox)
+    {
+        vec3 attenuation = getAttenuation(texelCoord);
+
+        if (dot(rayDir, sunDir) > sunSize)
+        {
+            setSkyBox(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attenuation);
+        }
+        else if (dot(rayDir, vec3(0, 0, 1)) > 0)
+        {
+            setSkyBox(texelCoord, 1 * vec3(40, 77, 222) / 255 * attenuation);
+        }
+        else
+        {
+            setSkyBox(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attenuation);
+        }
+    }
+
 
     // imageStore(hitPosition, texelCoord, vec4(0));
     // imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));

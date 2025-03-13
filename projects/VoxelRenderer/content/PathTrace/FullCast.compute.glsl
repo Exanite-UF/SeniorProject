@@ -36,7 +36,7 @@ uniform uint worldNumber;
 
 layout(std430, binding = 0) buffer RayPosition
 {
-    coherent restrict float rayPosition[];
+    float rayPosition[];
 };
 
 vec3 getRayPosition(ivec3 coord)
@@ -47,7 +47,7 @@ vec3 getRayPosition(ivec3 coord)
 
 layout(std430, binding = 1) buffer RayDirection
 {
-    coherent restrict float rayDirection[];
+    float rayDirection[];
 };
 
 vec3 getRayDirection(ivec3 coord)
@@ -59,7 +59,7 @@ vec3 getRayDirection(ivec3 coord)
 
 layout(std430, binding = 2) buffer RayPositionOut
 {
-    coherent restrict float rayPositionOut[];
+    float rayPositionOut[];
 };
 
 void setRayPosition(ivec3 coord, vec3 value)
@@ -72,7 +72,7 @@ void setRayPosition(ivec3 coord, vec3 value)
 
 layout(std430, binding = 3) buffer RayDirectionOut
 {
-    coherent restrict float rayDirectionOut[];
+    float rayDirectionOut[];
 };
 
 void setRayDirection(ivec3 coord, vec3 value)
@@ -116,7 +116,7 @@ uint getMaterialIndex(ivec3 voxelPosition)
 
 layout(std430, binding = 6) buffer HitMisc
 {
-    coherent float hitMisc[];
+    float hitMisc[];
 };
 
 float getHitWasHit(ivec3 coord)

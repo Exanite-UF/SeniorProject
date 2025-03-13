@@ -191,7 +191,7 @@ void Program::run()
 
     // VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
-    renderer.setBounces(0);
+    renderer.setBounces(2);
 
     // auto blurX = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
     // blurX->setUniforms = [&renderer](GLuint program){
