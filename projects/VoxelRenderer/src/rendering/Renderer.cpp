@@ -22,7 +22,7 @@ void Renderer::offscreenRenderingFunc()
     }
 }
 
-void Renderer::isOwningThreadCheck()
+void Renderer::isOwningThreadCheck() const
 {
     if (std::this_thread::get_id() != owningThread)
     {

@@ -114,7 +114,7 @@ private:
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure
-    void isOwningThreadCheck();
+    void isOwningThreadCheck() const;
 
     void _render(); // This is where all the rendering happens (The underscore is because a publicly facing function that wraps the entire rendering process exists)
     void reproject(float fov = -1); // This is where reprojection occurs
