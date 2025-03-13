@@ -19,10 +19,12 @@ void TransformComponent::updateTransform() const
     if (parent)
     {
         globalTransform = parent->getGlobalTransform() * localTransform;
+        globalRotation = parent->getGlobalRotation() * localRotation;
     }
     else
     {
         globalTransform = localTransform;
+        globalRotation = localRotation;
     }
 
     inverseGlobalTransform = glm::inverse(globalTransform);
