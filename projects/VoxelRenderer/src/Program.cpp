@@ -595,7 +595,7 @@ void Program::run()
 
         // Render
         {
-            renderer.setRenderResolution(window->size);
+            renderer.setRenderResolution(glm::ivec2(2560,1440));
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glDepthFunc(GL_GREATER);
