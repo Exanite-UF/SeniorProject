@@ -16,8 +16,8 @@
 #include <mutex>
 #include <thread>
 
-#include <src/world/Camera.h>
-#include <src/world/Scene.h>
+#include <src/world/CameraComponent.h>
+#include <src/world/SceneComponent.h>
 
 class VoxelRenderer;
 class AsynchronousReprojection;
@@ -89,7 +89,7 @@ private:
     std::array<GLuint, 3> materialTextures;
 
 private:
-    std::shared_ptr<Scene> scene = nullptr;
+    std::shared_ptr<SceneComponent> scene = nullptr;
     int bounces = 2;
 
     std::unique_ptr<VoxelRenderer> voxelRenderer = nullptr;
@@ -142,8 +142,8 @@ public:
     void setRenderResolution(glm::ivec2 renderResolution);
     void setRaysPerPixel(int number);
 
-    void pollCamera(const std::shared_ptr<Camera>& camera);
-    void setScene(const std::shared_ptr<Scene>& scene);
+    void pollCamera(const std::shared_ptr<CameraComponent>& camera);
+    void setScene(const std::shared_ptr<SceneComponent>& scene);
     void setBounces(const int& bounces);
 
     void render(float fov = -1);

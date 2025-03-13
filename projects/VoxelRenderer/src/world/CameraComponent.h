@@ -8,7 +8,7 @@
 
 #include <src/gameobjects/TransformComponent.h> // maybe replace with component
 
-class Camera : public Component
+class CameraComponent : public Component
 {
 public:
     // For Input

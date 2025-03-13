@@ -50,7 +50,7 @@
 #include <src/utilities/TupleHasher.h>
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
-#include <src/world/Scene.h>
+#include <src/world/SceneComponent.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
 
@@ -161,11 +161,11 @@ void Program::run()
 
     // Create the Scene GameObject
     auto sceneObject = GameObject::create();
-    auto scene = sceneObject->addComponent<Scene>();
+    auto scene = sceneObject->addComponent<SceneComponent>();
 
     // Create the Camera GameObject
     auto cameraObject = GameObject::create();
-    auto camera = cameraObject->addComponent<Camera>();
+    auto camera = cameraObject->addComponent<CameraComponent>();
     auto cameraTransform = camera->getTransform();
 
     auto worldSize = glm::ivec3(512, 512, 512);

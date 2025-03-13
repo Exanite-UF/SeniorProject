@@ -215,7 +215,7 @@ void Renderer::setRaysPerPixel(int number)
     voxelRenderer->setRaysPerPixel(number);
 }
 
-void Renderer::pollCamera(const std::shared_ptr<Camera>& camera)
+void Renderer::pollCamera(const std::shared_ptr<CameraComponent>& camera)
 {
     std::scoped_lock lock(cameraMtx);
     currentCameraPosition = camera->getTransform()->getGlobalPosition();
@@ -223,7 +223,7 @@ void Renderer::pollCamera(const std::shared_ptr<Camera>& camera)
     currentCameraFOV = camera->getHorizontalFov();
 }
 
-void Renderer::setScene(const std::shared_ptr<Scene>& scene)
+void Renderer::setScene(const std::shared_ptr<SceneComponent>& scene)
 {
     this->scene = scene;
 }

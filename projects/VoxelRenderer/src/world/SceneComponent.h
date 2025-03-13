@@ -4,13 +4,13 @@
 #include <vector>
 
 #include <src/gameobjects/Component.h>
-#include <src/world/Camera.h>
+#include <src/world/CameraComponent.h>
 #include <src/world/VoxelWorld.h>
 
-class Scene : public Component
+class SceneComponent : public Component
 {
 public:
     // TODO: Implement transformation hierarchy
-    std::shared_ptr<Camera> camera {};
+    std::shared_ptr<CameraComponent> camera {};
     std::vector<std::shared_ptr<VoxelWorld>> worlds {};
 };
