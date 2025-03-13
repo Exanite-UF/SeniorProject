@@ -174,7 +174,7 @@ void Program::run()
         scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
         scene.worlds.back()->transform.addGlobalPosition(glm::vec3(512 * (i % 3), 512 * (i / 3), 0));
     }
-    
+
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
 
     camera->transform.setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
@@ -595,8 +595,9 @@ void Program::run()
 
         // Render
         {
-            renderer.setRenderResolution(glm::ivec2(2560,1440));
-            //renderer.setRenderResolution(window->size);
+            // renderer.setRenderResolution(glm::ivec2(2560,1440));
+            constexpr float renderRatio = 0.40f;
+            renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glDepthFunc(GL_GREATER);
