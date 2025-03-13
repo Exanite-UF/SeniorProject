@@ -70,7 +70,11 @@ void GlfwContext::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GL
         return;
     }
 
-    auto self = reinterpret_cast<const GlfwContext*>(userParam);
+    auto self = static_cast<const GlfwContext*>(userParam);
+    if (self == nullptr)
+    {
+        return;
+    }
 
     std::string messageStr(message, length);
     Log::log("[" + std::to_string(self->id) + "] " + messageStr);
