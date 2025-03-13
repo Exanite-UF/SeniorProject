@@ -147,10 +147,8 @@ void TransformComponent::setGlobalPosition(const glm::vec3& value)
     }
     else
     {
-        localPosition = value + parent->getGlobalPosition();
+        setLocalPosition(parent->getGlobalTransform() * glm::vec4(value, 1));
     }
-
-    updateTransform();
 }
 
 void TransformComponent::addGlobalPosition(const glm::vec3& value)
@@ -162,10 +160,8 @@ void TransformComponent::addGlobalPosition(const glm::vec3& value)
     }
     else
     {
-        localPosition += value + parent->getGlobalPosition();
+        setLocalPosition(parent->getGlobalTransform() * glm::vec4(getGlobalPosition() + value, 1));
     }
-
-    updateTransform();
 }
 
 void TransformComponent::setGlobalRotation(const glm::quat& value)
@@ -177,10 +173,8 @@ void TransformComponent::setGlobalRotation(const glm::quat& value)
     }
     else
     {
-        localRotation = value * parent->getGlobalRotation();
+        setLocalRotation(value * parent->getGlobalRotation());
     }
-
-    updateTransform();
 }
 
 void TransformComponent::addGlobalRotation(const glm::quat& value)
@@ -192,10 +186,8 @@ void TransformComponent::addGlobalRotation(const glm::quat& value)
     }
     else
     {
-        localRotation = value * localRotation * parent->getGlobalRotation();
+        setLocalRotation(value * localRotation * parent->getGlobalRotation());
     }
-
-    updateTransform();
 }
 
 void TransformComponent::addChild(const std::shared_ptr<GameObject>& child)
