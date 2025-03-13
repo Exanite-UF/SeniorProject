@@ -44,7 +44,7 @@ void ExaniteWorldGenerator::generateData()
 
                             int materialIndex = ((materialBits2 << 6) | (materialBits1 << 3) | (materialBits0 << 0)) + materialOffset;
 
-                            data.setVoxelMaterialIndex(position0, materialIndex % Constants::VoxelWorld::maxMaterialCount);
+                            data.setVoxelMaterialIndex(position0, 17);
                         }
                     }
                 }
@@ -52,7 +52,7 @@ void ExaniteWorldGenerator::generateData()
         }
     }
 
-    for (int z = 0; z < data.getSize().z; ++z)
+    for (int z = 0; z < data.getSize().z / 2; ++z)
     {
         for (int y = 0; y < data.getSize().y; ++y)
         {

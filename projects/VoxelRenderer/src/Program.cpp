@@ -127,7 +127,7 @@ void Program::run()
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto cameraTransform = camera->getTransform();
 
-    auto worldSize = glm::ivec3(512, 512, 512);
+    auto worldSize = glm::ivec3(128, 128, 128);
     auto& voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
 
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));

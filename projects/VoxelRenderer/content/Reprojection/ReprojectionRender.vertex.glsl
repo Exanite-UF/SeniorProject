@@ -52,7 +52,7 @@ void main()
     pos2.xy *= temp + (temp - 1) / max(0, pos.z);
     pos3.xy *= temp + (temp - 1) / max(0, pos.z);
 
-    pos.xy = pos3.xy + pos2.xy;
+    //    pos.xy = pos3.xy + pos2.xy;
 
     // vec3 normal = texture(normalTexture, aPos.xy).xyz;
     // normal = vec3(normal.y, normal.z, normal.x);
