@@ -28,7 +28,6 @@ public:
     ~GlfwContext() override;
 
     void makeContextCurrent() const;
-    void present();
 
     GLFWwindow* getGlfwWindowHandle();
 };
