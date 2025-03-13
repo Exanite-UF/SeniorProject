@@ -1,0 +1,25 @@
+#pragma once
+
+#include <src/utilities/NonCopyable.h>
+
+#include "GLFW/glfw3.h"
+
+class GlfwContext : public NonCopyable
+{
+private:
+    static void onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+
+protected:
+    // Pointer returned by glfwCreateWindow
+    GLFWwindow* glfwWindowHandle;
+
+    explicit GlfwContext(bool isWindow, GlfwContext* shareWith = nullptr);
+
+public:
+    explicit GlfwContext(GlfwContext* shareWith = nullptr);
+    ~GlfwContext() override;
+
+    void makeContextCurrent();
+
+    GLFWwindow* getGlfwWindowHandle();
+};

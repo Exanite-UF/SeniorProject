@@ -9,8 +9,11 @@
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/NonCopyable.h>
 
-class Window : public NonCopyable
+#include "GlfwContext.h"
+
+class Window : public GlfwContext
 {
+private:
     // Stores last known window sizes/positions when not in fullscreen mode
     glm::i32vec2 lastWindowedPosition = glm::i32vec2(0);
     glm::i32vec2 lastWindowedSize = glm::i32vec2(1);
@@ -33,8 +36,6 @@ class Window : public NonCopyable
 public:
     glm::i32vec2 size = glm::i32vec2(1);
 
-    GLFWwindow* glfwWindowHandle; // A pointer to the object that is the window
-
     // Buffered events need to be flushed. This is done in update().
     // When adding new events, make sure they are flushed.
     BufferedEvent<Window*, int, int> windowSizeEvent {};
@@ -44,20 +45,16 @@ public:
     BufferedEvent<Window*, double, double> scrollEvent {};
     BufferedEvent<Window*, int> cursorEnterEvent {};
 
-    Window();
-    Window(GLFWwindow* shareContextWith);
+    explicit Window(GlfwContext* shareWith = nullptr);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 
-    ~Window();
-
     void update();
+
+    void setFullscreen();
+    void setWindowed();
 
     // Find the monitor that the window is most likely to be on
     // Based on window-monitor overlap
     static GLFWmonitor* getCurrentMonitor(GLFWwindow* window);
-
-    void setFullscreen();
-
-    void setWindowed();
 };

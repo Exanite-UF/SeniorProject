@@ -13,7 +13,7 @@ GLuint Renderer::drawTextureProgram;
 
 void Renderer::offscreenRenderingFunc()
 {
-    glfwMakeContextCurrent(offscreenContext);
+    offscreenContext->makeContextCurrent();
 
     while (isRenderingOffscreen)
     {
@@ -32,9 +32,8 @@ void Renderer::isOwningThreadCheck()
     }
 }
 
-Renderer::Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext)
+Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext)
 {
-
     drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
 
     this->mainContext = mainContext;
@@ -293,7 +292,7 @@ void Renderer::reproject(float fov)
 
     // This repolling of the output size happens here, because things that use the result of the new data, don't actually need the new data, until the reprojection resolution changes.
     int width, height;
-    glfwGetWindowSize(mainContext, &width, &height);
+    glfwGetWindowSize(mainContext->getGlfwWindowHandle(), &width, &height);
 
     if (glm::ivec2(width, height) != outputResolution)
     {

@@ -16,6 +16,8 @@
 #include <mutex>
 #include <thread>
 
+#include <src/windowing/GlfwContext.h>
+#include <src/windowing/Window.h>
 #include <src/world/CameraComponent.h>
 #include <src/world/SceneComponent.h>
 
@@ -36,8 +38,8 @@ private:
 
 private:
     // Rendering Contexts
-    GLFWwindow* offscreenContext = nullptr;
-    GLFWwindow* mainContext = nullptr;
+    std::shared_ptr<Window> mainContext = nullptr;
+    std::shared_ptr<GlfwContext> offscreenContext = nullptr;
 
     std::thread offscreenThread;
     bool isRenderingOffscreen = false;
@@ -122,7 +124,7 @@ private:
     void makeOutputTextures();
 
 public:
-    Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext);
+    Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext);
 
     // This needs to be called on the thread that needs to render to the asynchronous reprojection input
     void makeFramebuffers();

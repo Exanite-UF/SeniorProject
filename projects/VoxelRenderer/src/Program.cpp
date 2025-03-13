@@ -61,17 +61,6 @@
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
 
-void Program::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
-{
-    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
-    {
-        return;
-    }
-
-    std::string messageStr(message, length);
-    Log::log(messageStr);
-}
-
 Program::Program()
 {
     // Ensure preconditions are met
@@ -84,16 +73,9 @@ Program::Program()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // Enable debug messages
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    offscreenContext = std::make_shared<GlfwContext>();
+    window = std::make_shared<Window>(offscreenContext.get());
 
-    offscreen_context = glfwCreateWindow(1024, 1024, "", NULL, NULL);
-    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
-    window = std::make_shared<Window>(offscreen_context);
     inputManager = std::make_shared<InputManager>(window);
 
     // Init IMGUI
@@ -102,18 +84,8 @@ Program::Program()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-    ImGui_ImplGlfw_InitForOpenGL(window->glfwWindowHandle, true);
+    ImGui_ImplGlfw_InitForOpenGL(window->getGlfwWindowHandle(), true);
     ImGui_ImplOpenGL3_Init();
-
-    // Init GLEW
-    glewExperimental = true;
-    if (glewInit() != GLEW_OK)
-    {
-        throw std::runtime_error("Failed to initialize GLEW");
-    }
-
-    // Attach debug message callback
-    glDebugMessageCallback(Program::onOpenGlDebugMessage, this);
 }
 
 Program::~Program()
@@ -178,7 +150,7 @@ void Program::run()
     data.copyFrom(*voxelWorld);
 
     // Create the renderer
-    Renderer renderer { window->glfwWindowHandle, offscreen_context };
+    Renderer renderer(window, offscreenContext);
     renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
@@ -344,7 +316,7 @@ void Program::run()
     renderer.startAsynchronousReprojection();
 
     ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-    while (!glfwWindowShouldClose(window->glfwWindowHandle))
+    while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
         // Engine time
         auto currentTimestamp = std::chrono::high_resolution_clock::now();
@@ -489,8 +461,8 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_F))
             {
-                GLFWmonitor* monitor = glfwGetWindowMonitor(window->glfwWindowHandle);
-                if (monitor == NULL)
+                GLFWmonitor* monitor = glfwGetWindowMonitor(window->getGlfwWindowHandle());
+                if (monitor == nullptr)
                 {
                     window->setFullscreen();
                 }
@@ -502,20 +474,20 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_Q))
             {
-                int mode = glfwGetInputMode(window->glfwWindowHandle, GLFW_CURSOR);
+                int mode = glfwGetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR);
 
                 if (mode == GLFW_CURSOR_DISABLED)
                 {
-                    glfwSetInputMode(window->glfwWindowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 }
                 else
                 {
-                    glfwSetInputMode(window->glfwWindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 }
             }
             if (input->isKeyPressed(GLFW_KEY_ESCAPE))
             {
-                glfwSetWindowShouldClose(window->glfwWindowHandle, GLFW_TRUE);
+                glfwSetWindowShouldClose(window->getGlfwWindowHandle(), GLFW_TRUE);
             }
             if (input->isKeyPressed(GLFW_KEY_R))
             {
@@ -599,7 +571,7 @@ void Program::run()
             frameCount++;
         }
         // Present
-        glfwSwapBuffers(window->glfwWindowHandle);
+        glfwSwapBuffers(window->getGlfwWindowHandle());
     }
 
     renderer.stopAsynchronousReprojection();
