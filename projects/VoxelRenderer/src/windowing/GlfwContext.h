@@ -29,5 +29,5 @@ public:
 
     void makeContextCurrent() const;
 
-    GLFWwindow* getGlfwWindowHandle();
+    GLFWwindow* getGlfwWindowHandle() const;
 };
