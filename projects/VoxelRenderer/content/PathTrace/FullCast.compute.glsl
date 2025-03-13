@@ -32,7 +32,6 @@ uniform uint materialMapSize;
 uniform float random; // This is used to make non-deterministic randomness
 
 uniform bool isFirstRay;
-uniform uint worldNumber;
 
 layout(std430, binding = 0) buffer RayPosition
 {
@@ -232,15 +231,6 @@ void setFirstHitMaterial(ivec3 coord, vec3 value)
     firstHitMaterial[2 + index] = value.z;
 }
 
-layout(std430, binding = 15) buffer ShouldCastMask
-{
-    readonly uint showCastMask[];
-};
-
-bool shouldCast(ivec3 coord){
-    int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 1, axis order is x y z
-    return (showCastMask[index] & (1 << (worldNumber % 32))) != 0;
-}
 
 
 
