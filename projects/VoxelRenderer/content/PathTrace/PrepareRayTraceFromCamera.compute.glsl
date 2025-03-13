@@ -106,8 +106,26 @@ void main()
     // The random offset allows for temporal accumulation
     vec2 randOffset = vec2(random(vec3(texelCoord) + jitter.x), random(vec3(texelCoord) + jitter.y)); // Create a random offset using the position of the texel and a provided jitter
 
-    vec2 uv = ((texelCoord.xy + randOffset) / size.xy - 0.5) * 2.0; //([-1, 1), [-1, 1))
+    vec2 uv = ((vec2(texelCoord.xy + randOffset)) / size.xy - 0.5) * 2.0; //([-1, 1), [-1, 1))
     uv.y *= float(size.y) / size.x; // Correct for aspect ratio
+
+    if (uv.x >= 0)
+    {
+        uv.x -= 0.25 / size.x;
+    }
+    else
+    {
+        uv.x += 0.25 / size.x;
+    }
+
+    if (uv.y >= 0)
+    {
+        uv.y -= 0.25 / size.y;
+    }
+    else
+    {
+        uv.y += 0.25 / size.y;
+    }
 
     vec3 rayDir = forward + horizontalFovTan * (uv.x * right + uv.y * up);
 
