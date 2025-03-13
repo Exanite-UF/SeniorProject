@@ -26,7 +26,7 @@ void main()
     vec3 oldPos = texture(oldPosition, uv).xyz;
     vec3 newPos = texture(newPosition, localUV).xyz;
     float dist = length(newPos - oldPos);
-    frameCount /= 100 * (dist / distance1) + 1; // Distance traveled / distance from camera
+    frameCount /= 20 * (dist / distance1) + 1; // Distance traveled / distance from camera
 
     frameCount *= texture(combineMask, localUV).x;
 

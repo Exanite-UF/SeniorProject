@@ -671,10 +671,15 @@ void attempt(ivec3 texelCoord)
     //if(!shouldCast(texelCoord)){
     //    return;
     //}
+    float currentDepth = getHitDist(texelCoord);
+    if(currentDepth < 0){
+        return;
+    }
+
 
     vec3 startPos = getRayPosition(texelCoord);
     vec3 rayDir = normalize(getRayDirection(texelCoord));
-    float currentDepth = getHitDist(texelCoord);
+    
     
     RayHit hit = rayCast(texelCoord, startPos, rayDir, currentDepth);
 

@@ -170,9 +170,9 @@ void Program::run()
 
     glm::ivec3 worldSize = glm::ivec3(256, 256, 512);
     auto voxelWorld = scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
-    for(int i = 1; i < 8; i++){
+    for(int i = 1; i < 25; i++){
         scene.worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
-        scene.worlds.back()->transform.addGlobalPosition(glm::vec3(256 * i, 0, 0));
+        scene.worlds.back()->transform.addGlobalPosition(glm::vec3(256 * (i % 5), 256 * (i / 5), 0));
     }
     
     // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
