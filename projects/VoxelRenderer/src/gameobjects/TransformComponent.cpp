@@ -89,7 +89,7 @@ glm::vec3 TransformComponent::getLossyGlobalScale() const
     glm::vec3 y = globalTransform[1];
     glm::vec3 z = globalTransform[2];
 
-    return glm::vec3(x.length(), y.length(), z.length());
+    return glm::vec3(glm::length(x), glm::length(y), glm::length(z));
 }
 
 const glm::mat4& TransformComponent::getGlobalTransform() const
