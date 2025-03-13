@@ -72,7 +72,7 @@ void GlfwContext::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GL
     }
 
     std::string messageStr(message, length);
-    Log::log("[" + std::to_string(self->id) + "] " + messageStr);
+    Log::log("GL context " + std::to_string(self->id) + ": " + messageStr);
 }
 
 GLFWwindow* GlfwContext::getGlfwWindowHandle()
