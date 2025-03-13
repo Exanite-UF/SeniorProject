@@ -154,11 +154,9 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    vec3 startPos = getRayPosition(texelCoord);
-    vec3 rayDir = normalize(getRayDirection(texelCoord));
-
     
-    //setAttenuation(texelCoord, vec3(0));
+
+
 
     if(resetLight){
         setLightAccumulation(texelCoord, vec3(0));
@@ -170,33 +168,35 @@ void main()
     }
 
 
-    if (resetFirstHit && texelCoord.z == 0)
-    {
-        setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
-        setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
-        setFirstHitNormal(texelCoord, rayDir); // The skybox has a roughness of 0
+    if((resetFirstHit && texelCoord.z == 0) || drawSkybox){
+        vec3 startPos = getRayPosition(texelCoord);
+        vec3 rayDir = normalize(getRayDirection(texelCoord));
+
+        if (resetFirstHit && texelCoord.z == 0)
+        {
+            setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
+            setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
+            setFirstHitNormal(texelCoord, rayDir); // The skybox has a roughness of 0
+        }
+
+        if (drawSkybox)
+        {
+            vec3 attenuation = getAttenuation(texelCoord);
+
+            if (dot(rayDir, sunDir) > sunSize)
+            {
+                setSkyBox(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attenuation);
+            }
+            else if (dot(rayDir, vec3(0, 0, 1)) > 0)
+            {
+                setSkyBox(texelCoord, 1 * vec3(40, 77, 222) / 255 * attenuation);
+            }
+            else
+            {
+                setSkyBox(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attenuation);
+            }
+        }
     }
 
-    if (drawSkybox)
-    {
-        vec3 attenuation = getAttenuation(texelCoord);
-
-        if (dot(rayDir, sunDir) > sunSize)
-        {
-            setSkyBox(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attenuation);
-        }
-        else if (dot(rayDir, vec3(0, 0, 1)) > 0)
-        {
-            setSkyBox(texelCoord, 1 * vec3(40, 77, 222) / 255 * attenuation);
-        }
-        else
-        {
-            setSkyBox(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attenuation);
-        }
-    }
-
-
-    // imageStore(hitPosition, texelCoord, vec4(0));
-    // imageStore(hitNormal, texelCoord, vec4(vec3(0), 1.0 / 0.0));
-    // imageStore(hitMaterial, texelCoord, uvec4(0));
+    
 }
