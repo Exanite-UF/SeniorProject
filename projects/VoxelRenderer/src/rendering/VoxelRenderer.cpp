@@ -223,7 +223,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
-                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
             voxelWorld->unbindBuffers();
         }
@@ -258,6 +258,7 @@ void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& w
     for (int i = 0; i <= bounces; i++)
     {
         executeRayTrace(worlds, i == 0);
+        resetHitInfo();
     }
 }
 

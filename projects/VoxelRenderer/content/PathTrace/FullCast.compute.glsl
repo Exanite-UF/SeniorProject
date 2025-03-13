@@ -35,7 +35,7 @@ uniform bool isFirstRay;
 
 layout(std430, binding = 0) buffer RayPosition
 {
-    float rayPosition[];
+    coherent restrict float rayPosition[];
 };
 
 vec3 getRayPosition(ivec3 coord)
@@ -46,7 +46,7 @@ vec3 getRayPosition(ivec3 coord)
 
 layout(std430, binding = 1) buffer RayDirection
 {
-    float rayDirection[];
+    coherent restrict float rayDirection[];
 };
 
 vec3 getRayDirection(ivec3 coord)
@@ -58,7 +58,7 @@ vec3 getRayDirection(ivec3 coord)
 
 layout(std430, binding = 2) buffer RayPositionOut
 {
-    float rayPositionOut[];
+    coherent restrict float rayPositionOut[];
 };
 
 void setRayPosition(ivec3 coord, vec3 value)
@@ -71,7 +71,7 @@ void setRayPosition(ivec3 coord, vec3 value)
 
 layout(std430, binding = 3) buffer RayDirectionOut
 {
-    float rayDirectionOut[];
+    coherent restrict float rayDirectionOut[];
 };
 
 void setRayDirection(ivec3 coord, vec3 value)
@@ -84,7 +84,7 @@ void setRayDirection(ivec3 coord, vec3 value)
 
 layout(std430, binding = 4) buffer OccupancyMap
 {
-    uint occupancyMap[];
+    readonly uint occupancyMap[];
 };
 
 // coord is a cell coord
@@ -100,7 +100,7 @@ uint getOccupancyByte(ivec3 coord, int mipMapTexture)
 
 layout(std430, binding = 5) buffer MaterialMap
 {
-    uint materialMap[];
+    readonly uint materialMap[];
 };
 
 uint getMaterialIndex(ivec3 voxelPosition)
@@ -115,7 +115,7 @@ uint getMaterialIndex(ivec3 voxelPosition)
 
 layout(std430, binding = 6) buffer HitMisc
 {
-    float hitMisc[];
+    coherent float hitMisc[];
 };
 
 float getHitWasHit(ivec3 coord)
@@ -143,14 +143,14 @@ void setHitDist(ivec3 coord, float value)
 }
 
 // Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 7) restrict buffer MaterialDefinitions
+layout(std430, binding = 7) buffer MaterialDefinitions
 {
-    MaterialDefinition materialDefinitions[];
+    restrict MaterialDefinition materialDefinitions[];
 };
 
-layout(std430, binding = 8) restrict buffer AttenuationIn
+layout(std430, binding = 8) buffer AttenuationIn
 {
-    float attenuationIn[];
+    restrict float attenuationIn[];
 };
 
 vec3 getPriorAttenuation(ivec3 coord)
@@ -160,14 +160,14 @@ vec3 getPriorAttenuation(ivec3 coord)
     return vec3(attenuationIn[index + 0], attenuationIn[index + 1], attenuationIn[index + 2]);
 }
 
-layout(std430, binding = 9) restrict buffer AccumulatedLightIn
+layout(std430, binding = 9) buffer AccumulatedLightIn
 {
-    float accumulatedLightIn[];
+    restrict float accumulatedLightIn[];
 };
 
-layout(std430, binding = 10) restrict buffer AttenuationOut
+layout(std430, binding = 10) buffer AttenuationOut
 {
-    float attenuationOut[];
+    restrict float attenuationOut[];
 };
 
 void setAttenuation(ivec3 coord, vec3 value)
@@ -179,9 +179,9 @@ void setAttenuation(ivec3 coord, vec3 value)
     attenuationOut[2 + index] = value.z;
 }
 
-layout(std430, binding = 11) restrict buffer AccumulatedLightOut
+layout(std430, binding = 11) buffer AccumulatedLightOut
 {
-    float accumulatedLightOut[];
+    restrict float accumulatedLightOut[];
 };
 
 void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
@@ -194,7 +194,7 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 
 layout(std430, binding = 12) buffer FirstHitNormal
 {
-    float firstHitNormal[];
+    writeonly float firstHitNormal[];
 };
 
 void setFirstHitNormal(ivec3 coord, vec3 value)
@@ -207,7 +207,7 @@ void setFirstHitNormal(ivec3 coord, vec3 value)
 
 layout(std430, binding = 13) buffer FirstHitPosition
 {
-    float firstHitPosition[];
+    writeonly float firstHitPosition[];
 };
 
 void setFirstHitPosition(ivec3 coord, vec3 value)
@@ -220,7 +220,7 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
 
 layout(std430, binding = 14) buffer FirstHitMaterial
 {
-    float firstHitMaterial[];
+    writeonly float firstHitMaterial[];
 };
 
 void setFirstHitMaterial(ivec3 coord, vec3 value)
@@ -666,22 +666,22 @@ void attempt(ivec3 texelCoord)
     {
         if (dot(rayDir, sunDir) > sunSize)
         {
-            changeLightAccumulation(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
+            //changeLightAccumulation(texelCoord, sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1) * attentuation);
         }
         else if (dot(rayDir, vec3(0, 0, 1)) > 0)
         {
-            changeLightAccumulation(texelCoord, 1 * vec3(40, 77, 222) / 255 * attentuation);
+            //changeLightAccumulation(texelCoord, 1 * vec3(40, 77, 222) / 255 * attentuation);
         }
         else
         {
-            changeLightAccumulation(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attentuation);
+            //changeLightAccumulation(texelCoord, 0.1 * vec3(61, 150, 11) / 255 * attentuation);
         }
-        setAttenuation(texelCoord, vec3(0));
+        //setAttenuation(texelCoord, vec3(0));
         if (texelCoord.z == 0 && isFirstRay)
         {
-            setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
-            setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
-            setFirstHitNormal(texelCoord, rayDir); // The skybox has a roughness of 0
+            //setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
+            //setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
+            //setFirstHitNormal(texelCoord, rayDir); // The skybox has a roughness of 0
         }
     }
 
@@ -708,6 +708,6 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
     attempt(texelCoord);
-    setHitWasHit(texelCoord, false);
-    setHitDist(texelCoord, 1.0 / 0.0);
+    //setHitWasHit(texelCoord, false);
+    //setHitDist(texelCoord, 1.0 / 0.0);
 }
