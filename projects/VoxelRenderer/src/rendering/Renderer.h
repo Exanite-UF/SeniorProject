@@ -141,6 +141,7 @@ public:
     // Only the thread that is rendering asynchronously may call this function
     GLuint getWorkingFramebuffer();
 
+    const glm::ivec2& getRenderResolution();
     void setRenderResolution(glm::ivec2 renderResolution);
     void setRaysPerPixel(int number);
 
@@ -150,6 +151,7 @@ public:
 
     void render(float fov = -1);
 
+    bool getIsAsynchronousReprojectionEnabled();
     void startAsynchronousReprojection();
     void stopAsynchronousReprojection();
     void toggleAsynchronousReprojection();

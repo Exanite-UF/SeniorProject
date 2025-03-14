@@ -118,6 +118,10 @@ GLuint Renderer::getWorkingFramebuffer()
     return framebuffers[bufferMapping.working];
 }
 
+const glm::ivec2 & Renderer::getRenderResolution() {
+    return renderResolution;
+}
+
 void Renderer::setRenderResolution(glm::ivec2 renderResolution)
 {
     if (this->renderResolution == renderResolution)
@@ -442,6 +446,10 @@ void Renderer::makeOutputTextures()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+bool Renderer::getIsAsynchronousReprojectionEnabled() {
+    return isRenderingOffscreen;
 }
 
 void Renderer::startAsynchronousReprojection()

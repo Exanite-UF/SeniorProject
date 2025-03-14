@@ -42,7 +42,7 @@ private:
     static void onCursorEnter(GLFWwindow* window, int entered);
 
 public:
-    glm::i32vec2 size = glm::i32vec2(1);
+    glm::i32vec2 size = glm::i32vec2(1024);
 
     // Buffered events need to be flushed. This is done in update().
     // When adding new events, make sure they are flushed.

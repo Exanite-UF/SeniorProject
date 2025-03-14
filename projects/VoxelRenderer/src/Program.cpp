@@ -143,7 +143,9 @@ void Program::run()
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
-    renderer.setRenderResolution({ 1024, 1024 }); // Render resolution can be set seperately from display resolution
+    float renderRatio = 1.f; // Used to control the render resolution relative to the window resolution
+
+    renderer.setRenderResolution(window->size); // Render resolution can be set seperately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
     // VoxelRenderer renderer;
@@ -308,7 +310,6 @@ void Program::run()
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
 
-    ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
         // Engine time
@@ -333,7 +334,7 @@ void Program::run()
 
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
             auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
-            Log::log(std::to_string(currentFPS) + " FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
+            Log::log(std::to_string(currentFPS) + " Display FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " Render FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
             // std::cout << cameraTransform->getGlobalPosition().x << std::endl;
             // std::cout << cameraTransform->getGlobalPosition().y << std::endl;
             // std::cout << cameraTransform->getGlobalPosition().z << std::endl;
@@ -493,6 +494,10 @@ void Program::run()
                 fillAmount = std::clamp(fillAmount, 0.f, 1.f);
                 remakeNoise = true;
             }
+            else if (input->isKeyHeld(GLFW_KEY_LEFT_ALT) && input->getMouseScroll().y != 0)
+            {
+                renderRatio = glm::clamp(renderRatio + input->getMouseScroll().y * 0.01f, 0.01f, 2.0f);
+            }
             else
             {
                 camera->moveSpeed *= pow(1.1, input->getMouseScroll().y);
@@ -507,6 +512,14 @@ void Program::run()
             // Render debug UI
             if (showMenuGUI)
             {
+                // TODO: Gio, please fix the debug UI size!
+                ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar
+                    | ImGuiWindowFlags_NoResize
+                    | ImGuiWindowFlags_NoMove
+                    | ImGuiWindowFlags_NoCollapse;
+                    // | ImGuiWindowFlags_NoScrollbar
+                    // | ImGuiWindowFlags_NoScrollWithMouse;
+
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
                 ImGui::Begin("Menu", nullptr, guiWindowFlags);
@@ -516,6 +529,7 @@ void Program::run()
 
                     ImGui::SetWindowFontScale(1.5f);
                     ImGui::Text("Voxel Rendering Project\n");
+
                     ImGui::SetWindowFontScale(1.0f);
                     ImGui::Text("Controls:");
                     ImGui::Text("\tW - Forward");
@@ -530,12 +544,19 @@ void Program::run()
                     ImGui::Text("\tG - Toggle Reprojection");
                     ImGui::Text("\tMouse Scroll - Change Move Speed");
                     ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
+                    ImGui::Text("\tAlt + Mouse Scroll - Change Render Resolution");
+
                     ImGui::Text("\nCamera Position");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
                     ImGui::Text("\nCamera Look Direction");
                     ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
-                    ImGui::Text("\nFPS: %.2f | %.2f", currentFPS, currentFPS1);
-                    ImGui::Text("\nWindow Resolution: %.0f x %.0f", window->size.x, window->size.y);
+
+                    ImGui::Text("\nFPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                    ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
+                    ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
+                    ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
+                    ImGui::Text("Render Ratio: %.2f", renderRatio);
                 }
                 ImGui::End();
                 ImGui::PopStyleColor();
@@ -544,8 +565,6 @@ void Program::run()
 
         // Render
         {
-            // renderer.setRenderResolution(glm::ivec2(2560,1440));
-            constexpr float renderRatio = 0.40f;
             renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
