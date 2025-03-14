@@ -30,7 +30,8 @@ void main()
     float dist = length(newPos - oldPos);
     //frameCount /= 20 * (dist / distance1) + 1; // Distance traveled / distance from camera
 
-    frameCount *= texture(combineMask, localUV).x;
+    float mask = texture(combineMask, localUV).x;
+    frameCount *= mask;
 
     vec3 material = texture(newMaterial, localUV).xyz;
     vec3 oldMaterial = texture(oldMaterial, uv).xyz;
@@ -56,6 +57,7 @@ void main()
 
     //out_color = vec4(texture(oldColor, uv).xyz, float(frameCount) / (frameCount + 1));
     //out_color = vec4(vec3(float(frameCount) / (frameCount + 1)), 1);
-    out_color = vec4(vec3(material.x, oldMaterial.x, 0), 1);
+    //out_color = vec4(vec3(texture(combineMask, localUV).x), 1);
+    out_color = vec4(vec3(material.x, oldMaterial.x * mask, 0), 1);
     frameCountOut = vec4(frameCount + 1, 0, 0, 1);
 }

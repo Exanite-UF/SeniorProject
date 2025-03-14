@@ -54,8 +54,8 @@ void main()
 
     pos.xy = pos3.xy + pos2.xy;
 
-    // vec3 normal = texture(normalTexture, aPos.xy).xyz;
-    // normal = vec3(normal.y, normal.z, normal.x);
+    vec3 normal = texture(normalTexture, aPos.xy).xyz;
+    normal = vec3(normal.y, normal.z, normal.x);
 
     // float distFromSurface = abs(dot(normal, pos));
     // float distAlongSurface = length(cross(normal, pos));
@@ -71,5 +71,11 @@ void main()
     pos.z *= horizontalFovTan;
 
     uv = vec2(aPos.xy);
-    gl_Position = vec4(pos.xy, 0.1, pos.z);
+    if(length(normal) < 0.5){
+        //It is the skybox
+        gl_Position = vec4(pos.xy, 0.1, pos.z);
+    }else{
+        gl_Position = vec4(pos.xy, 0.1, pos.z);
+    }
+    
 }
