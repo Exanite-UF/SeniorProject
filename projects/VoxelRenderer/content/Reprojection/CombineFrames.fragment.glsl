@@ -56,9 +56,9 @@ void main()
     //frameCount *= 1 - 0.2 * (1 - exp(-length(cameraMovement)));
     //frameCount = min(frameCount, 100);
 
-    //out_color = vec4(texture(oldColor, uv).xyz, float(frameCount) / (frameCount + 1));
+    out_color = vec4(texture(oldColor, uv).xyz, float(frameCount) / (frameCount + 1));
     //out_color = vec4(vec3(float(frameCount) / (frameCount + 1)), 1);
-    //out_color = vec4(vec3(texture(combineMask, localUV).x), 1);
-    out_color = vec4(vec3(material.x, oldMaterial.x * mask, 0), 1);
+    //out_color = vec4(vec3(mask), 1);
+    out_color = vec4(vec3(material.x, 0 * oldMaterial.x * mask, mask), 1);
     frameCountOut = vec4(frameCount + 1, 0, 0, 1);
 }

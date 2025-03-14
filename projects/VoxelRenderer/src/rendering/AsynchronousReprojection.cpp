@@ -149,6 +149,8 @@ void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& repr
         GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers(4, drawBuffers);
 
+        //glPointSize(3); // I don't know why the points need to be this large
+        //glDrawArrays(GL_POINTS, 0, vertices.size());
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
