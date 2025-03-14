@@ -11,6 +11,7 @@ uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 
 out vec2 uv;
 out float distance1;
+out float isSkybox;
 
 vec3 qtransform(vec4 q, vec3 v)
 {
@@ -71,11 +72,7 @@ void main()
     pos.z *= horizontalFovTan;
 
     uv = vec2(aPos.xy);
-    if(length(normal) < 0.5){
-        //It is the skybox
-        gl_Position = vec4(pos.xy, 0.1, pos.z);
-    }else{
-        gl_Position = vec4(pos.xy, 0.1, pos.z);
-    }
+    isSkybox = float(length(normal) < 0.5);
+    gl_Position = vec4(pos.xy, 0.1, pos.z);
     
 }

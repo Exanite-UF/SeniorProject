@@ -13,6 +13,7 @@ layout(binding = 7) uniform sampler2D oldMaterial;
 
 in vec2 uv;
 in float distance1;
+in float isSkybox;
 
 uniform vec3 cameraMovement;
 uniform ivec2 resolution;
