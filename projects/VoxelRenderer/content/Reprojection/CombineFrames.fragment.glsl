@@ -33,7 +33,7 @@ void main()
     frameCount *= texture(combineMask, localUV).x;
 
     vec3 material = texture(newMaterial, localUV).xyz;
-    vec3 oldMaterial = texture(newMaterial, uv).xyz;
+    vec3 oldMaterial = texture(oldMaterial, uv).xyz;
 
     if(material.x < 0){
         frameCount = 0;
