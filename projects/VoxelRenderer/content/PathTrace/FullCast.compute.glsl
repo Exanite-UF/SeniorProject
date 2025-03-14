@@ -231,9 +231,6 @@ void setFirstHitMaterial(ivec3 coord, vec3 value)
     firstHitMaterial[2 + index] = value.z;
 }
 
-
-
-
 struct RayHit
 {
     bool wasHit;
@@ -658,19 +655,18 @@ float sunBrightness = 5;
 
 void attempt(ivec3 texelCoord)
 {
-    //if(!shouldCast(texelCoord)){
-    //    return;
-    //}
+    // if(!shouldCast(texelCoord)){
+    //     return;
+    // }
     float currentDepth = getHitDist(texelCoord);
-    if(currentDepth < 0){
+    if (currentDepth < 0)
+    {
         return;
     }
 
-
     vec3 startPos = getRayPosition(texelCoord);
     vec3 rayDir = normalize(getRayDirection(texelCoord));
-    
-    
+
     RayHit hit = rayCast(texelCoord, startPos, rayDir, currentDepth);
 
     // If it is not the nearest, then it should do nothing
@@ -694,6 +690,6 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
     attempt(texelCoord);
-    //setHitWasHit(texelCoord, false);
-    //setHitDist(texelCoord, 1.0 / 0.0);
+    // setHitWasHit(texelCoord, false);
+    // setHitDist(texelCoord, 1.0 / 0.0);
 }

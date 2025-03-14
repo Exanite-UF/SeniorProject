@@ -362,7 +362,6 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-
     if (currentBuffer % 2 == 0)
     {
         rayStartBuffer1.unbind();
@@ -373,7 +372,6 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
         rayStartBuffer2.unbind();
         rayDirectionBuffer2.unbind();
     }
-
 
     attentuationBuffer1.unbind();
     accumulatedLightBuffer1.unbind();

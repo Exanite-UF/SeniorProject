@@ -2,16 +2,12 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
 layout(std430, binding = 0) buffer HitMisc
 {
     float hitMisc[];
 };
-
-
-
 
 bool getHitWasHit(ivec3 coord)
 {
@@ -30,7 +26,6 @@ void setHitDist(ivec3 coord, float value)
     int index = 2 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // axis order is x y z
     hitMisc[index + 1] = value;
 }
-
 
 void main()
 {

@@ -2,8 +2,8 @@
 
 #include <functional>
 #include <memory>
-#include <string>
 #include <src/procgen/data/TextureData.h>
+#include <string>
 
 class PrintUtility
 {

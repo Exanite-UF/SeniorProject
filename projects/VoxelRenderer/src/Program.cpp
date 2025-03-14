@@ -129,7 +129,8 @@ void Program::run()
 
     glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
     auto voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
-    for(int i = 1; i < 9; i++){
+    for (int i = 1; i < 9; i++)
+    {
         scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
         scene->worlds.back()->transform.addGlobalPosition(glm::vec3(512 * (i % 3), 512 * (i / 3), 0));
     }
@@ -517,8 +518,8 @@ void Program::run()
                     | ImGuiWindowFlags_NoResize
                     | ImGuiWindowFlags_NoMove
                     | ImGuiWindowFlags_NoCollapse;
-                    // | ImGuiWindowFlags_NoScrollbar
-                    // | ImGuiWindowFlags_NoScrollWithMouse;
+                // | ImGuiWindowFlags_NoScrollbar
+                // | ImGuiWindowFlags_NoScrollWithMouse;
 
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen

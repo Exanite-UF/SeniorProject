@@ -87,7 +87,7 @@ public:
     void prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight = true);
 
     void resetHitInfo();
-    
+
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
 
     void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay);
