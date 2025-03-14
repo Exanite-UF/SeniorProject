@@ -1,37 +1,14 @@
 #include <stdexcept>
 
-#include "Window.h"
 #include <src/windowing/Window.h>
 
-Window::Window()
+Window::Window(GlfwContext* shareWith)
+    : GlfwContext(true, shareWith)
 {
-    Window(NULL);
-}
-
-Window::Window(GLFWwindow* shareContextWith)
-{
-    // Configure GLFW and OpenGL
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Use Core profile
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Block usage of deprecated APIs
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // Enable debug messages
-
-    // Create the window
-    glfwWindowHandle = glfwCreateWindow(1024, 1024, "Voxel Renderer", nullptr, shareContextWith);
-    if (glfwWindowHandle == nullptr)
-    {
-        throw std::runtime_error("Failed to create window");
-    }
-
-    // Set the Window's OpenGL context to be used on the current thread
-    glfwMakeContextCurrent(glfwWindowHandle);
-
     // Register GLFW callbacks
     registerGlfwCallbacks();
 
     // Initialize state
-    glfwSwapInterval(0); // Disable vsync
     glfwGetWindowPos(glfwWindowHandle, &lastWindowedPosition.x, &lastWindowedPosition.y);
     glfwGetWindowSize(glfwWindowHandle, &lastWindowedSize.x, &lastWindowedSize.y);
 
@@ -43,15 +20,33 @@ Window::Window(GLFWwindow* shareContextWith)
     }
 
     glfwSwapInterval(1); // Enable vsync
+
+    // Init IMGUI
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+    ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
+    ImGui_ImplOpenGL3_Init();
 }
 
 Window::~Window()
 {
-    glfwDestroyWindow(glfwWindowHandle);
+    // Shutdown IMGUI
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void Window::update()
 {
+    // Update IMGUI
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
     glfwPollEvents();
     glfwGetWindowSize(glfwWindowHandle, &size.x, &size.y);
 
@@ -63,40 +58,12 @@ void Window::update()
     cursorEnterEvent.flush();
 }
 
-GLFWmonitor* Window::getCurrentMonitor(GLFWwindow* window)
+void Window::present()
 {
-    int nmonitors, i;
-    int wx, wy, ww, wh;
-    int mx, my, mw, mh;
-    int overlap, bestoverlap;
-    GLFWmonitor* bestmonitor;
-    GLFWmonitor** monitors;
-    const GLFWvidmode* mode;
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    bestoverlap = 0;
-    bestmonitor = NULL;
-
-    glfwGetWindowPos(window, &wx, &wy);
-    glfwGetWindowSize(window, &ww, &wh);
-    monitors = glfwGetMonitors(&nmonitors);
-
-    for (i = 0; i < nmonitors; i++)
-    {
-        mode = glfwGetVideoMode(monitors[i]);
-        glfwGetMonitorPos(monitors[i], &mx, &my);
-        mw = mode->width;
-        mh = mode->height;
-
-        overlap = glm::max(0, glm::min(wx + ww, mx + mw) - glm::max(wx, mx)) * glm::max(0, glm::min(wy + wh, my + mh) - glm::max(wy, my));
-
-        if (bestoverlap < overlap)
-        {
-            bestoverlap = overlap;
-            bestmonitor = monitors[i];
-        }
-    }
-
-    return bestmonitor;
+    glfwSwapBuffers(glfwWindowHandle);
 }
 
 void Window::onWindowSize(GLFWwindow* window, int width, int height)
@@ -224,4 +191,40 @@ void Window::setFullscreen()
 void Window::setWindowed()
 {
     glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowedPosition.x, lastWindowedPosition.y, lastWindowedSize.x, lastWindowedSize.y, 0);
+}
+
+GLFWmonitor* Window::getCurrentMonitor(GLFWwindow* window)
+{
+    int nmonitors, i;
+    int wx, wy, ww, wh;
+    int mx, my, mw, mh;
+    int overlap, bestoverlap;
+    GLFWmonitor* bestmonitor;
+    GLFWmonitor** monitors;
+    const GLFWvidmode* mode;
+
+    bestoverlap = 0;
+    bestmonitor = NULL;
+
+    glfwGetWindowPos(window, &wx, &wy);
+    glfwGetWindowSize(window, &ww, &wh);
+    monitors = glfwGetMonitors(&nmonitors);
+
+    for (i = 0; i < nmonitors; i++)
+    {
+        mode = glfwGetVideoMode(monitors[i]);
+        glfwGetMonitorPos(monitors[i], &mx, &my);
+        mw = mode->width;
+        mh = mode->height;
+
+        overlap = glm::max(0, glm::min(wx + ww, mx + mw) - glm::max(wx, mx)) * glm::max(0, glm::min(wy + wh, my + mh) - glm::max(wy, my));
+
+        if (bestoverlap < overlap)
+        {
+            bestoverlap = overlap;
+            bestmonitor = monitors[i];
+        }
+    }
+
+    return bestmonitor;
 }

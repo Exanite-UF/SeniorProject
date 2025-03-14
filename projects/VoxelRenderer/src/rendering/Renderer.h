@@ -16,8 +16,10 @@
 #include <mutex>
 #include <thread>
 
-#include <src/world/Camera.h>
-#include <src/world/Scene.h>
+#include <src/windowing/GlfwContext.h>
+#include <src/windowing/Window.h>
+#include <src/world/CameraComponent.h>
+#include <src/world/SceneComponent.h>
 
 class VoxelRenderer;
 class AsynchronousReprojection;
@@ -36,8 +38,8 @@ private:
 
 private:
     // Rendering Contexts
-    GLFWwindow* offscreenContext = nullptr;
-    GLFWwindow* mainContext = nullptr;
+    std::shared_ptr<Window> mainContext = nullptr;
+    std::shared_ptr<GlfwContext> offscreenContext = nullptr;
 
     std::thread offscreenThread;
     bool isRenderingOffscreen = false;
@@ -89,7 +91,7 @@ private:
     std::array<GLuint, 3> materialTextures;
 
 private:
-    Scene* scene = nullptr;
+    std::shared_ptr<SceneComponent> scene = nullptr;
     int bounces = 2;
 
     std::unique_ptr<VoxelRenderer> voxelRenderer = nullptr;
@@ -112,7 +114,7 @@ private:
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure
-    void isOwningThreadCheck();
+    void isOwningThreadCheck() const;
 
     void _render(); // This is where all the rendering happens (The underscore is because a publicly facing function that wraps the entire rendering process exists)
     void reproject(float fov = -1); // This is where reprojection occurs
@@ -122,7 +124,7 @@ private:
     void makeOutputTextures();
 
 public:
-    Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext);
+    Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext);
 
     // This needs to be called on the thread that needs to render to the asynchronous reprojection input
     void makeFramebuffers();
@@ -139,15 +141,17 @@ public:
     // Only the thread that is rendering asynchronously may call this function
     GLuint getWorkingFramebuffer();
 
+    const glm::ivec2& getRenderResolution();
     void setRenderResolution(glm::ivec2 renderResolution);
     void setRaysPerPixel(int number);
 
-    void pollCamera(const Camera& camera);
-    void setScene(Scene& scene);
+    void pollCamera(const std::shared_ptr<CameraComponent>& camera);
+    void setScene(const std::shared_ptr<SceneComponent>& scene);
     void setBounces(const int& bounces);
 
     void render(float fov = -1);
 
+    bool getIsAsynchronousReprojectionEnabled();
     void startAsynchronousReprojection();
     void stopAsynchronousReprojection();
     void toggleAsynchronousReprojection();

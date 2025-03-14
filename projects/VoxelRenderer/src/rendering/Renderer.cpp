@@ -13,7 +13,7 @@ GLuint Renderer::drawTextureProgram;
 
 void Renderer::offscreenRenderingFunc()
 {
-    glfwMakeContextCurrent(offscreenContext);
+    offscreenContext->makeContextCurrent();
 
     while (isRenderingOffscreen)
     {
@@ -22,7 +22,7 @@ void Renderer::offscreenRenderingFunc()
     }
 }
 
-void Renderer::isOwningThreadCheck()
+void Renderer::isOwningThreadCheck() const
 {
     if (std::this_thread::get_id() != owningThread)
     {
@@ -32,9 +32,8 @@ void Renderer::isOwningThreadCheck()
     }
 }
 
-Renderer::Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext)
+Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext)
 {
-
     drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
 
     this->mainContext = mainContext;
@@ -117,6 +116,10 @@ GLuint Renderer::getWorkingFramebuffer()
     std::scoped_lock lock(bufferLocks.working);
 
     return framebuffers[bufferMapping.working];
+}
+
+const glm::ivec2 & Renderer::getRenderResolution() {
+    return renderResolution;
 }
 
 void Renderer::setRenderResolution(glm::ivec2 renderResolution)
@@ -215,17 +218,17 @@ void Renderer::setRaysPerPixel(int number)
     voxelRenderer->setRaysPerPixel(number);
 }
 
-void Renderer::pollCamera(const Camera& camera)
+void Renderer::pollCamera(const std::shared_ptr<CameraComponent>& camera)
 {
     std::scoped_lock lock(cameraMtx);
-    currentCameraPosition = camera.transform.getGlobalPosition();
-    currentCameraRotation = camera.transform.getGlobalRotation();
-    currentCameraFOV = camera.getHorizontalFov();
+    currentCameraPosition = camera->getTransform()->getGlobalPosition();
+    currentCameraRotation = camera->getTransform()->getGlobalRotation();
+    currentCameraFOV = camera->getHorizontalFov();
 }
 
-void Renderer::setScene(Scene& scene)
+void Renderer::setScene(const std::shared_ptr<SceneComponent>& scene)
 {
-    this->scene = &scene;
+    this->scene = scene;
 }
 
 void Renderer::setBounces(const int& bounces)
@@ -293,7 +296,7 @@ void Renderer::reproject(float fov)
 
     // This repolling of the output size happens here, because things that use the result of the new data, don't actually need the new data, until the reprojection resolution changes.
     int width, height;
-    glfwGetWindowSize(mainContext, &width, &height);
+    glfwGetWindowSize(mainContext->getGlfwWindowHandle(), &width, &height);
 
     if (glm::ivec2(width, height) != outputResolution)
     {
@@ -443,6 +446,10 @@ void Renderer::makeOutputTextures()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+bool Renderer::getIsAsynchronousReprojectionEnabled() {
+    return isRenderingOffscreen;
 }
 
 void Renderer::startAsynchronousReprojection()

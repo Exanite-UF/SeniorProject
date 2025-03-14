@@ -33,6 +33,7 @@ private:
     void setSize(glm::ivec3 size);
 
 public:
+    // TODO: DO NOT turn VoxelWorld into a Component. Add a VoxelWorldComponent instead.
     Transform transform;
 
     // Creates a voxel world

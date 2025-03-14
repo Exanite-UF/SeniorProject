@@ -1,6 +1,6 @@
 #pragma once
 
-#include <src/procgen/WorldGenerator.h>
+#include <src/procgen/generators/WorldGenerator.h>
 
 class ExaniteWorldGenerator : public WorldGenerator
 {

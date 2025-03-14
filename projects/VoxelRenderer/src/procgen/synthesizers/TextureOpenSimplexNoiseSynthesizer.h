@@ -1,6 +1,6 @@
 #pragma once
 
-#include <src/procgen/TextureDataSynthesizer.h>
+#include <src/procgen/synthesizers/TextureDataSynthesizer.h>
 
 class TextureOpenSimplexNoiseSynthesizer : public TextureDataSynthesizer
 {
@@ -9,6 +9,7 @@ private:
 
 public:
     TextureOpenSimplexNoiseSynthesizer(int seed);
-    void generate(TextureData& textureData) override;
+    void generate(std::shared_ptr<TextureData>& textureData) override;
     void showDebugMenu() override;
+    std::function<float(float)> mapperTo01() override;
 };
