@@ -102,7 +102,8 @@ void Renderer::swapWorkingBuffer()
     reprojection->combineBuffers(lastRenderedPosition - olderRenderedPosition, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
         colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
         positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
-        materialTextures[bufferMapping.ready], normalTextures[bufferMapping.ready]);
+        materialTextures[bufferMapping.display], materialTextures[bufferMapping.ready], 
+        normalTextures[bufferMapping.ready]);
 
     isNewerFrame = true;
 }

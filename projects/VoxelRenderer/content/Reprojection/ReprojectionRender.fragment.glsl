@@ -12,10 +12,15 @@ layout(location = 1) out vec3 posBuffer; // Global space
 layout(location = 2) out vec3 normalBuffer; // Camera space
 layout(location = 3) out vec3 materialBuffer;
 
+
 void main()
 {
+    vec3 material = texture(materialTexture, uv).xyz;
+    vec3 normal = texture(normalTexture, uv).xyz;
+
+
     fragColor = vec4(texture(sourceTexture, uv).xyz, 1);
     posBuffer = texture(positionTexture, uv).xyz;
-    normalBuffer = texture(normalTexture, uv).xyz;
-    materialBuffer = texture(materialTexture, uv).xyz;
+    normalBuffer = normal;
+    materialBuffer = material;
 }

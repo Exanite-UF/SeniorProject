@@ -29,7 +29,7 @@ void main()
 
     vec3 cameraSpacePosition = qtransform(vec4(cameraRotation.xyz, -cameraRotation.w), position - cameraPosition);
 
-    float stdev = material.x * ((cameraSpacePosition.x) * 0.002 + 0.01);
+    float stdev = 0.01;//material.x * ((cameraSpacePosition.x) * 0.002 + 0.01);
 
     if (stdev == 0)
     {

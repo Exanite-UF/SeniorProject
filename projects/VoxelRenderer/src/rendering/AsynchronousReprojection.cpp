@@ -142,12 +142,17 @@ void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& repr
     {
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthFunc(GL_GREATER);
 
         GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers(4, drawBuffers);
 
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glDisable(GL_BLEND);
     }
     glBindVertexArray(0);
 
@@ -161,7 +166,7 @@ void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& repr
 }
 
 void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
-    const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture)
+    const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& oldMaterialTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture)
 {
     // This runs in the offscreen context
 
@@ -237,6 +242,7 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, c
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, newMaterialTexture); // New material
 
+        
         // Old frame count
         if (currentBuffer % 2 == 0)
         {
@@ -251,6 +257,9 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, c
 
         glActiveTexture(GL_TEXTURE6);
         glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
+
+        glActiveTexture(GL_TEXTURE7);
+        glBindTexture(GL_TEXTURE_2D, oldMaterialTexture); // New material
 
         glUniform3fv(glGetUniformLocation(combineProgram, "cameraMovement"), 1, glm::value_ptr(cameraMovement));
         glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
@@ -276,6 +285,7 @@ void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, c
         glBindVertexArray(VAO);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthFunc(GL_GREATER);
         {
             const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
             glDrawBuffers(2, buffers);

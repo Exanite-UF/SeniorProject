@@ -55,5 +55,5 @@ public:
         const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& materialTexture);
 
     void combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
-        const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture);
+        const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& oldMaterialTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture);
 };
