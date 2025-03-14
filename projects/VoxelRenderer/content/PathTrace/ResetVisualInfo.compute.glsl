@@ -2,14 +2,12 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform bool resetLight;
 uniform bool drawSkybox;
 uniform bool resetAttentuation;
 uniform bool resetFirstHit;
 uniform bool currentBuffer;
-
 
 layout(std430, binding = 0) buffer RayPosition
 {
@@ -77,7 +75,6 @@ void setFirstHitMaterial(ivec3 coord, vec3 value)
     firstHitMaterial[2 + index] = value.z;
 }
 
-
 void setAttenuation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
@@ -94,12 +91,14 @@ void setAttenuation(ivec3 coord, vec3 value)
 vec3 getAttenuation(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
-    if(currentBuffer){
+    if (currentBuffer)
+    {
         return vec3(priorAttenuation1[index + 0], priorAttenuation1[index + 1], priorAttenuation1[index + 2]);
-    }else{
+    }
+    else
+    {
         return vec3(priorAttenuation2[index + 0], priorAttenuation2[index + 1], priorAttenuation2[index + 2]);
     }
-    
 }
 
 void setLightAccumulation(ivec3 coord, vec3 value)
@@ -119,11 +118,14 @@ void setSkyBox(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
 
-    if(!currentBuffer){
+    if (!currentBuffer)
+    {
         accumulatedLight1[0 + index] = accumulatedLight2[0 + index] + value.x;
         accumulatedLight1[1 + index] = accumulatedLight2[1 + index] + value.y;
         accumulatedLight1[2 + index] = accumulatedLight2[2 + index] + value.z;
-    }else{
+    }
+    else
+    {
         accumulatedLight2[0 + index] = accumulatedLight1[0 + index] + value.x;
         accumulatedLight2[1 + index] = accumulatedLight1[1 + index] + value.y;
         accumulatedLight2[2 + index] = accumulatedLight1[2 + index] + value.z;
@@ -154,11 +156,8 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    
-
-
-
-    if(resetLight){
+    if (resetLight)
+    {
         setLightAccumulation(texelCoord, vec3(0));
     }
 
@@ -167,8 +166,8 @@ void main()
         setAttenuation(texelCoord, vec3(1));
     }
 
-
-    if((resetFirstHit && texelCoord.z == 0) || drawSkybox){
+    if ((resetFirstHit && texelCoord.z == 0) || drawSkybox)
+    {
         vec3 startPos = getRayPosition(texelCoord);
         vec3 rayDir = normalize(getRayDirection(texelCoord));
 
@@ -197,6 +196,4 @@ void main()
             }
         }
     }
-
-    
 }

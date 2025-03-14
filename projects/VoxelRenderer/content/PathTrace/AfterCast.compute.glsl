@@ -2,7 +2,6 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 uniform bool currentBuffer;
 
@@ -39,35 +38,35 @@ layout(std430, binding = 2) buffer PriorAttenuation2
     float priorAttenuation2[];
 };
 
-
-
 void setAttenuation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
 
-    if(currentBuffer){
+    if (currentBuffer)
+    {
         priorAttenuation1[0 + index] = value.x;
         priorAttenuation1[1 + index] = value.y;
         priorAttenuation1[2 + index] = value.z;
-    }else{
+    }
+    else
+    {
         priorAttenuation2[0 + index] = value.x;
         priorAttenuation2[1 + index] = value.y;
         priorAttenuation2[2 + index] = value.z;
     }
-
 }
-
-
 
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-   
-    if(!getHitWasHit(texelCoord)){
+    if (!getHitWasHit(texelCoord))
+    {
         setAttenuation(texelCoord, vec3(0));
         setHitDist(texelCoord, -1.0);
-    }else{
+    }
+    else
+    {
         setHitDist(texelCoord, 1.0 / 0.0);
     }
 

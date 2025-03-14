@@ -118,7 +118,8 @@ GLuint Renderer::getWorkingFramebuffer()
     return framebuffers[bufferMapping.working];
 }
 
-const glm::ivec2 & Renderer::getRenderResolution() {
+const glm::ivec2& Renderer::getRenderResolution()
+{
     return renderResolution;
 }
 
@@ -448,7 +449,8 @@ void Renderer::makeOutputTextures()
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-bool Renderer::getIsAsynchronousReprojectionEnabled() {
+bool Renderer::getIsAsynchronousReprojectionEnabled()
+{
     return isRenderingOffscreen;
 }
 
