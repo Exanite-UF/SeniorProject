@@ -3,15 +3,14 @@
 #include <memory>
 #include <vector>
 
-#include <src/utilities/NonCopyable.h>
-#include <src/world/Camera.h>
+#include <src/gameobjects/Component.h>
+#include <src/world/CameraComponent.h>
 #include <src/world/VoxelWorld.h>
 
-class Scene : public NonCopyable
+class SceneComponent : public Component
 {
 public:
     // TODO: Implement transformation hierarchy
-
+    std::shared_ptr<CameraComponent> camera {};
     std::vector<std::shared_ptr<VoxelWorld>> worlds {};
-    std::shared_ptr<Camera> camera = std::make_shared<Camera>();
 };

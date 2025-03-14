@@ -18,8 +18,6 @@
 class Program : public NonCopyable
 {
 private:
-    static void onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
-
     static void checkForContentFolder();
 
     // Ran first thing when the class is constructed
@@ -30,10 +28,10 @@ private:
     static void runLateStartupTests();
 
 public:
+    std::shared_ptr<GlfwContext> offscreenContext;
     std::shared_ptr<Window> window;
-    std::shared_ptr<InputManager> inputManager;
 
-    GLFWwindow* offscreen_context;
+    std::shared_ptr<InputManager> inputManager;
 
     bool isWorkload = false; // View toggle
     bool isRand2 = true; // Noise type toggle

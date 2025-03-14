@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GL/glew.h>
+
 #include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
 #include <memory>
