@@ -7,18 +7,18 @@
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
 
-class VoxelWorld : public NonCopyable
+class VoxelChunk : public NonCopyable
 {
 private:
     glm::ivec3 size; // Size of the voxel world in voxels
 
     GraphicsBuffer<uint8_t> occupancyMap; // This stores the voxel occupancy data
-    std::vector<GLuint> occupancyMapIndices; // The start indices of the occupancy map in bytes. The max size of this vector is defined by Constants::VoxelWorld::maxOccupancyMapLayerCount
+    std::vector<GLuint> occupancyMapIndices; // The start indices of the occupancy map in bytes. The max size of this vector is defined by Constants::VoxelChunk::maxOccupancyMapLayerCount
 
     GraphicsBuffer<uint16_t> materialMap; // This stores the voxel material data
 
 public:
-    explicit VoxelWorld(glm::ivec3 size);
+    explicit VoxelChunk(glm::ivec3 size);
 
     void setSize(glm::ivec3 size);
     [[nodiscard]] glm::ivec3 getSize() const;

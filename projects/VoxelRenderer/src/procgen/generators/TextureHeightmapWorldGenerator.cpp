@@ -3,7 +3,7 @@
 #include <memory>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
-#include <src/world/VoxelWorldData.h>
+#include <src/world/VoxelChunkData.h>
 
 void TextureHeightmapWorldGenerator::generateData()
 {

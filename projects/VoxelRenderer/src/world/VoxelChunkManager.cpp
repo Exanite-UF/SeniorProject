@@ -1,9 +1,9 @@
-#include "VoxelWorldManager.h"
+#include "VoxelChunkManager.h"
 
 #include <src/Content.h>
 #include <src/graphics/ShaderManager.h>
 
-VoxelWorldManager::VoxelWorldManager()
+VoxelChunkManager::VoxelChunkManager()
 {
     auto& shaderManager = ShaderManager::getInstance();
 

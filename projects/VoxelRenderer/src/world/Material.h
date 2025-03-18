@@ -9,7 +9,7 @@
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
 
-// Materials are a property of voxels, however, they are also used heavily by the VoxelWorld and VoxelRenderer
+// Materials are a property of voxels, however, they are also used heavily by the VoxelChunk and VoxelRenderer
 // This means we need to account for how they are used before deciding how they should be stored
 
 // In shaders, materials will likely be used in the following manner:
@@ -26,7 +26,7 @@
 // We can easily change the size of the material array, given that we don't hit buffer size restrictions.
 
 // This material ID map and material array will need to be stored by the VoxelRenderer (or alternatively, stored once per program instance).
-// Why not store this data per VoxelWorld? If we do this, we need to know which material map+array to use.
+// Why not store this data per VoxelChunk? If we do this, we need to know which material map+array to use.
 // Since we only have a G-Buffer with material IDs, we'll need to store additional data to know which world the material ID comes from.
 // Since we also need to store multiple material maps+arrays, this is very costly for little to no benefit.
 

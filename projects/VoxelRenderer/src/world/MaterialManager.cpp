@@ -53,7 +53,7 @@ MaterialManager::MaterialManager()
     }
 
     // Generate placeholder materials
-    for (size_t i = materials.size(); i < Constants::VoxelWorld::maxMaterialCount; i++)
+    for (size_t i = materials.size(); i < Constants::VoxelChunk::maxMaterialCount; i++)
     {
         auto& material = createMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
         if (i % 4 == 0)
@@ -132,7 +132,7 @@ void MaterialManager::updateGpuMaterialData()
 
 std::shared_ptr<Material>& MaterialManager::createMaterial(const std::string& key, const std::string& name)
 {
-    Assert::isTrue(materials.size() < Constants::VoxelWorld::maxMaterialCount, "Failed to add material: Too many materials defined");
+    Assert::isTrue(materials.size() < Constants::VoxelChunk::maxMaterialCount, "Failed to add material: Too many materials defined");
 
     auto& material = materials.emplace_back(std::make_shared<Material>(materials.size(), key));
     material->name = name;

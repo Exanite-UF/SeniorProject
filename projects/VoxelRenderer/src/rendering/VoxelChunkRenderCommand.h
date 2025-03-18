@@ -1,9 +1,9 @@
 #pragma once
 
 #include <memory>
-#include <src/world/VoxelWorld.h>
+#include <src/world/VoxelChunk.h>
 
 struct VoxelChunkRenderCommand
 {
-    std::shared_ptr<VoxelWorld> voxelWorld;
+    std::shared_ptr<VoxelChunk> voxelWorld;
 };

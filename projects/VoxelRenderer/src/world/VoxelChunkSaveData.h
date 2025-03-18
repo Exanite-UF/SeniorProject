@@ -1,5 +1,5 @@
 #pragma once
 
-class VoxelWorldSaveData
+class VoxelChunkSaveData
 {
 };

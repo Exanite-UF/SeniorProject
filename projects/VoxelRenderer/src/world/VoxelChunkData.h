@@ -3,9 +3,9 @@
 #include <memory>
 
 #include <src/world/Material.h>
-#include <src/world/VoxelWorld.h>
+#include <src/world/VoxelChunk.h>
 
-class VoxelWorldData : public NonCopyable
+class VoxelChunkData : public NonCopyable
 {
 private:
     glm::ivec3 size = glm::ivec3(0);
@@ -33,6 +33,6 @@ public:
     void clearOccupancyMap();
     void clearMaterialMap();
 
-    void copyFrom(VoxelWorld& world);
-    void writeTo(VoxelWorld& world);
+    void copyFrom(VoxelChunk& world);
+    void writeTo(VoxelChunk& world);
 };

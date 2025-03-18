@@ -44,7 +44,7 @@ void ExaniteWorldGenerator::generateData()
 
                             int materialIndex = ((materialBits2 << 6) | (materialBits1 << 3) | (materialBits0 << 0)) + materialOffset;
 
-                            data.setVoxelMaterialIndex(position0, materialIndex % Constants::VoxelWorld::maxMaterialCount);
+                            data.setVoxelMaterialIndex(position0, materialIndex % Constants::VoxelChunk::maxMaterialCount);
                         }
                     }
                 }

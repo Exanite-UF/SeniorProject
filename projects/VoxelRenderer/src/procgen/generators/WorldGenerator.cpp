@@ -1,13 +1,13 @@
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/utilities/MeasureElapsedTimeScope.h>
-#include <src/world/VoxelWorldData.h>
+#include <src/world/VoxelChunkData.h>
 
 WorldGenerator::WorldGenerator(glm::ivec3 worldSize)
 {
     data.setSize(worldSize);
 }
 
-void WorldGenerator::generate(VoxelWorld& voxelWorld)
+void WorldGenerator::generate(VoxelChunk& voxelWorld)
 {
     MeasureElapsedTimeScope scope("WorldGenerator::generate");
 

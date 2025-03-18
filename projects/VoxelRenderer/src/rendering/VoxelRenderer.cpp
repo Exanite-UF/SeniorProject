@@ -19,7 +19,7 @@
 #include <src/utilities/TupleHasher.h>
 #include <src/world/Material.h>
 #include <src/world/MaterialManager.h>
-#include <src/world/VoxelWorld.h>
+#include <src/world/VoxelChunk.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;

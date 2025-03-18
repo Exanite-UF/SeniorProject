@@ -7,7 +7,7 @@
 class Constants
 {
 public:
-    class VoxelWorld
+    class VoxelChunk
     {
     public:
         // This is equivalent to 2*4*4

@@ -52,9 +52,9 @@
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/SceneComponent.h>
-#include <src/world/VoxelWorld.h>
-#include <src/world/VoxelWorldData.h>
-#include <src/world/VoxelWorldManager.h>
+#include <src/world/VoxelChunk.h>
+#include <src/world/VoxelChunkData.h>
+#include <src/world/VoxelChunkManager.h>
 
 Program::Program()
 {
@@ -90,7 +90,7 @@ void Program::run()
     auto& shaderManager = ShaderManager::getInstance();
     auto& textureManager = TextureManager::getInstance();
     auto& materialManager = MaterialManager::getInstance();
-    auto& voxelWorldManager = VoxelWorldManager::getInstance();
+    auto& voxelWorldManager = VoxelChunkManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
@@ -692,7 +692,7 @@ void Program::runLateStartupTests()
         GLint maxShaderBlockSize;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxShaderBlockSize);
 
-        Assert::isTrue(maxShaderBlockSize >= Constants::VoxelWorld::maxMaterialCount * sizeof(MaterialDefinition), "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store all material definitions");
+        Assert::isTrue(maxShaderBlockSize >= Constants::VoxelChunk::maxMaterialCount * sizeof(MaterialDefinition), "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store all material definitions");
         Assert::isTrue(maxShaderBlockSize >= 2 * 256 * 256 * 512, "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store material map for a voxel world (chunk) of size 256x256x512, where each voxel takes 2 bytes");
 
         if (maxShaderBlockSize >= 2 * 512 * 512 * 512)
