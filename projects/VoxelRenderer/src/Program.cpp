@@ -389,8 +389,6 @@ void Program::run()
                 cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
             }
 
-            // mtx.unlock();
-
             if (input->isKeyHeld(GLFW_KEY_E))
             {
                 voxelChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
