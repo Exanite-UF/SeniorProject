@@ -487,7 +487,6 @@ void Program::run()
                     }
                     case 2:
                     {
-                        // ImGui::Text("TO BE ADDED");
                         exaniteWorldGenerator.showDebugMenu();
                         exampleWorldGenerator.showDebugMenu();
                         octaveWorldGenerator.showDebugMenu();
