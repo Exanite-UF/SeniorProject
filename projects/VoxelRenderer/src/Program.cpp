@@ -54,6 +54,7 @@
 #include <src/world/SceneComponent.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
+#include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
 
 Program::Program()
@@ -90,7 +91,8 @@ void Program::run()
     auto& shaderManager = ShaderManager::getInstance();
     auto& textureManager = TextureManager::getInstance();
     auto& materialManager = MaterialManager::getInstance();
-    auto& voxelWorldManager = VoxelChunkResources::getInstance();
+    auto& voxelChunkResources = VoxelChunkResources::getInstance();
+    auto& voxelChunkManager = VoxelChunkManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
@@ -129,6 +131,9 @@ void Program::run()
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z / 1.75));
 
     auto& voxelChunk = scene->chunks.at(0);
+
+    // Initialize the chunk manager
+    voxelChunkManager.initialize(scene);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
@@ -295,6 +300,7 @@ void Program::run()
         // Update systems
         window->update();
         inputManager->update();
+        voxelChunkManager.update();
 
         // Update
         // TODO: This code should be moved into individual systems
