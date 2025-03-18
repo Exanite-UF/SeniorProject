@@ -17,8 +17,5 @@ public:
 
     void update();
 
-    ~VoxelChunkManager()
-    {
-        Log::log("Cleaning up VoxelChunkManager");
-    }
+    ~VoxelChunkManager();
 };

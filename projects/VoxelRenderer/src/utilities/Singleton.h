@@ -43,7 +43,7 @@ public:
             return canCreate;
         }
 
-        static void addCleanupFunction(std::function<void()> cleanup)
+        static void addCleanupFunction(const std::function<void()>& cleanup)
         {
             singletonCleanupFunctions.push_back(cleanup);
         }

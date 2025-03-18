@@ -3,6 +3,11 @@
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
 
+VoxelChunkManager::~VoxelChunkManager()
+{
+    Log::log("Cleaning up VoxelChunkManager");
+}
+
 void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 {
     Assert::isTrue(!isInitialized, "VoxelChunkManager has already been initialized");
