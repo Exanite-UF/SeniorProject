@@ -102,17 +102,11 @@ void Program::run()
     glDepthFunc(GL_GREATER); // Reverse-Z
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
-    // Load textures
-    // TODO: Remove OR save to Program class, similarly to the shaders above. These are used to make sure the texture loading is working
-    auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
-    auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
-    auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
-
-    // Create the Scene GameObject
+    // Create the scene GameObject
     auto sceneObject = GameObject::create();
     auto scene = sceneObject->addComponent<SceneComponent>();
 
-    // Create the Camera GameObject
+    // Create the camera GameObject
     auto cameraObject = GameObject::create();
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto cameraTransform = camera->getTransform();
