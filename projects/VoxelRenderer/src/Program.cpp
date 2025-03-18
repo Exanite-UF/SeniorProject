@@ -418,19 +418,16 @@ void Program::run()
                 renderer.toggleAsynchronousReprojection();
             }
 
-            exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F6))
             {
                 exaniteWorldGenerator.generate(*voxelWorld);
             }
 
-            exampleWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F7))
             {
                 exampleWorldGenerator.generate(*voxelWorld);
             }
 
-            octaveWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
                 octaveWorldGenerator.generate(*voxelWorld);
@@ -528,11 +525,11 @@ void Program::run()
                 {
                     ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
                 }
-                else
+                else if (i == 0)
                 {
                     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Always);
                 }
-                
+
                 ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
                 ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
                 switch (i)
@@ -548,7 +545,10 @@ void Program::run()
                         ImGui::Text("TO BE ADDED");
                         break;
                     case 2:
-                        ImGui::Text("TO BE ADDED");
+                        //ImGui::Text("TO BE ADDED");
+                        exaniteWorldGenerator.showDebugMenu();
+                        exampleWorldGenerator.showDebugMenu();
+                        octaveWorldGenerator.showDebugMenu();
                         break;
                     case 3:
                         ImGui::Text("W - Forward");
