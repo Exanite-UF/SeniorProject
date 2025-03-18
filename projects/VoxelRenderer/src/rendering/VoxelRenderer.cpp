@@ -181,7 +181,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     resetVisualInfo(resetLight, true, true, resetLight);
 }
 
-void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay)
+void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
@@ -238,25 +238,25 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
         glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
         glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
-        for (auto& voxelWorld : worlds)
+        for (auto& chunkComponent : chunks)
         {
-            voxelWorld->bindBuffers(4, 5);
+            chunkComponent->getChunk()->bindBuffers(4, 5);
             {
-                glm::ivec3 voxelSize = voxelWorld->getSize();
+                glm::ivec3 voxelSize = chunkComponent->getChunk()->getSize();
 
                 glUniform3i(glGetUniformLocation(fullCastProgram, "cellCount"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
+                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), chunkComponent->getChunk()->getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), chunkComponent->getChunk()->getOccupancyMapIndices().size() - 1, chunkComponent->getChunk()->getOccupancyMapIndices().data());
 
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
-                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalPosition()));
+                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
-            voxelWorld->unbindBuffers();
+            chunkComponent->getChunk()->unbindBuffers();
         }
     }
 
@@ -284,11 +284,11 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
     currentBuffer++;
 }
 
-void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces)
+void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces)
 {
     for (int i = 0; i <= bounces; i++)
     {
-        executeRayTrace(worlds, i == 0);
+        executeRayTrace(chunks, i == 0);
         afterCast();
         resetVisualInfo(false, false, false, true);
     }

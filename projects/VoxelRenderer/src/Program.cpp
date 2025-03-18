@@ -112,7 +112,9 @@ void Program::run()
     {
         for (int y = 0; y < 3; ++y)
         {
-            auto& voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelChunkComponent>());
+            auto voxelWorldObject = sceneObject->createChildObject();
+
+            auto& voxelWorld = scene->worlds.emplace_back(voxelWorldObject->addComponent<VoxelChunkComponent>());
             voxelWorld->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
 
             scene->worlds.push_back(voxelWorld);
@@ -391,7 +393,7 @@ void Program::run()
 
             if (input->isKeyHeld(GLFW_KEY_E))
             {
-                voxelChunk->world->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                voxelChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
             }
 
             if (input->isKeyPressed(GLFW_KEY_G))
@@ -402,25 +404,25 @@ void Program::run()
             exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F6))
             {
-                exaniteWorldGenerator.generate(*voxelChunk->world);
+                exaniteWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
             exampleWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F7))
             {
-                exampleWorldGenerator.generate(*voxelChunk->world);
+                exampleWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
             octaveWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
-                octaveWorldGenerator.generate(*voxelChunk->world);
+                octaveWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
             if (isRemakeNoiseRequested)
             {
                 // The noise time should not be incremented here
-                voxelChunk->world->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                voxelChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
                 isRemakeNoiseRequested = false;
             }
 

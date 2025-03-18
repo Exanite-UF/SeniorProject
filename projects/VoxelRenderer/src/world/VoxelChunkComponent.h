@@ -7,8 +7,13 @@
 
 class VoxelChunkComponent : public Component
 {
-public:
-    std::shared_ptr<VoxelWorld> world;
+    friend class GameObject;
 
+private:
+    std::shared_ptr<VoxelWorld> chunk;
+
+public:
     explicit VoxelChunkComponent(glm::ivec3 worldSize = Constants::VoxelChunkComponent::chunkSize);
+
+    std::shared_ptr<VoxelWorld>& getChunk();
 };

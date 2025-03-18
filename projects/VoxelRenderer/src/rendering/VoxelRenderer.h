@@ -6,7 +6,7 @@
 #include <src/utilities/NonCopyable.h>
 #include <src/world/CameraComponent.h>
 #include <src/world/MaterialManager.h>
-#include <src/world/VoxelWorld.h>
+#include <src/world/VoxelChunkComponent.h>
 #include <thread>
 #include <vector>
 
@@ -90,9 +90,9 @@ public:
 
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
 
-    void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay);
+    void executeRayTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay);
 
-    void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces);
+    void executePathTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces);
 
     void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 };

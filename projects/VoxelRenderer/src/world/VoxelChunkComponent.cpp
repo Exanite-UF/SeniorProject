@@ -4,5 +4,10 @@
 
 VoxelChunkComponent::VoxelChunkComponent(glm::ivec3 worldSize)
 {
-    world = std::make_shared<VoxelWorld>(Constants::VoxelChunkComponent::chunkSize);
+    chunk = std::make_shared<VoxelWorld>(Constants::VoxelChunkComponent::chunkSize);
+}
+
+std::shared_ptr<VoxelWorld>& VoxelChunkComponent::getChunk()
+{
+    return chunk;
 }
