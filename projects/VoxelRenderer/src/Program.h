@@ -38,15 +38,11 @@ public:
     float fillAmount = 0.6;
     bool remakeNoise = true;
 
-    GLuint blitTextureGraphicsProgram;
-    GLuint blitFramebufferGraphicsProgram;
-    GLuint raymarcherGraphicsProgram;
-    GLuint makeNoiseComputeProgram;
-    GLuint makeMipMapComputeProgram;
-    GLuint assignMaterialComputeProgram;
+    float currentFPS1 = 0;
+    float averagedDeltaTime1 = 0;
 
     Program();
-    ~Program();
+    ~Program() override;
 
     void run();
 };

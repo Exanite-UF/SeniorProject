@@ -6,12 +6,10 @@
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldUtility.h>
 
-VoxelWorld::VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram)
-{
-    this->makeNoiseComputeProgram = makeNoiseComputeProgram;
-    this->makeMipMapComputeProgram = makeMipMapComputeProgram;
-    this->assignMaterialComputeProgram = assignMaterialComputeProgram;
+#include "VoxelWorldManager.h"
 
+VoxelWorld::VoxelWorld(glm::ivec3 size)
+{
     this->currentNoiseTime = 0;
 
     // Initialize world size and contents
@@ -24,31 +22,10 @@ VoxelWorld::VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint m
     setSize(size);
 
     // Generates initial occupancy map data (non-essential)
-    generateNoiseOccupancyMapAndMipMaps(0, true, 0.6);
+    generatePlaceholderData(0, true, 0.6);
 
     // Generates initial material map (non-essential)
     generatePlaceholderMaterialMap();
-}
-
-void VoxelWorld::generateNoiseOccupancyMapAndMipMaps(double deltaTime, bool isRand2, float fillAmount)
-{
-    generateNoiseOccupancyMap(currentNoiseTime, isRand2, fillAmount);
-    updateMipMaps();
-
-    // Updating noise after generating makes the initial generation independent to framerate
-    this->currentNoiseTime += deltaTime;
-}
-
-void VoxelWorld::bindBuffers(int occupancyMapIndex, int materialMapIndex)
-{
-    occupancyMap.bind(occupancyMapIndex);
-    materialMap.bind(materialMapIndex);
-}
-
-void VoxelWorld::unbindBuffers() const
-{
-    occupancyMap.unbind();
-    materialMap.unbind();
 }
 
 glm::ivec3 VoxelWorld::getSize() const
@@ -71,8 +48,22 @@ const GraphicsBuffer<uint16_t>& VoxelWorld::getMaterialMap()
     return materialMap;
 }
 
-void VoxelWorld::generateNoiseOccupancyMap(double noiseTime, bool isRand2, float fillAmount)
+void VoxelWorld::setSize(glm::ivec3 size)
 {
+    // The size is validated by VoxelWorldUtility below
+    this->size = size;
+
+    occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
+    this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
+
+    this->materialMap.setSize(size.x * size.y * size.z);
+}
+
+void VoxelWorld::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise, float fillAmount)
+{
+    auto& voxelWorldManager = VoxelWorldManager::getInstance();
+    auto makeNoiseComputeProgram = voxelWorldManager.makeNoiseComputeProgram;
+
     glUseProgram(makeNoiseComputeProgram);
 
     // Bind output texture to image unit 0 (write-only)
@@ -87,7 +78,7 @@ void VoxelWorld::generateNoiseOccupancyMap(double noiseTime, bool isRand2, float
     glUniform3i(glGetUniformLocation(makeNoiseComputeProgram, "resolution"), size.x / 2, size.y / 2, size.z / 2);
     glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "time"), noiseTime);
     glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
-    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), isRand2);
+    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), useRandomNoise);
 
     glDispatchCompute(workgroupCountX, 1, 1);
 
@@ -100,6 +91,9 @@ void VoxelWorld::generateNoiseOccupancyMap(double noiseTime, bool isRand2, float
 
 void VoxelWorld::updateMipMaps()
 {
+    auto& voxelWorldManager = VoxelWorldManager::getInstance();
+    auto makeMipMapComputeProgram = voxelWorldManager.makeMipMapComputeProgram;
+
     glUseProgram(makeMipMapComputeProgram);
 
     occupancyMap.bind(0);
@@ -130,6 +124,9 @@ void VoxelWorld::updateMipMaps()
 
 void VoxelWorld::generatePlaceholderMaterialMap()
 {
+    auto& voxelWorldManager = VoxelWorldManager::getInstance();
+    auto assignMaterialComputeProgram = voxelWorldManager.assignMaterialComputeProgram;
+
     glUseProgram(assignMaterialComputeProgram);
 
     this->materialMap.bind(0);
@@ -147,13 +144,23 @@ void VoxelWorld::generatePlaceholderMaterialMap()
     this->materialMap.unbind();
 }
 
-void VoxelWorld::setSize(glm::ivec3 size)
+void VoxelWorld::generatePlaceholderData(double deltaTime, bool useRandomNoise, float fillAmount)
 {
-    // The size is validated by VoxelWorldUtility below
-    this->size = size;
+    generateNoiseOccupancyMap(currentNoiseTime, useRandomNoise, fillAmount);
+    updateMipMaps();
 
-    occupancyMapIndices = VoxelWorldUtility::getOccupancyMapIndices(size);
-    this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
+    // Updating noise after generating makes the initial generation independent to framerate
+    this->currentNoiseTime += deltaTime;
+}
 
-    this->materialMap.setSize(size.x * size.y * size.z);
+void VoxelWorld::bindBuffers(int occupancyMapIndex, int materialMapIndex)
+{
+    occupancyMap.bind(occupancyMapIndex);
+    materialMap.bind(materialMapIndex);
+}
+
+void VoxelWorld::unbindBuffers() const
+{
+    occupancyMap.unbind();
+    materialMap.unbind();
 }

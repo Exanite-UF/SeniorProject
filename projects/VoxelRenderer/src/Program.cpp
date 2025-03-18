@@ -56,9 +56,6 @@
 #include <src/world/VoxelWorldData.h>
 #include <src/world/VoxelWorldManager.h>
 
-float currentFPS1 = 0;
-float averagedDeltaTime1 = 0;
-
 Program::Program()
 {
     // Ensure preconditions are met
@@ -103,15 +100,7 @@ void Program::run()
     glEnable(GL_DEPTH_TEST);
     glClearDepth(0); // Reverse-Z
     glDepthFunc(GL_GREATER); // Reverse-Z
-
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
-
-    // Load shader programs
-    blitTextureGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFragmentShader);
-    blitFramebufferGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFramebufferFragmentShader);
-    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
-    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
-    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
 
     // Load textures
     // TODO: Remove OR save to Program class, similarly to the shaders above. These are used to make sure the texture loading is working
@@ -129,10 +118,10 @@ void Program::run()
     auto cameraTransform = camera->getTransform();
 
     glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
-    auto voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
+    auto voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize));
     for (int i = 1; i < 9; i++)
     {
-        scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
+        scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize));
         scene->worlds.back()->transform.addGlobalPosition(glm::vec3(512 * (i % 3), 512 * (i / 3), 0));
     }
 

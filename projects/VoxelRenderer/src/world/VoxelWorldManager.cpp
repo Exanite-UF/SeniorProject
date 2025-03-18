@@ -1,1 +1,13 @@
 #include "VoxelWorldManager.h"
+
+#include <src/Content.h>
+#include <src/graphics/ShaderManager.h>
+
+VoxelWorldManager::VoxelWorldManager()
+{
+    auto& shaderManager = ShaderManager::getInstance();
+
+    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
+    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
+    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
+}
