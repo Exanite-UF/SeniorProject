@@ -8,9 +8,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
+
+#include <src/utilities/OpenGl.h>
 
 class PostProcessEffect;
 class Renderer;

@@ -1,12 +1,11 @@
 #pragma once
 
-#include <GL/glew.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/utilities/NonCopyable.h>
+#include <src/utilities/OpenGl.h>
 
 class VoxelWorld : public NonCopyable
 {

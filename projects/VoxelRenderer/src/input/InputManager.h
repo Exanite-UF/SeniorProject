@@ -1,13 +1,12 @@
 #pragma once
 
-#include <GL/glew.h>
-
-#include <GLFW/glfw3.h>
-#include <glm/vec2.hpp>
 #include <memory>
 #include <unordered_set>
 
+#include <glm/vec2.hpp>
+
 #include <src/utilities/NonCopyable.h>
+#include <src/utilities/OpenGl.h>
 #include <src/windowing/Window.h>
 
 // Stores a snapshot of the input state

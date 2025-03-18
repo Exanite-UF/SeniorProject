@@ -1,16 +1,5 @@
 #pragma once
 
-#include <GL/glew.h>
-
-#include <GLFW/glfw3.h>
-
-#include <imgui/imgui.h>
-#include <imgui/imgui_impl_glfw.h>
-#include <imgui/imgui_impl_opengl3.h>
-#include <imgui/imgui_stdlib.h>
-
-#include <string>
-
 #include <src/input/InputManager.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/windowing/Window.h>

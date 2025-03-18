@@ -1,14 +1,13 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <string>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
 #include <src/utilities/NonCopyable.h>
-#include <string>
+#include <src/utilities/OpenGl.h>
 
 // Materials are a property of voxels, however, they are also used heavily by the VoxelWorld and VoxelRenderer
 // This means we need to account for how they are used before deciding how they should be stored

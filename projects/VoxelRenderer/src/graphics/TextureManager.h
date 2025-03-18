@@ -1,14 +1,12 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
 #include <memory>
 #include <string>
 #include <unordered_map>
 
 #include <src/graphics/Texture.h>
 #include <src/graphics/TextureType.h>
+#include <src/utilities/OpenGl.h>
 #include <src/utilities/Singleton.h>
 #include <src/utilities/TupleHasher.h>
 

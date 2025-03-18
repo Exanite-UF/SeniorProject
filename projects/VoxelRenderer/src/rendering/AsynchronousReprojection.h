@@ -1,17 +1,18 @@
 #pragma once
 
-#include <GL/glew.h>
+#include "Renderer.h"
+
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <src/world/CameraComponent.h>
 
 #include <array>
 #include <mutex>
 #include <vector>
 
-#include "Renderer.h"
+#include <src/utilities/OpenGl.h>
+#include <src/world/CameraComponent.h>
 
 // I should probably use a framebuffer, but this needs a custom framebuffer
 class AsyncReprojectionRenderer

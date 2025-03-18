@@ -1,21 +1,21 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <cmath>
+#include "VoxelRenderer.h"
+
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat3x3.hpp>
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 
-#include "VoxelRenderer.h"
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/OpenGl.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/world/Material.h>
 #include <src/world/MaterialManager.h>

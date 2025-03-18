@@ -1,23 +1,17 @@
 #pragma once
 
-#include <GL/glew.h>
-
-#include <GLFW/glfw3.h>
-
-#include <imgui/imgui.h>
-#include <imgui/imgui_impl_glfw.h>
-#include <imgui/imgui_impl_opengl3.h>
-#include <imgui/imgui_stdlib.h>
+#include "GlfwContext.h"
 
 #include <glm/common.hpp>
 #include <glm/vec2.hpp>
+
 #include <memory>
 #include <unordered_map>
 
 #include <src/utilities/BufferedEvent.h>
+#include <src/utilities/ImGui.h>
 #include <src/utilities/NonCopyable.h>
-
-#include "GlfwContext.h"
+#include <src/utilities/OpenGl.h>
 
 class Window : public GlfwContext
 {

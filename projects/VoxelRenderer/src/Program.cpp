@@ -1,5 +1,5 @@
-#include <imgui/imgui.h>
-#include <imgui/imgui_stdlib.h>
+#include <src/utilities/ImGui.h>
+#include <src/utilities/OpenGl.h>
 
 #include <Jolt/Jolt.h>
 

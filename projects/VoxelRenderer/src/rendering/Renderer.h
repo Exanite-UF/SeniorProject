@@ -1,10 +1,5 @@
 #pragma once
-#include "AsynchronousReprojection.h"
-#include "PostProcessing.h"
-#include "VoxelRenderer.h"
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/vec2.hpp>
@@ -16,6 +11,10 @@
 #include <mutex>
 #include <thread>
 
+#include <src/rendering/AsynchronousReprojection.h>
+#include <src/rendering/PostProcessing.h>
+#include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/OpenGl.h>
 #include <src/windowing/GlfwContext.h>
 #include <src/windowing/Window.h>
 #include <src/world/CameraComponent.h>
