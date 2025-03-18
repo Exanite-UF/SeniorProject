@@ -103,34 +103,39 @@ void Program::run()
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Create the scene GameObject
-    auto sceneObject = GameObject::create();
+    auto sceneObject = GameObject::createRootObject();
     auto scene = sceneObject->addComponent<SceneComponent>();
 
-    // Create the camera GameObject
-    auto cameraObject = GameObject::create();
-    auto camera = cameraObject->addComponent<CameraComponent>();
-    auto cameraTransform = camera->getTransform();
-
-    glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
-    auto voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize));
-    for (int i = 1; i < 9; i++)
+    // Create the chunk GameObjects
+    auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
+    for (int x = 0; x < 3; x++)
     {
-        scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize));
-        scene->worlds.back()->transform.addGlobalPosition(glm::vec3(512 * (i % 3), 512 * (i / 3), 0));
+        for (int y = 0; y < 3; ++y)
+        {
+            auto& voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelChunkComponent>());
+            voxelWorld->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
+
+            scene->worlds.push_back(voxelWorld);
+        }
     }
 
-    // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
+    // Create the camera GameObject
+    auto cameraObject = sceneObject->createChildObject();
+    auto camera = cameraObject->addComponent<CameraComponent>();
+    auto& cameraTransform = camera->getTransform();
+    scene->camera = camera;
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z / 1.75));
 
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
+    auto& voxelChunk = scene->worlds.at(0);
 
     VoxelWorldData data {};
-    data.copyFrom(*voxelWorld);
+    data.copyFrom(*voxelChunk->world);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
     float renderRatio = 1.f; // Used to control the render resolution relative to the window resolution
 
-    renderer.setRenderResolution(window->size); // Render resolution can be set seperately from display resolution
+    renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
     // VoxelRenderer renderer;
@@ -279,15 +284,15 @@ void Program::run()
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
-    ExampleWorldGenerator exampleWorldGenerator(worldSize);
-    ExaniteWorldGenerator exaniteWorldGenerator(worldSize);
+    ExampleWorldGenerator exampleWorldGenerator(chunkSize);
+    ExaniteWorldGenerator exaniteWorldGenerator(chunkSize);
 
     int seed = 0;
     int octaves = 3;
     float persistence = 0.5;
     // auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
-    TextureHeightmapWorldGenerator octaveWorldGenerator(worldSize, openSimplexSynthesizer);
+    TextureHeightmapWorldGenerator octaveWorldGenerator(chunkSize, openSimplexSynthesizer);
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -389,12 +394,12 @@ void Program::run()
 
             if (input->isKeyHeld(GLFW_KEY_E))
             {
-                voxelWorld->generateNoiseOccupancyMapAndMipMaps(deltaTime, isRand2, fillAmount);
+                voxelChunk->world->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F5))
             {
-                data.copyFrom(*voxelWorld);
+                data.copyFrom(*voxelChunk->world);
             }
 
             if (input->isKeyPressed(GLFW_KEY_G))
@@ -405,31 +410,31 @@ void Program::run()
             exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F6))
             {
-                exaniteWorldGenerator.generate(*voxelWorld);
+                exaniteWorldGenerator.generate(*voxelChunk->world);
             }
 
             exampleWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F7))
             {
-                exampleWorldGenerator.generate(*voxelWorld);
+                exampleWorldGenerator.generate(*voxelChunk->world);
             }
 
             octaveWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
-                octaveWorldGenerator.generate(*voxelWorld);
+                octaveWorldGenerator.generate(*voxelChunk->world);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F9))
             {
-                data.writeTo(*voxelWorld);
+                data.writeTo(*voxelChunk->world);
             }
 
-            if (remakeNoise)
+            if (isRemakeNoiseRequested)
             {
                 // The noise time should not be incremented here
-                voxelWorld->generateNoiseOccupancyMapAndMipMaps(0, isRand2, fillAmount);
-                remakeNoise = false;
+                voxelChunk->world->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                isRemakeNoiseRequested = false;
             }
 
             if (input->isKeyPressed(GLFW_KEY_F))
@@ -468,8 +473,8 @@ void Program::run()
             }
             if (input->isKeyPressed(GLFW_KEY_T))
             {
-                isRand2 = !isRand2;
-                remakeNoise = true;
+                useRandomNoise = !useRandomNoise;
+                isRemakeNoiseRequested = true;
             }
 
             // Scroll
@@ -477,7 +482,7 @@ void Program::run()
             {
                 fillAmount -= input->getMouseScroll().y * 0.01;
                 fillAmount = std::clamp(fillAmount, 0.f, 1.f);
-                remakeNoise = true;
+                isRemakeNoiseRequested = true;
             }
             else if (input->isKeyHeld(GLFW_KEY_LEFT_ALT) && input->getMouseScroll().y != 0)
             {

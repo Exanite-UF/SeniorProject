@@ -18,7 +18,7 @@ std::shared_ptr<TransformComponent>& GameObject::getTransform()
     return transform;
 }
 
-std::shared_ptr<GameObject> GameObject::create()
+std::shared_ptr<GameObject> GameObject::createRootObject()
 {
     auto gameObject = std::make_shared<GameObject>();
 
@@ -35,6 +35,14 @@ std::shared_ptr<GameObject> GameObject::create()
     gameObject->transform = transform;
 
     return gameObject;
+}
+
+std::shared_ptr<GameObject> GameObject::createChildObject()
+{
+    auto child = createRootObject();
+    transform->addChild(child);
+
+    return child;
 }
 
 void GameObject::destroy()

@@ -2,7 +2,7 @@
 
 #include <src/Constants.h>
 
-VoxelChunkComponent::VoxelChunkComponent()
+VoxelChunkComponent::VoxelChunkComponent(glm::ivec3 worldSize)
 {
-    std::make_shared<VoxelWorld>(Constants::VoxelChunkComponent::chunkSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram))
+    world = std::make_shared<VoxelWorld>(Constants::VoxelChunkComponent::chunkSize);
 }

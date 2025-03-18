@@ -34,9 +34,9 @@ public:
     std::shared_ptr<InputManager> inputManager;
 
     bool isWorkload = false; // View toggle
-    bool isRand2 = true; // Noise type toggle
+    bool useRandomNoise = true; // Noise type toggle
     float fillAmount = 0.6;
-    bool remakeNoise = true;
+    bool isRemakeNoiseRequested = true;
 
     float currentFPS1 = 0;
     float averagedDeltaTime1 = 0;
