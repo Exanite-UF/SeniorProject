@@ -514,7 +514,7 @@ void Program::run()
             float menuHeight = windowSize.y / 4;
             const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
 
-            for (int i = 0; i < numMenus;  i++)
+            for (int i = 0; i < numMenus; i++)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(i * menuWidth, 0));
@@ -545,7 +545,7 @@ void Program::run()
                         ImGui::Text("TO BE ADDED");
                         break;
                     case 2:
-                        //ImGui::Text("TO BE ADDED");
+                        // ImGui::Text("TO BE ADDED");
                         exaniteWorldGenerator.showDebugMenu();
                         exampleWorldGenerator.showDebugMenu();
                         octaveWorldGenerator.showDebugMenu();
@@ -579,12 +579,12 @@ void Program::run()
             if (showMenuGUI)
             {
                 // TODO: Gio, please fix the debug UI size!
-                
+
                 ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar
                     | ImGuiWindowFlags_NoResize
                     | ImGuiWindowFlags_NoMove
                     | ImGuiWindowFlags_NoCollapse;
-                
+
                 // | ImGuiWindowFlags_NoScrollbar
                 // | ImGuiWindowFlags_NoScrollWithMouse;
 
