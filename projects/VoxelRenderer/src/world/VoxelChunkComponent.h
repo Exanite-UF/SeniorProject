@@ -8,4 +8,6 @@ class VoxelChunkComponent : public Component
 {
 public:
     std::shared_ptr<VoxelWorld> world;
+
+    VoxelChunkComponent();
 };

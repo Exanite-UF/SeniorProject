@@ -24,4 +24,10 @@ public:
         // The max number of material definitions
         static constexpr uint32_t maxMaterialCount = 65536;
     };
+
+    class VoxelChunkComponent
+    {
+    public:
+        static constexpr glm::ivec3 chunkSize = glm::ivec3(512, 512, 512);
+    };
 };

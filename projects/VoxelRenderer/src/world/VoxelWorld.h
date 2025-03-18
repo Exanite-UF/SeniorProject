@@ -10,7 +10,6 @@
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/utilities/NonCopyable.h>
-#include <src/world/Transform.h>
 
 class VoxelWorld : public NonCopyable
 {
@@ -33,9 +32,6 @@ private:
     void setSize(glm::ivec3 size);
 
 public:
-    // TODO: DO NOT turn VoxelWorld into a Component. Add a VoxelWorldComponent instead.
-    Transform transform;
-
     // Creates a voxel world
     VoxelWorld(glm::ivec3 size, GLuint makeNoiseComputeProgram, GLuint makeMipMapComputeProgram, GLuint assignMaterialComputeProgram);
 

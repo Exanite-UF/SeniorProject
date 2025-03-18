@@ -42,6 +42,8 @@
 #include <src/procgen/synthesizers/TextureOpenSimplexNoiseSynthesizer.h>
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/Framebuffer.h>
+#include <src/rendering/PostProcessing.h>
+#include <src/rendering/Renderer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
@@ -52,9 +54,7 @@
 #include <src/world/SceneComponent.h>
 #include <src/world/VoxelWorld.h>
 #include <src/world/VoxelWorldData.h>
-
-#include <src/rendering/PostProcessing.h>
-#include <src/rendering/Renderer.h>
+#include <src/world/VoxelWorldManager.h>
 
 float currentFPS1 = 0;
 float averagedDeltaTime1 = 0;
@@ -93,6 +93,7 @@ void Program::run()
     auto& shaderManager = ShaderManager::getInstance();
     auto& textureManager = TextureManager::getInstance();
     auto& materialManager = MaterialManager::getInstance();
+    auto& voxelWorldManager = VoxelWorldManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
