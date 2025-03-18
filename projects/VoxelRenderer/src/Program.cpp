@@ -514,29 +514,35 @@ void Program::run()
             const int numMenus = 5;
             ImVec2 windowSize = ImVec2(window->size.x, window->size.y);
             float menuWidth = windowSize.x / numMenus;
-            float menuHeight = 150.0f;
-            const char* menuTitles[numMenus] = { "Stats", "Model Importer", "World Generation", "Controls", "About" };
+            float menuHeight = windowSize.y / 4;
+            const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
 
             for (int i = 0; i < numMenus;  i++)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(i * menuWidth, 0));
                 ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
+                ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
 
+                if (i == 0 && showMenuGUI)
+                {
+                    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
+                }
+                else
+                {
+                    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Always);
+                }
+                
                 ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-
+                ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
                 switch (i)
                 {
                     case 0:
-                        if (showMenuGUI)
-                        {
-                            ImGui::Text("Voxel Rendering Project\n");
-                            ImGui::Text("\nFPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
-                            ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
-                            ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
-                            ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
-                            ImGui::Text("Render Ratio: %.2f", renderRatio);
-                        }
+                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                        ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
+                        ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
+                        ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
+                        ImGui::Text("Render Ratio: %.2f", renderRatio);
                         break;
                     case 1:
                         ImGui::Text("TO BE ADDED");
@@ -563,6 +569,7 @@ void Program::run()
                         ImGui::Text("ABOUT");
                         break;
                 }
+                ImGui::PopTextWrapPos();
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
