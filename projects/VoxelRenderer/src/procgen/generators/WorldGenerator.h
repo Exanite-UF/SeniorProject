@@ -12,8 +12,8 @@ protected:
     virtual void generateData() = 0;
 
 public:
-    explicit WorldGenerator(glm::ivec3 worldSize);
+    explicit WorldGenerator(glm::ivec3 chunkSize);
 
-    void generate(VoxelChunk& voxelWorld);
+    void generate(VoxelChunk& chunk);
     virtual void showDebugMenu() = 0;
 };

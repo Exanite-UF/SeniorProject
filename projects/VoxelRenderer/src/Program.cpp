@@ -114,10 +114,10 @@ void Program::run()
         {
             auto voxelWorldObject = sceneObject->createChildObject();
 
-            auto& voxelWorld = scene->worlds.emplace_back(voxelWorldObject->addComponent<VoxelChunkComponent>());
+            auto& voxelWorld = scene->chunks.emplace_back(voxelWorldObject->addComponent<VoxelChunkComponent>());
             voxelWorld->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
 
-            scene->worlds.push_back(voxelWorld);
+            scene->chunks.push_back(voxelWorld);
         }
     }
 
@@ -128,7 +128,7 @@ void Program::run()
     scene->camera = camera;
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z / 1.75));
 
-    auto& voxelChunk = scene->worlds.at(0);
+    auto& voxelChunk = scene->chunks.at(0);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
@@ -693,15 +693,15 @@ void Program::runLateStartupTests()
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxShaderBlockSize);
 
         Assert::isTrue(maxShaderBlockSize >= Constants::VoxelChunk::maxMaterialCount * sizeof(MaterialDefinition), "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store all material definitions");
-        Assert::isTrue(maxShaderBlockSize >= 2 * 256 * 256 * 512, "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store material map for a voxel world (chunk) of size 256x256x512, where each voxel takes 2 bytes");
+        Assert::isTrue(maxShaderBlockSize >= 2 * 256 * 256 * 512, "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store material map for a voxel chunk of size 256x256x512, where each voxel takes 2 bytes");
 
         if (maxShaderBlockSize >= 2 * 512 * 512 * 512)
         {
-            Log::log("512x512x512 sized voxel worlds (chunks) are supported on this device!");
+            Log::log("512x512x512 sized voxel chunks are supported on this device!");
         }
         else
         {
-            Log::log("512x512x512 sized voxel worlds (chunks) are NOT supported on this device!");
+            Log::log("512x512x512 sized voxel chunks are NOT supported on this device!");
         }
     }
 

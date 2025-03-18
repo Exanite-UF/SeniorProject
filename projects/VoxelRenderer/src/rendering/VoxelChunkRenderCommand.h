@@ -5,5 +5,5 @@
 
 struct VoxelChunkRenderCommand
 {
-    std::shared_ptr<VoxelChunk> voxelWorld;
+    std::shared_ptr<VoxelChunk> chunk;
 };

@@ -15,7 +15,7 @@
 
 class Renderer;
 
-// The voxel renderer needs to be able to render multiple voxel worlds
+// The voxel renderer needs to be able to render multiple voxel chunks
 class VoxelRenderer : public NonCopyable
 {
 private:

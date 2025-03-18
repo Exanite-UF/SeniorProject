@@ -98,36 +98,36 @@ void VoxelChunkData::clearMaterialMap()
     std::fill(materialMap.begin(), materialMap.end(), 0);
 }
 
-void VoxelChunkData::copyFrom(VoxelChunk& world)
+void VoxelChunkData::copyFrom(VoxelChunk& chunk)
 {
-    if (size != world.getSize())
+    if (size != chunk.getSize())
     {
-        setSize(world.getSize());
+        setSize(chunk.getSize());
     }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMap.size() * 2, materialMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void VoxelChunkData::writeTo(VoxelChunk& world)
+void VoxelChunkData::writeTo(VoxelChunk& chunk)
 {
-    if (world.getSize() != size)
+    if (chunk.getSize() != size)
     {
-        throw std::runtime_error("Target world does not have the same size");
+        throw std::runtime_error("Target chunk does not have the same size");
     }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getOccupancyMap().bufferId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, occupancyMapIndices.at(1), occupancyMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world.getMaterialMap().bufferId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, materialMap.size() * 2, materialMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    world.updateMipMaps();
+    chunk.updateMipMaps();
 }

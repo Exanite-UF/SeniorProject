@@ -276,7 +276,7 @@ void Renderer::_render()
 
         voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
 
-        voxelRenderer->executePathTrace(scene->worlds, bounces);
+        voxelRenderer->executePathTrace(scene->chunks, bounces);
 
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }

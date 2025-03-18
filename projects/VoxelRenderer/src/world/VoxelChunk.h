@@ -10,7 +10,7 @@
 class VoxelChunk : public NonCopyable
 {
 private:
-    glm::ivec3 size; // Size of the voxel world in voxels
+    glm::ivec3 size; // Size of the voxel chunk in voxels
 
     GraphicsBuffer<uint8_t> occupancyMap; // This stores the voxel occupancy data
     std::vector<GLuint> occupancyMapIndices; // The start indices of the occupancy map in bytes. The max size of this vector is defined by Constants::VoxelChunk::maxOccupancyMapLayerCount

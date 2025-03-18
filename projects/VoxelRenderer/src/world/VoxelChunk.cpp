@@ -12,7 +12,8 @@ VoxelChunk::VoxelChunk(glm::ivec3 size)
 {
     this->currentNoiseTime = 0;
 
-    // Initialize world size and contents
+    // Initialize chunk size and contents
+    // Chunk size must be a power of 2
     size = {
         1 << glm::log2(size.x - 1) + 1,
         1 << glm::log2(size.y - 1) + 1,

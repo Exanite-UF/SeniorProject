@@ -11,5 +11,5 @@ class SceneComponent : public Component
 {
 public:
     std::shared_ptr<CameraComponent> camera {};
-    std::vector<std::shared_ptr<VoxelChunkComponent>> worlds {};
+    std::vector<std::shared_ptr<VoxelChunkComponent>> chunks {};
 };

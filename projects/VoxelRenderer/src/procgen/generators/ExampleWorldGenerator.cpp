@@ -5,8 +5,8 @@
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 
-ExampleWorldGenerator::ExampleWorldGenerator(glm::ivec3 worldSize)
-    : WorldGenerator(worldSize)
+ExampleWorldGenerator::ExampleWorldGenerator(glm::ivec3 chunkSize)
+    : WorldGenerator(chunkSize)
 {
 }
 

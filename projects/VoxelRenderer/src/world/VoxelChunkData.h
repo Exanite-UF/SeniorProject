@@ -33,6 +33,6 @@ public:
     void clearOccupancyMap();
     void clearMaterialMap();
 
-    void copyFrom(VoxelChunk& world);
-    void writeTo(VoxelChunk& world);
+    void copyFrom(VoxelChunk& chunk);
+    void writeTo(VoxelChunk& chunk);
 };

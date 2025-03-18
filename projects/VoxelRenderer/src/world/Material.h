@@ -27,7 +27,7 @@
 
 // This material ID map and material array will need to be stored by the VoxelRenderer (or alternatively, stored once per program instance).
 // Why not store this data per VoxelChunk? If we do this, we need to know which material map+array to use.
-// Since we only have a G-Buffer with material IDs, we'll need to store additional data to know which world the material ID comes from.
+// Since we only have a G-Buffer with material IDs, we'll need to store additional data to know which chunk the material ID comes from.
 // Since we also need to store multiple material maps+arrays, this is very costly for little to no benefit.
 
 // Note that the Material struct that is sent to the GPU may be different from the one stored on the CPU. Call the GPU version: MaterialData.
