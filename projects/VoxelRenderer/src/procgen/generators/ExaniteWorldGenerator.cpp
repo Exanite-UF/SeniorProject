@@ -66,12 +66,8 @@ void ExaniteWorldGenerator::generateData()
 
 void ExaniteWorldGenerator::showDebugMenu()
 {
-    ImGui::PushID("ExaniteWorldGenerator");
+    if (ImGui::CollapsingHeader("Exanite's Generator"))
     {
-        if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
-        {
-            ImGui::Text("This generator is used to test material palette solving");
-        }
+        ImGui::Text("This generator is used to test material palette solving");
     }
-    ImGui::PopID();
 }

@@ -399,19 +399,16 @@ void Program::run()
                 renderer.toggleAsynchronousReprojection();
             }
 
-            exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F6))
             {
                 exaniteWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
-            exampleWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F7))
             {
                 exampleWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
-            octaveWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
                 octaveWorldGenerator.generate(*voxelChunk->getChunk());
@@ -486,20 +483,90 @@ void Program::run()
                 showMenuGUI = !showMenuGUI;
             }
 
+            //  Debug UI Two
+            const int numMenus = 5;
+            ImVec2 windowSize = ImVec2(window->size.x, window->size.y);
+            float menuWidth = windowSize.x / numMenus;
+            float menuHeight = windowSize.y / 4;
+            const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
+
+            for (int i = 0; i < numMenus; i++)
+            {
+                ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
+                ImGui::SetNextWindowPos(ImVec2(i * menuWidth, 0));
+                ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
+                ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
+
+                if (i == 0 && showMenuGUI)
+                {
+                    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
+                }
+                else if (i == 0)
+                {
+                    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Always);
+                }
+
+                ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+                ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
+                switch (i)
+                {
+                    case 0:
+                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                        ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
+                        ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
+                        ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
+                        ImGui::Text("Render Ratio: %.2f", renderRatio);
+                        break;
+                    case 1:
+                        ImGui::Text("TO BE ADDED");
+                        break;
+                    case 2:
+                        // ImGui::Text("TO BE ADDED");
+                        exaniteWorldGenerator.showDebugMenu();
+                        exampleWorldGenerator.showDebugMenu();
+                        octaveWorldGenerator.showDebugMenu();
+                        break;
+                    case 3:
+                        ImGui::Text("W - Forward");
+                        ImGui::Text("S - Backward");
+                        ImGui::Text("A - Left");
+                        ImGui::Text("D - Right");
+                        ImGui::Text("Esc - Close Application");
+                        ImGui::Text("E - Iterate Noise Over Time");
+                        ImGui::Text("F - Toggle Fullscreen");
+                        ImGui::Text("Q - Toggle Mouse Input");
+                        ImGui::Text("T - Change Noise Type");
+                        ImGui::Text("G - Toggle Reprojection");
+                        ImGui::Text("Mouse Scroll - Change Move Speed");
+                        ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
+                        ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");
+                        break;
+                    case 4:
+                        ImGui::Text("ABOUT");
+                        break;
+                }
+                ImGui::PopTextWrapPos();
+                ImGui::End();
+                ImGui::PopStyleColor();
+            }
+
             // Render debug UI
+            /*
             if (showMenuGUI)
             {
                 // TODO: Gio, please fix the debug UI size!
+
                 ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar
                     | ImGuiWindowFlags_NoResize
                     | ImGuiWindowFlags_NoMove
                     | ImGuiWindowFlags_NoCollapse;
+
                 // | ImGuiWindowFlags_NoScrollbar
                 // | ImGuiWindowFlags_NoScrollWithMouse;
 
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
-                ImGui::Begin("Menu", nullptr, guiWindowFlags);
+                ImGui::Begin("Menu", nullptr); //,, guiWindowFlags
                 {
                     auto cameraPosition = cameraTransform->getGlobalPosition();
                     auto cameraLookDirection = cameraTransform->getForwardDirection();
@@ -538,6 +605,7 @@ void Program::run()
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
+            */
         }
 
         // Render
