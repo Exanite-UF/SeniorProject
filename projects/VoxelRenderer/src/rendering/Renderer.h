@@ -22,7 +22,7 @@
 #include <src/world/SceneComponent.h>
 
 class VoxelRenderer;
-class AsynchronousReprojection;
+class AsyncReprojectionRenderer;
 
 class Renderer
 {
@@ -95,13 +95,13 @@ private:
     int bounces = 2;
 
     std::unique_ptr<VoxelRenderer> voxelRenderer = nullptr;
-    std::unique_ptr<AsynchronousReprojection> reprojection = nullptr;
-    std::unique_ptr<PostProcessing> postProcessing = nullptr;
+    std::unique_ptr<AsyncReprojectionRenderer> reprojection = nullptr;
+    std::unique_ptr<PostProcessRenderer> postProcessing = nullptr;
 
     static GLuint drawTextureProgram;
 
     friend class VoxelRenderer;
-    friend class AsynchronousReprojection;
+    friend class AsyncReprojectionRenderer;
 
     // This is what the reprojection and post processes work on
     std::recursive_mutex outputLock {};
@@ -167,7 +167,7 @@ public:
 
     void setAsynchronousOverdrawFOV(float extraFOV);
 
-    std::shared_ptr<PostProcess> addPostProcessEffect(std::shared_ptr<PostProcess> effect);
+    std::shared_ptr<PostProcessEffect> addPostProcessEffect(std::shared_ptr<PostProcessEffect> effect);
 
     glm::vec2 getUpscaleMultiplier();
 

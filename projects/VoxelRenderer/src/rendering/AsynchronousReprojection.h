@@ -14,7 +14,7 @@
 #include "Renderer.h"
 
 // I should probably use a framebuffer, but this needs a custom framebuffer
-class AsynchronousReprojection
+class AsyncReprojectionRenderer
 {
 private:
     static GLuint renderProgram;
@@ -40,7 +40,7 @@ private:
 
     void generateMesh(const glm::ivec2& size);
 
-    AsynchronousReprojection(); // This is only supposed to be ran by Renderer
+    AsyncReprojectionRenderer(); // This is only supposed to be ran by Renderer
 
     friend class Renderer;
 

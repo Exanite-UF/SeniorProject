@@ -5,12 +5,12 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 
-GLuint PostProcessing::drawTextureProgram {};
-std::unordered_map<std::string, GLuint> PostProcessing::programs {};
+GLuint PostProcessRenderer::drawTextureProgram {};
+std::unordered_map<std::string, GLuint> PostProcessRenderer::programs {};
 
-std::unordered_map<std::string, std::shared_ptr<PostProcess>> PostProcess::existingProcesses {};
+std::unordered_map<std::string, std::shared_ptr<PostProcessEffect>> PostProcessEffect::existingProcesses {};
 
-void PostProcess::bindTextures(GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
+void PostProcessEffect::bindTextures(GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, previousOutputTexture);
@@ -40,7 +40,7 @@ void PostProcess::bindTextures(GLuint previousOutputTexture, GLuint colorTexture
     }
 }
 
-void PostProcess::unbindTextures()
+void PostProcessEffect::unbindTextures()
 {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -70,7 +70,7 @@ void PostProcess::unbindTextures()
     }
 }
 
-void PostProcess::applyProcess(GLuint currentOutput, GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
+void PostProcessEffect::applyProcess(GLuint currentOutput, GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {
     GLuint framebuffer;
     glGenFramebuffers(1, &framebuffer);
@@ -104,7 +104,7 @@ void PostProcess::applyProcess(GLuint currentOutput, GLuint previousOutputTextur
     glUseProgram(0);
 }
 
-void PostProcess::preventDuplicateBindings()
+void PostProcessEffect::preventDuplicateBindings()
 {
     static std::string message = "Cannot bind multiple textures to the same location.";
     std::unordered_set<GLenum> usedBindings;
@@ -151,7 +151,7 @@ void PostProcess::preventDuplicateBindings()
     }
 }
 
-PostProcess::PostProcess(GLuint program, GLenum colorTextureBinding, GLenum positionTextureBinding, GLenum normalTextureBinding, GLenum materialTextureBinding)
+PostProcessEffect::PostProcessEffect(GLuint program, GLenum colorTextureBinding, GLenum positionTextureBinding, GLenum normalTextureBinding, GLenum materialTextureBinding)
 {
     this->program = program;
     this->colorTextureBinding = colorTextureBinding;
@@ -162,7 +162,7 @@ PostProcess::PostProcess(GLuint program, GLenum colorTextureBinding, GLenum posi
     preventDuplicateBindings();
 }
 
-std::shared_ptr<PostProcess> PostProcess::getPostProcess(std::string name, GLuint program, GLenum colorTextureBinding, GLenum positionTextureBinding, GLenum normalTextureBinding, GLenum materialTextureBinding)
+std::shared_ptr<PostProcessEffect> PostProcessEffect::getPostProcess(std::string name, GLuint program, GLenum colorTextureBinding, GLenum positionTextureBinding, GLenum normalTextureBinding, GLenum materialTextureBinding)
 {
     if (existingProcesses.count(name))
     {
@@ -176,14 +176,14 @@ std::shared_ptr<PostProcess> PostProcess::getPostProcess(std::string name, GLuin
         throw std::runtime_error(message);
     }
 
-    std::shared_ptr<PostProcess> result = std::shared_ptr<PostProcess>(new PostProcess(program, colorTextureBinding, positionTextureBinding, normalTextureBinding, materialTextureBinding));
+    std::shared_ptr<PostProcessEffect> result = std::shared_ptr<PostProcessEffect>(new PostProcessEffect(program, colorTextureBinding, positionTextureBinding, normalTextureBinding, materialTextureBinding));
 
     existingProcesses[name] = result;
 
     return result;
 }
 
-void PostProcessing::applyProcess(std::size_t processID, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
+void PostProcessRenderer::applyProcess(std::size_t processID, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {
 
     GLuint outputTexture;
@@ -198,7 +198,7 @@ void PostProcessing::applyProcess(std::size_t processID, GLuint colorTexture, GL
     currentTexture = (currentTexture + 1) % 2;
 }
 
-void PostProcessing::makeTextures()
+void PostProcessRenderer::makeTextures()
 {
     // Remake the color texture
     glDeleteTextures(2, renderTextures.data());
@@ -219,12 +219,12 @@ void PostProcessing::makeTextures()
     }
 }
 
-PostProcessing::PostProcessing()
+PostProcessRenderer::PostProcessRenderer()
 {
     drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
 }
 
-void PostProcessing::applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
+void PostProcessRenderer::applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {
     if (this->outputResolution != outputResolution)
     {
@@ -268,17 +268,17 @@ void PostProcessing::applyAllProcesses(const glm::ivec2& outputResolution, GLuin
     }
 }
 
-GLuint PostProcessing::getOutputTexture()
+GLuint PostProcessRenderer::getOutputTexture()
 {
     return renderTextures[currentTexture % 2];
 }
 
-void PostProcessing::addPostProcessEffect(std::shared_ptr<PostProcess> effect)
+void PostProcessRenderer::addPostProcessEffect(std::shared_ptr<PostProcessEffect> effect)
 {
     postProcesses.push_back(effect);
 }
 
-bool PostProcessing::hasAnyProcesses()
+bool PostProcessRenderer::hasAnyProcesses()
 {
     return this->postProcesses.size() > 0;
 }
