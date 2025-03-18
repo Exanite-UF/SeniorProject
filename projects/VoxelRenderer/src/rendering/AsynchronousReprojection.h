@@ -1,20 +1,21 @@
 #pragma once
 
-#include <GL/glew.h>
+#include "Renderer.h"
+
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <src/world/CameraComponent.h>
 
 #include <array>
 #include <mutex>
 #include <vector>
 
-#include "Renderer.h"
+#include <src/utilities/OpenGl.h>
+#include <src/world/CameraComponent.h>
 
 // I should probably use a framebuffer, but this needs a custom framebuffer
-class AsynchronousReprojection
+class AsyncReprojectionRenderer
 {
 private:
     static GLuint renderProgram;
@@ -25,22 +26,22 @@ private:
 
     // These textures are only used by Asynchronous Reprojection when combining frames
     // As such it only needs old and new versions
-    std::array<GLuint, 2> frameCountTextures;
+    std::array<GLuint, 2> frameCountTextures {};
 
-    GLuint combineMaskTextureID;
+    GLuint combineMaskTextureID {};
 
-    glm::ivec2 size; // The size of the offscreen render
+    glm::ivec2 size {}; // The size of the offscreen render
 
-    std::vector<float> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<float> vertices {};
+    std::vector<unsigned int> indices {};
 
-    GLuint VAO;
-    GLuint VBO;
-    GLuint EBO;
+    GLuint VAO {};
+    GLuint VBO {};
+    GLuint EBO {};
 
     void generateMesh(const glm::ivec2& size);
 
-    AsynchronousReprojection(); // This is only supposed to be ran by Renderer
+    AsyncReprojectionRenderer(); // This is only supposed to be ran by Renderer
 
     friend class Renderer;
 

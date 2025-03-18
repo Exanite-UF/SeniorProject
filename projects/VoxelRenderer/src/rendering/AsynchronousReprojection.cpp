@@ -6,11 +6,11 @@
 
 #include <iostream>
 
-GLuint AsynchronousReprojection::renderProgram;
-GLuint AsynchronousReprojection::combineProgram;
-GLuint AsynchronousReprojection::combineMaskProgram;
+GLuint AsyncReprojectionRenderer::renderProgram {};
+GLuint AsyncReprojectionRenderer::combineProgram {};
+GLuint AsyncReprojectionRenderer::combineMaskProgram {};
 
-void AsynchronousReprojection::generateMesh(const glm::ivec2& size)
+void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 {
     vertices.resize(size.x * size.y * 3);
     indices.resize((size.x - 1) * (size.y - 1) * 2 * 3); // number of squares -> number of triangle -> number of edges
@@ -62,7 +62,7 @@ void AsynchronousReprojection::generateMesh(const glm::ivec2& size)
     glBindVertexArray(0);
 }
 
-AsynchronousReprojection::AsynchronousReprojection()
+AsyncReprojectionRenderer::AsyncReprojectionRenderer()
 {
     renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader);
     combineProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::combineReprojectionFragmentShader);
@@ -73,7 +73,7 @@ AsynchronousReprojection::AsynchronousReprojection()
     glGenBuffers(1, &EBO);
 }
 
-void AsynchronousReprojection::setSize(glm::ivec2 size)
+void AsyncReprojectionRenderer::setSize(glm::ivec2 size)
 {
     if (this->size == size)
     {
@@ -116,7 +116,7 @@ void AsynchronousReprojection::setSize(glm::ivec2 size)
     }
 }
 
-void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
+void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
     const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& materialTexture)
 {
     glUseProgram(renderProgram);
@@ -160,7 +160,7 @@ void AsynchronousReprojection::render(GLuint framebuffer, const glm::ivec2& repr
     glUseProgram(0);
 }
 
-void AsynchronousReprojection::combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
+void AsyncReprojectionRenderer::combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
     const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture)
 {
     // This runs in the offscreen context

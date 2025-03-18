@@ -1,8 +1,3 @@
-// Include GLEW before OpenGL and GLFW
-#include <GL/glew.h>
-
-#include <GLFW/glfw3.h>
-
 #include <iostream>
 #include <src/Program.h>
 #include <src/utilities/Log.h>

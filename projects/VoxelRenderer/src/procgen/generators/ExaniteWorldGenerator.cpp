@@ -5,8 +5,8 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
 
-ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 worldSize)
-    : WorldGenerator(worldSize)
+ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 chunkSize)
+    : WorldGenerator(chunkSize)
 {
 }
 
@@ -44,7 +44,7 @@ void ExaniteWorldGenerator::generateData()
 
                             int materialIndex = ((materialBits2 << 6) | (materialBits1 << 3) | (materialBits0 << 0)) + materialOffset;
 
-                            data.setVoxelMaterialIndex(position0, materialIndex % Constants::VoxelWorld::maxMaterialCount);
+                            data.setVoxelMaterialIndex(position0, materialIndex % Constants::VoxelChunk::maxMaterialCount);
                         }
                     }
                 }
@@ -66,12 +66,8 @@ void ExaniteWorldGenerator::generateData()
 
 void ExaniteWorldGenerator::showDebugMenu()
 {
-    ImGui::PushID("ExaniteWorldGenerator");
+    if (ImGui::CollapsingHeader("Exanite's Generator"))
     {
-        if (ImGui::CollapsingHeader("Exanite's Generator (F6)"))
-        {
-            ImGui::Text("This generator is used to test material palette solving");
-        }
+        ImGui::Text("This generator is used to test material palette solving");
     }
-    ImGui::PopID();
 }

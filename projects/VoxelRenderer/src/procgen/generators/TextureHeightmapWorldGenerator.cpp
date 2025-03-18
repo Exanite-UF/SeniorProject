@@ -3,7 +3,7 @@
 #include <memory>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
-#include <src/world/VoxelWorldData.h>
+#include <src/world/VoxelChunkData.h>
 
 void TextureHeightmapWorldGenerator::generateData()
 {
@@ -31,17 +31,13 @@ void TextureHeightmapWorldGenerator::generateData()
 void TextureHeightmapWorldGenerator::showDebugMenu()
 {
     // TODO: Testing. Once finalized, add to existing Imgui fields.
-    ImGui::PushID("TextureHeightmapWorldGenerator");
+    if (ImGui::CollapsingHeader("Texture-Heightmap World Generator"))
     {
-        if (ImGui::CollapsingHeader("Texture-Heightmap World Generator (F8)"))
+        ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
+        textureDataSynthesizer->showDebugMenu();
+        if (ImGui::Button("Print Texture"))
         {
-            ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
-            textureDataSynthesizer->showDebugMenu();
-            if (ImGui::Button("Print Texture"))
-            {
-                PrintUtility::printTexture(textureData, textureDataSynthesizer->mapperTo01(), "output_texture.ppm");
-            }
+            PrintUtility::printTexture(textureData, textureDataSynthesizer->mapperTo01(), "output_texture.ppm");
         }
     }
-    ImGui::PopID();
 }

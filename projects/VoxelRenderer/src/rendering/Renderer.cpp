@@ -9,7 +9,7 @@
 #include <src/graphics/ShaderManager.h>
 #include <src/windowing/Window.h>
 
-GLuint Renderer::drawTextureProgram;
+GLuint Renderer::drawTextureProgram {};
 
 void Renderer::offscreenRenderingFunc()
 {
@@ -40,8 +40,8 @@ Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared
     this->offscreenContext = offscreenContext;
 
     voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
-    reprojection = std::unique_ptr<AsynchronousReprojection>(new AsynchronousReprojection());
-    postProcessing = std::unique_ptr<PostProcessing>(new PostProcessing());
+    reprojection = std::unique_ptr<AsyncReprojectionRenderer>(new AsyncReprojectionRenderer());
+    postProcessing = std::unique_ptr<PostProcessRenderer>(new PostProcessRenderer());
 }
 
 void Renderer::makeFramebuffers()
@@ -276,7 +276,7 @@ void Renderer::_render()
 
         voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
 
-        voxelRenderer->executePathTrace(scene->worlds, bounces);
+        voxelRenderer->executePathTrace(scene->chunks, bounces);
 
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }
@@ -508,7 +508,7 @@ void Renderer::setAsynchronousOverdrawFOV(float extraFOV)
     overdrawFOV = extraFOV;
 }
 
-std::shared_ptr<PostProcess> Renderer::addPostProcessEffect(std::shared_ptr<PostProcess> effect)
+std::shared_ptr<PostProcessEffect> Renderer::addPostProcessEffect(std::shared_ptr<PostProcessEffect> effect)
 {
     postProcessing->addPostProcessEffect(effect);
     return effect;

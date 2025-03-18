@@ -4,7 +4,7 @@
 
 #include <src/Constants.h>
 
-class VoxelWorldUtility
+class VoxelChunkUtility
 {
 public:
     // First value will always be 0
@@ -14,6 +14,6 @@ public:
     // The total mipmap layers is result.size() - 2
     // The total layers is result.size() - 1
     //
-    // The max size of the returned vector is Constants::VoxelWorld::maxOccupancyMapLayerCount + 1
+    // The max size of the returned vector is Constants::VoxelChunk::maxOccupancyMapLayerCount + 1
     static std::vector<uint32_t> getOccupancyMapIndices(glm::ivec3 size);
 };

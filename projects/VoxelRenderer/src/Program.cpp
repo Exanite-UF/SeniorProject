@@ -1,5 +1,5 @@
-#include <imgui/imgui.h>
-#include <imgui/imgui_stdlib.h>
+#include <src/utilities/ImGui.h>
+#include <src/utilities/OpenGl.h>
 
 #include <Jolt/Jolt.h>
 
@@ -42,6 +42,8 @@
 #include <src/procgen/synthesizers/TextureOpenSimplexNoiseSynthesizer.h>
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/Framebuffer.h>
+#include <src/rendering/PostProcessing.h>
+#include <src/rendering/Renderer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
@@ -50,14 +52,9 @@
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/SceneComponent.h>
-#include <src/world/VoxelWorld.h>
-#include <src/world/VoxelWorldData.h>
-
-#include <src/rendering/PostProcessing.h>
-#include <src/rendering/Renderer.h>
-
-float currentFPS1 = 0;
-float averagedDeltaTime1 = 0;
+#include <src/world/VoxelChunk.h>
+#include <src/world/VoxelChunkData.h>
+#include <src/world/VoxelChunkManager.h>
 
 Program::Program()
 {
@@ -93,6 +90,7 @@ void Program::run()
     auto& shaderManager = ShaderManager::getInstance();
     auto& textureManager = TextureManager::getInstance();
     auto& materialManager = MaterialManager::getInstance();
+    auto& voxelWorldManager = VoxelChunkManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
@@ -102,182 +100,131 @@ void Program::run()
     glEnable(GL_DEPTH_TEST);
     glClearDepth(0); // Reverse-Z
     glDepthFunc(GL_GREATER); // Reverse-Z
-
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
-    // Load shader programs
-    blitTextureGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFragmentShader);
-    blitFramebufferGraphicsProgram = shaderManager.getGraphicsProgram(Content::screenTriVertexShader, Content::blitFramebufferFragmentShader);
-    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
-    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
-    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
-
-    // Load textures
-    // TODO: Remove OR save to Program class, similarly to the shaders above. These are used to make sure the texture loading is working
-    auto texture = textureManager.loadTexture(Content::defaultColorTexture, ColorAlpha);
-    auto texture1 = textureManager.loadTexture(Content::defaultColorTexture, ColorOnly);
-    auto texture2 = textureManager.loadTexture(Content::defaultNormalTexture, Normal);
-
-    // Create the Scene GameObject
-    auto sceneObject = GameObject::create();
+    // Create the scene GameObject
+    auto sceneObject = GameObject::createRootObject();
     auto scene = sceneObject->addComponent<SceneComponent>();
 
-    // Create the Camera GameObject
-    auto cameraObject = GameObject::create();
-    auto camera = cameraObject->addComponent<CameraComponent>();
-    auto cameraTransform = camera->getTransform();
-
-    glm::ivec3 worldSize = glm::ivec3(512, 512, 512);
-    auto voxelWorld = scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
-    for (int i = 1; i < 9; i++)
+    // Create the chunk GameObjects
+    auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
+    for (int x = 0; x < 3; x++)
     {
-        scene->worlds.emplace_back(std::make_shared<VoxelWorld>(worldSize, makeNoiseComputeProgram, makeMipMapComputeProgram, assignMaterialComputeProgram));
-        scene->worlds.back()->transform.addGlobalPosition(glm::vec3(512 * (i % 3), 512 * (i / 3), 0));
+        for (int y = 0; y < 3; ++y)
+        {
+            auto voxelWorldObject = sceneObject->createChildObject();
+
+            auto& voxelWorld = scene->chunks.emplace_back(voxelWorldObject->addComponent<VoxelChunkComponent>());
+            voxelWorld->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
+
+            scene->chunks.push_back(voxelWorld);
+        }
     }
 
-    // scene.worlds.at(1).transform.addGlobalPosition(glm::vec3(256, 0, 0));
+    // Create the camera GameObject
+    auto cameraObject = sceneObject->createChildObject();
+    auto camera = cameraObject->addComponent<CameraComponent>();
+    auto& cameraTransform = camera->getTransform();
+    scene->camera = camera;
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z / 1.75));
 
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, worldSize.z / 1.75));
-
-    VoxelWorldData data {};
-    data.copyFrom(*voxelWorld);
+    auto& voxelChunk = scene->chunks.at(0);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
     float renderRatio = 1.f; // Used to control the render resolution relative to the window resolution
 
-    renderer.setRenderResolution(window->size); // Render resolution can be set seperately from display resolution
+    renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
-    // VoxelRenderer renderer;
     renderer.setRaysPerPixel(1);
     renderer.setBounces(2);
 
-    // auto blurX = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
-    // blurX->setUniforms = [&renderer](GLuint program){
-    //     float standardDeviation = 2;
-    //     int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
-    //     float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
-    ////
-    //    std::vector<float> kernel;
-    //    float sharedCoefficient = lossCorrection / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
-    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
-    //        float dist = i * i;
-    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
-    //    }
-    ////
-    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
-    ////
-    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
-    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
-    //};
-    // auto blurY = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
-    // blurY->setUniforms = [&renderer](GLuint program){
-    //    float standardDeviation = 2;
-    //    int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
-    //    float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
-    ////
-    //    std::vector<float> kernel;
-    //    float sharedCoefficient = 1 / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
-    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
-    //        float dist = i * i;
-    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
-    //    }
-    ////
-    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
-    ////
-    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
-    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
-    //};
+    // Configure post processing
+    {
+        // Gaussian blur
+        if (false)
+        {
+            auto blurX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+            blurX->setUniforms = [&renderer](GLuint program)
+            {
+                float standardDeviation = 2;
+                int kernelRadius = standardDeviation * 2; // This will capture 96% of the expected input
+                float lossCorrection = 1 / 0.954499736104; // Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
 
-    // auto denoiseX = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-    // denoiseX->setUniforms = [&renderer](GLuint program){
-    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
-    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
-    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
-    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
-    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
-    // };
-    ////
-    // auto denoiseY = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-    // denoiseY->setUniforms = [&renderer](GLuint program){
-    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
-    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
-    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
-    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
-    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
-    // };
+                std::vector<float> kernel;
+                float sharedCoefficient = lossCorrection / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
+                for (int i = -kernelRadius; i <= kernelRadius; i++)
+                {
+                    float dist = i * i;
+                    kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
+                }
 
-    // auto denoise = renderer.addPostProcessEffect(PostProcess::getPostProcess("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-    // denoise->setUniforms = [&renderer](GLuint program){
-    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
-    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
-    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
-    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
-    // };
+                glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
 
-    // auto blurX = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
-    // blurX->setUniforms = [&renderer](GLuint program){
-    //     float standardDeviation = 2;
-    //     int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
-    //     float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
-    ////
-    //    std::vector<float> kernel;
-    //    float sharedCoefficient = lossCorrection / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
-    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
-    //        float dist = i * i;
-    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
-    //    }
-    ////
-    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
-    ////
-    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
-    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
-    //};
-    // auto blurY = renderer.addPostProcessEffect(PostProcess::getPostProcess("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
-    // blurY->setUniforms = [&renderer](GLuint program){
-    //    float standardDeviation = 2;
-    //    int kernelRadius = standardDeviation * 2;//This will capture 96% of the expected input
-    //    float lossCorrection = 1 / 0.954499736104;//Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
-    ////
-    //    std::vector<float> kernel;
-    //    float sharedCoefficient = 1 / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
-    //    for(int i = -kernelRadius; i <= kernelRadius; i++){
-    //        float dist = i * i;
-    //        kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
-    //    }
-    ////
-    //    glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
-    ////
-    //    glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius);//This is the number of pixel away from the center (not including the center) that the kernel will apply to
-    //    glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
-    //};
+                glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius); // This is the number of pixel away from the center (not including the center) that the kernel will apply to
+                glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
+            };
 
-    // auto denoiseX = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-    // denoiseX->setUniforms = [&renderer](GLuint program){
-    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
-    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
-    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
-    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
-    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
-    // };
-    ////
-    // auto denoiseY = renderer.addPostProcessEffect(PostProcess::getPostProcess("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-    // denoiseY->setUniforms = [&renderer](GLuint program){
-    //     glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
-    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
-    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
-    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
-    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
-    // };
+            auto blurY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+            blurY->setUniforms = [&renderer](GLuint program)
+            {
+                float standardDeviation = 2;
+                int kernelRadius = standardDeviation * 2; // This will capture 96% of the expected input
+                float lossCorrection = 1 / 0.954499736104; // Since some of the total is lost with a finite sized kernel, this multiplies the result by this correction factor
 
-    // auto denoise = renderer.addPostProcessEffect(PostProcess::getPostProcess("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-    // denoise->setUniforms = [&renderer](GLuint program){
-    //     glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
-    //     glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
-    //     glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
-    //     glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
-    // };
+                std::vector<float> kernel;
+                float sharedCoefficient = 1 / std::sqrt(6.28318530718 * standardDeviation * standardDeviation);
+                for (int i = -kernelRadius; i <= kernelRadius; i++)
+                {
+                    float dist = i * i;
+                    kernel.push_back(sharedCoefficient * std::exp(-dist / (standardDeviation * standardDeviation) * 0.5));
+                }
+
+                glUniform1fv(glGetUniformLocation(program, "kernel"), 2 * kernelRadius + 1, kernel.data());
+
+                glUniform1i(glGetUniformLocation(program, "kernelRadius"), kernelRadius); // This is the number of pixel away from the center (not including the center) that the kernel will apply to
+                glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
+            };
+        }
+
+        // Denoise approach 1
+        if (false)
+        {
+            auto denoiseX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            denoiseX->setUniforms = [&renderer](GLuint program)
+            {
+                glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
+                glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+                glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+                glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+                glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+            };
+
+            auto denoiseY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            denoiseY->setUniforms = [&renderer](GLuint program)
+            {
+                glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
+                glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+                glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+                glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+                glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+            };
+        }
+
+        // Denoise approach 2
+        if (false)
+        {
+            auto denoise = renderer.addPostProcessEffect(PostProcessEffect::getEffect("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            denoise->setUniforms = [&renderer](GLuint program)
+            {
+                glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
+                glUniform4fv(glGetUniformLocation(program, "cameraRotation"), 1, glm::value_ptr(renderer.getCurrentCameraRotation()));
+                glUniform1f(glGetUniformLocation(program, "cameraTanFOV"), std::tan(renderer.getCurrentCameraFOV() * 0.5));
+                glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+            };
+        }
+    }
 
     // Engine time
     double totalElapsedTime = 0;
@@ -295,15 +242,15 @@ void Program::run()
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
-    ExampleWorldGenerator exampleWorldGenerator(worldSize);
-    ExaniteWorldGenerator exaniteWorldGenerator(worldSize);
+    ExampleWorldGenerator exampleWorldGenerator(chunkSize);
+    ExaniteWorldGenerator exaniteWorldGenerator(chunkSize);
 
     int seed = 0;
     int octaves = 3;
     float persistence = 0.5;
     // auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
-    TextureHeightmapWorldGenerator octaveWorldGenerator(worldSize, openSimplexSynthesizer);
+    TextureHeightmapWorldGenerator octaveWorldGenerator(chunkSize, openSimplexSynthesizer);
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -401,16 +348,9 @@ void Program::run()
                 cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
             }
 
-            // mtx.unlock();
-
             if (input->isKeyHeld(GLFW_KEY_E))
             {
-                voxelWorld->generateNoiseOccupancyMapAndMipMaps(deltaTime, isRand2, fillAmount);
-            }
-
-            if (input->isKeyPressed(GLFW_KEY_F5))
-            {
-                data.copyFrom(*voxelWorld);
+                voxelChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
             }
 
             if (input->isKeyPressed(GLFW_KEY_G))
@@ -418,34 +358,26 @@ void Program::run()
                 renderer.toggleAsynchronousReprojection();
             }
 
-            exaniteWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F6))
             {
-                exaniteWorldGenerator.generate(*voxelWorld);
+                exaniteWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
-            exampleWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F7))
             {
-                exampleWorldGenerator.generate(*voxelWorld);
+                exampleWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
-            octaveWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
-                octaveWorldGenerator.generate(*voxelWorld);
+                octaveWorldGenerator.generate(*voxelChunk->getChunk());
             }
 
-            if (input->isKeyPressed(GLFW_KEY_F9))
-            {
-                data.writeTo(*voxelWorld);
-            }
-
-            if (remakeNoise)
+            if (isRemakeNoiseRequested)
             {
                 // The noise time should not be incremented here
-                voxelWorld->generateNoiseOccupancyMapAndMipMaps(0, isRand2, fillAmount);
-                remakeNoise = false;
+                voxelChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                isRemakeNoiseRequested = false;
             }
 
             if (input->isKeyPressed(GLFW_KEY_F))
@@ -484,8 +416,8 @@ void Program::run()
             }
             if (input->isKeyPressed(GLFW_KEY_T))
             {
-                isRand2 = !isRand2;
-                remakeNoise = true;
+                useRandomNoise = !useRandomNoise;
+                isRemakeNoiseRequested = true;
             }
 
             // Scroll
@@ -493,7 +425,7 @@ void Program::run()
             {
                 fillAmount -= input->getMouseScroll().y * 0.01;
                 fillAmount = std::clamp(fillAmount, 0.f, 1.f);
-                remakeNoise = true;
+                isRemakeNoiseRequested = true;
             }
             else if (input->isKeyHeld(GLFW_KEY_LEFT_ALT) && input->getMouseScroll().y != 0)
             {
@@ -510,55 +442,84 @@ void Program::run()
                 showMenuGUI = !showMenuGUI;
             }
 
-            // Render debug UI
-            if (showMenuGUI)
+            //  Debug UI Two
+            const int numMenus = 5;
+            ImVec2 windowSize = ImVec2(window->size.x, window->size.y);
+            float menuWidth = windowSize.x / numMenus;
+            float menuHeight = windowSize.y / 4;
+            const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
+
+            for (int i = 0; i < numMenus; i++)
             {
-                // TODO: Gio, please fix the debug UI size!
-                ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar
-                    | ImGuiWindowFlags_NoResize
-                    | ImGuiWindowFlags_NoMove
-                    | ImGuiWindowFlags_NoCollapse;
-                // | ImGuiWindowFlags_NoScrollbar
-                // | ImGuiWindowFlags_NoScrollWithMouse;
-
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
-                ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
-                ImGui::Begin("Menu", nullptr, guiWindowFlags);
+                ImGui::SetNextWindowPos(ImVec2(i * menuWidth, 0));
+                ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
+                ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
+
+                if (i == 0 && showMenuGUI)
                 {
-                    auto cameraPosition = cameraTransform->getGlobalPosition();
-                    auto cameraLookDirection = cameraTransform->getForwardDirection();
-
-                    ImGui::SetWindowFontScale(1.5f);
-                    ImGui::Text("Voxel Rendering Project\n");
-
-                    ImGui::SetWindowFontScale(1.0f);
-                    ImGui::Text("Controls:");
-                    ImGui::Text("\tW - Forward");
-                    ImGui::Text("\tS - Backward");
-                    ImGui::Text("\tA - Left");
-                    ImGui::Text("\tD - Right");
-                    ImGui::Text("\tEsc - Close Application");
-                    ImGui::Text("\tE - Iterate Noise Over Time");
-                    ImGui::Text("\tF - Toggle Fullscreen");
-                    ImGui::Text("\tQ - Toggle Mouse Input");
-                    ImGui::Text("\tT - Change Noise Type");
-                    ImGui::Text("\tG - Toggle Reprojection");
-                    ImGui::Text("\tMouse Scroll - Change Move Speed");
-                    ImGui::Text("\tCtrl + Mouse Scroll - Change Noise Fill");
-                    ImGui::Text("\tAlt + Mouse Scroll - Change Render Resolution");
-
-                    ImGui::Text("\nCamera Position");
-                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
-                    ImGui::Text("\nCamera Look Direction");
-                    ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
-
-                    ImGui::Text("\nFPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
-                    ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
-                    ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
-                    ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
-                    ImGui::Text("Render Ratio: %.2f", renderRatio);
+                    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
                 }
+                else if (i == 0)
+                {
+                    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Always);
+                }
+
+                ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+                ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
+                switch (i)
+                {
+                    case 0:
+                    {
+                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                        ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
+                        ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
+                        ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
+                        ImGui::Text("Render Ratio: %.2f", renderRatio);
+
+                        break;
+                    }
+                    case 1:
+                    {
+                        ImGui::Text("TO BE ADDED");
+
+                        break;
+                    }
+                    case 2:
+                    {
+                        // ImGui::Text("TO BE ADDED");
+                        exaniteWorldGenerator.showDebugMenu();
+                        exampleWorldGenerator.showDebugMenu();
+                        octaveWorldGenerator.showDebugMenu();
+
+                        break;
+                    }
+                    case 3:
+                    {
+                        ImGui::Text("W - Forward");
+                        ImGui::Text("S - Backward");
+                        ImGui::Text("A - Left");
+                        ImGui::Text("D - Right");
+                        ImGui::Text("Esc - Close Application");
+                        ImGui::Text("E - Iterate Noise Over Time");
+                        ImGui::Text("F - Toggle Fullscreen");
+                        ImGui::Text("Q - Toggle Mouse Input");
+                        ImGui::Text("T - Change Noise Type");
+                        ImGui::Text("G - Toggle Reprojection");
+                        ImGui::Text("Mouse Scroll - Change Move Speed");
+                        ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
+                        ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");
+
+                        break;
+                    }
+                    case 4:
+                    {
+                        ImGui::Text("ABOUT");
+
+                        break;
+                    }
+                }
+                ImGui::PopTextWrapPos();
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
@@ -714,16 +675,16 @@ void Program::runLateStartupTests()
         GLint maxShaderBlockSize;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxShaderBlockSize);
 
-        Assert::isTrue(maxShaderBlockSize >= Constants::VoxelWorld::maxMaterialCount * sizeof(MaterialDefinition), "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store all material definitions");
-        Assert::isTrue(maxShaderBlockSize >= 2 * 256 * 256 * 512, "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store material map for a voxel world (chunk) of size 256x256x512, where each voxel takes 2 bytes");
+        Assert::isTrue(maxShaderBlockSize >= Constants::VoxelChunk::maxMaterialCount * sizeof(MaterialDefinition), "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store all material definitions");
+        Assert::isTrue(maxShaderBlockSize >= 2 * 256 * 256 * 512, "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough to store material map for a voxel chunk of size 256x256x512, where each voxel takes 2 bytes");
 
         if (maxShaderBlockSize >= 2 * 512 * 512 * 512)
         {
-            Log::log("512x512x512 sized voxel worlds (chunks) are supported on this device!");
+            Log::log("512x512x512 sized voxel chunks are supported on this device!");
         }
         else
         {
-            Log::log("512x512x512 sized voxel worlds (chunks) are NOT supported on this device!");
+            Log::log("512x512x512 sized voxel chunks are NOT supported on this device!");
         }
     }
 

@@ -8,11 +8,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
 
-class PostProcess;
+#include <src/utilities/OpenGl.h>
+
+class PostProcessEffect;
 class Renderer;
 
 // For all post processing shader, the following must be included in the fragment shader
@@ -21,17 +21,17 @@ class Renderer;
 
 // Additionally all post processing shaders use ScreenTri.vertex.glsl for the vertex shader
 
-class PostProcessing
+class PostProcessRenderer
 {
 private:
     static GLuint drawTextureProgram;
 
-    glm::ivec2 outputResolution;
-    std::array<GLuint, 2> renderTextures; // Post processing must flip between the two textures inorder to work (input texture may not be the output texture)
+    glm::ivec2 outputResolution {};
+    std::array<GLuint, 2> renderTextures {}; // Post processing must flip between the two textures inorder to work (input texture may not be the output texture)
 
     static std::unordered_map<std::string, GLuint> programs;
 
-    std::vector<std::shared_ptr<PostProcess>> postProcesses;
+    std::vector<std::shared_ptr<PostProcessEffect>> postProcesses {};
 
     int currentTexture = 0;
 
@@ -39,7 +39,7 @@ private:
 
     void makeTextures();
 
-    PostProcessing();
+    PostProcessRenderer();
 
     friend class Renderer;
 
@@ -48,40 +48,40 @@ public:
 
     GLuint getOutputTexture();
 
-    void addPostProcessEffect(std::shared_ptr<PostProcess> effect);
+    void addPostProcessEffect(std::shared_ptr<PostProcessEffect> effect);
 
     bool hasAnyProcesses();
 };
 
-class PostProcess
+class PostProcessEffect
 {
+    friend class PostProcessRenderer;
+
 protected:
     GLuint program = 0;
 
 private:
-    static std::unordered_map<std::string, std::shared_ptr<PostProcess>> existingProcesses;
+    static std::unordered_map<std::string, std::shared_ptr<PostProcessEffect>> existingProcesses;
 
     // These are the texture binding locations in glsl
     // If non-positive, it means the texture is not used (The previous output is always bound to location 0)
-    GLenum colorTextureBinding;
-    GLenum positionTextureBinding;
-    GLenum normalTextureBinding;
-    GLenum materialTextureBinding;
+    GLenum colorTextureBinding {};
+    GLenum positionTextureBinding {};
+    GLenum normalTextureBinding {};
+    GLenum materialTextureBinding {};
 
     void bindTextures(GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
     void unbindTextures();
 
     void applyProcess(GLuint currentOutput, GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
 
-    friend class PostProcessing;
-
     // This will throw upon finding duplicate bindings
     void preventDuplicateBindings();
 
-    PostProcess(GLuint program, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
+    explicit PostProcessEffect(GLuint program, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
 
 public:
-    static std::shared_ptr<PostProcess> getPostProcess(std::string name, GLuint program = 0, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
+    static std::shared_ptr<PostProcessEffect> getEffect(std::string name, GLuint program = 0, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
 
     // Takes the program as input
     std::function<void(GLuint)> setUniforms = [](GLuint program) {};

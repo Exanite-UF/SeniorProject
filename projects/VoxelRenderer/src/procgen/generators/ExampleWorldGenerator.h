@@ -11,7 +11,7 @@ protected:
     void generateData() override;
 
 public:
-    ExampleWorldGenerator(glm::ivec3 worldSize);
+    ExampleWorldGenerator(glm::ivec3 chunkSize);
 
     void showDebugMenu() override;
 };

@@ -6,7 +6,7 @@
 
 int GlfwContext::nextId = 0;
 
-GlfwContext::GlfwContext(bool isWindow, GlfwContext* shareWith)
+GlfwContext::GlfwContext(bool isWindow, const GlfwContext* shareWith)
 {
     // Set ID for debugging
     id = nextId;

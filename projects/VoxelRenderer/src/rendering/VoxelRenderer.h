@@ -2,20 +2,20 @@
 
 #include <mutex>
 #include <semaphore>
-#include <src/graphics/GraphicsBuffer.h>
-#include <src/utilities/NonCopyable.h>
-#include <src/world/CameraComponent.h>
-#include <src/world/MaterialManager.h>
-#include <src/world/VoxelWorld.h>
 #include <thread>
 #include <vector>
 
-#include "AsynchronousReprojection.h"
-#include "Renderer.h"
+#include <src/graphics/GraphicsBuffer.h>
+#include <src/rendering/AsynchronousReprojection.h>
+#include <src/rendering/Renderer.h>
+#include <src/utilities/NonCopyable.h>
+#include <src/world/CameraComponent.h>
+#include <src/world/MaterialManager.h>
+#include <src/world/VoxelChunkComponent.h>
 
 class Renderer;
 
-// The voxel renderer needs to be able to render multiple voxel worlds
+// The voxel renderer needs to be able to render multiple voxel chunks
 class VoxelRenderer : public NonCopyable
 {
 private:
@@ -63,7 +63,7 @@ private:
     static GLuint fullCastProgram;
     static GLuint pathTraceToFramebufferProgram;
 
-    glm::ivec2 size;
+    glm::ivec2 size {};
     int raysPerPixel = 0;
 
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
@@ -90,9 +90,9 @@ public:
 
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
 
-    void executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay);
+    void executeRayTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay);
 
-    void executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces);
+    void executePathTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces);
 
     void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 };

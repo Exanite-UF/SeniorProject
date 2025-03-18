@@ -1,13 +1,12 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <vector>
-
 #include <cstdint>
 #include <span>
-#include <src/utilities/NonCopyable.h>
 #include <stdexcept>
+#include <vector>
+
+#include <src/utilities/NonCopyable.h>
+#include <src/utilities/OpenGl.h>
 
 // A templated buffer class.
 //

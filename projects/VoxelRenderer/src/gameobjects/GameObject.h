@@ -20,7 +20,8 @@ public:
     GameObject();
     ~GameObject() override;
 
-    static std::shared_ptr<GameObject> create();
+    static std::shared_ptr<GameObject> createRootObject();
+    std::shared_ptr<GameObject> createChildObject();
 
     template <typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args);

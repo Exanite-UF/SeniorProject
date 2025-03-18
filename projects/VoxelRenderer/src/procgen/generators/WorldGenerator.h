@@ -2,18 +2,18 @@
 
 #include <glm/vec3.hpp>
 #include <memory>
-#include <src/world/VoxelWorldData.h>
+#include <src/world/VoxelChunkData.h>
 
 class WorldGenerator : public NonCopyable
 {
 protected:
-    VoxelWorldData data;
+    VoxelChunkData data;
 
     virtual void generateData() = 0;
 
 public:
-    explicit WorldGenerator(glm::ivec3 worldSize);
+    explicit WorldGenerator(glm::ivec3 chunkSize);
 
-    void generate(VoxelWorld& voxelWorld);
+    void generate(VoxelChunk& chunk);
     virtual void showDebugMenu() = 0;
 };
