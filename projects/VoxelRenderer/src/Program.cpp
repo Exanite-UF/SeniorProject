@@ -128,9 +128,6 @@ void Program::run()
 
     auto& voxelChunk = scene->worlds.at(0);
 
-    VoxelWorldData data {};
-    data.copyFrom(*voxelChunk->world);
-
     // Create the renderer
     Renderer renderer(window, offscreenContext);
     float renderRatio = 1.f; // Used to control the render resolution relative to the window resolution
@@ -397,11 +394,6 @@ void Program::run()
                 voxelChunk->world->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
             }
 
-            if (input->isKeyPressed(GLFW_KEY_F5))
-            {
-                data.copyFrom(*voxelChunk->world);
-            }
-
             if (input->isKeyPressed(GLFW_KEY_G))
             {
                 renderer.toggleAsynchronousReprojection();
@@ -423,11 +415,6 @@ void Program::run()
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
                 octaveWorldGenerator.generate(*voxelChunk->world);
-            }
-
-            if (input->isKeyPressed(GLFW_KEY_F9))
-            {
-                data.writeTo(*voxelChunk->world);
             }
 
             if (isRemakeNoiseRequested)
