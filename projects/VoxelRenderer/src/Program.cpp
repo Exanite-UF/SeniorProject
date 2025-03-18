@@ -510,20 +510,80 @@ void Program::run()
                 showMenuGUI = !showMenuGUI;
             }
 
+            //  Debug UI Two
+            const int numMenus = 5;
+            ImVec2 windowSize = ImVec2(window->size.x, window->size.y);
+            float menuWidth = windowSize.x / numMenus;
+            float menuHeight = 150.0f;
+            const char* menuTitles[numMenus] = { "Stats", "Model Importer", "World Generation", "Controls", "About" };
+
+            for (int i = 0; i < numMenus;  i++)
+            {
+                ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
+                ImGui::SetNextWindowPos(ImVec2(i * menuWidth, 0));
+                ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
+
+                ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
+                switch (i)
+                {
+                    case 0:
+                        if (showMenuGUI)
+                        {
+                            ImGui::Text("Voxel Rendering Project\n");
+                            ImGui::Text("\nFPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                            ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
+                            ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
+                            ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
+                            ImGui::Text("Render Ratio: %.2f", renderRatio);
+                        }
+                        break;
+                    case 1:
+                        ImGui::Text("TO BE ADDED");
+                        break;
+                    case 2:
+                        ImGui::Text("TO BE ADDED");
+                        break;
+                    case 3:
+                        ImGui::Text("W - Forward");
+                        ImGui::Text("S - Backward");
+                        ImGui::Text("A - Left");
+                        ImGui::Text("D - Right");
+                        ImGui::Text("Esc - Close Application");
+                        ImGui::Text("E - Iterate Noise Over Time");
+                        ImGui::Text("F - Toggle Fullscreen");
+                        ImGui::Text("Q - Toggle Mouse Input");
+                        ImGui::Text("T - Change Noise Type");
+                        ImGui::Text("G - Toggle Reprojection");
+                        ImGui::Text("Mouse Scroll - Change Move Speed");
+                        ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
+                        ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");
+                        break;
+                    case 4:
+                        ImGui::Text("ABOUT");
+                        break;
+                }
+                ImGui::End();
+                ImGui::PopStyleColor();
+            }
+
             // Render debug UI
+            /*
             if (showMenuGUI)
             {
                 // TODO: Gio, please fix the debug UI size!
+                
                 ImGuiWindowFlags guiWindowFlags = ImGuiWindowFlags_NoTitleBar
                     | ImGuiWindowFlags_NoResize
                     | ImGuiWindowFlags_NoMove
                     | ImGuiWindowFlags_NoCollapse;
+                
                 // | ImGuiWindowFlags_NoScrollbar
                 // | ImGuiWindowFlags_NoScrollWithMouse;
 
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
                 ImGui::SetNextWindowPos(ImVec2(0, 0)); // Set Menu to Top Left of Screen
-                ImGui::Begin("Menu", nullptr, guiWindowFlags);
+                ImGui::Begin("Menu", nullptr); //,, guiWindowFlags
                 {
                     auto cameraPosition = cameraTransform->getGlobalPosition();
                     auto cameraLookDirection = cameraTransform->getForwardDirection();
@@ -562,6 +622,7 @@ void Program::run()
                 ImGui::End();
                 ImGui::PopStyleColor();
             }
+            */
         }
 
         // Render
