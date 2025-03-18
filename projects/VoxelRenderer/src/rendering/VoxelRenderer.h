@@ -2,16 +2,16 @@
 
 #include <mutex>
 #include <semaphore>
+#include <thread>
+#include <vector>
+
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/rendering/AsynchronousReprojection.h>
+#include <src/rendering/Renderer.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/world/CameraComponent.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkComponent.h>
-#include <thread>
-#include <vector>
-
-#include "AsynchronousReprojection.h"
-#include "Renderer.h"
 
 class Renderer;
 
