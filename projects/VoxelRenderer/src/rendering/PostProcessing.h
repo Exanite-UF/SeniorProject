@@ -55,6 +55,8 @@ public:
 
 class PostProcessEffect
 {
+    friend class PostProcessRenderer;
+
 protected:
     GLuint program = 0;
 
@@ -73,15 +75,13 @@ private:
 
     void applyProcess(GLuint currentOutput, GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
 
-    friend class PostProcessRenderer;
-
     // This will throw upon finding duplicate bindings
     void preventDuplicateBindings();
 
-    PostProcessEffect(GLuint program, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
+    explicit PostProcessEffect(GLuint program, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
 
 public:
-    static std::shared_ptr<PostProcessEffect> getPostProcess(std::string name, GLuint program = 0, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
+    static std::shared_ptr<PostProcessEffect> getEffect(std::string name, GLuint program = 0, GLenum colorTextureBinding = GL_TEXTURE0, GLenum positionTextureBinding = GL_TEXTURE0, GLenum normalTextureBinding = GL_TEXTURE0, GLenum materialTextureBinding = GL_TEXTURE0);
 
     // Takes the program as input
     std::function<void(GLuint)> setUniforms = [](GLuint program) {};

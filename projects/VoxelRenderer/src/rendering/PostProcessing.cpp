@@ -162,7 +162,7 @@ PostProcessEffect::PostProcessEffect(GLuint program, GLenum colorTextureBinding,
     preventDuplicateBindings();
 }
 
-std::shared_ptr<PostProcessEffect> PostProcessEffect::getPostProcess(std::string name, GLuint program, GLenum colorTextureBinding, GLenum positionTextureBinding, GLenum normalTextureBinding, GLenum materialTextureBinding)
+std::shared_ptr<PostProcessEffect> PostProcessEffect::getEffect(std::string name, GLuint program, GLenum colorTextureBinding, GLenum positionTextureBinding, GLenum normalTextureBinding, GLenum materialTextureBinding)
 {
     if (existingProcesses.count(name))
     {
