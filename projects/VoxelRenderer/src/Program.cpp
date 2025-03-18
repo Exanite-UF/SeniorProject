@@ -79,6 +79,9 @@ Program::Program()
 
 Program::~Program()
 {
+    // Cleanup singletons
+    SingletonManager::destroyAllSingletons();
+
     // Shutdown GLFW
     glfwTerminate();
 }

@@ -11,6 +11,8 @@
 
 class ShaderManager : public Singleton<ShaderManager>
 {
+    friend class Singleton;
+
 private:
     // (shaderPath, shaderType) -> (shaderModule)
     std::unordered_map<std::tuple<std::string, GLenum>, GLuint, TupleHasher<std::tuple<std::string, GLenum>>> shaderModules;

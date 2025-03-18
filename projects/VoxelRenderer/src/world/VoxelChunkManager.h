@@ -2,9 +2,9 @@
 
 #include <memory>
 
+#include <src/utilities/Log.h>
 #include <src/utilities/Singleton.h>
 #include <src/world/SceneComponent.h>
-#include <src/world/VoxelChunkComponent.h>
 
 class VoxelChunkManager : public Singleton<VoxelChunkManager>
 {
@@ -16,4 +16,9 @@ public:
     void initialize(const std::shared_ptr<SceneComponent>& scene);
 
     void update();
+
+    ~VoxelChunkManager()
+    {
+        Log::log("Cleaning up VoxelChunkManager");
+    }
 };
