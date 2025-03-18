@@ -63,7 +63,7 @@ private:
     static GLuint fullCastProgram;
     static GLuint pathTraceToFramebufferProgram;
 
-    glm::ivec2 size;
+    glm::ivec2 size {};
     int raysPerPixel = 0;
 
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed

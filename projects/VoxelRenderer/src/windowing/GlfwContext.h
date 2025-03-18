@@ -21,7 +21,7 @@ protected:
     // Stores ID for logging and debugging purposes
     int id;
 
-    explicit GlfwContext(bool isWindow, GlfwContext* shareWith = nullptr);
+    explicit GlfwContext(bool isWindow, const GlfwContext* shareWith = nullptr);
 
 public:
     explicit GlfwContext(GlfwContext* shareWith = nullptr);

@@ -26,12 +26,12 @@ class PostProcessing
 private:
     static GLuint drawTextureProgram;
 
-    glm::ivec2 outputResolution;
-    std::array<GLuint, 2> renderTextures; // Post processing must flip between the two textures inorder to work (input texture may not be the output texture)
+    glm::ivec2 outputResolution {};
+    std::array<GLuint, 2> renderTextures {}; // Post processing must flip between the two textures inorder to work (input texture may not be the output texture)
 
     static std::unordered_map<std::string, GLuint> programs;
 
-    std::vector<std::shared_ptr<PostProcess>> postProcesses;
+    std::vector<std::shared_ptr<PostProcess>> postProcesses {};
 
     int currentTexture = 0;
 
@@ -63,10 +63,10 @@ private:
 
     // These are the texture binding locations in glsl
     // If non-positive, it means the texture is not used (The previous output is always bound to location 0)
-    GLenum colorTextureBinding;
-    GLenum positionTextureBinding;
-    GLenum normalTextureBinding;
-    GLenum materialTextureBinding;
+    GLenum colorTextureBinding {};
+    GLenum positionTextureBinding {};
+    GLenum normalTextureBinding {};
+    GLenum materialTextureBinding {};
 
     void bindTextures(GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
     void unbindTextures();

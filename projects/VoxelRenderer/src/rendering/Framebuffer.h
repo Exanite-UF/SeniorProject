@@ -7,7 +7,7 @@
 class Framebuffer : public NonCopyable
 {
 private:
-    glm::ivec2 size;
+    glm::ivec2 size {};
 
 public:
     GLuint framebufferId = 0;

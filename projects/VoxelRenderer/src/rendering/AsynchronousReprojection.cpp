@@ -6,9 +6,9 @@
 
 #include <iostream>
 
-GLuint AsynchronousReprojection::renderProgram;
-GLuint AsynchronousReprojection::combineProgram;
-GLuint AsynchronousReprojection::combineMaskProgram;
+GLuint AsynchronousReprojection::renderProgram {};
+GLuint AsynchronousReprojection::combineProgram {};
+GLuint AsynchronousReprojection::combineMaskProgram {};
 
 void AsynchronousReprojection::generateMesh(const glm::ivec2& size)
 {

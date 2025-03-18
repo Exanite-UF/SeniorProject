@@ -5,10 +5,10 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 
-GLuint PostProcessing::drawTextureProgram;
-std::unordered_map<std::string, GLuint> PostProcessing::programs;
+GLuint PostProcessing::drawTextureProgram {};
+std::unordered_map<std::string, GLuint> PostProcessing::programs {};
 
-std::unordered_map<std::string, std::shared_ptr<PostProcess>> PostProcess::existingProcesses;
+std::unordered_map<std::string, std::shared_ptr<PostProcess>> PostProcess::existingProcesses {};
 
 void PostProcess::bindTextures(GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {

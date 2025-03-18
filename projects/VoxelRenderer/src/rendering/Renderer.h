@@ -49,21 +49,21 @@ private:
 
 private:
     // Camera stuff
-    glm::vec3 olderRenderedPosition;
+    glm::vec3 olderRenderedPosition {};
 
-    std::mutex cameraMtx;
-    glm::vec3 lastRenderedPosition;
-    glm::quat lastRenderedRotation;
-    float lastRenderedFOV;
+    std::mutex cameraMtx {};
+    glm::vec3 lastRenderedPosition {};
+    glm::quat lastRenderedRotation {};
+    float lastRenderedFOV {};
 
-    glm::vec3 currentCameraPosition;
-    glm::quat currentCameraRotation;
-    float currentCameraFOV;
+    glm::vec3 currentCameraPosition {};
+    glm::quat currentCameraRotation {};
+    float currentCameraFOV {};
 
 private:
     // Rendering variables
 
-    glm::ivec2 renderResolution;
+    glm::ivec2 renderResolution = glm::ivec2(1);
 
     std::thread::id owningThread; // The id of the thread that owns the asynchronous reprojection framebuffer objects (The thread that needs to render to the framebuffers)
     std::array<GLuint, 3> framebuffers { 0 }; // These are the three framebuffer objects that are used as input to asynchronous reprojection
@@ -80,15 +80,15 @@ private:
 
     struct BufferLocks
     {
-        std::recursive_mutex display;
-        std::recursive_mutex ready;
-        std::recursive_mutex working;
-    } bufferLocks;
+        std::recursive_mutex display {};
+        std::recursive_mutex ready {};
+        std::recursive_mutex working {};
+    } bufferLocks {};
 
-    std::array<GLuint, 3> colorTextures;
-    std::array<GLuint, 3> positionTextures;
-    std::array<GLuint, 3> normalTextures;
-    std::array<GLuint, 3> materialTextures;
+    std::array<GLuint, 3> colorTextures {};
+    std::array<GLuint, 3> positionTextures {};
+    std::array<GLuint, 3> normalTextures {};
+    std::array<GLuint, 3> materialTextures {};
 
 private:
     std::shared_ptr<SceneComponent> scene = nullptr;
@@ -104,13 +104,13 @@ private:
     friend class AsynchronousReprojection;
 
     // This is what the reprojection and post processes work on
-    std::recursive_mutex outputLock;
-    glm::ivec2 outputResolution;
-    GLuint outputDepthTexture;
-    GLuint outputColorTexture;
-    GLuint outputPositionTexture;
-    GLuint outputNormalTexture;
-    GLuint outputMaterialTexture;
+    std::recursive_mutex outputLock {};
+    glm::ivec2 outputResolution {};
+    GLuint outputDepthTexture {};
+    GLuint outputColorTexture {};
+    GLuint outputPositionTexture {};
+    GLuint outputNormalTexture {};
+    GLuint outputMaterialTexture {};
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure

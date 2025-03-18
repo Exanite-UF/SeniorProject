@@ -9,7 +9,7 @@
 #include <src/graphics/ShaderManager.h>
 #include <src/windowing/Window.h>
 
-GLuint Renderer::drawTextureProgram;
+GLuint Renderer::drawTextureProgram {};
 
 void Renderer::offscreenRenderingFunc()
 {

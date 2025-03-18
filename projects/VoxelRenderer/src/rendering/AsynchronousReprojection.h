@@ -25,18 +25,18 @@ private:
 
     // These textures are only used by Asynchronous Reprojection when combining frames
     // As such it only needs old and new versions
-    std::array<GLuint, 2> frameCountTextures;
+    std::array<GLuint, 2> frameCountTextures {};
 
-    GLuint combineMaskTextureID;
+    GLuint combineMaskTextureID {};
 
-    glm::ivec2 size; // The size of the offscreen render
+    glm::ivec2 size {}; // The size of the offscreen render
 
-    std::vector<float> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<float> vertices {};
+    std::vector<unsigned int> indices {};
 
-    GLuint VAO;
-    GLuint VBO;
-    GLuint EBO;
+    GLuint VAO {};
+    GLuint VBO {};
+    GLuint EBO {};
 
     void generateMesh(const glm::ivec2& size);
 
