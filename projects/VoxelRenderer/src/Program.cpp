@@ -54,7 +54,7 @@
 #include <src/world/SceneComponent.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
-#include <src/world/VoxelChunkManager.h>
+#include <src/world/VoxelChunkResources.h>
 
 Program::Program()
 {
@@ -90,7 +90,7 @@ void Program::run()
     auto& shaderManager = ShaderManager::getInstance();
     auto& textureManager = TextureManager::getInstance();
     auto& materialManager = MaterialManager::getInstance();
-    auto& voxelWorldManager = VoxelChunkManager::getInstance();
+    auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
