@@ -34,7 +34,7 @@ public:
     class GameObject
     {
     public:
-        static constexpr bool isEventLoggingEnabled = true;
+        static constexpr bool isEventLoggingEnabled = false;
         static constexpr bool isUpdateEventLoggingEnabled = false;
     };
 };
