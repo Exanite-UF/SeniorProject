@@ -59,12 +59,20 @@ void Component::notifyCreate()
 
 void Component::notifyDestroy()
 {
+    if (isDestroyPending)
+    {
+        return;
+    }
+
+    isDestroyPending = true;
+
     if (!wasCreateCalled)
     {
         return;
     }
 
     wasCreateCalled = false;
+
     onDestroy();
 }
 
