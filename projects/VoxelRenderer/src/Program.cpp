@@ -664,6 +664,24 @@ void Program::runLateStartupTests()
     Log::log("Running late startup tests (in run())");
 
     {
+        // Verify GameObject destroy API
+        auto root = GameObject::createRootObject("Root");
+
+        auto child1 = root->createChildObject("Child1");
+        auto child2 = root->createChildObject("Child2");
+        Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
+
+        child1->destroy();
+        Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
+        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
+
+        root->destroy();
+        Assert::isTrue(!root->getIsAlive(), "Root GameObject should have been destroyed");
+        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
+        Assert::isTrue(!child2->getIsAlive(), "Child2 GameObject should have been destroyed");
+    }
+
+    {
         // Verify shader storage block size is large enough
         GLint size;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
