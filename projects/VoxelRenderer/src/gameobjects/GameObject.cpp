@@ -40,7 +40,7 @@ std::shared_ptr<GameObject> GameObject::createRootObject()
 std::shared_ptr<GameObject> GameObject::createChildObject()
 {
     auto child = createRootObject();
-    transform->addChild(child);
+    child->getTransform()->setParent(getTransform());
 
     return child;
 }

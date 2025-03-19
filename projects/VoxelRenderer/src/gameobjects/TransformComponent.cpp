@@ -35,6 +35,25 @@ void TransformComponent::updateTransform() const
     }
 }
 
+void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& parent)
+{
+    // Remove self from parent's child list
+    if (parent)
+    {
+        auto self = std::find(parent->children.begin(), parent->children.end(), shared_from_this());
+        if (self != parent->children.end())
+        {
+            parent->children.erase(self);
+        }
+    }
+
+    // Update parent of self
+    this->parent = parent;
+
+    // Update children of new parent
+    parent->children.push_back(shared_from_this());
+}
+
 void TransformComponent::onDestroy()
 {
     Component::onDestroy();
@@ -193,11 +212,4 @@ void TransformComponent::addGlobalRotation(const glm::quat& value)
     {
         setLocalRotation(value * localRotation * parent->getGlobalRotation());
     }
-}
-
-void TransformComponent::addChild(const std::shared_ptr<GameObject>& child)
-{
-    children.push_back(child->getTransform());
-
-    child->getTransform()->parent = shared_from_this();
 }
