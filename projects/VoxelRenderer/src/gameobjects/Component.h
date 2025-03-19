@@ -11,6 +11,12 @@ class Component : public NonCopyable
 {
     friend class GameObject;
 
+private:
+    bool wasCreateCalled = false;
+
+    void notifyCreate();
+    void notifyDestroy();
+
 protected:
     bool isAlive = true;
 
@@ -22,10 +28,10 @@ protected:
     Component();
     ~Component() override;
 
-    virtual void onUpdate();
-
     virtual void onCreate();
     virtual void onDestroy();
+
+    virtual void onUpdate();
 
 private:
     std::shared_ptr<GameObject> gameObject;

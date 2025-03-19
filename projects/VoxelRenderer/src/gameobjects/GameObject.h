@@ -56,7 +56,7 @@ std::shared_ptr<T> GameObject::addComponent(Args&&... args)
     component->transform = transform;
 
     // Notify component of creation
-    component->onCreate();
+    component->notifyCreate();
 
     return component;
 }

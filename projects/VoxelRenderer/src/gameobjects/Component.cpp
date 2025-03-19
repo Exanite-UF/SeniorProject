@@ -5,6 +5,28 @@
 
 #include "GameObject.h"
 
+void Component::notifyCreate()
+{
+    if (wasCreateCalled)
+    {
+        return;
+    }
+
+    wasCreateCalled = true;
+    onCreate();
+}
+
+void Component::notifyDestroy()
+{
+    if (!wasCreateCalled)
+    {
+        return;
+    }
+
+    wasCreateCalled = false;
+    onDestroy();
+}
+
 Component::Component() = default;
 
 Component::~Component()
@@ -12,26 +34,26 @@ Component::~Component()
     destroy();
 }
 
-void Component::onUpdate()
-{
-    Log::log("Component::onUpdate for " + getGameObject()->getName());
-}
-
 void Component::onCreate()
 {
-    Log::log("Component::onCreate for " + getGameObject()->getName());
+    Log::log("Component::onCreate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
 }
 
 void Component::onDestroy()
 {
-    Log::log("Component::onDestroy for " + getGameObject()->getName());
+    Log::log("Component::onDestroy for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+}
+
+void Component::onUpdate()
+{
+    Log::log("Component::onUpdate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
 }
 
 void Component::destroy()
 {
     assertIsAlive();
 
-    onDestroy();
+    notifyDestroy();
 
     isAlive = false;
     gameObject.reset();
