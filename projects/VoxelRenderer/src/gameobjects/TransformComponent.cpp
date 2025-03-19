@@ -64,6 +64,9 @@ void TransformComponent::onDestroy()
     {
         children[i]->getGameObject()->destroy();
     }
+
+    // Destroy own GameObject to ensure the TransformComponent is never destroyed without its GameObject being destroyed
+    getGameObject()->destroy();
 }
 
 const glm::vec3& TransformComponent::getLocalPosition() const
