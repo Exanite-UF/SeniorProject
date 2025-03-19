@@ -448,7 +448,7 @@ void Program::run()
                 showMenuGUI = !showMenuGUI;
             }
 
-            //  Debug UI Two
+            //  Debug UI
             const int numMenus = 5;
             ImVec2 windowSize = ImVec2(window->size.x, window->size.y);
             float menuWidth = windowSize.x / numMenus;
