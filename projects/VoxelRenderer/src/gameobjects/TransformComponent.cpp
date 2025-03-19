@@ -60,10 +60,13 @@ void TransformComponent::onDestroy()
 
     // Destroy all children GameObjects in reverse order
     // Note that this is very different from destroying just the TransformComponent
-    for (int i = children.size() - 1; i >= 0; --i)
+    auto childrenCopy = children;
+    for (int i = childrenCopy.size() - 1; i >= 0; --i)
     {
-        children[i]->getGameObject()->destroy();
+        childrenCopy[i]->getGameObject()->destroy();
     }
+
+    children.clear();
 
     // Destroy own GameObject to ensure the TransformComponent is never destroyed without its GameObject being destroyed
     getGameObject()->destroy();

@@ -80,10 +80,10 @@ void Component::actualDestroy()
     assertIsAlive();
 
     // Destroy self
-    isAlive = false;
     gameObject.reset();
     transform.reset();
 
+    isAlive = false;
     isDestroyPending = false;
 }
 

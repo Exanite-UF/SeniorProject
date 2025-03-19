@@ -98,15 +98,16 @@ void GameObject::actualDestroy()
     assertIsAlive();
 
     // Destroy components in reverse order
-    for (int i = components.size() - 1; i >= 0; --i)
+    auto componentsCopy = components;
+    for (int i = componentsCopy.size() - 1; i >= 0; --i)
     {
-        components.at(i)->destroy();
+        componentsCopy.at(i)->destroy();
     }
+
+    components.clear();
 
     // Then destroy self
     isAlive = false;
-    components.clear();
-
     isDestroyPending = false;
 }
 
