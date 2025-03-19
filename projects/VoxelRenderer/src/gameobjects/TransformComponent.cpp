@@ -176,52 +176,52 @@ void TransformComponent::multiplyLocalScale(const glm::vec3& value)
 
 void TransformComponent::setGlobalPosition(const glm::vec3& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         setLocalPosition(value);
     }
     else
     {
+        // TODO: Verify
         setLocalPosition(parent->getGlobalTransform() * glm::vec4(value, 1));
     }
 }
 
 void TransformComponent::addGlobalPosition(const glm::vec3& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         addLocalPosition(value);
     }
     else
     {
+        // TODO: Verify
         setLocalPosition(parent->getGlobalTransform() * glm::vec4(getGlobalPosition() + value, 1));
     }
 }
 
 void TransformComponent::setGlobalRotation(const glm::quat& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         setLocalRotation(value);
     }
     else
     {
+        // TODO: Verify
         setLocalRotation(value * parent->getGlobalRotation());
     }
 }
 
 void TransformComponent::addGlobalRotation(const glm::quat& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         addLocalRotation(value);
     }
     else
     {
+        // TODO: Verify
         setLocalRotation(value * localRotation * parent->getGlobalRotation());
     }
 }
