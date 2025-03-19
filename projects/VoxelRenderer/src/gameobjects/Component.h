@@ -22,10 +22,10 @@ protected:
     Component();
     ~Component() override;
 
-    virtual void onUpdate() {}
+    virtual void onUpdate();
 
-    virtual void onCreate() {}
-    virtual void onDestroy() {}
+    virtual void onCreate();
+    virtual void onDestroy();
 
 private:
     std::shared_ptr<GameObject> gameObject;

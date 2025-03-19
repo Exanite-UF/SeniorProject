@@ -562,6 +562,7 @@ void Program::run()
     }
 
     renderer.stopAsynchronousReprojection();
+    sceneObject->destroy();
 }
 
 void Program::checkForContentFolder()

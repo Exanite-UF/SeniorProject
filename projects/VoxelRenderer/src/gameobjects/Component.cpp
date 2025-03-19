@@ -1,12 +1,28 @@
 #include "Component.h"
 
 #include <src/utilities/Assert.h>
+#include <src/utilities/Log.h>
 
 Component::Component() = default;
 
 Component::~Component()
 {
     destroy();
+}
+
+void Component::onUpdate()
+{
+    Log::log("Component::onUpdate");
+}
+
+void Component::onCreate()
+{
+    Log::log("Component::onCreate");
+}
+
+void Component::onDestroy()
+{
+    Log::log("Component::onDestroy");
 }
 
 void Component::destroy()
