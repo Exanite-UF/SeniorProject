@@ -69,9 +69,9 @@ void GameObject::destroy()
 {
     assertIsAlive();
 
-    for (const auto& component : components)
+    for (int i = components.size() - 1; i >= 0; --i)
     {
-        component->destroy();
+        components.at(i)->destroy();
     }
 
     isAlive = false;

@@ -58,9 +58,9 @@ void TransformComponent::onDestroy()
 {
     Component::onDestroy();
 
-    // Destroy all children GameObjects
+    // Destroy all children GameObjects in reverse order
     // Note that this is very different from destroying just the TransformComponent
-    for (int i = 0; i < children.size(); ++i)
+    for (int i = children.size() - 1; i >= 0; --i)
     {
         children[i]->getGameObject()->destroy();
     }
