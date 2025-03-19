@@ -9,7 +9,7 @@ Component::Component()
 {
     if constexpr (isEventLoggingEnabled)
     {
-        Log::log(std::string("Component constructor called for ") + typeid(*this).name());
+        Log::log(std::format("Component constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -17,7 +17,7 @@ Component::~Component()
 {
     if constexpr (isEventLoggingEnabled)
     {
-        Log::log(std::string("Component constructor called for ") + typeid(*this).name());
+        Log::log(std::format("Component destructor called for {:s} @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 
     destroy();
@@ -27,7 +27,7 @@ void Component::onCreate()
 {
     if constexpr (isEventLoggingEnabled)
     {
-        Log::log("Component::onCreate called for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+        Log::log(std::format("Component::onCreate called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -35,7 +35,7 @@ void Component::onDestroy()
 {
     if constexpr (isEventLoggingEnabled)
     {
-        Log::log("Component::onDestroy called for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+        Log::log(std::format("Component::onDestroy called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -43,7 +43,7 @@ void Component::onUpdate()
 {
     if constexpr (isEventLoggingEnabled && isUpdateEventLoggingEnabled)
     {
-        Log::log("Component::onUpdate called for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+        Log::log(std::format("Component::onUpdate called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 }
 
