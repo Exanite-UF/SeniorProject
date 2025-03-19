@@ -51,10 +51,15 @@ void Component::onUpdate()
 
 void Component::destroy()
 {
-    assertIsAlive();
+    if (!isAlive)
+    {
+        return;
+    }
 
+    // Notify first
     notifyDestroy();
 
+    // Then destroy self
     isAlive = false;
     gameObject.reset();
     transform.reset();
