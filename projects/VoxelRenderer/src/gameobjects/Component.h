@@ -11,11 +11,10 @@ class Component : public NonCopyable
 {
     friend class GameObject;
 
-protected:
-    Component();
-    ~Component() override;
-
 private:
+    std::shared_ptr<GameObject> gameObject;
+    std::shared_ptr<TransformComponent> transform;
+
     bool isAlive = true;
     bool wasCreateCalled = false;
     bool isDestroyPending = false;
@@ -23,6 +22,10 @@ private:
     void notifyCreate();
     void notifyDestroy();
     void notifyUpdate();
+
+protected:
+    Component();
+    ~Component() override;
 
     // Certain calls are paired
     // If the first event in the pair is called, the second will eventually called:
@@ -32,10 +35,6 @@ private:
     virtual void onCreate();
     virtual void onDestroy();
     virtual void onUpdate();
-
-private:
-    std::shared_ptr<GameObject> gameObject;
-    std::shared_ptr<TransformComponent> transform;
 
 public:
     // When destroy is called, all components that will be destroyed will be first notified
