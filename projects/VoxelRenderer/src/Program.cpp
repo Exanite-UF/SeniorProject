@@ -108,7 +108,7 @@ void Program::run()
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Create the scene GameObject
-    auto sceneObject = GameObject::createRootObject();
+    auto sceneObject = GameObject::createRootObject("Scene");
     auto scene = sceneObject->addComponent<SceneComponent>();
 
     // Create the chunk GameObjects
@@ -117,7 +117,7 @@ void Program::run()
     {
         for (int y = 0; y < 3; ++y)
         {
-            auto voxelChunkObject = sceneObject->createChildObject();
+            auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
             auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>());
             voxelChunk->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
@@ -127,7 +127,7 @@ void Program::run()
     }
 
     // Create the camera GameObject
-    auto cameraObject = sceneObject->createChildObject();
+    auto cameraObject = sceneObject->createChildObject("Camera");
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto& cameraTransform = camera->getTransform();
     scene->camera = camera;
