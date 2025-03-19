@@ -12,6 +12,21 @@ Component::~Component()
     destroy();
 }
 
+void Component::onCreate()
+{
+    Log::log("Component::onCreate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+}
+
+void Component::onDestroy()
+{
+    Log::log("Component::onDestroy for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+}
+
+void Component::onUpdate()
+{
+    Log::log("Component::onUpdate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+}
+
 void Component::notifyCreate()
 {
     if (wasCreateCalled)
@@ -39,24 +54,21 @@ void Component::notifyUpdate()
     onUpdate();
 }
 
-void Component::onCreate()
+void Component::actualDestroy()
 {
-    Log::log("Component::onCreate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
-}
+    assertIsAlive();
 
-void Component::onDestroy()
-{
-    Log::log("Component::onDestroy for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
-}
+    // Destroy self
+    isAlive = false;
+    gameObject.reset();
+    transform.reset();
 
-void Component::onUpdate()
-{
-    Log::log("Component::onUpdate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+    isDestroyPending = false;
 }
 
 void Component::destroy()
 {
-    if (!isAlive)
+    if (!isAlive || isDestroyPending)
     {
         return;
     }
@@ -65,9 +77,7 @@ void Component::destroy()
     notifyDestroy();
 
     // Then destroy self
-    isAlive = false;
-    gameObject.reset();
-    transform.reset();
+    actualDestroy();
 }
 
 std::shared_ptr<TransformComponent>& Component::getTransform()

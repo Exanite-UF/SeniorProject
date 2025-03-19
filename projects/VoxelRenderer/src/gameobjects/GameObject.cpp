@@ -65,17 +65,51 @@ std::shared_ptr<GameObject> GameObject::createChildObject(const std::string& nam
     return child;
 }
 
-void GameObject::destroy()
+void GameObject::notifyDestroy()
+{
+    if (isDestroyPending)
+    {
+        return;
+    }
+
+    isDestroyPending = true;
+
+    // Notify components in reverse order
+    for (int i = components.size() - 1; i >= 0; --i)
+    {
+        components.at(i)->notifyDestroy();
+    }
+}
+
+void GameObject::actualDestroy()
 {
     assertIsAlive();
 
+    // Destroy components in reverse order
     for (int i = components.size() - 1; i >= 0; --i)
     {
         components.at(i)->destroy();
     }
 
+    // Then destroy self
     isAlive = false;
     components.clear();
+
+    isDestroyPending = false;
+}
+
+void GameObject::destroy()
+{
+    if (!isAlive || isDestroyPending)
+    {
+        return;
+    }
+
+    // Notify first
+    notifyDestroy();
+
+    // Then destroy self
+    actualDestroy();
 }
 
 bool GameObject::getIsAlive() const

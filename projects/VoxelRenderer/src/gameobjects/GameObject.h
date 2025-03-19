@@ -12,6 +12,8 @@ class GameObject : public NonCopyable, public std::enable_shared_from_this<GameO
 {
 private:
     bool isAlive = true;
+    bool isDestroyPending = false;
+
     std::string name {};
 
     std::shared_ptr<TransformComponent> transform {};
@@ -19,9 +21,16 @@ private:
 
     static constexpr std::string defaultName = "GameObject";
 
+    void notifyDestroy();
+
+    void actualDestroy();
+
 public:
     explicit GameObject(const std::string& name = defaultName);
     ~GameObject() override;
+
+    void update();
+    void destroy();
 
     static std::shared_ptr<GameObject> createRootObject(const std::string& name = defaultName);
     std::shared_ptr<GameObject> createChildObject(const std::string& name = defaultName);
@@ -33,9 +42,6 @@ public:
     std::shared_ptr<T> getComponent();
 
     std::shared_ptr<TransformComponent>& getTransform();
-
-    void update();
-    void destroy();
 
     bool getIsAlive() const;
     void assertIsAlive() const;

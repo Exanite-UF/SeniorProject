@@ -23,6 +23,8 @@ private:
     void notifyDestroy();
     void notifyUpdate();
 
+    void actualDestroy();
+
 protected:
     Component();
     ~Component() override;
