@@ -301,6 +301,7 @@ void Program::run()
         window->update();
         inputManager->update();
         voxelChunkManager.update();
+        sceneObject->update();
 
         // Update
         // TODO: This code should be moved into individual systems
