@@ -117,12 +117,12 @@ void Program::run()
     {
         for (int y = 0; y < 3; ++y)
         {
-            auto voxelWorldObject = sceneObject->createChildObject();
+            auto voxelChunkObject = sceneObject->createChildObject();
 
-            auto& voxelWorld = scene->chunks.emplace_back(voxelWorldObject->addComponent<VoxelChunkComponent>());
-            voxelWorld->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
+            auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>());
+            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
 
-            scene->chunks.push_back(voxelWorld);
+            scene->chunks.push_back(voxelChunk);
         }
     }
 
