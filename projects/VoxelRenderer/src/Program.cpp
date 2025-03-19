@@ -477,6 +477,19 @@ void Program::run()
                 {
                     case 0:
                     {
+                        auto cameraPosition = cameraTransform->getGlobalPosition();
+                        auto cameraLookDirection = cameraTransform->getForwardDirection();
+
+                        ImGui::Text("Camera Position");
+                        ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+                        ImGui::Text("\n");
+
+                        ImGui::Text("Camera Look Direction");
+                        ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
+
+                        ImGui::Text("\n");
+
                         ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
                         ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
                         ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
