@@ -22,8 +22,6 @@ GameObject::~GameObject()
     {
         Log::log(std::format("GameObject destructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
-
-    destroy();
 }
 
 std::shared_ptr<TransformComponent>& GameObject::getTransform()

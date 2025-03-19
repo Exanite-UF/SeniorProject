@@ -20,8 +20,6 @@ Component::~Component()
     {
         Log::log(std::format("Component destructor called for {:s} @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
-
-    destroy();
 }
 
 void Component::onCreate()
