@@ -12,16 +12,19 @@ class GameObject : public NonCopyable, public std::enable_shared_from_this<GameO
 {
 private:
     bool isAlive = true;
+    std::string name {};
 
     std::shared_ptr<TransformComponent> transform {};
     std::vector<std::shared_ptr<Component>> components {};
 
+    static constexpr std::string defaultName = "GameObject";
+
 public:
-    GameObject();
+    GameObject(const std::string& name = defaultName);
     ~GameObject() override;
 
-    static std::shared_ptr<GameObject> createRootObject();
-    std::shared_ptr<GameObject> createChildObject();
+    static std::shared_ptr<GameObject> createRootObject(const std::string& name = defaultName);
+    std::shared_ptr<GameObject> createChildObject(const std::string& name = defaultName);
 
     template <typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args);
@@ -35,6 +38,9 @@ public:
 
     bool getIsAlive() const;
     void assertIsAlive() const;
+
+    void setName(const std::string& name);
+    const std::string& getName();
 };
 
 template <typename T, typename... Args>

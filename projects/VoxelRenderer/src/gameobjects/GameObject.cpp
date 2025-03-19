@@ -4,7 +4,10 @@
 
 #include "TransformComponent.h"
 
-GameObject::GameObject() = default;
+GameObject::GameObject(const std::string& name)
+{
+    this->name = name;
+}
 
 GameObject::~GameObject()
 {
@@ -18,9 +21,9 @@ std::shared_ptr<TransformComponent>& GameObject::getTransform()
     return transform;
 }
 
-std::shared_ptr<GameObject> GameObject::createRootObject()
+std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name)
 {
-    auto gameObject = std::make_shared<GameObject>();
+    auto gameObject = std::make_shared<GameObject>(name);
 
     // Add default Transform component
     auto transform = gameObject->addComponent<TransformComponent>();
@@ -37,9 +40,9 @@ std::shared_ptr<GameObject> GameObject::createRootObject()
     return gameObject;
 }
 
-std::shared_ptr<GameObject> GameObject::createChildObject()
+std::shared_ptr<GameObject> GameObject::createChildObject(const std::string& name)
 {
-    auto child = createRootObject();
+    auto child = createRootObject(name);
     child->getTransform()->setParent(getTransform());
 
     return child;
@@ -66,4 +69,14 @@ bool GameObject::getIsAlive() const
 void GameObject::assertIsAlive() const
 {
     Assert::isTrue(isAlive, "GameObject has been destroyed");
+}
+
+void GameObject::setName(const std::string& name)
+{
+    this->name = name;
+}
+
+const std::string& GameObject::getName()
+{
+    return name;
 }

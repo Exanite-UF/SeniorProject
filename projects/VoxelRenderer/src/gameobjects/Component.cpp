@@ -3,6 +3,8 @@
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
 
+#include "GameObject.h"
+
 Component::Component() = default;
 
 Component::~Component()
@@ -12,17 +14,17 @@ Component::~Component()
 
 void Component::onUpdate()
 {
-    Log::log("Component::onUpdate");
+    Log::log("Component::onUpdate for " + getGameObject()->getName());
 }
 
 void Component::onCreate()
 {
-    Log::log("Component::onCreate");
+    Log::log("Component::onCreate for " + getGameObject()->getName());
 }
 
 void Component::onDestroy()
 {
-    Log::log("Component::onDestroy");
+    Log::log("Component::onDestroy for " + getGameObject()->getName());
 }
 
 void Component::destroy()
