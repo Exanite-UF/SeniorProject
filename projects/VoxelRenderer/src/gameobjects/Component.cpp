@@ -5,6 +5,13 @@
 
 #include "GameObject.h"
 
+Component::Component() = default;
+
+Component::~Component()
+{
+    destroy();
+}
+
 void Component::notifyCreate()
 {
     if (wasCreateCalled)
@@ -27,11 +34,9 @@ void Component::notifyDestroy()
     onDestroy();
 }
 
-Component::Component() = default;
-
-Component::~Component()
+void Component::notifyUpdate()
 {
-    destroy();
+    onUpdate();
 }
 
 void Component::onCreate()

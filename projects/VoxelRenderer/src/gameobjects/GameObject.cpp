@@ -21,6 +21,23 @@ std::shared_ptr<TransformComponent>& GameObject::getTransform()
     return transform;
 }
 
+void GameObject::update()
+{
+    assertIsAlive();
+
+    // Update own components
+    for (auto component : components)
+    {
+        component->notifyUpdate();
+    }
+
+    // Then update children
+    for (auto child : transform->getChildren())
+    {
+        child->getGameObject()->update();
+    }
+}
+
 std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name)
 {
     auto gameObject = std::make_shared<GameObject>(name);

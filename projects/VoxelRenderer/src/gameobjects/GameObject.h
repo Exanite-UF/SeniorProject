@@ -20,7 +20,7 @@ private:
     static constexpr std::string defaultName = "GameObject";
 
 public:
-    GameObject(const std::string& name = defaultName);
+    explicit GameObject(const std::string& name = defaultName);
     ~GameObject() override;
 
     static std::shared_ptr<GameObject> createRootObject(const std::string& name = defaultName);
@@ -34,6 +34,7 @@ public:
 
     std::shared_ptr<TransformComponent>& getTransform();
 
+    void update();
     void destroy();
 
     bool getIsAlive() const;
