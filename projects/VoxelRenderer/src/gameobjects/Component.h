@@ -15,9 +15,6 @@ private:
     std::shared_ptr<GameObject> gameObject;
     std::shared_ptr<TransformComponent> transform;
 
-    static constexpr bool isEventLoggingEnabled = true;
-    static constexpr bool isUpdateEventLoggingEnabled = false;
-
     bool isAlive = true;
     bool wasCreateCalled = false;
     bool isDestroyPending = false;

@@ -30,4 +30,11 @@ public:
     public:
         static constexpr glm::ivec3 chunkSize = glm::ivec3(512, 512, 512);
     };
+
+    class GameObject
+    {
+    public:
+        static constexpr bool isEventLoggingEnabled = true;
+        static constexpr bool isUpdateEventLoggingEnabled = false;
+    };
 };

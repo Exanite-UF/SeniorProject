@@ -1,5 +1,6 @@
 #include "Component.h"
 
+#include <src/Constants.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
 
@@ -7,7 +8,7 @@
 
 Component::Component()
 {
-    if constexpr (isEventLoggingEnabled)
+    if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::log(std::format("Component constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
@@ -15,7 +16,7 @@ Component::Component()
 
 Component::~Component()
 {
-    if constexpr (isEventLoggingEnabled)
+    if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::log(std::format("Component destructor called for {:s} @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
@@ -25,7 +26,7 @@ Component::~Component()
 
 void Component::onCreate()
 {
-    if constexpr (isEventLoggingEnabled)
+    if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::log(std::format("Component::onCreate called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
@@ -33,7 +34,7 @@ void Component::onCreate()
 
 void Component::onDestroy()
 {
-    if constexpr (isEventLoggingEnabled)
+    if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::log(std::format("Component::onDestroy called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
@@ -41,7 +42,7 @@ void Component::onDestroy()
 
 void Component::onUpdate()
 {
-    if constexpr (isEventLoggingEnabled && isUpdateEventLoggingEnabled)
+    if constexpr (Constants::GameObject::isEventLoggingEnabled && Constants::GameObject::isUpdateEventLoggingEnabled)
     {
         Log::log(std::format("Component::onUpdate called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
