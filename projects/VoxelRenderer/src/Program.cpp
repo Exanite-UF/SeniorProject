@@ -55,6 +55,7 @@
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkManager.h>
+#include <src/world/VoxelChunkResources.h>
 
 Program::Program()
 {
@@ -78,6 +79,9 @@ Program::Program()
 
 Program::~Program()
 {
+    // Cleanup singletons
+    SingletonManager::destroyAllSingletons();
+
     // Shutdown GLFW
     glfwTerminate();
 }
@@ -90,7 +94,8 @@ void Program::run()
     auto& shaderManager = ShaderManager::getInstance();
     auto& textureManager = TextureManager::getInstance();
     auto& materialManager = MaterialManager::getInstance();
-    auto& voxelWorldManager = VoxelChunkManager::getInstance();
+    auto& voxelChunkResources = VoxelChunkResources::getInstance();
+    auto& voxelChunkManager = VoxelChunkManager::getInstance();
     auto& input = inputManager->input;
 
     // Configure OpenGL
@@ -103,7 +108,7 @@ void Program::run()
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Create the scene GameObject
-    auto sceneObject = GameObject::createRootObject();
+    auto sceneObject = GameObject::createRootObject("Scene");
     auto scene = sceneObject->addComponent<SceneComponent>();
 
     // Create the chunk GameObjects
@@ -112,23 +117,26 @@ void Program::run()
     {
         for (int y = 0; y < 3; ++y)
         {
-            auto voxelWorldObject = sceneObject->createChildObject();
+            auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
-            auto& voxelWorld = scene->chunks.emplace_back(voxelWorldObject->addComponent<VoxelChunkComponent>());
-            voxelWorld->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
+            auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>());
+            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(512 * x, 512 * y, 0));
 
-            scene->chunks.push_back(voxelWorld);
+            scene->chunks.push_back(voxelChunk);
         }
     }
 
     // Create the camera GameObject
-    auto cameraObject = sceneObject->createChildObject();
+    auto cameraObject = sceneObject->createChildObject("Camera");
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto& cameraTransform = camera->getTransform();
     scene->camera = camera;
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z / 1.75));
 
     auto& voxelChunk = scene->chunks.at(0);
+
+    // Initialize the chunk manager
+    voxelChunkManager.initialize(scene);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
@@ -283,9 +291,6 @@ void Program::run()
             auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
             auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
             Log::log(std::to_string(currentFPS) + " Display FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " Render FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
-            // std::cout << cameraTransform->getGlobalPosition().x << std::endl;
-            // std::cout << cameraTransform->getGlobalPosition().y << std::endl;
-            // std::cout << cameraTransform->getGlobalPosition().z << std::endl;
 
             fpsCycleTimer = 0;
             framesThisCycle = 0;
@@ -295,6 +300,8 @@ void Program::run()
         // Update systems
         window->update();
         inputManager->update();
+        voxelChunkManager.update();
+        sceneObject->update();
 
         // Update
         // TODO: This code should be moved into individual systems
@@ -442,7 +449,7 @@ void Program::run()
                 showMenuGUI = !showMenuGUI;
             }
 
-            //  Debug UI Two
+            //  Debug UI
             const int numMenus = 5;
             ImVec2 windowSize = ImVec2(window->size.x, window->size.y);
             float menuWidth = windowSize.x / numMenus;
@@ -471,6 +478,19 @@ void Program::run()
                 {
                     case 0:
                     {
+                        auto cameraPosition = cameraTransform->getGlobalPosition();
+                        auto cameraLookDirection = cameraTransform->getForwardDirection();
+
+                        ImGui::Text("Camera Position");
+                        ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+                        ImGui::Text("\n");
+
+                        ImGui::Text("Camera Look Direction");
+                        ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
+
+                        ImGui::Text("\n");
+
                         ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
                         ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
                         ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
@@ -543,6 +563,7 @@ void Program::run()
     }
 
     renderer.stopAsynchronousReprojection();
+    sceneObject->destroy();
 }
 
 void Program::checkForContentFolder()
@@ -641,6 +662,24 @@ void Program::runEarlyStartupTests()
 void Program::runLateStartupTests()
 {
     Log::log("Running late startup tests (in run())");
+
+    {
+        // Verify GameObject destroy API
+        auto root = GameObject::createRootObject("Root");
+
+        auto child1 = root->createChildObject("Child1");
+        auto child2 = root->createChildObject("Child2");
+        Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
+
+        child1->destroy();
+        Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
+        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
+
+        root->destroy();
+        Assert::isTrue(!root->getIsAlive(), "Root GameObject should have been destroyed");
+        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
+        Assert::isTrue(!child2->getIsAlive(), "Child2 GameObject should have been destroyed");
+    }
 
     {
         // Verify shader storage block size is large enough

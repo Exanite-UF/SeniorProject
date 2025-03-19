@@ -12,16 +12,28 @@ class GameObject : public NonCopyable, public std::enable_shared_from_this<GameO
 {
 private:
     bool isAlive = true;
+    bool isDestroyPending = false;
+
+    std::string name {};
 
     std::shared_ptr<TransformComponent> transform {};
     std::vector<std::shared_ptr<Component>> components {};
 
+    static constexpr std::string defaultName = "GameObject";
+
+    void notifyDestroy();
+
+    void actualDestroy();
+
 public:
-    GameObject();
+    explicit GameObject(const std::string& name = defaultName);
     ~GameObject() override;
 
-    static std::shared_ptr<GameObject> createRootObject();
-    std::shared_ptr<GameObject> createChildObject();
+    void update();
+    void destroy();
+
+    static std::shared_ptr<GameObject> createRootObject(const std::string& name = defaultName);
+    std::shared_ptr<GameObject> createChildObject(const std::string& name = defaultName);
 
     template <typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args);
@@ -31,10 +43,11 @@ public:
 
     std::shared_ptr<TransformComponent>& getTransform();
 
-    void destroy();
-
     bool getIsAlive() const;
     void assertIsAlive() const;
+
+    void setName(const std::string& name);
+    const std::string& getName();
 };
 
 template <typename T, typename... Args>
@@ -50,7 +63,7 @@ std::shared_ptr<T> GameObject::addComponent(Args&&... args)
     component->transform = transform;
 
     // Notify component of creation
-    component->onCreate();
+    component->notifyCreate();
 
     return component;
 }

@@ -6,7 +6,7 @@
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkUtility.h>
 
-#include "VoxelChunkManager.h"
+#include "VoxelChunkResources.h"
 
 VoxelChunk::VoxelChunk(glm::ivec3 size)
 {
@@ -62,7 +62,7 @@ void VoxelChunk::setSize(glm::ivec3 size)
 
 void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise, float fillAmount)
 {
-    auto& voxelWorldManager = VoxelChunkManager::getInstance();
+    auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto makeNoiseComputeProgram = voxelWorldManager.makeNoiseComputeProgram;
 
     glUseProgram(makeNoiseComputeProgram);
@@ -92,7 +92,7 @@ void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise
 
 void VoxelChunk::updateMipMaps()
 {
-    auto& voxelWorldManager = VoxelChunkManager::getInstance();
+    auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto makeMipMapComputeProgram = voxelWorldManager.makeMipMapComputeProgram;
 
     glUseProgram(makeMipMapComputeProgram);
@@ -125,7 +125,7 @@ void VoxelChunk::updateMipMaps()
 
 void VoxelChunk::generatePlaceholderMaterialMap()
 {
-    auto& voxelWorldManager = VoxelChunkManager::getInstance();
+    auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto assignMaterialComputeProgram = voxelWorldManager.assignMaterialComputeProgram;
 
     glUseProgram(assignMaterialComputeProgram);

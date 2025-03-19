@@ -1,13 +1,24 @@
 #include "VoxelChunkManager.h"
 
-#include <src/Content.h>
-#include <src/graphics/ShaderManager.h>
+#include <src/utilities/Assert.h>
+#include <src/utilities/Log.h>
 
-VoxelChunkManager::VoxelChunkManager()
+VoxelChunkManager::~VoxelChunkManager()
 {
-    auto& shaderManager = ShaderManager::getInstance();
+    Log::log("Cleaning up VoxelChunkManager");
+}
 
-    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
-    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
-    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
+void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
+{
+    Assert::isTrue(!isInitialized, "VoxelChunkManager has already been initialized");
+
+    isInitialized = true;
+
+    this->scene = scene;
+
+    Log::log("Initialized VoxelChunkManager");
+}
+
+void VoxelChunkManager::update()
+{
 }

@@ -28,18 +28,54 @@ void TransformComponent::updateTransform() const
     }
 
     inverseGlobalTransform = glm::inverse(globalTransform);
+
+    for (const auto& child : children)
+    {
+        child->updateTransform();
+    }
+}
+
+void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& parent)
+{
+    // Remove self from parent's child list
+    const auto previousParent = this->parent;
+    if (previousParent)
+    {
+        auto self = std::find(previousParent->children.begin(), previousParent->children.end(), shared_from_this());
+        if (self != previousParent->children.end())
+        {
+            previousParent->children.erase(self);
+        }
+    }
+
+    // Update parent of self
+    this->parent = parent;
+
+    // Update children of new parent
+    if (parent)
+    {
+        parent->children.push_back(shared_from_this());
+    }
 }
 
 void TransformComponent::onDestroy()
 {
     Component::onDestroy();
 
-    // Destroy all children GameObjects
+    setParent(nullptr);
+
+    // Destroy all children GameObjects in reverse order
     // Note that this is very different from destroying just the TransformComponent
-    for (int i = 0; i < children.size(); ++i)
+    auto childrenCopy = children;
+    for (int i = childrenCopy.size() - 1; i >= 0; --i)
     {
-        children[i]->getGameObject()->destroy();
+        childrenCopy[i]->getGameObject()->destroy();
     }
+
+    children.clear();
+
+    // Destroy own GameObject to ensure the TransformComponent is never destroyed without its GameObject being destroyed
+    getGameObject()->destroy();
 }
 
 const glm::vec3& TransformComponent::getLocalPosition() const
@@ -140,59 +176,52 @@ void TransformComponent::multiplyLocalScale(const glm::vec3& value)
 
 void TransformComponent::setGlobalPosition(const glm::vec3& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         setLocalPosition(value);
     }
     else
     {
+        // TODO: Verify
         setLocalPosition(parent->getGlobalTransform() * glm::vec4(value, 1));
     }
 }
 
 void TransformComponent::addGlobalPosition(const glm::vec3& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         addLocalPosition(value);
     }
     else
     {
+        // TODO: Verify
         setLocalPosition(parent->getGlobalTransform() * glm::vec4(getGlobalPosition() + value, 1));
     }
 }
 
 void TransformComponent::setGlobalRotation(const glm::quat& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         setLocalRotation(value);
     }
     else
     {
+        // TODO: Verify
         setLocalRotation(value * parent->getGlobalRotation());
     }
 }
 
 void TransformComponent::addGlobalRotation(const glm::quat& value)
 {
-    // TODO: Verify
     if (parent == nullptr)
     {
         addLocalRotation(value);
     }
     else
     {
+        // TODO: Verify
         setLocalRotation(value * localRotation * parent->getGlobalRotation());
     }
-}
-
-void TransformComponent::addChild(const std::shared_ptr<GameObject>& child)
-{
-    children.push_back(child->getTransform());
-
-    child->getTransform()->parent = shared_from_this();
 }

@@ -1,15 +1,21 @@
 #pragma once
 
-#include <src/utilities/OpenGl.h>
-#include <src/utilities/Singleton.h>
+#include <memory>
 
-// Not really a manager currently. Just a class to hold the shaders used by VoxelChunk.
+#include <src/utilities/Log.h>
+#include <src/utilities/Singleton.h>
+#include <src/world/SceneComponent.h>
+
 class VoxelChunkManager : public Singleton<VoxelChunkManager>
 {
-public:
-    GLuint makeNoiseComputeProgram = 0;
-    GLuint makeMipMapComputeProgram = 0;
-    GLuint assignMaterialComputeProgram = 0;
+private:
+    bool isInitialized = false;
+    std::shared_ptr<SceneComponent> scene;
 
-    VoxelChunkManager();
+public:
+    void initialize(const std::shared_ptr<SceneComponent>& scene);
+
+    void update();
+
+    ~VoxelChunkManager();
 };

@@ -22,7 +22,9 @@ private:
     void updateTransform() const;
 
 public:
+    void setParent(const std::shared_ptr<TransformComponent>& parent);
     [[nodiscard]] const std::shared_ptr<TransformComponent>& getParent() const;
+
     [[nodiscard]] const std::vector<std::shared_ptr<TransformComponent>>& getChildren() const;
 
     void onDestroy() override;
@@ -56,6 +58,4 @@ public:
 
     void setGlobalRotation(const glm::quat& value);
     void addGlobalRotation(const glm::quat& value);
-
-    void addChild(const std::shared_ptr<GameObject>& child);
 };
