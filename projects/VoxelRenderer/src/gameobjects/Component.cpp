@@ -14,17 +14,26 @@ Component::~Component()
 
 void Component::onCreate()
 {
-    Log::log("Component::onCreate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+    if constexpr (isEventLoggingEnabled)
+    {
+        Log::log("Component::onCreate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+    }
 }
 
 void Component::onDestroy()
 {
-    Log::log("Component::onDestroy for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+    if constexpr (isEventLoggingEnabled)
+    {
+        Log::log("Component::onDestroy for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+    }
 }
 
 void Component::onUpdate()
 {
-    Log::log("Component::onUpdate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+    if constexpr (isEventLoggingEnabled)
+    {
+        Log::log("Component::onUpdate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+    }
 }
 
 void Component::notifyCreate()
