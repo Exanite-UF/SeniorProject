@@ -16,6 +16,7 @@ private:
     std::shared_ptr<TransformComponent> transform;
 
     static constexpr bool isEventLoggingEnabled = false;
+    static constexpr bool isUpdateEventLoggingEnabled = false;
 
     bool isAlive = true;
     bool wasCreateCalled = false;

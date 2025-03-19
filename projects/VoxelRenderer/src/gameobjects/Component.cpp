@@ -5,10 +5,21 @@
 
 #include "GameObject.h"
 
-Component::Component() = default;
+Component::Component()
+{
+    if constexpr (isEventLoggingEnabled)
+    {
+        Log::log(std::string("Component constructor called for ") + typeid(*this).name());
+    }
+}
 
 Component::~Component()
 {
+    if constexpr (isEventLoggingEnabled)
+    {
+        Log::log(std::string("Component constructor called for ") + typeid(*this).name());
+    }
+
     destroy();
 }
 
@@ -16,7 +27,7 @@ void Component::onCreate()
 {
     if constexpr (isEventLoggingEnabled)
     {
-        Log::log("Component::onCreate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+        Log::log("Component::onCreate called for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
     }
 }
 
@@ -24,15 +35,15 @@ void Component::onDestroy()
 {
     if constexpr (isEventLoggingEnabled)
     {
-        Log::log("Component::onDestroy for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+        Log::log("Component::onDestroy called for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
     }
 }
 
 void Component::onUpdate()
 {
-    if constexpr (isEventLoggingEnabled)
+    if constexpr (isEventLoggingEnabled && isUpdateEventLoggingEnabled)
     {
-        Log::log("Component::onUpdate for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
+        Log::log("Component::onUpdate called for '" + getGameObject()->getName() + "' (" + typeid(*this).name() + ")");
     }
 }
 
