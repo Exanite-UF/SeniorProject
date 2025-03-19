@@ -38,12 +38,13 @@ void TransformComponent::updateTransform() const
 void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& parent)
 {
     // Remove self from parent's child list
-    if (parent)
+    const auto previousParent = this->parent;
+    if (previousParent)
     {
-        auto self = std::find(parent->children.begin(), parent->children.end(), shared_from_this());
-        if (self != parent->children.end())
+        auto self = std::find(previousParent->children.begin(), previousParent->children.end(), shared_from_this());
+        if (self != previousParent->children.end())
         {
-            parent->children.erase(self);
+            previousParent->children.erase(self);
         }
     }
 
@@ -51,12 +52,17 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     this->parent = parent;
 
     // Update children of new parent
-    parent->children.push_back(shared_from_this());
+    if (parent)
+    {
+        parent->children.push_back(shared_from_this());
+    }
 }
 
 void TransformComponent::onDestroy()
 {
     Component::onDestroy();
+
+    setParent(nullptr);
 
     // Destroy all children GameObjects in reverse order
     // Note that this is very different from destroying just the TransformComponent
