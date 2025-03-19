@@ -28,6 +28,11 @@ void TransformComponent::updateTransform() const
     }
 
     inverseGlobalTransform = glm::inverse(globalTransform);
+
+    for (const auto& child : children)
+    {
+        child->updateTransform();
+    }
 }
 
 void TransformComponent::onDestroy()
