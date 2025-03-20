@@ -30,7 +30,7 @@ private:
         }
     };
 
-    struct LoadedChunkData
+    struct ActiveChunkData
     {
     public:
         std::shared_ptr<VoxelChunkComponent> chunk {};
@@ -41,7 +41,7 @@ private:
         bool isUnloading = false;
         float unloadWaitTime = 0;
 
-        explicit LoadedChunkData(const glm::ivec2& chunkPosition)
+        explicit ActiveChunkData(const glm::ivec2& chunkPosition)
         {
             this->chunkPosition = chunkPosition;
         }
@@ -92,7 +92,7 @@ private:
 
         // ----- Chunks -----
 
-        std::unordered_map<glm::ivec2, LoadedChunkData> loadedChunks {};
+        std::unordered_map<glm::ivec2, ActiveChunkData> activeChunks {};
     };
 
 private:

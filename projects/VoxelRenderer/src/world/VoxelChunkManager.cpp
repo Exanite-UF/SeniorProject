@@ -5,6 +5,7 @@
 #include <format>
 #include <memory>
 #include <queue>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -133,7 +134,7 @@ void VoxelChunkManager::update(float deltaTime)
         }
 
         // Unload chunks
-        for (auto& loadedChunk : data.loadedChunks)
+        for (auto& loadedChunk : data.activeChunks)
         {
             if (loadedChunk.second.isUnloading)
             {
@@ -157,18 +158,18 @@ void VoxelChunkManager::update(float deltaTime)
         // Load chunks
         for (auto chunkToLoad : chunksToLoad)
         {
-            auto loadedChunk = data.loadedChunks.find(chunkToLoad);
-            if (loadedChunk != data.loadedChunks.end())
+            auto chunk = data.activeChunks.find(chunkToLoad);
+            if (chunk != data.activeChunks.end())
             {
                 // Keep the chunk alive if necessary
-                loadedChunk->second.isUnloading = false;
+                chunk->second.isUnloading = false;
 
                 // Chunk is already loaded, we don't need to load
                 continue;
             }
 
             // Load the chunk
-            data.loadedChunks.emplace(chunkToLoad, LoadedChunkData(chunkToLoad));
+            data.activeChunks.emplace(chunkToLoad, ActiveChunkData(chunkToLoad));
             {
                 // Send a request to a worker thread to either load the chunk
                 std::lock_guard lock(data.pendingRequestsMutex);
@@ -185,16 +186,16 @@ void VoxelChunkManager::update(float deltaTime)
         // Check for chunks to unload
         int chunksUpdated = 0;
         std::vector<glm::ivec2> chunksToUnload {};
-        for (auto& loadedChunk : data.loadedChunks)
+        for (auto& chunk : std::ranges::views::values(data.activeChunks))
         {
-            if (loadedChunk.second.isUnloading)
+            if (chunk.isUnloading)
             {
-                loadedChunk.second.unloadWaitTime += deltaTime;
+                chunk.unloadWaitTime += deltaTime;
                 chunksUpdated++;
 
-                if (loadedChunk.second.unloadWaitTime > data.chunkUnloadTime)
+                if (chunk.unloadWaitTime > data.chunkUnloadTime)
                 {
-                    chunksToUnload.push_back(loadedChunk.second.chunkPosition);
+                    chunksToUnload.push_back(chunk.chunkPosition);
                 }
             }
         }
@@ -202,7 +203,7 @@ void VoxelChunkManager::update(float deltaTime)
         for (auto chunkToUnload : chunksToUnload)
         {
             Log::log(std::format("Unloaded chunk at ({}, {})", chunkToUnload.x, chunkToUnload.y));
-            data.loadedChunks.erase(chunkToUnload);
+            data.activeChunks.erase(chunkToUnload);
             // TODO: Actually unload the chunk
         }
 
@@ -221,7 +222,20 @@ void VoxelChunkManager::update(float deltaTime)
             while (!data.completedRequests.empty())
             {
                 // TODO: Currently throwing away data to prevent memory leaks
+                auto request = data.completedRequests.front();
                 data.completedRequests.pop();
+
+                auto chunkIterator = data.activeChunks.find(request->chunkPosition);
+                if (chunkIterator == data.activeChunks.end())
+                {
+                    // Chunk no longer exists (was probably unloaded)
+                    // Throw the data away
+
+                    continue;
+                }
+
+                auto& chunk = chunkIterator->second;
+                chunk.isLoading = false;
             }
         }
     }
@@ -232,7 +246,7 @@ void VoxelChunkManager::showDebugMenu()
     if (ImGui::CollapsingHeader("VoxelChunkManager"))
     {
         ImGui::Text("%s", std::format("Render distance: {}", data.renderDistance).c_str());
-        ImGui::Text("%s", std::format("Loaded chunk count: {}", data.loadedChunks.size()).c_str());
+        ImGui::Text("%s", std::format("Loaded chunk count: {}", data.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", data.cameraChunkPosition.x, data.cameraChunkPosition.y).c_str());
 
         {
@@ -269,10 +283,15 @@ void VoxelChunkManager::showDebugMenu()
 
                     auto color = unloadedColor;
 
-                    auto chunkIterator = data.loadedChunks.find(chunkPosition);
-                    if (chunkIterator != data.loadedChunks.end())
+                    auto chunkIterator = data.activeChunks.find(chunkPosition);
+                    if (chunkIterator != data.activeChunks.end())
                     {
                         color = loadedColor;
+
+                        if (chunkIterator->second.isLoading)
+                        {
+                            color = loadingColor;
+                        }
 
                         if (chunkIterator->second.isUnloading)
                         {
