@@ -65,8 +65,8 @@ private:
         // Used to wake up the chunk loading thread
         std::condition_variable chunkLoadingThreadCondition {};
 
-        std::mutex pendingChunkLoadRequestsMutex {};
-        std::mutex completedChunkLoadRequestsMutex {};
+        std::mutex pendingRequestsMutex {};
+        std::mutex completedRequestsMutex {};
 
         std::queue<std::shared_ptr<ChunkLoadRequest>> pendingRequests {};
         std::queue<std::shared_ptr<ChunkLoadRequest>> completedRequests {};

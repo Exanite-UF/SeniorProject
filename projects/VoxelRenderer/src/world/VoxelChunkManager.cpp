@@ -24,7 +24,7 @@ VoxelChunkManager::~VoxelChunkManager()
     isRunning = false;
 
     {
-        std::lock_guard lock(data.pendingChunkLoadRequestsMutex);
+        std::lock_guard lock(data.pendingRequestsMutex);
         data.chunkLoadingThreadCondition.notify_all();
     }
 
@@ -56,7 +56,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
     {
         // Create pending requests lock, but don't lock the mutex
         // Locking is done by condition variable below
-        std::unique_lock pendingRequestsLock(data.pendingChunkLoadRequestsMutex);
+        std::unique_lock pendingRequestsLock(data.pendingRequestsMutex);
 
         // Wait for new requests to come in
         data.chunkLoadingThreadCondition.wait(pendingRequestsLock, [&]()
@@ -83,7 +83,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         // TODO: Actually generate chunk
 
         // Acquire completed requests mutex
-        std::unique_lock completedRequestsLock(data.completedChunkLoadRequestsMutex);
+        std::unique_lock completedRequestsLock(data.completedRequestsMutex);
 
         // Publish completed request
         data.completedRequests.push(request);
@@ -159,9 +159,12 @@ void VoxelChunkManager::update(float deltaTime)
 
             // Load the chunk
             data.loadedChunks.emplace(chunkToLoad, LoadedChunkData(chunkToLoad));
-            // TODO: Acquire lock
-            data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, Constants::VoxelChunkComponent::chunkSize));
-            // TODO: Send a job to a worker thread to either load the chunk from disk or generate the chunk
+            {
+                // Send a request to a worker thread to either load the chunk
+                std::lock_guard lock(data.pendingRequestsMutex);
+                data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, Constants::VoxelChunkComponent::chunkSize));
+                data.chunkLoadingThreadCondition.notify_one();
+            }
 
             Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
         }
