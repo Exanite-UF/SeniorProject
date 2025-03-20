@@ -19,6 +19,7 @@ public:
     constexpr static std::string_view prepareRayTraceFromCameraComputeShader = "content/PathTrace/PrepareRayTraceFromCamera.compute.glsl";
     constexpr static std::string_view fullCastComputeShader = "content/PathTrace/FullCast.compute.glsl";
     constexpr static std::string_view pathTraceToFramebufferShader = "content/PathTrace/ToFramebuffer.fragment.glsl";
+    constexpr static std::string_view afterCastComputerShader = "content/PathTrace/AfterCast.compute.glsl";
 
     // Reprojection
     constexpr static std::string_view renderReprojectionVertexShader = "content/Reprojection/ReprojectionRender.vertex.glsl";

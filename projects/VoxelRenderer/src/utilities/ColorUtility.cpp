@@ -47,8 +47,15 @@ glm::vec4 ColorUtility::srgbToLinear(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     return glm::vec4(linearToSrgb(r / 255.0f), linearToSrgb(g / 255.0f), linearToSrgb(b / 255.0f), a / 255.0f);
 }
 
-glm::vec4 ColorUtility::srgbToLinear(std::string value)
+glm::vec4 ColorUtility::htmlToLinear(const std::string& value)
 {
+    return srgbToLinear(htmlToSrgb(value));
+}
+
+glm::vec4 ColorUtility::htmlToSrgb(std::string value)
+{
+    Assert::isTrue(value.size() > 0, "Color code is empty");
+
     // Remove leading '#'
     if (value.at(0) == '#')
     {
@@ -84,9 +91,6 @@ glm::vec4 ColorUtility::srgbToLinear(std::string value)
 
     // Convert result to [0, 1] range
     result /= 255;
-
-    // Convert result to linear
-    result = srgbToLinear(result);
 
     return result;
 }

@@ -7,12 +7,12 @@
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/utilities/Singleton.h>
 #include <src/world/Material.h>
-#include <src/world/VoxelWorldData.h>
+#include <src/world/VoxelChunkData.h>
 
 class MaterialManager : public Singleton<MaterialManager>
 {
     friend class Singleton;
-    friend class VoxelWorldData;
+    friend class VoxelChunkData;
 
 private:
     // ----- CPU data -----
@@ -28,7 +28,7 @@ private:
     std::vector<MaterialDefinition> materialData {};
 
     // ----- GPU data -----
-    GraphicsBuffer<MaterialDefinition> materialDefinitionsBuffer = GraphicsBuffer<MaterialDefinition>(Constants::VoxelWorld::maxMaterialCount);
+    GraphicsBuffer<MaterialDefinition> materialDefinitionsBuffer = GraphicsBuffer<MaterialDefinition>(Constants::VoxelChunk::maxMaterialCount);
 
     MaterialManager();
 

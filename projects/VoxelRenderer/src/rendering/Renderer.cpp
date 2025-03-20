@@ -9,11 +9,11 @@
 #include <src/graphics/ShaderManager.h>
 #include <src/windowing/Window.h>
 
-GLuint Renderer::drawTextureProgram;
+GLuint Renderer::drawTextureProgram {};
 
 void Renderer::offscreenRenderingFunc()
 {
-    glfwMakeContextCurrent(offscreenContext);
+    offscreenContext->makeContextCurrent();
 
     while (isRenderingOffscreen)
     {
@@ -22,7 +22,7 @@ void Renderer::offscreenRenderingFunc()
     }
 }
 
-void Renderer::isOwningThreadCheck()
+void Renderer::isOwningThreadCheck() const
 {
     if (std::this_thread::get_id() != owningThread)
     {
@@ -32,17 +32,16 @@ void Renderer::isOwningThreadCheck()
     }
 }
 
-Renderer::Renderer(GLFWwindow* mainContext, GLFWwindow* offscreenContext)
+Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext)
 {
-
     drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
 
     this->mainContext = mainContext;
     this->offscreenContext = offscreenContext;
 
     voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
-    reprojection = std::unique_ptr<AsynchronousReprojection>(new AsynchronousReprojection());
-    postProcessing = std::unique_ptr<PostProcessing>(new PostProcessing());
+    reprojection = std::unique_ptr<AsyncReprojectionRenderer>(new AsyncReprojectionRenderer());
+    postProcessing = std::unique_ptr<PostProcessRenderer>(new PostProcessRenderer());
 }
 
 void Renderer::makeFramebuffers()
@@ -117,6 +116,11 @@ GLuint Renderer::getWorkingFramebuffer()
     std::scoped_lock lock(bufferLocks.working);
 
     return framebuffers[bufferMapping.working];
+}
+
+const glm::ivec2& Renderer::getRenderResolution()
+{
+    return renderResolution;
 }
 
 void Renderer::setRenderResolution(glm::ivec2 renderResolution)
@@ -272,7 +276,7 @@ void Renderer::_render()
 
         voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
 
-        voxelRenderer->executePathTrace(scene->worlds, bounces);
+        voxelRenderer->executePathTrace(scene->chunks, bounces);
 
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }
@@ -293,7 +297,7 @@ void Renderer::reproject(float fov)
 
     // This repolling of the output size happens here, because things that use the result of the new data, don't actually need the new data, until the reprojection resolution changes.
     int width, height;
-    glfwGetWindowSize(mainContext, &width, &height);
+    glfwGetWindowSize(mainContext->getGlfwWindowHandle(), &width, &height);
 
     if (glm::ivec2(width, height) != outputResolution)
     {
@@ -445,6 +449,11 @@ void Renderer::makeOutputTextures()
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+bool Renderer::getIsAsynchronousReprojectionEnabled()
+{
+    return isRenderingOffscreen;
+}
+
 void Renderer::startAsynchronousReprojection()
 {
     isRenderingOffscreen = true;
@@ -499,7 +508,7 @@ void Renderer::setAsynchronousOverdrawFOV(float extraFOV)
     overdrawFOV = extraFOV;
 }
 
-std::shared_ptr<PostProcess> Renderer::addPostProcessEffect(std::shared_ptr<PostProcess> effect)
+std::shared_ptr<PostProcessEffect> Renderer::addPostProcessEffect(std::shared_ptr<PostProcessEffect> effect)
 {
     postProcessing->addPostProcessEffect(effect);
     return effect;

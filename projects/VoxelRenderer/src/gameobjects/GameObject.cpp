@@ -1,14 +1,27 @@
 #include "GameObject.h"
 
+#include <src/Constants.h>
 #include <src/utilities/Assert.h>
+#include <src/utilities/Log.h>
 
 #include "TransformComponent.h"
 
-GameObject::GameObject() = default;
+GameObject::GameObject(const std::string& name)
+{
+    if constexpr (Constants::GameObject::isEventLoggingEnabled)
+    {
+        Log::log(std::format("GameObject constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+    }
+
+    this->name = name;
+}
 
 GameObject::~GameObject()
 {
-    destroy();
+    if constexpr (Constants::GameObject::isEventLoggingEnabled)
+    {
+        Log::log(std::format("GameObject destructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+    }
 }
 
 std::shared_ptr<TransformComponent>& GameObject::getTransform()
@@ -18,9 +31,26 @@ std::shared_ptr<TransformComponent>& GameObject::getTransform()
     return transform;
 }
 
-std::shared_ptr<GameObject> GameObject::create()
+void GameObject::update()
 {
-    auto gameObject = std::make_shared<GameObject>();
+    assertIsAlive();
+
+    // Update own components
+    for (auto component : components)
+    {
+        component->notifyUpdate();
+    }
+
+    // Then update children
+    for (auto child : transform->getChildren())
+    {
+        child->getGameObject()->update();
+    }
+}
+
+std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name)
+{
+    auto gameObject = std::make_shared<GameObject>(name);
 
     // Add default Transform component
     auto transform = gameObject->addComponent<TransformComponent>();
@@ -37,17 +67,60 @@ std::shared_ptr<GameObject> GameObject::create()
     return gameObject;
 }
 
-void GameObject::destroy()
+std::shared_ptr<GameObject> GameObject::createChildObject(const std::string& name)
+{
+    auto child = createRootObject(name);
+    child->getTransform()->setParent(getTransform());
+
+    return child;
+}
+
+void GameObject::notifyDestroy()
+{
+    if (isDestroyPending)
+    {
+        return;
+    }
+
+    isDestroyPending = true;
+
+    // Notify components in reverse order
+    for (int i = components.size() - 1; i >= 0; --i)
+    {
+        components.at(i)->notifyDestroy();
+    }
+}
+
+void GameObject::actualDestroy()
 {
     assertIsAlive();
 
-    for (const auto& component : components)
+    // Destroy components in reverse order
+    auto componentsCopy = components;
+    for (int i = componentsCopy.size() - 1; i >= 0; --i)
     {
-        component->destroy();
+        componentsCopy.at(i)->destroy();
     }
 
-    isAlive = false;
     components.clear();
+
+    // Then destroy self
+    isAlive = false;
+    isDestroyPending = false;
+}
+
+void GameObject::destroy()
+{
+    if (!isAlive || isDestroyPending)
+    {
+        return;
+    }
+
+    // Notify first
+    notifyDestroy();
+
+    // Then destroy self
+    actualDestroy();
 }
 
 bool GameObject::getIsAlive() const
@@ -58,4 +131,14 @@ bool GameObject::getIsAlive() const
 void GameObject::assertIsAlive() const
 {
     Assert::isTrue(isAlive, "GameObject has been destroyed");
+}
+
+void GameObject::setName(const std::string& name)
+{
+    this->name = name;
+}
+
+const std::string& GameObject::getName()
+{
+    return name;
 }

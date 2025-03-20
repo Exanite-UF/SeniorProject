@@ -1,21 +1,21 @@
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/utilities/MeasureElapsedTimeScope.h>
-#include <src/world/VoxelWorldData.h>
+#include <src/world/VoxelChunkData.h>
 
-WorldGenerator::WorldGenerator(glm::ivec3 worldSize)
+WorldGenerator::WorldGenerator(glm::ivec3 chunkSize)
 {
-    data.setSize(worldSize);
+    data.setSize(chunkSize);
 }
 
-void WorldGenerator::generate(VoxelWorld& voxelWorld)
+void WorldGenerator::generate(VoxelChunk& chunk)
 {
     MeasureElapsedTimeScope scope("WorldGenerator::generate");
 
-    // data.copyFrom(voxelWorld);
+    // data.copyFrom(chunk);
     data.clearOccupancyMap();
     data.clearMaterialMap();
     {
         generateData();
     }
-    data.writeTo(voxelWorld);
+    data.writeTo(chunk);
 }

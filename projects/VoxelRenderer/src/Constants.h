@@ -7,7 +7,7 @@
 class Constants
 {
 public:
-    class VoxelWorld
+    class VoxelChunk
     {
     public:
         // This is equivalent to 2*4*4
@@ -23,5 +23,18 @@ public:
 
         // The max number of material definitions
         static constexpr uint32_t maxMaterialCount = 65536;
+    };
+
+    class VoxelChunkComponent
+    {
+    public:
+        static constexpr int chunkSize = 512;
+    };
+
+    class GameObject
+    {
+    public:
+        static constexpr bool isEventLoggingEnabled = false;
+        static constexpr bool isUpdateEventLoggingEnabled = false;
     };
 };

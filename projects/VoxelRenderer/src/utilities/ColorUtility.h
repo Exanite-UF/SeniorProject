@@ -26,5 +26,6 @@ public:
 
     // Converts an HTML/hexadecimal color code to linear [0, 1]
     // The alpha component can be excluded
-    static glm::vec4 srgbToLinear(std::string value);
+    static glm::vec4 htmlToLinear(const std::string& value);
+    static glm::vec4 htmlToSrgb(std::string value);
 };

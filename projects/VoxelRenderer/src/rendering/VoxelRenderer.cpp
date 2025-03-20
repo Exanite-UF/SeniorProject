@@ -1,31 +1,32 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <cmath>
+#include "VoxelRenderer.h"
+
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat3x3.hpp>
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 
-#include "VoxelRenderer.h"
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/OpenGl.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/world/Material.h>
 #include <src/world/MaterialManager.h>
-#include <src/world/VoxelWorld.h>
+#include <src/world/VoxelChunk.h>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
 GLuint VoxelRenderer::resetVisualInfoProgram;
 GLuint VoxelRenderer::fullCastProgram;
 GLuint VoxelRenderer::pathTraceToFramebufferProgram;
+GLuint VoxelRenderer::afterCastProgram;
 
 void VoxelRenderer::remakeTextures()
 {
@@ -67,15 +68,45 @@ void VoxelRenderer::handleDirtySizing()
 
 VoxelRenderer::VoxelRenderer()
 {
-
     prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
     resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
     resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
     fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
+    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader);
 
     pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader);
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
+}
+
+void VoxelRenderer::afterCast()
+{
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
+    GLuint workGroupsZ = raysPerPixel;
+
+    // Reset the hit info
+    glUseProgram(afterCastProgram);
+
+    rayHitMiscBuffer.bind(0);
+    attentuationBuffer1.bind(1);
+    attentuationBuffer2.bind(2);
+
+    glUniform3i(glGetUniformLocation(afterCastProgram, "resolution"), size.x, size.y, raysPerPixel);
+    glUniform1i(glGetUniformLocation(afterCastProgram, "currentBuffer"), currentBuffer % 2 == 0);
+
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
+
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    rayHitMiscBuffer.unbind();
+    attentuationBuffer1.unbind();
+    attentuationBuffer2.unbind();
+
+    glUseProgram(0);
 }
 
 void VoxelRenderer::setResolution(glm::ivec2 size)
@@ -147,10 +178,10 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     }
 
     resetHitInfo();
-    resetVisualInfo(resetLight);
+    resetVisualInfo(resetLight, true, true, resetLight);
 }
 
-void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, bool isFirstRay)
+void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
@@ -207,25 +238,25 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
         glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
         glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
-        for (auto& voxelWorld : worlds)
+        for (auto& chunkComponent : chunks)
         {
-            voxelWorld->bindBuffers(4, 5);
+            chunkComponent->getChunk()->bindBuffers(4, 5);
             {
-                glm::ivec3 voxelSize = voxelWorld->getSize();
+                glm::ivec3 voxelSize = chunkComponent->getChunk()->getSize();
 
                 glUniform3i(glGetUniformLocation(fullCastProgram, "cellCount"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), voxelWorld->getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), voxelWorld->getOccupancyMapIndices().size() - 1, voxelWorld->getOccupancyMapIndices().data());
+                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), chunkComponent->getChunk()->getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), chunkComponent->getChunk()->getOccupancyMapIndices().size() - 1, chunkComponent->getChunk()->getOccupancyMapIndices().data());
 
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(voxelWorld->transform.getGlobalPosition()));
-                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(voxelWorld->transform.getGlobalRotation()));
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(voxelWorld->transform.getGlobalScale()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalPosition()));
+                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
 
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
-            voxelWorld->unbindBuffers();
+            chunkComponent->getChunk()->unbindBuffers();
         }
     }
 
@@ -253,11 +284,13 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelWorld>>& wo
     currentBuffer++;
 }
 
-void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelWorld>>& worlds, int bounces)
+void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces)
 {
     for (int i = 0; i <= bounces; i++)
     {
-        executeRayTrace(worlds, i == 0);
+        executeRayTrace(chunks, i == 0);
+        afterCast();
+        resetVisualInfo(false, false, false, true);
     }
 }
 
@@ -286,16 +319,29 @@ void VoxelRenderer::resetHitInfo()
     glUseProgram(0);
 }
 
-void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
+void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool resetFirstHit, bool drawSkyBox)
 {
     glUseProgram(resetVisualInfoProgram);
 
-    attentuationBuffer1.bind(0);
-    accumulatedLightBuffer1.bind(1);
-    attentuationBuffer2.bind(2);
-    accumulatedLightBuffer2.bind(3);
-    normalBuffer.bind(4);
-    positionBuffer.bind(5);
+    // bind rayStart info
+    if (currentBuffer % 2 == 0)
+    {
+        rayStartBuffer1.bind(0); // Input
+        rayDirectionBuffer1.bind(1); // Input
+    }
+    else
+    {
+        rayStartBuffer2.bind(0); // Input
+        rayDirectionBuffer2.bind(1); // Input
+    }
+
+    attentuationBuffer1.bind(2);
+    accumulatedLightBuffer1.bind(3);
+    attentuationBuffer2.bind(4);
+    accumulatedLightBuffer2.bind(5);
+    normalBuffer.bind(6);
+    positionBuffer.bind(7);
+    materialBuffer.bind(8);
 
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (size.y + 8 - 1) / 8;
@@ -304,6 +350,9 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
     glUniform3i(glGetUniformLocation(resetVisualInfoProgram, "resolution"), size.x, size.y, raysPerPixel);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetLight"), resetLight);
     glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetAttentuation"), resetAttenuation);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "resetFirstHit"), resetFirstHit);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "drawSkybox"), drawSkyBox);
+    glUniform1i(glGetUniformLocation(resetVisualInfoProgram, "currentBuffer"), currentBuffer % 2 == 0);
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
@@ -312,12 +361,24 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation)
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
+    if (currentBuffer % 2 == 0)
+    {
+        rayStartBuffer1.unbind();
+        rayDirectionBuffer1.unbind();
+    }
+    else
+    {
+        rayStartBuffer2.unbind();
+        rayDirectionBuffer2.unbind();
+    }
+
     attentuationBuffer1.unbind();
     accumulatedLightBuffer1.unbind();
     attentuationBuffer2.unbind();
     accumulatedLightBuffer2.unbind();
     normalBuffer.unbind();
     positionBuffer.unbind();
+    materialBuffer.unbind();
 
     glUseProgram(0);
 }

@@ -2,11 +2,10 @@
 
 #include "TextureType.h"
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
 
 #include <src/utilities/NonCopyable.h>
+#include <src/utilities/OpenGl.h>
 
 class Texture : public NonCopyable
 {

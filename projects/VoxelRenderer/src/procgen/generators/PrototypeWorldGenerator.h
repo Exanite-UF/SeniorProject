@@ -14,7 +14,7 @@ private:
 
     // Stone Terrain
     int octaves = 3;
-    float persistence = 0.5; 
+    float persistence = 0.5;
     int baseHeight = 100;
     float frequency = 0.002;
     int terrainMaxAmplitude = 100;

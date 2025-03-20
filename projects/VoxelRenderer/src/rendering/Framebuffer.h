@@ -1,13 +1,14 @@
 #pragma once
 
-#include <GL/glew.h>
 #include <glm/vec2.hpp>
+
 #include <src/utilities/NonCopyable.h>
+#include <src/utilities/OpenGl.h>
 
 class Framebuffer : public NonCopyable
 {
 private:
-    glm::ivec2 size;
+    glm::ivec2 size {};
 
 public:
     GLuint framebufferId = 0;

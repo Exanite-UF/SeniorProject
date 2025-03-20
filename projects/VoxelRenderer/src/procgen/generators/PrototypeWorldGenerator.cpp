@@ -1,10 +1,11 @@
-#include <src/procgen/generators/PrototypeWorldGenerator.h>
-#include <imgui/imgui.h>
 #include <memory>
+
 #include <src/procgen/PrintUtility.h>
-#include <src/world/VoxelWorldData.h>
-#include <src/world/MaterialManager.h>
+#include <src/procgen/generators/PrototypeWorldGenerator.h>
+#include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
+#include <src/world/MaterialManager.h>
+#include <src/world/VoxelChunkData.h>
 
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 
@@ -48,7 +49,7 @@ void PrototypeWorldGenerator::generateData()
             }
 
             // Replace surface with dirt
-            for(int z = height; z >= height - dirtDepth; --z)
+            for (int z = height; z >= height - dirtDepth; --z)
             {
                 data.setVoxelMaterial({ x, y, z }, dirtMaterial);
             }
@@ -62,7 +63,7 @@ void PrototypeWorldGenerator::showDebugMenu()
     ImGui::PushID("PrototypeWorldGenerator");
     {
         if (ImGui::CollapsingHeader("Prototype World Generator (F8)"))
-        {   
+        {
             if (ImGui::BeginMenu("Stone Terrain"))
             {
                 ImGui::SliderInt("Base Height", &baseHeight, 0, data.getSize().z);

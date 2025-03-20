@@ -11,7 +11,7 @@ protected:
     void generateData() override;
 
 public:
-    ExaniteWorldGenerator(glm::ivec3 worldSize);
+    ExaniteWorldGenerator(glm::ivec3 chunkSize);
 
     void showDebugMenu() override;
 };

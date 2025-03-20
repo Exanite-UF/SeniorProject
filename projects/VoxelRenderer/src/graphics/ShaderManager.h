@@ -1,7 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <src/utilities/OpenGl.h>
 
 #include <string>
 #include <tuple>
@@ -12,6 +11,8 @@
 
 class ShaderManager : public Singleton<ShaderManager>
 {
+    friend class Singleton;
+
 private:
     // (shaderPath, shaderType) -> (shaderModule)
     std::unordered_map<std::tuple<std::string, GLenum>, GLuint, TupleHasher<std::tuple<std::string, GLenum>>> shaderModules;
