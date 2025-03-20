@@ -511,6 +511,8 @@ void Program::run()
                         exampleWorldGenerator.showDebugMenu();
                         octaveWorldGenerator.showDebugMenu();
 
+                        voxelChunkManager.showDebugMenu();
+
                         break;
                     }
                     case 3:
