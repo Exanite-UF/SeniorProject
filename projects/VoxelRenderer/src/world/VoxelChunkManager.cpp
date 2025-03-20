@@ -153,12 +153,14 @@ void VoxelChunkManager::update(float deltaTime)
     if (data.isChunkUnloadingDirty)
     {
         // Check for chunks to unload
+        int chunksUpdated = 0;
         std::vector<glm::ivec2> chunksToUnload {};
         for (auto& loadedChunk : data.loadedChunks)
         {
             if (loadedChunk.second.isUnloading)
             {
                 loadedChunk.second.unloadWaitTime += deltaTime;
+                chunksUpdated++;
 
                 if (loadedChunk.second.unloadWaitTime > data.chunkUnloadTime)
                 {
@@ -171,6 +173,12 @@ void VoxelChunkManager::update(float deltaTime)
         {
             data.loadedChunks.erase(chunkToUnload);
             // TODO: Actually unload the chunk
+        }
+
+        if (chunksUpdated == 0)
+        {
+            // No chunks have been updated this frame so we can stop checking until we are notified to start checking again
+            data.isChunkUnloadingDirty = false;
         }
     }
 }
