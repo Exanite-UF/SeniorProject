@@ -1,11 +1,10 @@
 #include "VoxelChunkManager.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
-
 #include <algorithm>
+#include <condition_variable>
 #include <format>
 #include <memory>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -16,74 +15,77 @@
 #include <src/utilities/ImGui.h>
 #include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
-
-// TODO: Move these types into the header
-struct LoadedChunkData
-{
-public:
-    std::shared_ptr<VoxelChunkComponent> chunk {};
-    glm::ivec2 chunkPosition;
-
-    bool isUnloading = false;
-    float unloadWaitTime = 0;
-
-    explicit LoadedChunkData(const glm::ivec2& chunkPosition)
-    {
-        this->chunkPosition = chunkPosition;
-    }
-};
-
-struct Data
-{
-public:
-    // ----- Rendering -----
-
-    // The distance at which chunks begin to be generated on a separate thread
-    int generationDistance = 3; // TODO
-
-    // The distance at which chunks are loaded and uploaded to the GPU
-    int renderDistance = 2;
-
-    // ----- Unloading -----
-
-    // Delay before a chunk marked for unloading is actually unloaded
-    float chunkUnloadTime = 1;
-
-    // ----- Camera -----
-
-    glm::vec3 cameraWorldPosition {};
-    glm::ivec2 cameraChunkPosition {};
-
-    // ----- Caching -----
-
-    // If true, then we need to check for chunks to load/unload and *mark* them as such. We will load/unload them in a separate step
-    bool isChunkLoadingDirty = true;
-
-    // If true, then we need to check for chunks to unload
-    bool isChunkUnloadingDirty = true;
-
-    // ----- Chunks -----
-
-    std::unordered_map<glm::ivec2, LoadedChunkData> loadedChunks {};
-};
-
-// TODO: Don't store this here
-Data data;
+#include <src/world/VoxelChunkData.h>
 
 VoxelChunkManager::~VoxelChunkManager()
 {
     Log::log("Cleaning up VoxelChunkManager");
+
+    isRunning = false;
+
+    data.chunkLoadingThreadCondition.notify_all();
+    if (data.chunkLoadingThread.joinable())
+    {
+        data.chunkLoadingThread.join();
+    }
 }
 
 void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 {
-    Assert::isTrue(!isInitialized, "VoxelChunkManager has already been initialized");
+    Assert::isTrue(!isRunning, "VoxelChunkManager has already been initialized");
 
-    isInitialized = true;
-
+    isRunning = true;
     this->scene = scene;
 
+    Log::log("Initializing VoxelChunkManager");
+
+    data.chunkLoadingThread = std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this);
+
     Log::log("Initialized VoxelChunkManager");
+}
+
+void VoxelChunkManager::chunkLoaderThreadEntrypoint()
+{
+    Log::log("Started VoxelChunkManager chunk loading thread");
+
+    while (isRunning)
+    {
+        // Create pending requests lock, but don't lock the mutex
+        // Locking is done by condition variable below
+        std::unique_lock pendingRequestsLock(data.pendingChunkLoadRequestsMutex, std::defer_lock);
+
+        // Wait for new requests to come in
+        data.chunkLoadingThreadCondition.wait(pendingRequestsLock, [&]()
+            {
+                return !data.pendingRequests.empty() || !isRunning;
+            });
+
+        if (data.pendingRequests.empty() || !isRunning)
+        {
+            continue;
+        }
+
+        // Take some work
+        auto request = data.pendingRequests.front();
+        data.pendingRequests.pop();
+
+        // Unlock the lock
+        pendingRequestsLock.unlock();
+
+        // Generate chunk
+        Log::log(std::format("Generating chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
+
+        request->chunkData.setSize(request->chunkSize);
+        // TODO: Actually generate chunk
+
+        // Acquire completed requests mutex
+        std::unique_lock completedRequestsLock(data.completedChunkLoadRequestsMutex);
+
+        // Publish completed request
+        data.completedRequests.push(request);
+    }
+
+    Log::log("Stopped VoxelChunkManager chunk loading thread");
 }
 
 void VoxelChunkManager::update(float deltaTime)
@@ -91,7 +93,10 @@ void VoxelChunkManager::update(float deltaTime)
     // Calculate new camera chunk position
     data.cameraWorldPosition = scene->camera->getTransform()->getGlobalPosition();
 
-    auto newCameraChunkPosition = glm::ivec2(glm::round((glm::vec2(data.cameraWorldPosition) - glm::vec2(Constants::VoxelChunkComponent::chunkSize / 2)) / static_cast<float>(Constants::VoxelChunkComponent::chunkSize)));
+    auto newCameraChunkPosition = glm::ivec2(glm::round(glm::vec2(
+        data.cameraWorldPosition.x / Constants::VoxelChunkComponent::chunkSize.x - 0.5f,
+        data.cameraWorldPosition.y / Constants::VoxelChunkComponent::chunkSize.y - 0.5f)));
+
     if (data.cameraChunkPosition != newCameraChunkPosition)
     {
         // Camera chunk position has changed, we may need to load new chunks
@@ -150,6 +155,8 @@ void VoxelChunkManager::update(float deltaTime)
 
             // Load the chunk
             data.loadedChunks.emplace(chunkToLoad, LoadedChunkData(chunkToLoad));
+            // TODO: Acquire lock
+            data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, Constants::VoxelChunkComponent::chunkSize));
             // TODO: Send a job to a worker thread to either load the chunk from disk or generate the chunk
 
             Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));

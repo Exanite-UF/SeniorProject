@@ -5,6 +5,15 @@
 #include <src/world/VoxelChunkUtility.h>
 #include <stdexcept>
 
+VoxelChunkData::VoxelChunkData()
+{
+}
+
+VoxelChunkData::VoxelChunkData(const glm::ivec3& size)
+{
+    setSize(size);
+}
+
 const glm::ivec3& VoxelChunkData::getSize() const
 {
     return size;
