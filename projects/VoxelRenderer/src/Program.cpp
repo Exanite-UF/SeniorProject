@@ -39,6 +39,7 @@
 #include <src/procgen/generators/ExampleWorldGenerator.h>
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
+#include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOpenSimplexNoiseSynthesizer.h>
@@ -333,9 +334,11 @@ void Program::run()
     int seed = 0;
     int octaves = 3;
     float persistence = 0.5;
-    // auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
+    auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
+    
     TextureHeightmapWorldGenerator octaveWorldGenerator(worldSize, openSimplexSynthesizer);
+    PrototypeWorldGenerator prototypeWorldGenerator(worldSize, octaveSynthesizer); 
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -469,10 +472,10 @@ void Program::run()
                 exampleWorldGenerator.generate(*voxelWorld);
             }
 
-            octaveWorldGenerator.showDebugMenu();
+            prototypeWorldGenerator.showDebugMenu();
             if (input->isKeyPressed(GLFW_KEY_F8))
             {
-                octaveWorldGenerator.generate(*voxelWorld);
+                prototypeWorldGenerator.generate(*voxelWorld);
             }
 
             if (input->isKeyPressed(GLFW_KEY_F9))

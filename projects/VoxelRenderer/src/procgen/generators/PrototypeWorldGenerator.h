@@ -9,7 +9,18 @@ class PrototypeWorldGenerator : public WorldGenerator
 private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureData> textureData;
-    float baseHeight = 100;
+
+    int seed = 0;
+
+    // Stone Terrain
+    int octaves = 3;
+    float persistence = 0.5; 
+    int baseHeight = 100;
+    float frequency = 0.002;
+    int terrainMaxAmplitude = 100;
+
+    // Replace surface with dirt
+    int dirtDepth = 5;
 
     void generateData() override;
 

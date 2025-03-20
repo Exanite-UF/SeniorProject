@@ -17,6 +17,15 @@ MaterialManager::MaterialManager()
     }
 
     {
+        auto& material = createMaterial("stone", "stone");
+        material->albedo = ColorUtility::srgbToLinear("#ababab");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
         auto& material = createMaterial("blue_light", "Blue Light");
         material->albedo = glm::vec3(1);
         material->emission = ColorUtility::srgbToLinear("#09e4e8");
