@@ -29,7 +29,15 @@ void PrototypeWorldGenerator::generateData()
     if (!materialManager.tryGetMaterialByKey(dirtMaterialKey, dirtMaterial))
     {
         dirtMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find Material with id '" + dirtMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::log("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + stoneMaterial->getKey() + "' instead.");
+    }
+    
+    std::shared_ptr<Material> grassMaterial;
+    std::string grassMaterialKey = "grass";
+    if (!materialManager.tryGetMaterialByKey(grassMaterialKey, grassMaterial))
+    {
+        grassMaterial = materialManager.getMaterialByIndex(0);
+        Log::log("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
@@ -49,11 +57,20 @@ void PrototypeWorldGenerator::generateData()
                 data.setVoxelMaterial({ x, y, z }, stoneMaterial);
             }
 
+            // Replace surface with grass
+            int lastHeight = height - 1;
+            for (int z = lastHeight; z >= lastHeight - grassDepth && z >= 0; --z)
+            {
+                data.setVoxelMaterial({ x, y, z }, grassMaterial);
+            }
+            lastHeight -= grassDepth;
+            
             // Replace surface with dirt
-            for (int z = height; z >= height - dirtDepth; --z)
+            for (int z = lastHeight; z >= lastHeight - dirtDepth && z >= 0; --z)
             {
                 data.setVoxelMaterial({ x, y, z }, dirtMaterial);
             }
+            lastHeight -= dirtDepth;
         }
     }
 }
@@ -78,6 +95,7 @@ void PrototypeWorldGenerator::showDebugMenu()
 
             if (ImGui::BeginMenu("Surface Dirt"))
             {
+                ImGui::SliderInt("Grass Depth", &grassDepth, 0, 20);
                 ImGui::SliderInt("Dirt Depth", &dirtDepth, 0, 20);
 
                 ImGui::EndMenu();
