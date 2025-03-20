@@ -8,9 +8,9 @@
 class ImGuiUtility
 {
 public:
-    static ImVec2 toImVec2(const glm::vec2& vec);
-    static glm::vec2 toGlmVec2(const ImVec2& vec);
+    static ImVec2 toImGui(const glm::vec2& vec);
+    static glm::vec2 toGlm(const ImVec2& vec);
 
-    static ImVec4 toImVec4(const glm::vec4& vec);
-    static glm::vec4 toGlmVec4(const ImVec4& vec);
+    static ImVec4 toImGui(const glm::vec4& vec);
+    static glm::vec4 toGlm(const ImVec4& vec);
 };
