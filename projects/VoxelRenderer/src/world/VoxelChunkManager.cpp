@@ -23,7 +23,11 @@ VoxelChunkManager::~VoxelChunkManager()
 
     isRunning = false;
 
-    data.chunkLoadingThreadCondition.notify_all();
+    {
+        std::lock_guard lock(data.pendingChunkLoadRequestsMutex);
+        data.chunkLoadingThreadCondition.notify_all();
+    }
+
     if (data.chunkLoadingThread.joinable())
     {
         data.chunkLoadingThread.join();
@@ -52,7 +56,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
     {
         // Create pending requests lock, but don't lock the mutex
         // Locking is done by condition variable below
-        std::unique_lock pendingRequestsLock(data.pendingChunkLoadRequestsMutex, std::defer_lock);
+        std::unique_lock pendingRequestsLock(data.pendingChunkLoadRequestsMutex);
 
         // Wait for new requests to come in
         data.chunkLoadingThreadCondition.wait(pendingRequestsLock, [&]()
