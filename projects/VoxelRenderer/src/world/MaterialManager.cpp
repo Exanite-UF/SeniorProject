@@ -9,7 +9,7 @@ MaterialManager::MaterialManager()
     // Define custom materials
     {
         auto& material = createMaterial("dirt", "Dirt");
-        material->albedo = ColorUtility::srgbToLinear("#70381c");
+        material->albedo = ColorUtility::htmlToLinear("#70381c");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -19,7 +19,7 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("blue_light", "Blue Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::srgbToLinear("#09e4e8");
+        material->emission = ColorUtility::htmlToLinear("#09e4e8");
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
@@ -28,7 +28,7 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("red_light", "Red Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::srgbToLinear("#ff0000");
+        material->emission = ColorUtility::htmlToLinear("#ff0000");
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
@@ -37,7 +37,7 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("yellow_light", "Yellow Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::srgbToLinear("#ffff00");
+        material->emission = ColorUtility::htmlToLinear("#ffff00");
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
@@ -46,7 +46,7 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("green_light", "Green Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::srgbToLinear("#00ff00");
+        material->emission = ColorUtility::htmlToLinear("#00ff00");
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
