@@ -1,13 +1,14 @@
 #include <memory>
 
+#include <PerlinNoise/PerlinNoise.hpp>
+
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
+#include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
-
-#include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 
 void PrototypeWorldGenerator::generateData()
 {
@@ -59,7 +60,7 @@ void PrototypeWorldGenerator::generateData()
 
 void PrototypeWorldGenerator::showDebugMenu()
 {
-    // TODO: Testing. Once finalized, add to existing Imgwui fields.
+    // TODO: Testing. Once finalized, add to existing Imgui fields.
     ImGui::PushID("PrototypeWorldGenerator");
     {
         if (ImGui::CollapsingHeader("Prototype World Generator (F8)"))
