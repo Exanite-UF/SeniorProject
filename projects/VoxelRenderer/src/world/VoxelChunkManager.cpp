@@ -4,8 +4,10 @@
 #include <glm/gtx/hash.hpp>
 
 #include <algorithm>
+#include <condition_variable>
 #include <format>
 #include <memory>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -16,6 +18,22 @@
 #include <src/utilities/ImGui.h>
 #include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
+#include <src/world/VoxelChunkData.h>
+
+struct ChunkLoadRequest
+{
+public:
+    glm::ivec2 chunkPosition;
+    glm::ivec3 chunkSize;
+
+    VoxelChunkData chunkData;
+
+    explicit ChunkLoadRequest(glm::ivec2 chunkPosition, glm::ivec3 chunkSize)
+    {
+        this->chunkPosition = chunkPosition;
+        this->chunkSize = chunkSize;
+    }
+};
 
 // TODO: Move these types into the header
 struct LoadedChunkData
@@ -23,6 +41,8 @@ struct LoadedChunkData
 public:
     std::shared_ptr<VoxelChunkComponent> chunk {};
     glm::ivec2 chunkPosition;
+
+    bool isLoading = true;
 
     bool isUnloading = false;
     float unloadWaitTime = 0;
@@ -43,6 +63,15 @@ public:
 
     // The distance at which chunks are loaded and uploaded to the GPU
     int renderDistance = 2;
+
+    // ----- Loading -----
+
+    std::mutex pendingChunkLoadRequestsMutex {};
+    std::mutex completedChunkLoadRequestsMutex {};
+    std::condition_variable pendingChunkRequestsUpdatedCondition {};
+
+    std::queue<std::shared_ptr<ChunkLoadRequest>> pendingRequests {};
+    std::queue<std::shared_ptr<ChunkLoadRequest>> completedRequests {};
 
     // ----- Unloading -----
 
@@ -91,7 +120,10 @@ void VoxelChunkManager::update(float deltaTime)
     // Calculate new camera chunk position
     data.cameraWorldPosition = scene->camera->getTransform()->getGlobalPosition();
 
-    auto newCameraChunkPosition = glm::ivec2(glm::round((glm::vec2(data.cameraWorldPosition) - glm::vec2(Constants::VoxelChunkComponent::chunkSize / 2)) / static_cast<float>(Constants::VoxelChunkComponent::chunkSize)));
+    auto newCameraChunkPosition = glm::ivec2(glm::round(glm::vec2(
+        data.cameraWorldPosition.x / Constants::VoxelChunkComponent::chunkSize.x - 0.5f,
+        data.cameraWorldPosition.y / Constants::VoxelChunkComponent::chunkSize.y - 0.5f)));
+
     if (data.cameraChunkPosition != newCameraChunkPosition)
     {
         // Camera chunk position has changed, we may need to load new chunks
@@ -150,6 +182,7 @@ void VoxelChunkManager::update(float deltaTime)
 
             // Load the chunk
             data.loadedChunks.emplace(chunkToLoad, LoadedChunkData(chunkToLoad));
+            data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, Constants::VoxelChunkComponent::chunkSize));
             // TODO: Send a job to a worker thread to either load the chunk from disk or generate the chunk
 
             Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
