@@ -60,7 +60,8 @@ private:
 
         // ----- Loading -----
 
-        std::thread chunkLoadingThread {};
+        int chunkLoadingThreadCount = 0;
+        std::vector<std::thread> chunkLoadingThreads {};
 
         // Used to wake up the chunk loading thread
         std::condition_variable chunkLoadingThreadCondition {};

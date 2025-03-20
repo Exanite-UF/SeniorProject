@@ -28,9 +28,14 @@ VoxelChunkManager::~VoxelChunkManager()
         data.chunkLoadingThreadCondition.notify_all();
     }
 
-    if (data.chunkLoadingThread.joinable())
+    Log::log("Stopping VoxelChunkManager chunk loading threads");
+
+    for (auto& thread : data.chunkLoadingThreads)
     {
-        data.chunkLoadingThread.join();
+        if (thread.joinable())
+        {
+            thread.join();
+        }
     }
 }
 
@@ -43,7 +48,12 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 
     Log::log("Initializing VoxelChunkManager");
 
-    data.chunkLoadingThread = std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this);
+    data.chunkLoadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
+    Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", data.chunkLoadingThreadCount));
+    for (int i = 0; i < data.chunkLoadingThreadCount; ++i)
+    {
+        data.chunkLoadingThreads.push_back(std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this));
+    }
 
     Log::log("Initialized VoxelChunkManager");
 }
