@@ -300,7 +300,7 @@ void Program::run()
         // Update systems
         window->update();
         inputManager->update();
-        voxelChunkManager.update();
+        voxelChunkManager.update(deltaTime);
         sceneObject->update();
 
         // Update

@@ -15,7 +15,7 @@ private:
 public:
     void initialize(const std::shared_ptr<SceneComponent>& scene);
 
-    void update();
+    void update(float deltaTime);
     void showDebugMenu();
 
     ~VoxelChunkManager();
