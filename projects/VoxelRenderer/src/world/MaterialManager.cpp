@@ -18,7 +18,7 @@ MaterialManager::MaterialManager()
 
     {
         auto& material = createMaterial("stone", "stone");
-        material->albedo = ColorUtility::srgbToLinear("#ababab");
+        material->albedo = ColorUtility::htmlToLinear("#ababab");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
