@@ -20,17 +20,70 @@
 VoxelChunkManager::~VoxelChunkManager()
 {
     Log::log("Cleaning up VoxelChunkManager");
+
+    isRunning = false;
+
+    data.chunkLoadingThreadCondition.notify_all();
+    if (data.chunkLoadingThread.joinable())
+    {
+        data.chunkLoadingThread.join();
+    }
 }
 
 void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 {
-    Assert::isTrue(!isInitialized, "VoxelChunkManager has already been initialized");
+    Assert::isTrue(!isRunning, "VoxelChunkManager has already been initialized");
 
-    isInitialized = true;
-
+    isRunning = true;
     this->scene = scene;
 
+    Log::log("Initializing VoxelChunkManager");
+
+    data.chunkLoadingThread = std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this);
+
     Log::log("Initialized VoxelChunkManager");
+}
+
+void VoxelChunkManager::chunkLoaderThreadEntrypoint()
+{
+    Log::log("Started VoxelChunkManager chunk loading thread");
+
+    while (isRunning)
+    {
+        // Create pending requests lock, but don't lock the mutex
+        // Locking is done by condition variable below
+        std::unique_lock pendingRequestsLock(data.pendingChunkLoadRequestsMutex, std::defer_lock);
+
+        // Wait for new requests to come in
+        data.chunkLoadingThreadCondition.wait(pendingRequestsLock, [&]()
+            {
+                return !data.pendingRequests.empty() || !isRunning;
+            });
+
+        if (data.pendingRequests.empty() || !isRunning)
+        {
+            continue;
+        }
+
+        // Take some work
+        auto request = data.pendingRequests.front();
+        data.pendingRequests.pop();
+
+        // Unlock the lock
+        pendingRequestsLock.unlock();
+
+        // Generate chunk
+        request->chunkData.setSize(request->chunkSize);
+        // TODO: Actually generate chunk
+
+        // Acquire completed requests mutex
+        std::unique_lock completedRequestsLock(data.completedChunkLoadRequestsMutex);
+
+        // Publish completed request
+        data.completedRequests.push(request);
+    }
+
+    Log::log("Stopped VoxelChunkManager chunk loading thread");
 }
 
 void VoxelChunkManager::update(float deltaTime)
@@ -100,6 +153,7 @@ void VoxelChunkManager::update(float deltaTime)
 
             // Load the chunk
             data.loadedChunks.emplace(chunkToLoad, LoadedChunkData(chunkToLoad));
+            // TODO: Acquire lock
             data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, Constants::VoxelChunkComponent::chunkSize));
             // TODO: Send a job to a worker thread to either load the chunk from disk or generate the chunk
 

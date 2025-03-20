@@ -60,9 +60,13 @@ private:
 
         // ----- Loading -----
 
+        std::thread chunkLoadingThread {};
+
+        // Used to wake up the chunk loading thread
+        std::condition_variable chunkLoadingThreadCondition {};
+
         std::mutex pendingChunkLoadRequestsMutex {};
         std::mutex completedChunkLoadRequestsMutex {};
-        std::condition_variable pendingChunkRequestsUpdatedCondition {};
 
         std::queue<std::shared_ptr<ChunkLoadRequest>> pendingRequests {};
         std::queue<std::shared_ptr<ChunkLoadRequest>> completedRequests {};
@@ -91,10 +95,12 @@ private:
     };
 
 private:
-    bool isInitialized = false;
+    std::atomic<bool> isRunning = false;
     std::shared_ptr<SceneComponent> scene;
 
     ManagerData data;
+
+    void chunkLoaderThreadEntrypoint();
 
 public:
     void initialize(const std::shared_ptr<SceneComponent>& scene);
