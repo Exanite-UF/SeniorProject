@@ -1,8 +1,5 @@
 #include "VoxelChunkManager.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
-
 #include <algorithm>
 #include <condition_variable>
 #include <format>
@@ -19,85 +16,6 @@
 #include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
 #include <src/world/VoxelChunkData.h>
-
-struct ChunkLoadRequest
-{
-public:
-    glm::ivec2 chunkPosition;
-    glm::ivec3 chunkSize;
-
-    VoxelChunkData chunkData;
-
-    explicit ChunkLoadRequest(glm::ivec2 chunkPosition, glm::ivec3 chunkSize)
-    {
-        this->chunkPosition = chunkPosition;
-        this->chunkSize = chunkSize;
-    }
-};
-
-// TODO: Move these types into the header
-struct LoadedChunkData
-{
-public:
-    std::shared_ptr<VoxelChunkComponent> chunk {};
-    glm::ivec2 chunkPosition;
-
-    bool isLoading = true;
-
-    bool isUnloading = false;
-    float unloadWaitTime = 0;
-
-    explicit LoadedChunkData(const glm::ivec2& chunkPosition)
-    {
-        this->chunkPosition = chunkPosition;
-    }
-};
-
-struct Data
-{
-public:
-    // ----- Rendering -----
-
-    // The distance at which chunks begin to be generated on a separate thread
-    int generationDistance = 3; // TODO
-
-    // The distance at which chunks are loaded and uploaded to the GPU
-    int renderDistance = 2;
-
-    // ----- Loading -----
-
-    std::mutex pendingChunkLoadRequestsMutex {};
-    std::mutex completedChunkLoadRequestsMutex {};
-    std::condition_variable pendingChunkRequestsUpdatedCondition {};
-
-    std::queue<std::shared_ptr<ChunkLoadRequest>> pendingRequests {};
-    std::queue<std::shared_ptr<ChunkLoadRequest>> completedRequests {};
-
-    // ----- Unloading -----
-
-    // Delay before a chunk marked for unloading is actually unloaded
-    float chunkUnloadTime = 1;
-
-    // ----- Camera -----
-
-    glm::vec3 cameraWorldPosition {};
-    glm::ivec2 cameraChunkPosition {};
-
-    // ----- Caching -----
-
-    // If true, then we need to check for chunks to load/unload and *mark* them as such. We will load/unload them in a separate step
-    bool isChunkLoadingDirty = true;
-
-    // If true, then we need to check for chunks to unload
-    bool isChunkUnloadingDirty = true;
-
-    // ----- Chunks -----
-
-    std::unordered_map<glm::ivec2, LoadedChunkData> loadedChunks {};
-};
-
-// TODO: Don't store this here
-Data data;
 
 VoxelChunkManager::~VoxelChunkManager()
 {
