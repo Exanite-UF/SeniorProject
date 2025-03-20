@@ -31,7 +31,7 @@ void PrototypeWorldGenerator::generateData()
         dirtMaterial = materialManager.getMaterialByIndex(0);
         Log::log("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
-    
+
     std::shared_ptr<Material> grassMaterial;
     std::string grassMaterialKey = "grass";
     if (!materialManager.tryGetMaterialByKey(grassMaterialKey, grassMaterial))
@@ -64,7 +64,7 @@ void PrototypeWorldGenerator::generateData()
                 data.setVoxelMaterial({ x, y, z }, grassMaterial);
             }
             lastHeight -= grassDepth;
-            
+
             // Replace surface with dirt
             for (int z = lastHeight; z >= lastHeight - dirtDepth && z >= 0; --z)
             {
