@@ -13,7 +13,7 @@ private:
     std::shared_ptr<VoxelChunk> chunk;
 
 public:
-    explicit VoxelChunkComponent(glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize);
+    explicit VoxelChunkComponent(glm::ivec3 chunkSize = glm::ivec3(Constants::VoxelChunkComponent::chunkSize));
 
     std::shared_ptr<VoxelChunk>& getChunk();
 };
