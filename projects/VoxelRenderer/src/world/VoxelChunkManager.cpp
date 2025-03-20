@@ -16,12 +16,7 @@
 #include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
 
-struct CameraData
-{
-public:
-    glm::ivec3 previousPosition {};
-};
-
+// TODO: Move these types into the header
 struct LoadedChunk
 {
 public:
@@ -32,7 +27,10 @@ struct Data
 {
 public:
     int renderDistance = 2;
-    CameraData cameraData {};
+
+    glm::vec3 cameraWorldPosition {};
+    glm::ivec2 cameraChunkPosition {};
+
     std::unordered_map<glm::ivec2, LoadedChunk> loadedChunks {};
 };
 
@@ -66,8 +64,9 @@ void VoxelChunkManager::showDebugMenu()
         ImGui::Text("%s", std::format("Loaded chunk count: {}", data.loadedChunks.size()).c_str());
 
         {
-            int rowCount = 2 * data.renderDistance + 1;
-            int columnCount = 2 * data.renderDistance + 1;
+            int displayDistance = data.renderDistance * 2;
+            int rowCount = 2 * displayDistance + 1;
+            int columnCount = 2 * displayDistance + 1;
             float squareSize = 10;
             float padding = 2;
 
@@ -76,8 +75,10 @@ void VoxelChunkManager::showDebugMenu()
             auto drawPosition = ImGui::GetCursorPos();
 
             auto unloadedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
-            auto loddedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
+            auto loadingColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
+            auto unloadingColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
             auto loadedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
+            auto loddedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
 
             auto basePosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
 
@@ -85,10 +86,20 @@ void VoxelChunkManager::showDebugMenu()
             {
                 for (int x = 0; x < columnCount; ++x)
                 {
+                    auto chunkPosition = data.cameraChunkPosition + glm::ivec2(x, y) - glm::ivec2(data.renderDistance + 1);
+
                     auto topLeft = basePosition + (squareSize + padding) * glm::vec2(x, y);
                     auto bottomRight = topLeft + glm::vec2(squareSize);
 
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(topLeft), ImGuiUtility::toImGui(bottomRight), unloadedColor);
+                    auto color = unloadedColor;
+
+                    auto chunkIterator = data.loadedChunks.find(chunkPosition);
+                    if (chunkIterator != data.loadedChunks.end())
+                    {
+                        color = loadedColor;
+                    }
+
+                    drawList->AddRectFilled(ImGuiUtility::toImGui(topLeft), ImGuiUtility::toImGui(bottomRight), color);
                 }
             }
         }
