@@ -18,6 +18,9 @@ private:
     std::vector<uint16_t> materialMap {};
 
 public:
+    VoxelChunkData();
+    explicit VoxelChunkData(const glm::ivec3& size);
+
     [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(const glm::ivec3& size);
 
