@@ -1,5 +1,7 @@
 #include "Component.h"
 
+#include <format>
+
 #include <src/Constants.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>

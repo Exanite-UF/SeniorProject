@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 #include <src/gameobjects/Component.h>
 #include <src/utilities/NonCopyable.h>

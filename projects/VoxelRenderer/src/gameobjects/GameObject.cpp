@@ -1,10 +1,11 @@
 #include "GameObject.h"
 
+#include <format>
+
 #include <src/Constants.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
-
-#include "TransformComponent.h"
+#include <src/gameobjects/TransformComponent.h>
 
 GameObject::GameObject(const std::string& name)
 {
