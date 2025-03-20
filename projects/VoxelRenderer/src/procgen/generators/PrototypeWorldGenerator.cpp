@@ -3,12 +3,24 @@
 #include <memory>
 #include <src/procgen/PrintUtility.h>
 #include <src/world/VoxelWorldData.h>
+#include <src/world/MaterialManager.h>
+#include <src/utilities/Log.h>
 
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 
 void PrototypeWorldGenerator::generateData()
 {
     glm::ivec3 size = { data.getSize().x, data.getSize().y, 1 };
+
+    auto& materialManager = MaterialManager::getInstance();
+    
+    std::shared_ptr<Material> stoneMaterial;
+    std::string materialKey = "stone";
+    if (!materialManager.tryGetMaterialByKey(materialKey, stoneMaterial))
+    {
+        stoneMaterial = materialManager.getMaterialByIndex(0);
+        Log::log("Failed to find stoneMaterial with id '" + materialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+    }
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
@@ -21,9 +33,11 @@ void PrototypeWorldGenerator::generateData()
             int offset = (int)(baseHeight + (perlinNoiseSample * terrainMaxAmplitude));
             int height = glm::min(data.getSize().z, offset);
 
+            
             for (int z = 0; z < height; ++z)
             {
                 data.setVoxelOccupancy({ x, y, z }, true);
+                data.setVoxelMaterial({ x, y, z }, stoneMaterial);
             }
         }
     }
@@ -40,12 +54,7 @@ void PrototypeWorldGenerator::showDebugMenu()
             ImGui::SliderInt("Octaves", &octaves, 1, 5);
             ImGui::SliderFloat("Persistence", &persistence, 0, 1);
             ImGui::SliderFloat("Frequency", &frequency, 0, 1);
-            
-    int octaves = 3;
-    float persistence = 0.5; 
-    int baseHeight = 100;
-    float frequency = 10;
-    int terrainMaxAmplitude = 100;
+
             textureDataSynthesizer->showDebugMenu();
             if (ImGui::Button("Print Texture"))
             {
