@@ -5,7 +5,7 @@
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
 #include <src/world/VoxelChunkData.h>
 
-void TextureHeightmapWorldGenerator::generateData()
+void TextureHeightmapWorldGenerator::generateData(VoxelChunkData& data)
 {
     glm::ivec3 size = { data.getSize().x, data.getSize().y, 1 };
     this->textureData = std::make_shared<TextureData>(size);
@@ -27,6 +27,12 @@ void TextureHeightmapWorldGenerator::generateData()
     }
 }
 
+TextureHeightmapWorldGenerator::TextureHeightmapWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
+{
+    this->chunkSize = chunkSize;
+    this->textureDataSynthesizer = textureDataSynthesizer;
+}
+
 void TextureHeightmapWorldGenerator::showDebugMenu()
 {
     // TODO: Testing. Once finalized, add to existing Imgui fields.
@@ -34,7 +40,7 @@ void TextureHeightmapWorldGenerator::showDebugMenu()
     {
         if (ImGui::CollapsingHeader("Texture-Heightmap World Generator"))
         {
-            ImGui::SliderFloat("Base Height", &baseHeight, 0, data.getSize().z);
+            ImGui::SliderFloat("Base Height", &baseHeight, 0, chunkSize.z);
             textureDataSynthesizer->showDebugMenu();
             if (ImGui::Button("Print Texture"))
             {

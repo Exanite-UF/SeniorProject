@@ -3,21 +3,18 @@
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/procgen/synthesizers/TextureDataSynthesizer.h>
 
-// TODO: Idea: Reduce octaves for farther away positions ~ level of detail
 class TextureHeightmapWorldGenerator : public WorldGenerator
 {
 private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureData> textureData;
     float baseHeight = 100;
+    glm::ivec3 chunkSize;
 
-    void generateData() override;
+    void generateData(VoxelChunkData& data) override;
 
 public:
-    TextureHeightmapWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
-        : WorldGenerator(chunkSize)
-    {
-        this->textureDataSynthesizer = textureDataSynthesizer;
-    }
+    explicit TextureHeightmapWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
+
     void showDebugMenu() override;
 };

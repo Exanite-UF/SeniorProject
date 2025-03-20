@@ -10,6 +10,7 @@ private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureData> textureData;
 
+    glm::ivec3 chunkSize;
     int seed = 0;
 
     // Stone Terrain
@@ -25,13 +26,10 @@ private:
     // Replace surface with grass
     int grassDepth = 1;
 
-    void generateData() override;
+    void generateData(VoxelChunkData& data) override;
 
 public:
-    PrototypeWorldGenerator(glm::ivec3 worldSize, std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer)
-        : WorldGenerator(worldSize)
-    {
-        this->textureDataSynthesizer = textureDataSynthesizer;
-    }
+    explicit PrototypeWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
+
     void showDebugMenu() override;
 };

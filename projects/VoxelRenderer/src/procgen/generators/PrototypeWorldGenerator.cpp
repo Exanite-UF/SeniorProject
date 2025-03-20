@@ -10,7 +10,7 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
 
-void PrototypeWorldGenerator::generateData()
+void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
     glm::ivec3 size = { data.getSize().x, data.getSize().y, 1 };
 
@@ -75,6 +75,13 @@ void PrototypeWorldGenerator::generateData()
     }
 }
 
+PrototypeWorldGenerator::PrototypeWorldGenerator(const glm::ivec3& chunkSize,
+    const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
+{
+    this->chunkSize = chunkSize;
+    this->textureDataSynthesizer = textureDataSynthesizer;
+}
+
 void PrototypeWorldGenerator::showDebugMenu()
 {
     // TODO: Testing. Once finalized, add to existing Imgui fields.
@@ -84,11 +91,11 @@ void PrototypeWorldGenerator::showDebugMenu()
         {
             if (ImGui::BeginMenu("Stone Terrain"))
             {
-                ImGui::SliderInt("Base Height", &baseHeight, 0, data.getSize().z);
+                ImGui::SliderInt("Base Height", &baseHeight, 0, chunkSize.z);
                 ImGui::SliderInt("Octaves", &octaves, 1, 5);
                 ImGui::SliderFloat("Persistence", &persistence, 0, 1);
                 ImGui::SliderFloat("Frequency", &frequency, 0, 1);
-                ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitude, 0, data.getSize().z);
+                ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitude, 0, chunkSize.z);
 
                 ImGui::EndMenu();
             }

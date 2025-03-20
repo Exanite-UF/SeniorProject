@@ -5,12 +5,7 @@
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 
-ExampleWorldGenerator::ExampleWorldGenerator(glm::ivec3 chunkSize)
-    : WorldGenerator(chunkSize)
-{
-}
-
-void ExampleWorldGenerator::generateData()
+void ExampleWorldGenerator::generateData(VoxelChunkData& data)
 {
     auto& materialManager = MaterialManager::getInstance();
     std::shared_ptr<Material> material;

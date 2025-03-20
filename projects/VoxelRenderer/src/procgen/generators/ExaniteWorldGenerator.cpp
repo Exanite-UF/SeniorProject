@@ -5,12 +5,7 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
 
-ExaniteWorldGenerator::ExaniteWorldGenerator(const glm::ivec3& chunkSize)
-    : WorldGenerator(chunkSize)
-{
-}
-
-void ExaniteWorldGenerator::generateData()
+void ExaniteWorldGenerator::generateData(VoxelChunkData& data)
 {
     MeasureElapsedTimeScope scope("ExaniteWorldGenerator::generateData");
 

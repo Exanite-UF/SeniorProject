@@ -8,10 +8,8 @@ private:
     std::string materialKey = "dirt";
 
 protected:
-    void generateData() override;
+    void generateData(VoxelChunkData& data) override;
 
 public:
-    ExampleWorldGenerator(glm::ivec3 chunkSize);
-
     void showDebugMenu() override;
 };

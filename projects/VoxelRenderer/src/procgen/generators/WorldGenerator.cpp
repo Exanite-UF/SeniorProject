@@ -2,20 +2,27 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkData.h>
 
-WorldGenerator::WorldGenerator(const glm::ivec3& chunkSize)
+WorldGenerator::WorldGenerator() = default;
+
+void WorldGenerator::generate(VoxelChunkData& data)
 {
-    data.setSize(chunkSize);
+    data.clearOccupancyMap();
+    data.clearMaterialMap();
+    {
+        generateData(data);
+    }
 }
 
 void WorldGenerator::generate(VoxelChunk& chunk)
 {
     MeasureElapsedTimeScope scope("WorldGenerator::generate");
 
-    // data.copyFrom(chunk);
+    VoxelChunkData data(chunk.getSize());
+
     data.clearOccupancyMap();
     data.clearMaterialMap();
     {
-        generateData();
+        generateData(data);
     }
     data.writeTo(chunk);
 }

@@ -251,8 +251,8 @@ void Program::run()
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
-    ExampleWorldGenerator exampleWorldGenerator { chunkSize };
-    ExaniteWorldGenerator exaniteWorldGenerator { chunkSize };
+    ExampleWorldGenerator exampleWorldGenerator {};
+    ExaniteWorldGenerator exaniteWorldGenerator {};
 
     int seed = 0;
     int octaves = 3;

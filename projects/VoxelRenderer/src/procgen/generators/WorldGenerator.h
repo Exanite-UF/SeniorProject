@@ -7,13 +7,13 @@
 class WorldGenerator : public NonCopyable
 {
 protected:
-    VoxelChunkData data;
-
-    virtual void generateData() = 0;
+    virtual void generateData(VoxelChunkData& data) = 0;
 
 public:
-    explicit WorldGenerator(const glm::ivec3& chunkSize);
+    explicit WorldGenerator();
 
-    void generate(VoxelChunk& chunk);
+    void generate(VoxelChunkData& data);
+    void generate(VoxelChunk& chunk); // TODO: Remove this overload
+
     virtual void showDebugMenu() = 0;
 };
