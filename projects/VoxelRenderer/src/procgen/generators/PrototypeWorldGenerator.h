@@ -22,6 +22,9 @@ private:
     // Replace surface with dirt
     int dirtDepth = 5;
 
+    // Replace surface with grass
+    int grassDepth = 1;
+
     void generateData() override;
 
 public:

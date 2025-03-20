@@ -24,6 +24,15 @@ MaterialManager::MaterialManager()
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
     }
+    
+    {
+        auto& material = createMaterial("grass", "grass");
+        material->albedo = ColorUtility::htmlToLinear("#41b000");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
 
     {
         auto& material = createMaterial("blue_light", "Blue Light");
