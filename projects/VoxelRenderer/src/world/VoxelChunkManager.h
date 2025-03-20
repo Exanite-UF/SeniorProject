@@ -23,7 +23,7 @@ private:
 
         VoxelChunkData chunkData;
 
-        explicit ChunkLoadRequest(glm::ivec2 chunkPosition, glm::ivec3 chunkSize)
+        explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
         {
             this->chunkPosition = chunkPosition;
             this->chunkSize = chunkSize;
