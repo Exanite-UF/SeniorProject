@@ -72,11 +72,15 @@ void PrototypeWorldGenerator::showDebugMenu()
                 ImGui::SliderFloat("Persistence", &persistence, 0, 1);
                 ImGui::SliderFloat("Frequency", &frequency, 0, 1);
                 ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitude, 0, data.getSize().z);
+
+                ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Surface Dirt"))
             {
                 ImGui::SliderInt("Dirt Depth", &dirtDepth, 0, 20);
+
+                ImGui::EndMenu();
             }
 
             textureDataSynthesizer->showDebugMenu();
