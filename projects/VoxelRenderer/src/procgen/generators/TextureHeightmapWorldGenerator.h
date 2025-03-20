@@ -14,7 +14,7 @@ private:
     void generateData() override;
 
 public:
-    TextureHeightmapWorldGenerator(glm::ivec3 chunkSize, std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer)
+    TextureHeightmapWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
         : WorldGenerator(chunkSize)
     {
         this->textureDataSynthesizer = textureDataSynthesizer;

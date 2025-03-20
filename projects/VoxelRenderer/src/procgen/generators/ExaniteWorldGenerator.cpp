@@ -5,7 +5,7 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/MaterialManager.h>
 
-ExaniteWorldGenerator::ExaniteWorldGenerator(glm::ivec3 chunkSize)
+ExaniteWorldGenerator::ExaniteWorldGenerator(const glm::ivec3& chunkSize)
     : WorldGenerator(chunkSize)
 {
 }
