@@ -120,7 +120,7 @@ void Program::run()
             auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
             auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>());
-            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize * x, chunkSize * y, 0) + glm::vec3(chunkSize / 2, chunkSize / 2, chunkSize / 2));
+            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
 
             scene->chunks.push_back(voxelChunk);
         }
@@ -131,7 +131,7 @@ void Program::run()
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto& cameraTransform = camera->getTransform();
     scene->camera = camera;
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize * 1.25f));
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
 
     auto& voxelChunk = scene->chunks.at(0);
 
@@ -250,15 +250,15 @@ void Program::run()
     bool shouldRenderPathTrace = true;
 
     // Procedural Generation
-    ExampleWorldGenerator exampleWorldGenerator { glm::ivec3(chunkSize) };
-    ExaniteWorldGenerator exaniteWorldGenerator { glm::ivec3(chunkSize) };
+    ExampleWorldGenerator exampleWorldGenerator { chunkSize };
+    ExaniteWorldGenerator exaniteWorldGenerator { chunkSize };
 
     int seed = 0;
     int octaves = 3;
     float persistence = 0.5;
     // auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
-    TextureHeightmapWorldGenerator octaveWorldGenerator(glm::ivec3(chunkSize), openSimplexSynthesizer);
+    TextureHeightmapWorldGenerator octaveWorldGenerator(chunkSize, openSimplexSynthesizer);
 
     // IMGUI Menu
     bool showMenuGUI = false;

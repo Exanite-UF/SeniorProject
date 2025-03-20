@@ -28,7 +28,7 @@ public:
     class VoxelChunkComponent
     {
     public:
-        static constexpr int chunkSize = 512;
+        static constexpr glm::ivec3 chunkSize = glm::ivec3(512, 512, 512);
     };
 
     class GameObject
