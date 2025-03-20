@@ -26,10 +26,13 @@ public:
 struct Data
 {
 public:
+    int generationDistance = 3; // TODO
     int renderDistance = 2;
 
     glm::vec3 cameraWorldPosition {};
     glm::ivec2 cameraChunkPosition {};
+
+    bool isLoadingDirty = true; // If true, then we need to check for chunks to load/unload
 
     std::unordered_map<glm::ivec2, LoadedChunk> loadedChunks {};
 };
@@ -54,6 +57,17 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 
 void VoxelChunkManager::update()
 {
+    // Calculate new camera chunk position
+    data.cameraWorldPosition = scene->camera->getTransform()->getGlobalPosition();
+
+    auto newCameraChunkPosition = glm::ivec2(glm::round((glm::vec2(data.cameraWorldPosition) - glm::vec2(Constants::VoxelChunkComponent::chunkSize / 2)) / static_cast<float>(Constants::VoxelChunkComponent::chunkSize)));
+    if (data.cameraChunkPosition != newCameraChunkPosition)
+    {
+        // Camera chunk position has changed, we may need to load new chunks
+        data.isLoadingDirty = true;
+    }
+
+    data.cameraChunkPosition = newCameraChunkPosition;
 }
 
 void VoxelChunkManager::showDebugMenu()
@@ -62,6 +76,7 @@ void VoxelChunkManager::showDebugMenu()
     {
         ImGui::Text("%s", std::format("Render distance: {}", data.renderDistance).c_str());
         ImGui::Text("%s", std::format("Loaded chunk count: {}", data.loadedChunks.size()).c_str());
+        ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", data.cameraChunkPosition.x, data.cameraChunkPosition.y).c_str());
 
         {
             int displayDistance = data.renderDistance * 2;
