@@ -3,9 +3,9 @@
 #include <format>
 
 #include <src/Constants.h>
+#include <src/gameobjects/TransformComponent.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
-#include <src/gameobjects/TransformComponent.h>
 
 GameObject::GameObject(const std::string& name)
 {
