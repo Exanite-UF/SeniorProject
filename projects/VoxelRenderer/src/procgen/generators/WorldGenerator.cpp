@@ -2,7 +2,7 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkData.h>
 
-WorldGenerator::WorldGenerator(glm::ivec3 chunkSize)
+WorldGenerator::WorldGenerator(const glm::ivec3& chunkSize)
 {
     data.setSize(chunkSize);
 }
