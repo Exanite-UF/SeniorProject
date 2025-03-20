@@ -8,14 +8,21 @@
 class VoxelChunkData : public NonCopyable
 {
 private:
-    glm::ivec3 size = glm::ivec3(0);
+    // This allows for easier copies without allowing automatic copies
+    struct Data
+    {
+    public:
+        glm::ivec3 size = glm::ivec3(0);
 
-    // Same format as on the GPU
-    std::vector<uint8_t> occupancyMap {};
-    std::vector<uint32_t> occupancyMapIndices {};
+        // Same format as on the GPU
+        std::vector<uint8_t> occupancyMap {};
+        std::vector<uint32_t> occupancyMapIndices {};
 
-    // Same format as on the GPU
-    std::vector<uint16_t> materialMap {};
+        // Same format as on the GPU
+        std::vector<uint16_t> materialMap {};
+    };
+
+    Data data;
 
 public:
     VoxelChunkData();
@@ -38,4 +45,7 @@ public:
 
     void copyFrom(VoxelChunk& chunk);
     void writeTo(VoxelChunk& chunk);
+
+    void copyFrom(VoxelChunkData& data);
+    void writeTo(VoxelChunkData& data);
 };
