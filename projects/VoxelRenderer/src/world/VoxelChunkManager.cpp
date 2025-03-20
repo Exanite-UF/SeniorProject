@@ -212,6 +212,19 @@ void VoxelChunkManager::update(float deltaTime)
             data.isChunkUnloadingDirty = false;
         }
     }
+
+    // TODO: Actually use data instead of immediately throwing it away
+    {
+        std::unique_lock completedRequestsLock(data.completedRequestsMutex, std::defer_lock);
+        if (completedRequestsLock.try_lock())
+        {
+            while (!data.completedRequests.empty())
+            {
+                // TODO: Currently throwing away data to prevent memory leaks
+                data.completedRequests.pop();
+            }
+        }
+    }
 }
 
 void VoxelChunkManager::showDebugMenu()
