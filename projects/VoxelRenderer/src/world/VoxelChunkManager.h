@@ -53,10 +53,10 @@ private:
         // ----- Rendering -----
 
         // The distance at which chunks begin to be generated on a separate thread
-        int generationDistance = 3; // TODO
+        int generationDistance = 2; // TODO
 
         // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 2;
+        int renderDistance = 1;
 
         // ----- Loading -----
 
