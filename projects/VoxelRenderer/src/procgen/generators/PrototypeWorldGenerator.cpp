@@ -9,6 +9,7 @@
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
+#include <FastNoiseLite/FastNoiseLite.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
@@ -22,6 +23,22 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     {
         stoneMaterial = materialManager.getMaterialByIndex(0);
         Log::log("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+    }
+
+    std::shared_ptr<Material> lightStoneMaterial;
+    std::string lightStoneMaterialKey = "lightStone";
+    if (!materialManager.tryGetMaterialByKey(lightStoneMaterialKey, lightStoneMaterial))
+    {
+        stoneMaterial = materialManager.getMaterialByIndex(0);
+        Log::log("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+    }
+    
+    std::shared_ptr<Material> darkStoneMaterial;
+    std::string darkStoneMaterialKey = "darkStone";
+    if (!materialManager.tryGetMaterialByKey(darkStoneMaterialKey, darkStoneMaterial))
+    {
+        stoneMaterial = materialManager.getMaterialByIndex(0);
+        Log::log("Failed to find stoneMaterial with id '" + darkStoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     std::shared_ptr<Material> dirtMaterial;
@@ -55,15 +72,46 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             }
         }
     };
-
-    // Capture all materials when evaluating a block? 
-    auto stoneBlock = [grassMaterial, dirtMaterial, stoneMaterial](int localX, int localY, int localZ) {
-        return stoneMaterial;
+    
+    // Fill texture data with random noise, each block evaluated once
+    TextureData stoneBlockTextureData({blockLength, blockLength, blockLength});
+    FastNoiseLite simplexNoise;
+    simplexNoise.SetSeed(seed);
+    simplexNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    float stoneFrequency = 0.01;
+    for (int localX = 0; localX < blockLength; localX++)
+    {
+        for (int localY = 0; localY < blockLength; localY++)
+        {
+            for(int localZ = 0; localZ < blockLength; localZ++)
+            {
+                // TODO: Analyze noise outputs
+                float noise = simplexNoise.GetNoise(localX * stoneFrequency, localY * stoneFrequency, localZ * stoneFrequency);
+                stoneBlockTextureData.set(noise, localX, localY, localZ);
+            }
+        }
+    }
+    
+    // Capture all materials when evaluating a block? Maybe pass material manager reference on instance creation. 
+    auto stoneBlock = [stoneMaterial, lightStoneMaterial, darkStoneMaterial, &blockLength = blockLength, &stoneBlockTextureData](int localX, int localY, int localZ) {
+        float sample = stoneBlockTextureData.get(localX, localY, localZ);
+        if(sample > 0.7)
+        {
+            return lightStoneMaterial;
+        } 
+        else if(sample > 0.2)
+        {
+            return stoneMaterial;
+        } 
+        else
+        {
+            return darkStoneMaterial;
+        }
     };
-    auto dirtBlock = [grassMaterial, dirtMaterial, stoneMaterial](int localX, int localY, int localZ) {
+    auto dirtBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ) {        
         return dirtMaterial;
     };
-    auto grassBlock = [grassMaterial, dirtMaterial, stoneMaterial](int localX, int localY, int localZ) {
+    auto grassBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ) {
         return grassMaterial;
     };
 
