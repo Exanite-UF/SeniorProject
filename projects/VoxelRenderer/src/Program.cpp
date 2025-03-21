@@ -366,7 +366,7 @@ void Program::run()
             std::shared_ptr<VoxelChunkComponent> closestChunkComponent {};
             if (scene->tryGetClosestChunk(closestChunkComponent) && closestChunkComponent->chunk.has_value())
             {
-                auto closestChunk = closestChunkComponent->chunk.value();
+                auto& closestChunk = closestChunkComponent->chunk.value();
 
                 if (input->isKeyHeld(GLFW_KEY_E))
                 {

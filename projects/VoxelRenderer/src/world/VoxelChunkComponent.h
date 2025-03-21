@@ -11,7 +11,7 @@ class VoxelChunkComponent : public Component
 
 public:
     // TODO: Better encapsulation
-    std::optional<std::shared_ptr<VoxelChunk>> chunk;
+    std::optional<std::unique_ptr<VoxelChunk>> chunk;
     VoxelChunkData chunkData {};
 
     bool isDisplayed = false;
@@ -21,7 +21,7 @@ public:
 
     // Will throw if chunk data does not exist on the GPU
     // If the chunk is being displayed, this will always succeed
-    const std::shared_ptr<VoxelChunk>& getChunk();
+    const std::unique_ptr<VoxelChunk>& getChunk();
 
     bool getIsDisplayed() const;
     void setIsDisplayed(bool isDisplayed);
