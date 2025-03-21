@@ -40,37 +40,69 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         Log::log("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
+    // For organization
+    auto placeBlock = [&data = data, &blockLength = blockLength](int x, int y, int z, std::function<std::shared_ptr<Material>(int, int, int)> blockFunction){
+        for(int localX = 0; localX < blockLength; ++localX)
+        {
+            for(int localY = 0; localY < blockLength; ++localY)
+            {
+                for(int localZ = 0; localZ < blockLength; ++localZ)
+                {
+                    glm::vec3 globalPos = { x + localX, y + localY, z + localZ };
+                    data.setVoxelOccupancy(globalPos, true);
+                    data.setVoxelMaterial(globalPos, blockFunction(localX, localY, localZ));
+                }
+            }
+        }
+    };
+
+    // Capture all materials when evaluating a block? 
+    auto stoneBlock = [grassMaterial, dirtMaterial, stoneMaterial](int localX, int localY, int localZ) {
+        return stoneMaterial;
+    };
+    auto dirtBlock = [grassMaterial, dirtMaterial, stoneMaterial](int localX, int localY, int localZ) {
+        return dirtMaterial;
+    };
+    auto grassBlock = [grassMaterial, dirtMaterial, stoneMaterial](int localX, int localY, int localZ) {
+        return grassMaterial;
+    };
+
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    for (int x = 0; x < data.getSize().x; ++x)
-    {
-        for (int y = 0; y < data.getSize().y; ++y)
-        {
-            // Stone Terrain
-            float perlinNoiseSample = perlinNoise.octave2D_01(x * frequency, y * frequency, octaves, persistence);
-            int offset = (int)(baseHeight + (perlinNoiseSample * terrainMaxAmplitude));
-            int height = glm::min(data.getSize().z, offset);
+    //TODO: Fille entire space, don't floor
+    int worldSizeBlocksX = std::floor(data.getSize().x / blockLength);
+    int worldSizeBlocksY = std::floor(data.getSize().y / blockLength);
+    int worldSizeBlocksZ = std::floor(data.getSize().z / blockLength);
 
-            for (int z = 0; z < height; ++z)
+    // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
+    for (int x = 0; x < worldSizeBlocksX; ++x)
+    {
+        for (int y = 0; y < worldSizeBlocksY; ++y)
+        {
+            // Stone Terrain, retain same shape as using voxels of blockLength 1
+            float perlinNoiseSample = perlinNoise.octave2D_01((x * blockLength) * frequency, (y * blockLength) * frequency, octaves, persistence);
+            int offsetBlocks = (int)(baseHeightBlocks + (perlinNoiseSample * terrainMaxAmplitudeBlocks));
+            int heightBlocks = glm::min(data.getSize().z, offsetBlocks);
+
+            for (int z = 0; z < heightBlocks; ++z)
             {
-                data.setVoxelOccupancy({ x, y, z }, true);
-                data.setVoxelMaterial({ x, y, z }, stoneMaterial);
+                placeBlock(x * blockLength, y * blockLength, z * blockLength, stoneBlock);
             }
 
             // Replace surface with grass
-            int lastHeight = height - 1;
-            for (int z = lastHeight; z >= lastHeight - grassDepth && z >= 0; --z)
+            int lastHeightBlocks = heightBlocks - 1;
+            for (int z = lastHeightBlocks; z >= lastHeightBlocks - grassDepth && z >= 0; --z)
             {
-                data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                placeBlock(x * blockLength, y * blockLength, z * blockLength, grassBlock);
             }
-            lastHeight -= grassDepth;
+            lastHeightBlocks -= grassDepth;
 
             // Replace surface with dirt
-            for (int z = lastHeight; z >= lastHeight - dirtDepth && z >= 0; --z)
+            for (int z = lastHeightBlocks; z >= lastHeightBlocks - dirtDepth && z >= 0; --z)
             {
-                data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                placeBlock(x * blockLength, y * blockLength, z * blockLength, dirtBlock);
             }
-            lastHeight -= dirtDepth;
+            lastHeightBlocks -= dirtDepth;
         }
     }
 }
@@ -91,11 +123,11 @@ void PrototypeWorldGenerator::showDebugMenu()
         {
             if (ImGui::BeginMenu("Stone Terrain"))
             {
-                ImGui::SliderInt("Base Height", &baseHeight, 0, chunkSize.z);
+                ImGui::SliderInt("Base Height", &baseHeightBlocks, 0, chunkSize.z);
                 ImGui::SliderInt("Octaves", &octaves, 1, 5);
                 ImGui::SliderFloat("Persistence", &persistence, 0, 1);
                 ImGui::SliderFloat("Frequency", &frequency, 0, 1);
-                ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitude, 0, chunkSize.z);
+                ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitudeBlocks, 0, chunkSize.z);
 
                 ImGui::EndMenu();
             }

@@ -12,13 +12,14 @@ private:
 
     glm::ivec3 chunkSize;
     int seed = 0;
+    int blockLength = 8;
 
     // Stone Terrain
     int octaves = 3;
     float persistence = 0.5;
-    int baseHeight = 100;
+    int baseHeightBlocks = 20;
     float frequency = 0.002;
-    int terrainMaxAmplitude = 100;
+    int terrainMaxAmplitudeBlocks = 20;
 
     // Replace surface with dirt
     int dirtDepth = 5;
