@@ -11,7 +11,7 @@ VoxelChunkComponent::VoxelChunkComponent(bool shouldGeneratePlaceholderData)
 {
     if (shouldGeneratePlaceholderData)
     {
-        isDisplayed = true;
+        existsOnGpu = true;
         chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, shouldGeneratePlaceholderData);
         chunkData.copyFrom(*chunk.value());
     }
@@ -22,21 +22,26 @@ const std::unique_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
     return chunk.value();
 }
 
-bool VoxelChunkComponent::getIsDisplayed() const
+VoxelChunkData& VoxelChunkComponent::getChunkData()
 {
-    return isDisplayed;
+    return chunkData;
 }
 
-void VoxelChunkComponent::setIsDisplayed(const bool isDisplayed)
+bool VoxelChunkComponent::getExistsOnGpu() const
 {
-    if (this->isDisplayed == isDisplayed)
+    return existsOnGpu;
+}
+
+void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu)
+{
+    if (this->existsOnGpu == existsOnGpu)
     {
         return;
     }
 
-    this->isDisplayed = isDisplayed;
+    this->existsOnGpu = existsOnGpu;
 
-    if (isDisplayed)
+    if (existsOnGpu)
     {
         chunk.value().reset();
     }

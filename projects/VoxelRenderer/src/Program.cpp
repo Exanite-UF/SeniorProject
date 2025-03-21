@@ -363,14 +363,19 @@ void Program::run()
                 renderer.toggleAsynchronousReprojection();
             }
 
-            std::shared_ptr<VoxelChunkComponent> closestChunkComponent {};
-            if (scene->tryGetClosestChunk(closestChunkComponent) && closestChunkComponent->chunk.has_value())
+            std::shared_ptr<VoxelChunkComponent> closestChunk {};
+            if (scene->tryGetClosestChunk(closestChunk))
             {
-                auto& closestChunk = closestChunkComponent->chunk.value();
-
-                if (input->isKeyHeld(GLFW_KEY_E))
+                if (input->isKeyHeld(GLFW_KEY_E) && closestChunk->getExistsOnGpu())
                 {
-                    closestChunk->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                    closestChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                }
+
+                if (isRemakeNoiseRequested && closestChunk->getExistsOnGpu())
+                {
+                    // The noise time (corresponds to the deltaTime parameter) should not be incremented here
+                    closestChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                    isRemakeNoiseRequested = false;
                 }
 
                 if (input->isKeyPressed(GLFW_KEY_F6))
@@ -386,13 +391,6 @@ void Program::run()
                 if (input->isKeyPressed(GLFW_KEY_F8))
                 {
                     prototypeWorldGenerator.generate(*closestChunk);
-                }
-
-                if (isRemakeNoiseRequested)
-                {
-                    // The noise time should not be incremented here
-                    closestChunk->generatePlaceholderData(0, useRandomNoise, fillAmount);
-                    isRemakeNoiseRequested = false;
                 }
             }
 

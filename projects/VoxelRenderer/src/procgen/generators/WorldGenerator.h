@@ -1,7 +1,10 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+
 #include <memory>
+
+#include <src/world/VoxelChunkComponent.h>
 #include <src/world/VoxelChunkData.h>
 
 class WorldGenerator : public NonCopyable
@@ -13,7 +16,7 @@ public:
     explicit WorldGenerator();
 
     void generate(VoxelChunkData& data);
-    void generate(VoxelChunk& chunk); // TODO: Remove this overload
+    void generate(VoxelChunkComponent& chunk); // TODO: Remove this overload
 
     virtual void showDebugMenu() = 0;
 };

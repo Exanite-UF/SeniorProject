@@ -240,7 +240,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelChunkCompon
 
         for (auto& chunkComponent : chunks)
         {
-            if (!chunkComponent->isDisplayed)
+            if (!chunkComponent->getExistsOnGpu())
             {
                 continue;
             }
