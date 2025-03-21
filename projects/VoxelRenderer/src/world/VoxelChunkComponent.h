@@ -1,10 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <src/gameobjects/Component.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
-#include <optional>
 
 class VoxelChunkComponent : public Component
 {
