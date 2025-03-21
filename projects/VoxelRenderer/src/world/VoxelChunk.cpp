@@ -8,7 +8,7 @@
 
 #include "VoxelChunkResources.h"
 
-VoxelChunk::VoxelChunk(glm::ivec3 size)
+VoxelChunk::VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData)
 {
     this->currentNoiseTime = 0;
 
@@ -22,11 +22,14 @@ VoxelChunk::VoxelChunk(glm::ivec3 size)
 
     setSize(size);
 
-    // Generates initial occupancy map data (non-essential)
-    generatePlaceholderData(0, true, 0.6);
+    if (shouldGeneratePlaceholderData)
+    {
+        // Generates initial occupancy map data
+        generatePlaceholderData(0, true, 0.6);
 
-    // Generates initial material map (non-essential)
-    generatePlaceholderMaterialMap();
+        // Generates initial material map
+        generatePlaceholderMaterialMap();
+    }
 }
 
 glm::ivec3 VoxelChunk::getSize() const

@@ -41,6 +41,8 @@ private:
         bool isUnloading = false;
         float unloadWaitTime = 0;
 
+        bool isDisplayed = false;
+
         explicit ActiveChunkData(const glm::ivec2& chunkPosition)
         {
             this->chunkPosition = chunkPosition;

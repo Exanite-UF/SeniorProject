@@ -240,6 +240,11 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelChunkCompon
 
         for (auto& chunkComponent : chunks)
         {
+            if (!chunkComponent->isDisplayed)
+            {
+                continue;
+            }
+
             chunkComponent->getChunk()->bindBuffers(4, 5);
             {
                 glm::ivec3 voxelSize = chunkComponent->getChunk()->getSize();

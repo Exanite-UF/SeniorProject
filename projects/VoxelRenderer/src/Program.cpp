@@ -120,7 +120,7 @@ void Program::run()
         {
             auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
-            auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>());
+            auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>(true));
             voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
 
             scene->chunks.push_back(voxelChunk);
@@ -358,41 +358,47 @@ void Program::run()
                 cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
             }
 
-            if (input->isKeyHeld(GLFW_KEY_E))
-            {
-                voxelChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
-            }
-
             if (input->isKeyPressed(GLFW_KEY_G))
             {
                 renderer.toggleAsynchronousReprojection();
             }
 
-            if (input->isKeyPressed(GLFW_KEY_F6))
+            std::shared_ptr<VoxelChunkComponent> closestChunkComponent {};
+            if (scene->tryGetClosestChunk(closestChunkComponent) && closestChunkComponent->chunk.has_value())
             {
-                exaniteWorldGenerator.generate(*voxelChunk->getChunk());
-            }
+                auto closestChunk = closestChunkComponent->chunk.value();
 
-            if (input->isKeyPressed(GLFW_KEY_F7))
-            {
-                exampleWorldGenerator.generate(*voxelChunk->getChunk());
-            }
+                if (input->isKeyHeld(GLFW_KEY_E))
+                {
+                    closestChunk->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                }
 
-            if (input->isKeyPressed(GLFW_KEY_F8))
-            {
-                prototypeWorldGenerator.generate(*voxelChunk->getChunk());
-            }
+                if (input->isKeyPressed(GLFW_KEY_F6))
+                {
+                    exaniteWorldGenerator.generate(*closestChunk);
+                }
 
-            if (isRemakeNoiseRequested)
-            {
-                // The noise time should not be incremented here
-                voxelChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
-                isRemakeNoiseRequested = false;
+                if (input->isKeyPressed(GLFW_KEY_F7))
+                {
+                    exampleWorldGenerator.generate(*closestChunk);
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_F8))
+                {
+                    prototypeWorldGenerator.generate(*closestChunk);
+                }
+
+                if (isRemakeNoiseRequested)
+                {
+                    // The noise time should not be incremented here
+                    closestChunk->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                    isRemakeNoiseRequested = false;
+                }
             }
 
             if (input->isKeyPressed(GLFW_KEY_F))
             {
-                GLFWmonitor* monitor = glfwGetWindowMonitor(window->getGlfwWindowHandle());
+                auto* monitor = glfwGetWindowMonitor(window->getGlfwWindowHandle());
                 if (monitor == nullptr)
                 {
                     window->setFullscreen();

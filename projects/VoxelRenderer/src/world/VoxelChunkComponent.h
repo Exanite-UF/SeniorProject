@@ -1,19 +1,28 @@
 #pragma once
 
 #include <memory>
-#include <src/Constants.h>
 #include <src/gameobjects/Component.h>
 #include <src/world/VoxelChunk.h>
+#include <src/world/VoxelChunkData.h>
 
 class VoxelChunkComponent : public Component
 {
     friend class GameObject;
 
-private:
-    std::shared_ptr<VoxelChunk> chunk;
-
 public:
-    explicit VoxelChunkComponent(glm::ivec3 chunkSize = glm::ivec3(Constants::VoxelChunkComponent::chunkSize));
+    // TODO: Better encapsulation
+    std::optional<std::shared_ptr<VoxelChunk>> chunk;
+    VoxelChunkData chunkData {};
 
-    std::shared_ptr<VoxelChunk>& getChunk();
+    bool isDisplayed = false;
+
+    explicit VoxelChunkComponent();
+    explicit VoxelChunkComponent(bool generatePlaceholderData);
+
+    // Will throw if chunk data does not exist on the GPU
+    // If the chunk is being displayed, this will always succeed
+    const std::shared_ptr<VoxelChunk>& getChunk();
+
+    bool getIsDisplayed() const;
+    void setIsDisplayed(bool isDisplayed);
 };

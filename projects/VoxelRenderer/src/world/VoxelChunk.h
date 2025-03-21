@@ -18,7 +18,7 @@ private:
     GraphicsBuffer<uint16_t> materialMap; // This stores the voxel material data
 
 public:
-    explicit VoxelChunk(glm::ivec3 size);
+    explicit VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData);
 
     void setSize(glm::ivec3 size);
     [[nodiscard]] glm::ivec3 getSize() const;

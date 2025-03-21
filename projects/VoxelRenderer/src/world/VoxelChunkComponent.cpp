@@ -2,12 +2,32 @@
 
 #include <src/Constants.h>
 
-VoxelChunkComponent::VoxelChunkComponent(glm::ivec3 chunkSize)
+VoxelChunkComponent::VoxelChunkComponent()
+    : VoxelChunkComponent(false)
 {
-    chunk = std::make_shared<VoxelChunk>(chunkSize);
 }
 
-std::shared_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
+VoxelChunkComponent::VoxelChunkComponent(bool shouldGeneratePlaceholderData)
 {
-    return chunk;
+    if (shouldGeneratePlaceholderData)
+    {
+        isDisplayed = true;
+        chunk = std::make_shared<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, shouldGeneratePlaceholderData);
+        chunkData.copyFrom(*chunk.value());
+    }
+}
+
+const std::shared_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
+{
+    return chunk.value();
+}
+
+bool VoxelChunkComponent::getIsDisplayed() const
+{
+    return isDisplayed;
+}
+
+void VoxelChunkComponent::setIsDisplayed(bool isDisplayed)
+{
+    this->isDisplayed = isDisplayed;
 }

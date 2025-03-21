@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include <src/Constants.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/ColorUtility.h>
 #include <src/utilities/ImGui.h>
@@ -258,6 +259,7 @@ void VoxelChunkManager::showDebugMenu()
 
             // Drawing parameters
             float squareSize = 10;
+            float dotSize = 6;
             float padding = 2;
 
             auto* drawList = ImGui::GetWindowDrawList();
