@@ -12,8 +12,6 @@
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
-    glm::ivec3 size = { data.getSize().x, data.getSize().y, 1 };
-
     auto& materialManager = MaterialManager::getInstance();
 
     std::shared_ptr<Material> stoneMaterial;
@@ -42,14 +40,15 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    for (int x = 0; x < data.getSize().x; ++x)
+    glm::vec2 basePosition = chunkSize * chunkPosition;
+    for (int x = 0; x < chunkSize.x; ++x)
     {
-        for (int y = 0; y < data.getSize().y; ++y)
+        for (int y = 0; y < chunkSize.y; ++y)
         {
             // Stone Terrain
-            float perlinNoiseSample = perlinNoise.octave2D_01(x * frequency, y * frequency, octaves, persistence);
-            int offset = (int)(baseHeight + (perlinNoiseSample * terrainMaxAmplitude));
-            int height = glm::min(data.getSize().z, offset);
+            float perlinNoiseSample = perlinNoise.octave2D_01((x + basePosition.x) * frequency, (y + basePosition.y) * frequency, octaves, persistence);
+            int offset = static_cast<int>(baseHeight + (perlinNoiseSample * terrainMaxAmplitude));
+            int height = glm::min(chunkSize.z, offset);
 
             for (int z = 0; z < height; ++z)
             {
