@@ -58,6 +58,9 @@
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
 
+// Helper Function
+void HeaderCondenser(std::string &headerText_);
+
 Program::Program()
 {
     // Ensure preconditions are met
@@ -503,6 +506,7 @@ void Program::run()
                     case 1:
                     {
                         std::string modelFileName = "C:/";
+                        
 
                         ImGui::Text("Please choose a file.");
                         ImGui::Indent(indentSize);
@@ -511,6 +515,41 @@ void Program::run()
                         ImGui::PopID();
                         ImGui::Unindent(indentSize);
                         if (ImGui::Button("Import"))
+                        {
+                            
+                        }
+
+                        // Polygnol Mesh Preview
+                        std::string originalModelHeader = "Preview Original Model";
+                        HeaderCondenser(originalModelHeader);
+
+                        if (ImGui::BeginMenu(originalModelHeader.c_str()))
+                        {
+                            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                            ImGui::BeginChild("InvisibleBox",  ImVec2(320, 240), true);
+                            ImGui::EndChild();
+                            ImGui::PopStyleColor(); 
+
+                            ImGui::EndMenu();
+                        }
+
+                            
+
+                        // Voxel Mesh Preview
+                        std::string voxelizedModelHeader = "Preview Voxelized Model";
+                        HeaderCondenser(voxelizedModelHeader);
+
+                        if (ImGui::BeginMenu(voxelizedModelHeader.c_str()))
+                        {
+                            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                            ImGui::BeginChild("InvisibleBox",  ImVec2(320, 240), true);
+                            ImGui::EndChild();
+                            ImGui::PopStyleColor(); 
+
+                            ImGui::EndMenu();
+                        }
+
+                        if (ImGui::Button("Add to world"))
                         {
                             
                         }
@@ -754,5 +793,25 @@ void Program::runLateStartupTests()
         importer.FreeScene();
 
         Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
+    }
+}
+
+// Helper Function
+void HeaderCondenser(std::string &headerText_)
+{
+    float availableWidth = ImGui::GetContentRegionAvail().x * 0.8f;
+    float textWidth = ImGui::CalcTextSize(headerText_.c_str()).x;
+
+    if (textWidth > availableWidth)
+    {
+        std::string ellipsis = "...";
+        float ellipsisWidth = ImGui::CalcTextSize(ellipsis.c_str()).x;
+
+        while (ImGui::CalcTextSize((headerText_ + ellipsis).c_str()).x > (availableWidth) && headerText_.length() > 1)
+        {
+            headerText_.pop_back();
+        }
+
+        headerText_ += ellipsis;
     }
 }
