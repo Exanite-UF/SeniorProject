@@ -452,7 +452,7 @@ void Program::run()
             float menuWidth = windowSize.x / numMenus;
             float menuHeight = windowSize.y / 4;
             const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
-            
+
             for (int i = 0; i < numMenus; i++)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
@@ -460,8 +460,8 @@ void Program::run()
                 ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
                 ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
 
-                static bool collapsedStates[6] = {  true, true, true, true, true, true };
-                
+                static bool collapsedStates[6] = { true, true, true, true, true, true };
+
                 // Stats
                 if (i == 0 && input->isKeyPressed(GLFW_KEY_F3))
                 {
@@ -469,7 +469,7 @@ void Program::run()
                 }
 
                 ImGui::SetNextWindowCollapsed(collapsedStates[i], ImGuiCond_Always);
-                
+
                 ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
                 ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
@@ -510,7 +510,7 @@ void Program::run()
                         exampleWorldGenerator.showDebugMenu();
                         octaveWorldGenerator.showDebugMenu();
                         prototypeWorldGenerator.showDebugMenu();
-                        
+
                         voxelChunkManager.showDebugMenu();
 
                         break;

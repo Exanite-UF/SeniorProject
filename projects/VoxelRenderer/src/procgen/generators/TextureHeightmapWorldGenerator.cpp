@@ -1,10 +1,10 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
+#include <iostream>
 #include <memory>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
 #include <src/world/VoxelChunkData.h>
-#include <iostream>
 
 void TextureHeightmapWorldGenerator::generateData(VoxelChunkData& data)
 {

@@ -208,7 +208,7 @@ void VoxelChunkManager::showDebugMenu()
         ImGui::Text("%s", std::format("Render distance: {}", data.renderDistance).c_str());
         ImGui::Text("%s", std::format("Loaded chunk count: {}", data.loadedChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", data.cameraChunkPosition.x, data.cameraChunkPosition.y).c_str());
-        
+
         {
             // Chunk display distance parameters
             int displayDistance = data.renderDistance * 2;
@@ -217,8 +217,7 @@ void VoxelChunkManager::showDebugMenu()
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
 
             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-            ImGui::BeginChild("InvisibleBox",  ImVec2(120, 120), true);
-
+            ImGui::BeginChild("InvisibleBox", ImVec2(120, 120), true);
 
             // Drawing parameters
             float squareSize = 10;
@@ -263,7 +262,7 @@ void VoxelChunkManager::showDebugMenu()
             }
 
             ImGui::EndChild();
-            ImGui::PopStyleColor(); 
+            ImGui::PopStyleColor();
         }
     }
 }

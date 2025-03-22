@@ -76,7 +76,6 @@ void ExaniteWorldGenerator::showDebugMenu()
         headerText += "...";
     }
 
-
     ImGui::PushID("ExaniteWorldGenerator");
     {
         ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
