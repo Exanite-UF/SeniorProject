@@ -286,7 +286,6 @@ void VoxelChunkManager::update(const float deltaTime)
                 chunk->isLoading = false;
 
                 chunk->component->getChunkData().copyFrom(request->chunkData);
-                chunk->component->getChunkData().writeTo(*chunk->component->getChunk());
                 chunk->component->setExistsOnGpu(true);
             }
         }

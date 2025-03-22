@@ -43,12 +43,15 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu)
 
     if (existsOnGpu)
     {
-        chunk.value().reset();
+        chunk = std::make_unique<VoxelChunk>(chunkData.getSize(), false);
+        chunkData.writeTo(*chunk.value());
     }
     else
     {
-        chunk = std::make_unique<VoxelChunk>(chunkData.getSize(), false);
-        chunkData.writeTo(*chunk.value());
+        if (chunk.has_value())
+        {
+            chunk.value().reset();
+        }
     }
 }
 
