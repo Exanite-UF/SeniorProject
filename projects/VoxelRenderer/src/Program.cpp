@@ -261,10 +261,10 @@ void Program::run()
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
 
     TextureHeightmapWorldGenerator octaveWorldGenerator(openSimplexSynthesizer);
-    octaveWorldGenerator.setChunkPosition(chunkSize);
+    octaveWorldGenerator.setChunkSize(chunkSize);
 
     PrototypeWorldGenerator prototypeWorldGenerator(octaveSynthesizer);
-    prototypeWorldGenerator.setChunkPosition(chunkSize);
+    prototypeWorldGenerator.setChunkSize(chunkSize);
 
     // IMGUI Menu
     bool showMenuGUI = false;
