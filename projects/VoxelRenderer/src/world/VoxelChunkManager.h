@@ -39,7 +39,7 @@ private:
         bool isLoading = true;
 
         bool isUnloading = false;
-        float unloadWaitTime = 0;
+        float unloadWaitTime = 0; // TODO: This should be 1 after LODs are added
 
         bool isDisplayed = false;
 
@@ -58,7 +58,7 @@ private:
         int generationDistance = 2; // TODO
 
         // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 1;
+        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
 
         // ----- Loading -----
 
