@@ -83,9 +83,9 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 
     Log::log("Initializing VoxelChunkManager");
 
-    data.chunkLoadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
-    Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", data.chunkLoadingThreadCount));
-    for (int i = 0; i < data.chunkLoadingThreadCount; ++i)
+    auto threadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
+    Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", threadCount));
+    for (int i = 0; i < threadCount; ++i)
     {
         data.chunkLoadingThreads.push_back(std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this));
     }
