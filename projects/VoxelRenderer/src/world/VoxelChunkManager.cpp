@@ -141,6 +141,7 @@ void VoxelChunkManager::update(float deltaTime)
 
     data.cameraChunkPosition = newCameraChunkPosition;
 
+    // Chunk loading logic
     if (data.isChunkLoadingDirty)
     {
         // Calculate which chunks should be loaded
@@ -202,6 +203,7 @@ void VoxelChunkManager::update(float deltaTime)
         }
     }
 
+    // Chunk unloading logic
     if (data.isChunkUnloadingDirty)
     {
         // Check for chunks to unload
@@ -235,6 +237,7 @@ void VoxelChunkManager::update(float deltaTime)
         }
     }
 
+    // Chunk data readback from worker threads
     // TODO: Actually use data instead of immediately throwing it away
     {
         std::unique_lock completedRequestsLock(data.completedRequestsMutex, std::defer_lock);
