@@ -60,7 +60,7 @@ void ExampleWorldGenerator::showDebugMenu()
     {
         ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
         float indentSize = ImGui::GetWindowContentRegionMax().x / 16.0f;
-        
+
         if (ImGui::CollapsingHeader(headerText.c_str()))
         {
             ImGui::Text("Material");
