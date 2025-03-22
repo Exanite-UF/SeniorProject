@@ -260,8 +260,11 @@ void Program::run()
     auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
 
-    TextureHeightmapWorldGenerator octaveWorldGenerator(glm::ivec3(chunkSize), openSimplexSynthesizer);
-    PrototypeWorldGenerator prototypeWorldGenerator(glm::ivec3(chunkSize), octaveSynthesizer);
+    TextureHeightmapWorldGenerator octaveWorldGenerator(openSimplexSynthesizer);
+    octaveWorldGenerator.setChunkPosition(chunkSize);
+
+    PrototypeWorldGenerator prototypeWorldGenerator(octaveSynthesizer);
+    prototypeWorldGenerator.setChunkPosition(chunkSize);
 
     // IMGUI Menu
     bool showMenuGUI = false;
