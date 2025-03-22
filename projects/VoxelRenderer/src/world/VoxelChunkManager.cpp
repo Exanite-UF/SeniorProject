@@ -298,7 +298,15 @@ void VoxelChunkManager::showDebugMenu()
 {
     if (ImGui::CollapsingHeader("VoxelChunkManager"))
     {
-        ImGui::Checkbox("Enable chunk loading", &data.isChunkLoadingEnabled);
+        if (ImGui::Checkbox("Enable chunk loading", &data.isChunkLoadingEnabled))
+        {
+            data.isChunkLoadingDirty = true;
+        }
+
+        if (ImGui::SliderInt("Render distance", &data.renderDistance, 0, 1))
+        {
+            data.isChunkLoadingDirty = true;
+        }
 
         ImGui::Text("%s", std::format("Render distance: {}", data.renderDistance).c_str());
         ImGui::Text("%s", std::format("Loaded chunk count: {}", data.activeChunks.size()).c_str());
