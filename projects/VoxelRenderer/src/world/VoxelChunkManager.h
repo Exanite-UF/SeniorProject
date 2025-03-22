@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <memory>
 #include <queue>
+#include <src/Constants.h>
 
 #include <src/utilities/Log.h>
 #include <src/utilities/Singleton.h>
@@ -26,7 +27,7 @@ private:
         explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
 
-    struct ActiveChunkData
+    class ActiveChunkData
     {
     public:
         std::shared_ptr<VoxelChunkComponent> chunk {};
@@ -38,8 +39,10 @@ private:
         float timeSpentWaitingForUnload = 0;
 
         bool isDisplayed = false;
+        std::shared_ptr<SceneComponent> scene;
 
-        explicit ActiveChunkData(const glm::ivec2& chunkPosition);
+        explicit ActiveChunkData(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
+        ~ActiveChunkData();
     };
 
     struct ManagerData
@@ -87,6 +90,7 @@ private:
 
         // ----- Chunks -----
 
+        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
         std::unordered_map<glm::ivec2, ActiveChunkData> activeChunks {};
     };
 

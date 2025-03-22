@@ -56,16 +56,16 @@ void SceneComponent::addChunk(const glm::ivec3& chunkPosition, std::shared_ptr<V
     }
 }
 
-void SceneComponent::removeChunk(const glm::ivec3& chunkPosition, const std::shared_ptr<VoxelChunkComponent>& chunk)
+void SceneComponent::removeChunk(const glm::ivec3& chunkPosition)
 {
     // Find chunk in chunksByChunkPosition and erase it
     auto mapIterator = chunksByChunkPosition.find(chunkPosition);
-    if (mapIterator != chunksByChunkPosition.end() && mapIterator->second == chunk)
+    if (mapIterator != chunksByChunkPosition.end())
     {
         chunksByChunkPosition.erase(mapIterator);
 
         // If removal from chunksByChunkPosition succeeds, also remove it from the flattened vector
-        auto vectorIterator = std::find(chunks.begin(), chunks.end(), chunk);
+        auto vectorIterator = std::find(chunks.begin(), chunks.end(), mapIterator->second);
         if (vectorIterator != chunks.end())
         {
             chunks.erase(vectorIterator);

@@ -26,4 +26,6 @@ public:
 
     bool getExistsOnGpu() const;
     void setExistsOnGpu(bool existsOnGpu);
+
+    void onDestroy() override;
 };

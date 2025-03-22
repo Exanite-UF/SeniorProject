@@ -51,3 +51,10 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu)
         chunkData.writeTo(*chunk.value());
     }
 }
+
+void VoxelChunkComponent::onDestroy()
+{
+    Component::onDestroy();
+
+    setExistsOnGpu(false);
+}

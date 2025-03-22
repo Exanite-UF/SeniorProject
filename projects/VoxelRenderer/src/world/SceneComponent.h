@@ -31,5 +31,5 @@ public:
     bool tryGetClosestChunk(std::shared_ptr<VoxelChunkComponent>& result);
 
     void addChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk);
-    void removeChunk(const glm::ivec3& chunkPosition, const std::shared_ptr<VoxelChunkComponent>& chunk);
+    void removeChunk(const glm::ivec3& chunkPosition);
 };
