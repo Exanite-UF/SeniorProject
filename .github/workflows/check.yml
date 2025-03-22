@@ -84,9 +84,9 @@ jobs:
           restore-keys: |
             cmake-{{ runner.os }}-
 
-      - name: Install dependencies
-        run: |
-          choco install opengl
+#      - name: Install dependencies
+#        run: |
+#          choco install opengl
 
       - name: Configure CMake
         run: |
