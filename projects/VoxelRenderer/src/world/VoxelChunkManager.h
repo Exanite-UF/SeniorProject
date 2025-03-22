@@ -56,7 +56,17 @@ private:
         // The distance at which chunks are loaded and uploaded to the GPU
         int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
 
-        // ----- Loading -----
+        // ----- Chunk loading -----
+
+        bool isChunkLoadingEnabled = true;
+
+        // If true, then we need to check for chunks to load/unload and mark them as such. We will load/unload them in a separate step
+        bool isChunkLoadingDirty = true;
+
+        // If true, then we need to check for chunks to unload
+        bool isChunkUnloadingDirty = true;
+
+        // ----- Chunk loading threads -----
 
         std::vector<std::thread> chunkLoadingThreads {};
 
@@ -78,14 +88,6 @@ private:
 
         glm::vec3 cameraWorldPosition {};
         glm::ivec2 cameraChunkPosition {};
-
-        // ----- Caching -----
-
-        // If true, then we need to check for chunks to load/unload and *mark* them as such. We will load/unload them in a separate step
-        bool isChunkLoadingDirty = true;
-
-        // If true, then we need to check for chunks to unload
-        bool isChunkUnloadingDirty = true;
 
         // ----- Chunks -----
 
