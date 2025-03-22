@@ -37,10 +37,10 @@ jobs:
           restore-keys: |
             cmake-{{ runner.os }}-
 
-      - name: Install OpenGL
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev
+          sudo apt-get install -y libgl1-mesa-dev wayland-protocols
 
       - name: Configure CMake
         run: |
@@ -84,7 +84,7 @@ jobs:
           restore-keys: |
             cmake-{{ runner.os }}-
 
-      - name: Install OpenGL
+      - name: Install dependencies
         run: |
           choco install opengl
 
