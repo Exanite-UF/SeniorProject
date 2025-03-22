@@ -460,6 +460,8 @@ void Program::run()
                 ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
                 ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
 
+                float indentSize = ImGui::GetWindowContentRegionMax().x / 16.0f;
+
                 static bool collapsedStates[6] = {  true, true, true, true, true, true };
                 
                 // Stats
@@ -500,7 +502,18 @@ void Program::run()
                     }
                     case 1:
                     {
-                        ImGui::Text("TO BE ADDED");
+                        std::string modelFileName = "C:/";
+
+                        ImGui::Text("Please choose a file.");
+                        ImGui::Indent(indentSize);
+                        ImGui::PushID("ModelKey");
+                        ImGui::InputText("", &modelFileName);
+                        ImGui::PopID();
+                        ImGui::Unindent(indentSize);
+                        if (ImGui::Button("Import"))
+                        {
+                            
+                        }
 
                         break;
                     }
