@@ -32,7 +32,7 @@ jobs:
       - name: Cache CMake folder
         uses: actions/cache@v4
         with:
-          path: cmake
+          path: build
           key: cmake-{{ runner.os }}-{{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             cmake-{{ runner.os }}-
@@ -79,7 +79,7 @@ jobs:
       - name: Cache CMake folder
         uses: actions/cache@v4
         with:
-          path: cmake
+          path: build
           key: cmake-{{ runner.os }}-{{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             cmake-{{ runner.os }}-
