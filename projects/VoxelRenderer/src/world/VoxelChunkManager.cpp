@@ -315,7 +315,7 @@ void VoxelChunkManager::showDebugMenu()
 
         {
             // Chunk display distance parameters
-            int displayDistance = data.renderDistance * 2;
+            int displayDistance = data.renderDistance + 1;
 
             glm::ivec2 displaySize = glm::ivec2(displayDistance * 2 + 1);
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
