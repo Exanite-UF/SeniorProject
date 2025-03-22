@@ -455,6 +455,7 @@ void Program::run()
             float menuWidth = windowSize.x / numMenus;
             float menuHeight = windowSize.y / 4;
             const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
+
             
             for (int i = 0; i < numMenus; i++)
             {
@@ -462,6 +463,9 @@ void Program::run()
                 ImGui::SetNextWindowPos(ImVec2(i * menuWidth, 0));
                 ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
                 ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
+
+                static bool showOriginalModelMenu = false;
+                static bool showVoxelizedModelMenu = false;
 
                 float indentSize = ImGui::GetWindowContentRegionMax().x / 16.0f;
 
@@ -514,23 +518,36 @@ void Program::run()
                         ImGui::InputText("", &modelFileName);
                         ImGui::PopID();
                         ImGui::Unindent(indentSize);
+                    
                         if (ImGui::Button("Import"))
                         {
                             
                         }
 
+
                         // Polygnol Mesh Preview
                         std::string originalModelHeader = "Preview Original Model";
                         HeaderCondenser(originalModelHeader);
 
-                        if (ImGui::BeginMenu(originalModelHeader.c_str()))
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.750f, 0.625f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.129f, 0.460f, 0.405f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
+                        if (ImGui::Button(originalModelHeader.c_str()))
                         {
+                            showOriginalModelMenu = !showOriginalModelMenu;
+                        }
+                        ImGui::PopStyleColor(3);
+
+
+                        if (showOriginalModelMenu)
+                        {
+                            ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiCond_FirstUseEver);
+                            ImGui::Begin("Original Model Preview", &showOriginalModelMenu, ImGuiWindowFlags_NoCollapse);
                             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
                             ImGui::BeginChild("InvisibleBox",  ImVec2(320, 240), true);
                             ImGui::EndChild();
                             ImGui::PopStyleColor(); 
-
-                            ImGui::EndMenu();
+                            ImGui::End();
                         }
 
                             
@@ -539,20 +556,35 @@ void Program::run()
                         std::string voxelizedModelHeader = "Preview Voxelized Model";
                         HeaderCondenser(voxelizedModelHeader);
 
-                        if (ImGui::BeginMenu(voxelizedModelHeader.c_str()))
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.770f, 0.372f, 0.0f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.510f, 0.320f, 0.143f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
+                        if (ImGui::Button(voxelizedModelHeader.c_str()))
                         {
+                            showVoxelizedModelMenu = !showVoxelizedModelMenu;
+                        }
+                        ImGui::PopStyleColor(3);
+
+                        if (showVoxelizedModelMenu)
+                        {
+                            ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiCond_FirstUseEver);
+                            ImGui::Begin("Voxelized Model Preview", &showVoxelizedModelMenu, ImGuiWindowFlags_NoCollapse);
                             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
                             ImGui::BeginChild("InvisibleBox",  ImVec2(320, 240), true);
                             ImGui::EndChild();
                             ImGui::PopStyleColor(); 
-
-                            ImGui::EndMenu();
+                            ImGui::End();
                         }
+
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.253f, 0.540f, 0.248f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.313f, 0.450f, 0.310f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f)); 
 
                         if (ImGui::Button("Add to world"))
                         {
                             
                         }
+                        ImGui::PopStyleColor(3);
 
                         break;
                     }
@@ -799,7 +831,7 @@ void Program::runLateStartupTests()
 // Helper Function
 void HeaderCondenser(std::string &headerText_)
 {
-    float availableWidth = ImGui::GetContentRegionAvail().x * 0.8f;
+    float availableWidth = ImGui::GetContentRegionAvail().x * 0.9f;
     float textWidth = ImGui::CalcTextSize(headerText_.c_str()).x;
 
     if (textWidth > availableWidth)
