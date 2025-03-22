@@ -25,8 +25,8 @@ public:
     virtual void showDebugMenu() = 0;
 
     void setChunkSize(const glm::ivec3& chunkSize);
-    const glm::ivec3& getChunkSize();
+    const glm::ivec3& getChunkSize() const;
 
     void setChunkPosition(const glm::ivec3& chunkPosition);
-    const glm::ivec3& getChunkPosition();
+    const glm::ivec3& getChunkPosition() const;
 };

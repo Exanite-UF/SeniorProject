@@ -36,7 +36,7 @@ void WorldGenerator::setChunkSize(const glm::ivec3& chunkSize)
     this->chunkSize = chunkSize;
 }
 
-const glm::ivec3& WorldGenerator::getChunkSize()
+const glm::ivec3& WorldGenerator::getChunkSize() const
 {
     return chunkSize;
 }
@@ -46,7 +46,7 @@ void WorldGenerator::setChunkPosition(const glm::ivec3& chunkPosition)
     this->chunkPosition = chunkPosition;
 }
 
-const glm::ivec3& WorldGenerator::getChunkPosition()
+const glm::ivec3& WorldGenerator::getChunkPosition() const
 {
     return chunkPosition;
 }
