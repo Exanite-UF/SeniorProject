@@ -111,21 +111,21 @@ void Program::run()
     // Create the scene GameObject
     auto sceneObject = GameObject::createRootObject("Scene");
     auto scene = sceneObject->addComponent<SceneComponent>();
-
-    // Create the chunk GameObjects
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
-    for (int x = 0; x < 3; x++)
-    {
-        for (int y = 0; y < 3; ++y)
-        {
-            auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
-            auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
-            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-
-            scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
-        }
-    }
+    // // Create the chunk GameObjects
+    // for (int x = 0; x < 3; x++)
+    // {
+    //     for (int y = 0; y < 3; ++y)
+    //     {
+    //         auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+    //
+    //         auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
+    //         voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
+    //
+    //         scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
+    //     }
+    // }
 
     // Create the camera GameObject
     auto cameraObject = sceneObject->createChildObject("Camera");
