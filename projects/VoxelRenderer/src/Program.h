@@ -27,8 +27,14 @@ public:
     float fillAmount = 0.6;
     bool isRemakeNoiseRequested = true;
 
-    float currentFPS1 = 0;
-    float averagedDeltaTime1 = 0;
+    // Fps counter
+    float fpsCycleTimer = 0;
+
+    float currentDisplayFps = 0;
+    float averageDisplayDeltaTime = 0;
+
+    float currentRenderFps = 0;
+    float averagedRenderDeltaTime = 0;
 
     Program();
     ~Program() override;

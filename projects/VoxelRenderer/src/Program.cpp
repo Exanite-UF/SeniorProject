@@ -237,11 +237,6 @@ void Program::run()
     double totalElapsedTime = 0;
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
 
-    // Fps counter
-    float fpsCycleTimer = 0;
-    float currentFPS = 0;
-    float averagedDeltaTime = 0;
-
     // Temporal accumulation
     int frameCount = 0;
     int maxFrames = 0; // TODO: Currently unused?
@@ -282,23 +277,21 @@ void Program::run()
         fpsCycleTimer += deltaTime;
         if (fpsCycleTimer > 1)
         {
-            int framesThisCycle = renderer.getReprojectionCounter();
+            int displaysThisCycle = renderer.getReprojectionCounter();
             renderer.resetReprojectionCounter();
-            currentFPS = framesThisCycle / fpsCycleTimer;
-            averagedDeltaTime = fpsCycleTimer / framesThisCycle;
+            currentDisplayFps = displaysThisCycle / fpsCycleTimer;
+            averageDisplayDeltaTime = fpsCycleTimer / displaysThisCycle;
 
-            int framesThisCycle1 = renderer.getRenderCounter();
+            int rendersThisCycle = renderer.getRenderCounter();
             renderer.resetRenderCounter();
-            currentFPS1 = framesThisCycle1 / fpsCycleTimer;
-            averagedDeltaTime1 = fpsCycleTimer / framesThisCycle1;
+            currentRenderFps = rendersThisCycle / fpsCycleTimer;
+            averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
 
-            auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
-            auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
-            Log::log(std::to_string(currentFPS) + " Display FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " Render FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
+            auto averagedDisplayDeltaTimeMs = averageDisplayDeltaTime * 1000;
+            auto averagedRenderDeltaTimeMs = averagedRenderDeltaTime * 1000;
+            Log::log(std::format("{} display FPS ({} ms) | {} render FPS ({} ms)", currentDisplayFps, averagedDisplayDeltaTimeMs, currentRenderFps, averagedRenderDeltaTimeMs));
 
             fpsCycleTimer = 0;
-            framesThisCycle = 0;
-            framesThisCycle1 = 0;
         }
 
         // Update systems
@@ -499,7 +492,7 @@ void Program::run()
 
                         ImGui::Text("\n");
 
-                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentDisplayFps, currentRenderFps);
                         ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
                         ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
                         ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
