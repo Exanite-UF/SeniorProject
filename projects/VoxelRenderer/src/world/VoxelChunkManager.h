@@ -30,7 +30,7 @@ private:
     class ActiveChunk : public NonCopyable
     {
     public:
-        std::shared_ptr<VoxelChunkComponent> chunk {};
+        std::shared_ptr<VoxelChunkComponent> component {};
         glm::ivec2 chunkPosition;
 
         bool isLoading = true;

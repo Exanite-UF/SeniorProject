@@ -38,18 +38,18 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
     this->scene = scene;
 
     auto go = scene->getGameObject()->createChildObject(std::format("Chunk ({}, {})", chunkPosition.x, chunkPosition.y));
-    chunk = go->addComponent<VoxelChunkComponent>();
+    component = go->addComponent<VoxelChunkComponent>();
 
-    chunk->getTransform()->setGlobalPosition(
+    component->getTransform()->setGlobalPosition(
         glm::vec3(chunkSize.x * chunkPosition.x, chunkSize.y * chunkPosition.y, 0) + (glm::vec3(chunkSize) / 2.0f));
 
-    scene->addChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), chunk);
+    scene->addChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), component);
 }
 
 VoxelChunkManager::ActiveChunk::~ActiveChunk()
 {
     scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
-    chunk->destroy();
+    component->destroy();
 }
 
 VoxelChunkManager::~VoxelChunkManager()
@@ -285,9 +285,9 @@ void VoxelChunkManager::update(const float deltaTime)
                 auto& chunk = chunkIterator->second;
                 chunk->isLoading = false;
 
-                chunk->chunk->getChunkData().copyFrom(request->chunkData);
-                chunk->chunk->getChunkData().writeTo(*chunk->chunk->getChunk());
-                chunk->chunk->setExistsOnGpu(true);
+                chunk->component->getChunkData().copyFrom(request->chunkData);
+                chunk->component->getChunkData().writeTo(*chunk->component->getChunk());
+                chunk->component->setExistsOnGpu(true);
             }
         }
     }
