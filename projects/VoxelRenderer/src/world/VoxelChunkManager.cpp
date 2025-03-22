@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <src/Constants.h>
+#include <src/gameobjects/GameObject.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/Assert.h>
@@ -28,9 +29,27 @@ VoxelChunkManager::ChunkLoadRequest::ChunkLoadRequest(const glm::ivec2& chunkPos
     this->chunkSize = chunkSize;
 }
 
-VoxelChunkManager::ActiveChunkData::ActiveChunkData(const glm::ivec2& chunkPosition)
+VoxelChunkManager::ActiveChunkData::ActiveChunkData(
+    const glm::ivec2& chunkPosition,
+    const glm::ivec3& chunkSize,
+    const std::shared_ptr<SceneComponent>& scene)
 {
     this->chunkPosition = chunkPosition;
+    this->scene = scene;
+
+    auto go = scene->getGameObject()->createChildObject(std::format("Chunk ({}, {})", chunkPosition.x, chunkPosition.y));
+    auto chunk = go->addComponent<VoxelChunkComponent>();
+
+    chunk->getTransform()->setGlobalPosition(
+        glm::vec3(chunkSize.x * chunkPosition.x, chunkSize.y * chunkPosition.y, 0) + (glm::vec3(chunkSize) / 2.0f));
+
+    scene->addChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), chunk);
+}
+
+VoxelChunkManager::ActiveChunkData::~ActiveChunkData()
+{
+    scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
+    chunk->destroy();
 }
 
 VoxelChunkManager::~VoxelChunkManager()
@@ -132,14 +151,14 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
     Log::log("Stopped VoxelChunkManager chunk loading thread");
 }
 
-void VoxelChunkManager::update(float deltaTime)
+void VoxelChunkManager::update(const float deltaTime)
 {
     // Calculate new camera chunk position
     data.cameraWorldPosition = scene->camera->getTransform()->getGlobalPosition();
 
     auto newCameraChunkPosition = glm::ivec2(glm::round(glm::vec2(
-        data.cameraWorldPosition.x / Constants::VoxelChunkComponent::chunkSize.x - 0.5f,
-        data.cameraWorldPosition.y / Constants::VoxelChunkComponent::chunkSize.y - 0.5f)));
+        data.cameraWorldPosition.x / data.chunkSize.x - 0.5f,
+        data.cameraWorldPosition.y / data.chunkSize.y - 0.5f)));
 
     if (data.cameraChunkPosition != newCameraChunkPosition)
     {
@@ -199,11 +218,11 @@ void VoxelChunkManager::update(float deltaTime)
             }
 
             // Load the chunk
-            data.activeChunks.emplace(chunkToLoad, ActiveChunkData(chunkToLoad));
+            data.activeChunks.emplace(chunkToLoad, ActiveChunkData(chunkToLoad, data.chunkSize, scene));
             {
                 // Send a request to a worker thread to either load the chunk
                 std::lock_guard lock(data.pendingRequestsMutex);
-                data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, Constants::VoxelChunkComponent::chunkSize));
+                data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, data.chunkSize));
                 data.chunkLoadingThreadCondition.notify_one();
             }
 
@@ -235,7 +254,6 @@ void VoxelChunkManager::update(float deltaTime)
         {
             Log::log(std::format("Unloaded chunk at ({}, {})", chunkToUnload.x, chunkToUnload.y));
             data.activeChunks.erase(chunkToUnload);
-            // TODO: Actually unload the chunk
         }
 
         if (chunksUpdated == 0)
@@ -246,15 +264,13 @@ void VoxelChunkManager::update(float deltaTime)
     }
 
     // Chunk data readback from worker threads
-    // TODO: Actually use data instead of immediately throwing it away
     {
         std::unique_lock completedRequestsLock(data.completedRequestsMutex, std::defer_lock);
         if (completedRequestsLock.try_lock())
         {
             while (!data.completedRequests.empty())
             {
-                // TODO: Currently throwing away data to prevent memory leaks
-                auto request = data.completedRequests.front();
+                const auto request = data.completedRequests.front();
                 data.completedRequests.pop();
 
                 auto chunkIterator = data.activeChunks.find(request->chunkPosition);
@@ -268,6 +284,10 @@ void VoxelChunkManager::update(float deltaTime)
 
                 auto& chunk = chunkIterator->second;
                 chunk.isLoading = false;
+
+                chunk.chunk->getChunkData().copyFrom(request->chunkData);
+                chunk.chunk->getChunkData().writeTo(*chunk.chunk->getChunk());
+                chunk.chunk->setExistsOnGpu(true);
             }
         }
     }
