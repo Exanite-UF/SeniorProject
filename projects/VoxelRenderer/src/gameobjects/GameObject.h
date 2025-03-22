@@ -20,7 +20,7 @@ private:
     std::shared_ptr<TransformComponent> transform {};
     std::vector<std::shared_ptr<Component>> components {};
 
-    static constexpr std::string defaultName = "GameObject";
+    static constexpr const char* defaultName = "GameObject";
 
     void notifyDestroy();
 
