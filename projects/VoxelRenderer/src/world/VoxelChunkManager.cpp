@@ -29,7 +29,7 @@ VoxelChunkManager::ChunkLoadRequest::ChunkLoadRequest(const glm::ivec2& chunkPos
     this->chunkSize = chunkSize;
 }
 
-VoxelChunkManager::ActiveChunkData::ActiveChunkData(
+VoxelChunkManager::ActiveChunk::ActiveChunk(
     const glm::ivec2& chunkPosition,
     const glm::ivec3& chunkSize,
     const std::shared_ptr<SceneComponent>& scene)
@@ -38,7 +38,7 @@ VoxelChunkManager::ActiveChunkData::ActiveChunkData(
     this->scene = scene;
 
     auto go = scene->getGameObject()->createChildObject(std::format("Chunk ({}, {})", chunkPosition.x, chunkPosition.y));
-    auto chunk = go->addComponent<VoxelChunkComponent>();
+    chunk = go->addComponent<VoxelChunkComponent>();
 
     chunk->getTransform()->setGlobalPosition(
         glm::vec3(chunkSize.x * chunkPosition.x, chunkSize.y * chunkPosition.y, 0) + (glm::vec3(chunkSize) / 2.0f));
@@ -46,7 +46,7 @@ VoxelChunkManager::ActiveChunkData::ActiveChunkData(
     scene->addChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), chunk);
 }
 
-VoxelChunkManager::ActiveChunkData::~ActiveChunkData()
+VoxelChunkManager::ActiveChunk::~ActiveChunk()
 {
     scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
     chunk->destroy();
@@ -185,23 +185,23 @@ void VoxelChunkManager::update(const float deltaTime)
         // Unload chunks
         for (auto& loadedChunk : std::views::values(data.activeChunks))
         {
-            if (loadedChunk.isUnloading)
+            if (loadedChunk->isUnloading)
             {
                 // Chunk is already unloading, skip it
                 continue;
             }
 
-            if (chunksToLoad.contains(loadedChunk.chunkPosition))
+            if (chunksToLoad.contains(loadedChunk->chunkPosition))
             {
                 // Chunk should be loaded, don't unload it
                 continue;
             }
 
             // Mark the chunk to be unloaded
-            loadedChunk.isUnloading = true;
+            loadedChunk->isUnloading = true;
             data.isChunkUnloadingDirty = true;
 
-            Log::log(std::format("Preparing to unload chunk at ({}, {})", loadedChunk.chunkPosition.x, loadedChunk.chunkPosition.y));
+            Log::log(std::format("Preparing to unload chunk at ({}, {})", loadedChunk->chunkPosition.x, loadedChunk->chunkPosition.y));
         }
 
         // Load chunks
@@ -211,14 +211,14 @@ void VoxelChunkManager::update(const float deltaTime)
             if (chunk != data.activeChunks.end())
             {
                 // Keep the chunk alive if necessary
-                chunk->second.isUnloading = false;
+                chunk->second->isUnloading = false;
 
                 // Chunk is already loaded, we don't need to load
                 continue;
             }
 
             // Load the chunk
-            data.activeChunks.emplace(chunkToLoad, ActiveChunkData(chunkToLoad, data.chunkSize, scene));
+            data.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, data.chunkSize, scene));
             {
                 // Send a request to a worker thread to either load the chunk
                 std::lock_guard lock(data.pendingRequestsMutex);
@@ -238,14 +238,14 @@ void VoxelChunkManager::update(const float deltaTime)
         std::vector<glm::ivec2> chunksToUnload {};
         for (auto& chunk : std::ranges::views::values(data.activeChunks))
         {
-            if (chunk.isUnloading)
+            if (chunk->isUnloading)
             {
-                chunk.timeSpentWaitingForUnload += deltaTime;
+                chunk->timeSpentWaitingForUnload += deltaTime;
                 chunksUpdated++;
 
-                if (chunk.timeSpentWaitingForUnload > data.chunkUnloadTime)
+                if (chunk->timeSpentWaitingForUnload > data.chunkUnloadTime)
                 {
-                    chunksToUnload.push_back(chunk.chunkPosition);
+                    chunksToUnload.push_back(chunk->chunkPosition);
                 }
             }
         }
@@ -283,11 +283,11 @@ void VoxelChunkManager::update(const float deltaTime)
                 }
 
                 auto& chunk = chunkIterator->second;
-                chunk.isLoading = false;
+                chunk->isLoading = false;
 
-                chunk.chunk->getChunkData().copyFrom(request->chunkData);
-                chunk.chunk->getChunkData().writeTo(*chunk.chunk->getChunk());
-                chunk.chunk->setExistsOnGpu(true);
+                chunk->chunk->getChunkData().copyFrom(request->chunkData);
+                chunk->chunk->getChunkData().writeTo(*chunk->chunk->getChunk());
+                chunk->chunk->setExistsOnGpu(true);
             }
         }
     }
@@ -341,12 +341,12 @@ void VoxelChunkManager::showDebugMenu()
                     {
                         color = loadedColor;
 
-                        if (chunkIterator->second.isLoading)
+                        if (chunkIterator->second->isLoading)
                         {
                             color = loadingColor;
                         }
 
-                        if (chunkIterator->second.isUnloading)
+                        if (chunkIterator->second->isUnloading)
                         {
                             color = unloadingColor;
                         }
