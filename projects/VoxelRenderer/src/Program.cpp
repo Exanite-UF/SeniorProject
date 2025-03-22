@@ -120,10 +120,10 @@ void Program::run()
         {
             auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
-            auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>(true));
+            auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
             voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
 
-            scene->chunks.push_back(voxelChunk);
+            scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
         }
     }
 
@@ -131,10 +131,8 @@ void Program::run()
     auto cameraObject = sceneObject->createChildObject("Camera");
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto& cameraTransform = camera->getTransform();
-    scene->camera = camera;
+    scene->setCamera(camera);
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
-
-    auto& voxelChunk = scene->chunks.at(0);
 
     // Initialize the chunk manager
     voxelChunkManager.initialize(scene);

@@ -90,9 +90,9 @@ public:
 
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
 
-    void executeRayTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay);
+    void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay);
 
-    void executePathTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces);
+    void executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces);
 
     void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 };
