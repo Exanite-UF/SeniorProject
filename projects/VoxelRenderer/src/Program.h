@@ -25,7 +25,7 @@ public:
     bool isWorkload = false; // View toggle
     bool useRandomNoise = true; // Noise type toggle
     float fillAmount = 0.6;
-    bool isRemakeNoiseRequested = true;
+    bool isRemakeNoiseRequested = false;
 
     // Fps counter
     float fpsCycleTimer = 0;
