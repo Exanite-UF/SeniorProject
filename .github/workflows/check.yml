@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  linux:
+    name: Build for Linux
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration:
+          - Release
+          - Debug
+
+    steps:
+
+      - name: Cache .git folder
+        uses: actions/cache@v4
+        with:
+          path: .git
+          key: git-{{ hashFiles('**/.gitmodules') }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.0
+        with:
+          token: ${{ secrets._GITHUB_TOKEN }}
+          submodules: recursive
+          lfs: false
+
+      - name: Cache CMake folder
+        uses: actions/cache@v4
+        with:
+          path: cmake
+          key: cmake-{{ runner.os }}-{{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            cmake-{{ runner.os }}-
+
+      - name: Configure CMake
+        run: |
+          export CC=gcc
+          export CXX=g++
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.configuration }}
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.configuration }}
