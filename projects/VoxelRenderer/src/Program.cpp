@@ -244,9 +244,9 @@ void Program::run()
 
     // Temporal accumulation
     int frameCount = 0;
-    int maxFrames = 0;
+    int maxFrames = 0; // TODO: Currently unused?
 
-    bool shouldRenderPathTrace = true;
+    bool shouldRenderPathTrace = true; // TODO: Currently unused?
 
     // Procedural Generation
     ExampleWorldGenerator exampleWorldGenerator {};
