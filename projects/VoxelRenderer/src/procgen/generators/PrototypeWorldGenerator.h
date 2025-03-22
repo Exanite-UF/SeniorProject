@@ -10,7 +10,6 @@ private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureData> textureData;
 
-    glm::ivec3 chunkSize;
     int seed = 0;
     int blockLength = 8;
 
@@ -30,7 +29,7 @@ private:
     void generateData(VoxelChunkData& data) override;
 
 public:
-    explicit PrototypeWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
+    explicit PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
 
     void showDebugMenu() override;
 };

@@ -27,9 +27,8 @@ void TextureHeightmapWorldGenerator::generateData(VoxelChunkData& data)
     }
 }
 
-TextureHeightmapWorldGenerator::TextureHeightmapWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
+TextureHeightmapWorldGenerator::TextureHeightmapWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
 {
-    this->chunkSize = chunkSize;
     this->textureDataSynthesizer = textureDataSynthesizer;
 }
 

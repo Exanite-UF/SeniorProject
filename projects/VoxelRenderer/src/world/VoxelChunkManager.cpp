@@ -12,12 +12,26 @@
 #include <vector>
 
 #include <src/Constants.h>
+#include <src/procgen/generators/PrototypeWorldGenerator.h>
+#include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/ColorUtility.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
+#include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkData.h>
+
+VoxelChunkManager::ChunkLoadRequest::ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
+{
+    this->chunkPosition = chunkPosition;
+    this->chunkSize = chunkSize;
+}
+
+VoxelChunkManager::ActiveChunkData::ActiveChunkData(const glm::ivec2& chunkPosition)
+{
+    this->chunkPosition = chunkPosition;
+}
 
 VoxelChunkManager::~VoxelChunkManager()
 {
@@ -88,11 +102,28 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         // Unlock the lock
         pendingRequestsLock.unlock();
 
-        // Generate chunk
+        // Prepare to generate chunk
         Log::log(std::format("Generating chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
 
         request->chunkData.setSize(request->chunkSize);
-        // TODO: Actually generate chunk
+
+        // Generate chunk using generator
+        {
+            MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
+
+            int seed = 0;
+            int octaves = 3;
+            float persistence = 0.5;
+            auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
+
+            PrototypeWorldGenerator generator(octaveSynthesizer);
+            generator.setChunkSize(request->chunkSize);
+            generator.setChunkPosition(glm::ivec3(request->chunkPosition, 0));
+
+            generator.generate(request->chunkData);
+        }
+
+        Log::log(std::format("Generated chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
 
         // Acquire completed requests mutex
         std::unique_lock completedRequestsLock(data.completedRequestsMutex);
@@ -121,6 +152,7 @@ void VoxelChunkManager::update(float deltaTime)
 
     data.cameraChunkPosition = newCameraChunkPosition;
 
+    // Chunk loading logic
     if (data.isChunkLoadingDirty)
     {
         // Calculate which chunks should be loaded
@@ -182,6 +214,7 @@ void VoxelChunkManager::update(float deltaTime)
         }
     }
 
+    // Chunk unloading logic
     if (data.isChunkUnloadingDirty)
     {
         // Check for chunks to unload
@@ -191,10 +224,10 @@ void VoxelChunkManager::update(float deltaTime)
         {
             if (chunk.isUnloading)
             {
-                chunk.unloadWaitTime += deltaTime;
+                chunk.timeSpentWaitingForUnload += deltaTime;
                 chunksUpdated++;
 
-                if (chunk.unloadWaitTime > data.chunkUnloadTime)
+                if (chunk.timeSpentWaitingForUnload > data.chunkUnloadTime)
                 {
                     chunksToUnload.push_back(chunk.chunkPosition);
                 }
@@ -215,6 +248,7 @@ void VoxelChunkManager::update(float deltaTime)
         }
     }
 
+    // Chunk data readback from worker threads
     // TODO: Actually use data instead of immediately throwing it away
     {
         std::unique_lock completedRequestsLock(data.completedRequestsMutex, std::defer_lock);

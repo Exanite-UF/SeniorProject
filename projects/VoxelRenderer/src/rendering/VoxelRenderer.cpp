@@ -181,7 +181,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     resetVisualInfo(resetLight, true, true, resetLight);
 }
 
-void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay)
+void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
@@ -289,7 +289,7 @@ void VoxelRenderer::executeRayTrace(std::vector<std::shared_ptr<VoxelChunkCompon
     currentBuffer++;
 }
 
-void VoxelRenderer::executePathTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces)
+void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces)
 {
     for (int i = 0; i <= bounces; i++)
     {

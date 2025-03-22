@@ -155,10 +155,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     }
 }
 
-PrototypeWorldGenerator::PrototypeWorldGenerator(const glm::ivec3& chunkSize,
-    const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
+PrototypeWorldGenerator::PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
 {
-    this->chunkSize = chunkSize;
     this->textureDataSynthesizer = textureDataSynthesizer;
 }
 

@@ -23,11 +23,7 @@ private:
 
         VoxelChunkData chunkData;
 
-        explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
-        {
-            this->chunkPosition = chunkPosition;
-            this->chunkSize = chunkSize;
-        }
+        explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
 
     struct ActiveChunkData
@@ -39,14 +35,11 @@ private:
         bool isLoading = true;
 
         bool isUnloading = false;
-        float unloadWaitTime = 0;
+        float timeSpentWaitingForUnload = 0;
 
         bool isDisplayed = false;
 
-        explicit ActiveChunkData(const glm::ivec2& chunkPosition)
-        {
-            this->chunkPosition = chunkPosition;
-        }
+        explicit ActiveChunkData(const glm::ivec2& chunkPosition);
     };
 
     struct ManagerData
@@ -58,7 +51,7 @@ private:
         int generationDistance = 2; // TODO
 
         // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 1;
+        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
 
         // ----- Loading -----
 
@@ -77,7 +70,7 @@ private:
         // ----- Unloading -----
 
         // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 1;
+        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
 
         // ----- Camera -----
 
