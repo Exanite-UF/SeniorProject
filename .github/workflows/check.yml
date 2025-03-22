@@ -37,6 +37,11 @@ jobs:
           restore-keys: |
             cmake-{{ runner.os }}-
 
+      - name: Install OpenGL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev
+
       - name: Configure CMake
         run: |
           export CC=gcc
@@ -78,6 +83,10 @@ jobs:
           key: cmake-{{ runner.os }}-{{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             cmake-{{ runner.os }}-
+
+      - name: Install OpenGL
+        run: |
+          choco install opengl
 
       - name: Configure CMake
         run: |
