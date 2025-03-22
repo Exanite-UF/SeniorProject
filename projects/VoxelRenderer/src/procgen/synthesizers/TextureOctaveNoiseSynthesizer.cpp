@@ -26,11 +26,48 @@ void TextureOctaveNoiseSynthesizer::generate(std::shared_ptr<TextureData>& textu
 
 void TextureOctaveNoiseSynthesizer::showDebugMenu()
 {
-    if (ImGui::CollapsingHeader("Octave Noise Synthesizer"))
+    // To Fix the Long title issue for headers
+    std::string headerText = "Octave Noise Synthesizer";
+
+    float availableWidth = ImGui::GetContentRegionAvail().x * 0.9f;
+    float textWidth = ImGui::CalcTextSize(headerText.c_str()).x;
+
+    if (textWidth > availableWidth)
     {
-        ImGui::SliderInt("Seed", &seed, 0, 100);
-        ImGui::SliderInt("Octaves", &octaves, 1, 100);
-        ImGui::SliderFloat("Persistence", &persistence, 0, 1);
+        std::string ellipsis = "...";
+        float ellipsisWidth = ImGui::CalcTextSize(ellipsis.c_str()).x;
+
+        while (ImGui::CalcTextSize((headerText + ellipsis).c_str()).x > (availableWidth) && headerText.length() > 1)
+        {
+            headerText.pop_back();
+        }
+
+        headerText += ellipsis;
+    }
+
+    float indentSize = ImGui::GetWindowContentRegionMax().x / 16.0f;
+    if (ImGui::CollapsingHeader(headerText.c_str()))
+    {
+        ImGui::Text("Seed");
+        ImGui::Indent(indentSize);
+        ImGui::PushID("seedOctave");
+        ImGui::SliderInt("", &seed, 0, 100);
+        ImGui::PopID();
+        ImGui::Unindent(indentSize);
+
+        ImGui::Text("Octaves");
+        ImGui::Indent(indentSize);
+        ImGui::PushID("octaves");
+        ImGui::SliderInt("", &octaves, 1, 100);
+        ImGui::PopID();
+        ImGui::Unindent(indentSize);
+
+        ImGui::Text("Persistence");
+        ImGui::Indent(indentSize);
+        ImGui::PushID("persistence");
+        ImGui::SliderFloat("", &persistence, 0, 1);
+        ImGui::PopID();
+        ImGui::Unindent(indentSize);
     }
 }
 

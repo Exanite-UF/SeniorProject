@@ -37,12 +37,40 @@ void ExampleWorldGenerator::generateData(VoxelChunkData& data)
 
 void ExampleWorldGenerator::showDebugMenu()
 {
+    // To Fix the Long title issue for headers
+    std::string headerText = "Example World Generator";
+
+    float availableWidth = ImGui::GetContentRegionAvail().x * 0.9f;
+    float textWidth = ImGui::CalcTextSize(headerText.c_str()).x;
+
+    if (textWidth > availableWidth)
+    {
+        std::string ellipsis = "...";
+        float ellipsisWidth = ImGui::CalcTextSize(ellipsis.c_str()).x;
+
+        while (ImGui::CalcTextSize((headerText + ellipsis).c_str()).x > (availableWidth) && headerText.length() > 1)
+        {
+            headerText.pop_back();
+        }
+
+        headerText += ellipsis;
+    }
+
     ImGui::PushID("ExampleWorldGenerator");
     {
-        if (ImGui::CollapsingHeader("Example World Generator"))
+        ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
+        float indentSize = ImGui::GetWindowContentRegionMax().x / 16.0f;
+        
+        if (ImGui::CollapsingHeader(headerText.c_str()))
         {
-            ImGui::InputText("Material", &materialKey);
+            ImGui::Text("Material");
+            ImGui::Indent(indentSize);
+            ImGui::PushID("MaterialKey");
+            ImGui::InputText("", &materialKey);
+            ImGui::PopID();
+            ImGui::Unindent(indentSize);
         }
+        ImGui::PopTextWrapPos();
     }
     ImGui::PopID();
 }
