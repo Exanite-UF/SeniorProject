@@ -169,7 +169,7 @@ void VoxelChunkManager::update(const float deltaTime)
     data.cameraChunkPosition = newCameraChunkPosition;
 
     // Chunk loading logic
-    if (data.isChunkLoadingDirty)
+    if (data.isChunkLoadingDirty && data.isChunkLoadingEnabled)
     {
         // Calculate which chunks should be loaded
         std::unordered_set<glm::ivec2> chunksToLoad {};
@@ -228,10 +228,12 @@ void VoxelChunkManager::update(const float deltaTime)
 
             Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
         }
+
+        data.isChunkLoadingDirty = false;
     }
 
     // Chunk unloading logic
-    if (data.isChunkUnloadingDirty)
+    if (data.isChunkUnloadingDirty && data.isChunkLoadingEnabled)
     {
         // Check for chunks to unload
         int chunksUpdated = 0;
@@ -296,6 +298,8 @@ void VoxelChunkManager::showDebugMenu()
 {
     if (ImGui::CollapsingHeader("VoxelChunkManager"))
     {
+        ImGui::Checkbox("Enable chunk loading", &data.isChunkLoadingEnabled);
+
         ImGui::Text("%s", std::format("Render distance: {}", data.renderDistance).c_str());
         ImGui::Text("%s", std::format("Loaded chunk count: {}", data.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", data.cameraChunkPosition.x, data.cameraChunkPosition.y).c_str());
