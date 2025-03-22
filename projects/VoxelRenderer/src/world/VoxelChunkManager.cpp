@@ -102,12 +102,9 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         // Unlock the lock
         pendingRequestsLock.unlock();
 
-        // Prepare to generate chunk
-        Log::log(std::format("Generating chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
-
+        // Generate chunk
         request->chunkData.setSize(request->chunkSize);
-
-        // Generate chunk using generator
+        Log::log(std::format("Generating chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
         {
             MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
 
