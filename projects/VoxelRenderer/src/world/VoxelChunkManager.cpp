@@ -49,7 +49,7 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
 VoxelChunkManager::ActiveChunk::~ActiveChunk()
 {
     scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
-    component->destroy();
+    component->getGameObject()->destroy();
 }
 
 VoxelChunkManager::~VoxelChunkManager()
