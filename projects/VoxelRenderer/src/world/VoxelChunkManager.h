@@ -23,11 +23,7 @@ private:
 
         VoxelChunkData chunkData;
 
-        explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
-        {
-            this->chunkPosition = chunkPosition;
-            this->chunkSize = chunkSize;
-        }
+        explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
 
     struct ActiveChunkData
@@ -43,10 +39,7 @@ private:
 
         bool isDisplayed = false;
 
-        explicit ActiveChunkData(const glm::ivec2& chunkPosition)
-        {
-            this->chunkPosition = chunkPosition;
-        }
+        explicit ActiveChunkData(const glm::ivec2& chunkPosition);
     };
 
     struct ManagerData

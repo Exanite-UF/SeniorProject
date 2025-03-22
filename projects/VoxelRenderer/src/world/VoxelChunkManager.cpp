@@ -22,6 +22,17 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkData.h>
 
+VoxelChunkManager::ChunkLoadRequest::ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
+{
+    this->chunkPosition = chunkPosition;
+    this->chunkSize = chunkSize;
+}
+
+VoxelChunkManager::ActiveChunkData::ActiveChunkData(const glm::ivec2& chunkPosition)
+{
+    this->chunkPosition = chunkPosition;
+}
+
 VoxelChunkManager::~VoxelChunkManager()
 {
     Log::log("Cleaning up VoxelChunkManager");
