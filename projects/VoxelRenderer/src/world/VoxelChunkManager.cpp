@@ -164,25 +164,25 @@ void VoxelChunkManager::update(float deltaTime)
         }
 
         // Unload chunks
-        for (auto& loadedChunk : data.activeChunks)
+        for (auto& loadedChunk : std::views::values(data.activeChunks))
         {
-            if (loadedChunk.second.isUnloading)
+            if (loadedChunk.isUnloading)
             {
                 // Chunk is already unloading, skip it
                 continue;
             }
 
-            if (chunksToLoad.contains(loadedChunk.second.chunkPosition))
+            if (chunksToLoad.contains(loadedChunk.chunkPosition))
             {
                 // Chunk should be loaded, don't unload it
                 continue;
             }
 
             // Mark the chunk to be unloaded
-            loadedChunk.second.isUnloading = true;
+            loadedChunk.isUnloading = true;
             data.isChunkUnloadingDirty = true;
 
-            Log::log(std::format("Preparing to unload chunk at ({}, {})", loadedChunk.second.chunkPosition.x, loadedChunk.second.chunkPosition.y));
+            Log::log(std::format("Preparing to unload chunk at ({}, {})", loadedChunk.chunkPosition.x, loadedChunk.chunkPosition.y));
         }
 
         // Load chunks
