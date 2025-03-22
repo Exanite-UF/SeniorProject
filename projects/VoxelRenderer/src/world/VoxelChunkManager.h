@@ -39,7 +39,7 @@ private:
         bool isLoading = true;
 
         bool isUnloading = false;
-        float unloadWaitTime = 0; // TODO: This should be 1 after LODs are added
+        float timeSpentWaitingForUnload = 0;
 
         bool isDisplayed = false;
 
@@ -77,7 +77,7 @@ private:
         // ----- Unloading -----
 
         // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 1;
+        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
 
         // ----- Camera -----
 

@@ -211,10 +211,10 @@ void VoxelChunkManager::update(float deltaTime)
         {
             if (chunk.isUnloading)
             {
-                chunk.unloadWaitTime += deltaTime;
+                chunk.timeSpentWaitingForUnload += deltaTime;
                 chunksUpdated++;
 
-                if (chunk.unloadWaitTime > data.chunkUnloadTime)
+                if (chunk.timeSpentWaitingForUnload > data.chunkUnloadTime)
                 {
                     chunksToUnload.push_back(chunk.chunkPosition);
                 }
