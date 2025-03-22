@@ -27,7 +27,7 @@ private:
         explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
 
-    class ActiveChunkData
+    class ActiveChunk : public NonCopyable
     {
     public:
         std::shared_ptr<VoxelChunkComponent> chunk {};
@@ -41,8 +41,8 @@ private:
         bool isDisplayed = false;
         std::shared_ptr<SceneComponent> scene;
 
-        explicit ActiveChunkData(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
-        ~ActiveChunkData();
+        explicit ActiveChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
+        ~ActiveChunk() override;
     };
 
     struct ManagerData
@@ -91,7 +91,7 @@ private:
         // ----- Chunks -----
 
         glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
-        std::unordered_map<glm::ivec2, ActiveChunkData> activeChunks {};
+        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveChunk>> activeChunks {};
     };
 
 private:
