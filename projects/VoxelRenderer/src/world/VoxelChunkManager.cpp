@@ -311,6 +311,7 @@ void VoxelChunkManager::showDebugMenu()
         ImGui::Text("%s", std::format("Render distance: {}", data.renderDistance).c_str());
         ImGui::Text("%s", std::format("Loaded chunk count: {}", data.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", data.cameraChunkPosition.x, data.cameraChunkPosition.y).c_str());
+        ImGui::Text("%s", std::format("Chunk generation threads: {}", data.chunkLoadingThreads.size()).c_str());
 
         {
             // Chunk display distance parameters
