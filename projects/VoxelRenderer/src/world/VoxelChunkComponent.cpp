@@ -7,7 +7,7 @@ VoxelChunkComponent::VoxelChunkComponent()
 {
 }
 
-VoxelChunkComponent::VoxelChunkComponent(bool shouldGeneratePlaceholderData)
+VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderData)
 {
     if (shouldGeneratePlaceholderData)
     {
