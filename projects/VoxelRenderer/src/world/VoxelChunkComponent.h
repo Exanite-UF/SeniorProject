@@ -18,7 +18,7 @@ private:
 
 public:
     explicit VoxelChunkComponent();
-    explicit VoxelChunkComponent(bool generatePlaceholderData);
+    explicit VoxelChunkComponent(bool shouldGeneratePlaceholderData);
 
     // Will throw if chunk data does not exist on the GPU
     const std::unique_ptr<VoxelChunk>& getChunk(); // TODO: Add mutex for chunk and another one for chunkData
