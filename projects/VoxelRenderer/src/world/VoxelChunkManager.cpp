@@ -42,8 +42,7 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
     auto go = scene->getGameObject()->createChildObject(std::format("Chunk ({}, {})", chunkPosition.x, chunkPosition.y));
     component = go->addComponent<VoxelChunkComponent>();
 
-    component->getTransform()->setGlobalPosition(
-        glm::vec3(chunkSize.x * chunkPosition.x, chunkSize.y * chunkPosition.y, 0) + (glm::vec3(chunkSize) / 2.0f));
+    component->getTransform()->setGlobalPosition(glm::vec3(chunkSize.x * chunkPosition.x, chunkSize.y * chunkPosition.y, 0) + (glm::vec3(chunkSize) / 2.0f));
 
     scene->addChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), component);
 }
