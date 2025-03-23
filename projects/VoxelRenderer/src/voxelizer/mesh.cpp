@@ -45,8 +45,8 @@ void Mesh::Draw(Shader &shader)
     for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i);
-        string number;
-        string name = textures[i].type;
+        std::string number;
+        std::string name = textures[i].type;
         if (name == "texture_diffuse")
         {
             number = std::to_string(diffuseNr++);
