@@ -18,6 +18,7 @@ private:
 
 public:
     std::shared_ptr<GlfwContext> offscreenContext;
+    std::shared_ptr<GlfwContext> chunkManagerContext;
     std::shared_ptr<Window> window;
 
     std::shared_ptr<InputManager> inputManager;
