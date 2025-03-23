@@ -56,6 +56,16 @@ private:
 
         std::shared_ptr<SceneComponent> scene;
 
+        // ----- Camera -----
+
+        glm::vec3 cameraWorldPosition {};
+        glm::ivec2 cameraChunkPosition {};
+
+        // ----- Chunks -----
+
+        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
+        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveChunk>> activeChunks {};
+
         // ----- Rendering -----
 
         // The distance at which chunks begin to be generated on a separate thread
@@ -74,6 +84,11 @@ private:
         // If true, then we need to check for chunks to unload
         bool isChunkUnloadingDirty = true;
 
+        // ----- Chunk unloading -----
+
+        // Delay before a chunk marked for unloading is actually unloaded
+        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+
         // ----- Chunk loading threads -----
 
         std::vector<std::thread> chunkLoadingThreads {};
@@ -86,21 +101,6 @@ private:
 
         std::queue<std::shared_ptr<ChunkLoadRequest>> pendingRequests {};
         std::queue<std::shared_ptr<ChunkLoadRequest>> completedRequests {};
-
-        // ----- Unloading -----
-
-        // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
-
-        // ----- Camera -----
-
-        glm::vec3 cameraWorldPosition {};
-        glm::ivec2 cameraChunkPosition {};
-
-        // ----- Chunks -----
-
-        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
-        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveChunk>> activeChunks {};
     };
 
 private:
