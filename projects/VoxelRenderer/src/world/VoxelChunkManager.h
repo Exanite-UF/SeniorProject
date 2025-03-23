@@ -19,6 +19,9 @@ class VoxelChunkManager : public Singleton<VoxelChunkManager>
 private:
     struct ChunkModificationTask
     {
+    public:
+        std::shared_ptr<VoxelChunkComponent> chunk;
+        std::shared_ptr<VoxelChunkData> chunkData; // TODO: Change to command buffer
     };
 
     struct ChunkLoadTask
@@ -27,7 +30,7 @@ private:
         glm::ivec2 chunkPosition;
         glm::ivec3 chunkSize;
 
-        VoxelChunkData chunkData;
+        std::shared_ptr<VoxelChunkData> chunkData;
 
         explicit ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
@@ -106,9 +109,9 @@ private:
         std::condition_variable runCondition {};
 
         std::mutex pendingTasksMutex {};
-        std::mutex completedTasksMutex {};
-
         std::queue<std::shared_ptr<ChunkLoadTask>> pendingTasks {};
+
+        std::mutex completedTasksMutex {};
         std::queue<std::shared_ptr<ChunkLoadTask>> completedTasks {};
     };
 
@@ -119,8 +122,6 @@ private:
         std::condition_variable runCondition {};
 
         std::mutex pendingTasksMutex {};
-        std::mutex completedTasksMutex {};
-
         std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
     };
 
