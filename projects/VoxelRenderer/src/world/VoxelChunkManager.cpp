@@ -27,6 +27,8 @@ VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition,
 {
     this->chunkPosition = chunkPosition;
     this->chunkSize = chunkSize;
+
+    chunkData = std::make_shared<VoxelChunkData>(chunkSize);
 }
 
 VoxelChunkManager::ActiveChunk::ActiveChunk(
@@ -128,7 +130,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         pendingRequestsLock.unlock();
 
         // Generate chunk
-        request->chunkData.setSize(request->chunkSize);
+        request->chunkData->setSize(request->chunkSize);
         Log::log(std::format("Generating chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
         {
             MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
@@ -142,7 +144,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
             generator.setChunkSize(request->chunkSize);
             generator.setChunkPosition(glm::ivec3(request->chunkPosition, 0));
 
-            generator.generate(request->chunkData);
+            generator.generate(*request->chunkData);
         }
 
         Log::log(std::format("Generated chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
@@ -295,7 +297,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 std::lock_guard lock(chunk->component->getMutex());
 
-                chunk->component->getChunkData().copyFrom(request->chunkData);
+                chunk->component->getChunkData().copyFrom(*request->chunkData);
                 chunk->component->setExistsOnGpu(true);
             }
         }
