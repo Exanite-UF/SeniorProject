@@ -10,13 +10,18 @@
 
 #include <src/utilities/Log.h>
 #include <src/utilities/Singleton.h>
+#include <src/windowing/GlfwContext.h>
 #include <src/world/SceneComponent.h>
 #include <src/world/VoxelChunkData.h>
 
 class VoxelChunkManager : public Singleton<VoxelChunkManager>
 {
 private:
-    struct ChunkLoadRequest
+    struct ChunkModificationTask
+    {
+    };
+
+    struct ChunkLoadTask
     {
     public:
         glm::ivec2 chunkPosition;
@@ -24,7 +29,7 @@ private:
 
         VoxelChunkData chunkData;
 
-        explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
+        explicit ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
 
     class ActiveChunk : public NonCopyable
@@ -45,27 +50,9 @@ private:
         ~ActiveChunk() override;
     };
 
-    struct ManagerData
+    struct ManagerSettings
     {
     public:
-        // ----- Primary state -----
-
-        std::atomic<bool> isRunning = false;
-
-        // ----- Scene -----
-
-        std::shared_ptr<SceneComponent> scene;
-
-        // ----- Camera -----
-
-        glm::vec3 cameraWorldPosition {};
-        glm::ivec2 cameraChunkPosition {};
-
-        // ----- Chunks -----
-
-        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
-        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveChunk>> activeChunks {};
-
         // ----- Rendering -----
 
         // The distance at which chunks begin to be generated on a separate thread
@@ -74,37 +61,74 @@ private:
         // The distance at which chunks are loaded and uploaded to the GPU
         int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
 
-        // ----- Chunk loading -----
+        // ----- Chunks -----
 
+        // False prevents chunks from loading and unloading
         bool isChunkLoadingEnabled = true;
+
+        // Delay before a chunk marked for unloading is actually unloaded
+        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+
+        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
+    };
+
+    struct ManagerState
+    {
+    public:
+        // ----- Primary state -----
+
+        std::atomic<bool> isRunning = false;
+        std::shared_ptr<GlfwContext> chunkManagerContext;
+
+        // ----- Scene -----
+
+        std::shared_ptr<SceneComponent> scene;
+        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveChunk>> activeChunks {};
+
+        // ----- Camera -----
+
+        glm::vec3 cameraWorldPosition {};
+        glm::ivec2 cameraChunkPosition {};
+
+        // ----- Chunk loading -----
 
         // If true, then we need to check for chunks to load/unload and mark them as such. We will load/unload them in a separate step
         bool isChunkLoadingDirty = true;
 
         // If true, then we need to check for chunks to unload
         bool isChunkUnloadingDirty = true;
+    };
 
-        // ----- Chunk unloading -----
+    struct LoadingThreadState
+    {
+    public:
+        std::vector<std::thread> threads {};
+        std::condition_variable runCondition {};
 
-        // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+        std::mutex pendingTasksMutex {};
+        std::mutex completedTasksMutex {};
 
-        // ----- Chunk loading threads -----
+        std::queue<std::shared_ptr<ChunkLoadTask>> pendingTasks {};
+        std::queue<std::shared_ptr<ChunkLoadTask>> completedTasks {};
+    };
 
-        std::vector<std::thread> chunkLoadingThreads {};
+    struct ModificationThreadState
+    {
+    public:
+        std::thread thread {};
+        std::condition_variable runCondition {};
 
-        // Used to wake up the chunk loading thread
-        std::condition_variable chunkLoadingThreadCondition {};
+        std::mutex pendingTasksMutex {};
+        std::mutex completedTasksMutex {};
 
-        std::mutex pendingRequestsMutex {};
-        std::mutex completedRequestsMutex {};
-
-        std::queue<std::shared_ptr<ChunkLoadRequest>> pendingRequests {};
-        std::queue<std::shared_ptr<ChunkLoadRequest>> completedRequests {};
+        std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
     };
 
 private:
-    ManagerData data {};
+    ManagerSettings settings {};
+    ManagerState state {};
+    LoadingThreadState loadingThreadState {};
+    ModificationThreadState modificationThreadState {};
 
     void chunkLoaderThreadEntrypoint();
 
