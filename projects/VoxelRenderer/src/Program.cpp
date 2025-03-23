@@ -274,7 +274,7 @@ void Program::run()
     bool isModelLoaded = false;
 
     renderer.setScene(scene);
-    renderer.startAsynchronousReprojection();
+    //renderer.startAsynchronousReprojection();
 
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
@@ -372,7 +372,7 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_G))
             {
-                renderer.toggleAsynchronousReprojection();
+                //renderer.toggleAsynchronousReprojection();
             }
 
             if (input->isKeyPressed(GLFW_KEY_F6))
@@ -544,7 +544,14 @@ void Program::run()
                         if (ImGui::Button(originalModelHeader.c_str()))
                         {
                             showOriginalModelMenu = !showOriginalModelMenu;
-                            modelPreviewer.CreateWindowTriangle();
+                            if (showOriginalModelMenu)
+                            {
+                                modelPreviewer.CreateWindowTriangle();
+                            }
+                            else
+                            {
+                                modelPreviewer.CloseWindowTriangle();
+                            }
                         }
                         ImGui::PopStyleColor(3);
 
@@ -552,11 +559,11 @@ void Program::run()
                         if (showOriginalModelMenu)
                         {
                             // Creates Triangle Window
-                            modelPreviewer.RenderWindowTriangle();
+                            //modelPreviewer.RenderWindowTriangle();
                         }
                         else
                         {
-                            modelPreviewer.CloseWindowTriangle();
+                            //modelPreviewer.CloseWindowTriangle();
                         }
 
 
@@ -652,8 +659,9 @@ void Program::run()
         window->present();
     }
 
-    renderer.stopAsynchronousReprojection(); // messing with preview window
+    //renderer.stopAsynchronousReprojection(); // messing with preview window
     sceneObject->destroy();
+    std::cout << "END" << std::endl;
 }
 
 void Program::checkForContentFolder()
