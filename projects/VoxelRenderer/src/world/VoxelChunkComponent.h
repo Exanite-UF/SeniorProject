@@ -26,8 +26,6 @@ public:
     explicit VoxelChunkComponent();
     explicit VoxelChunkComponent(bool shouldGeneratePlaceholderData);
 
-    // shared access must be acquired when calling getChunk()
-    // exclusive access must be acquired when calling any non-const method
     std::shared_mutex& getMutex();
 
     // Will throw if chunk data does not exist on the GPU

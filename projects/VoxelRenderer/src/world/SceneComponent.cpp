@@ -3,6 +3,11 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
 
+std::shared_mutex& SceneComponent::getMutex()
+{
+    return mutex;
+}
+
 void SceneComponent::setCamera(const std::shared_ptr<CameraComponent>& camera)
 {
     this->camera = camera;

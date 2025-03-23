@@ -240,12 +240,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
         for (auto& chunkComponent : chunks)
         {
-            // TODO: This helps, but doesn't really fix the issue since the chunks vector is unsynchronized
-            if (!chunkComponent->getIsAlive())
-            {
-                continue;
-            }
-
             std::shared_lock lock(chunkComponent->getMutex());
 
             if (!chunkComponent->getExistsOnGpu())

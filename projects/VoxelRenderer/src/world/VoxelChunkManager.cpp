@@ -48,6 +48,8 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
 
 VoxelChunkManager::ActiveChunk::~ActiveChunk()
 {
+    std::lock_guard lock(scene->getMutex());
+
     scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
     component->getGameObject()->destroy();
 }
