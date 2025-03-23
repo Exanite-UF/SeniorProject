@@ -44,6 +44,11 @@ Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared
     postProcessing = std::unique_ptr<PostProcessRenderer>(new PostProcessRenderer());
 }
 
+Renderer::~Renderer()
+{
+    stopAsynchronousReprojection();
+}
+
 void Renderer::makeFramebuffers()
 {
     std::scoped_lock lock(bufferLocks.display, bufferLocks.ready, bufferLocks.working);
