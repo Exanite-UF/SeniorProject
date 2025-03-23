@@ -70,8 +70,10 @@ Program::Program()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    offscreenContext = std::make_shared<GlfwContext>();
-    window = std::make_shared<Window>(offscreenContext.get());
+    std::shared_ptr<GlfwContext> previousContext {};
+    previousContext = offscreenContext = std::make_shared<GlfwContext>(previousContext.get());
+    previousContext = chunkManagerContext = std::make_shared<GlfwContext>(previousContext.get());
+    previousContext = window = std::make_shared<Window>(previousContext.get());
 
     window->makeContextCurrent();
 
