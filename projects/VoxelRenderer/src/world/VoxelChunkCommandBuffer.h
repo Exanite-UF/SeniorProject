@@ -17,7 +17,7 @@ public:
     void clearOccupancyMap();
     void clearMaterialMap();
 
-    void copyFrom(VoxelChunkData& data);
+    void copyFrom(VoxelChunkData* data);
 
 public:
     void apply(const std::shared_ptr<VoxelChunkComponent>& chunk);
