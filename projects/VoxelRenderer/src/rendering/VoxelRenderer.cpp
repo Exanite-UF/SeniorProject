@@ -240,18 +240,22 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
         for (auto& chunkComponent : chunks)
         {
+            std::shared_lock lock(chunkComponent->getChunkMutex());
+
             if (!chunkComponent->getExistsOnGpu())
             {
                 continue;
             }
 
-            chunkComponent->getChunk()->bindBuffers(4, 5);
-            {
-                glm::ivec3 voxelSize = chunkComponent->getChunk()->getSize();
+            auto& chunk = chunkComponent->getChunkUnsafe();
 
-                glUniform3i(glGetUniformLocation(fullCastProgram, "cellCount"), voxelSize.x / 2, voxelSize.y / 2, voxelSize.z / 2);
-                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), chunkComponent->getChunk()->getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), chunkComponent->getChunk()->getOccupancyMapIndices().size() - 1, chunkComponent->getChunk()->getOccupancyMapIndices().data());
+            chunk->bindBuffers(4, 5);
+            {
+                const auto chunkSize = chunk->getSize();
+
+                glUniform3i(glGetUniformLocation(fullCastProgram, "cellCount"), chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2);
+                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), chunk->getOccupancyMapIndices().size() - 2);
+                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), chunk->getOccupancyMapIndices().size() - 1, chunk->getOccupancyMapIndices().data());
 
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalPosition()));
                 glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
@@ -261,7 +265,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
-            chunkComponent->getChunk()->unbindBuffers();
+            chunk->unbindBuffers();
         }
     }
 
