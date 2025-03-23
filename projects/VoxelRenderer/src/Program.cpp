@@ -50,6 +50,7 @@
 #include <src/utilities/Event.h>
 #include <src/utilities/Log.h>
 #include <src/utilities/TupleHasher.h>
+#include <src/voxelizer/ModelPreviewer.h>
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/SceneComponent.h>
@@ -266,8 +267,9 @@ void Program::run()
     TextureHeightmapWorldGenerator octaveWorldGenerator(glm::ivec3(chunkSize), openSimplexSynthesizer);
     PrototypeWorldGenerator prototypeWorldGenerator(glm::ivec3(chunkSize), octaveSynthesizer);
 
-    // IMGUI Menu
-    bool showMenuGUI = false;
+    // Model Previewer
+    ModelPreviewer modelViewer {};
+    bool isModelLoaded = false;
 
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
@@ -521,7 +523,6 @@ void Program::run()
                     
                         if (ImGui::Button("Import"))
                         {
-                            
                         }
 
 
