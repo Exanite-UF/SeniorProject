@@ -1,13 +1,8 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
 #include <src/voxelizer/mesh.h>
-//#include <glad/glad.h> 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 #include <assimp/Importer.hpp>      // C++ importer interface
 #include <assimp/scene.h>           // Output data structure
@@ -41,6 +36,3 @@ private:
     std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
     Material loadMaterial(aiMaterial* mat);
 };
-
-
-#endif

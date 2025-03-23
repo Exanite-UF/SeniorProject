@@ -1,5 +1,6 @@
 #include <src/voxelizer/shader.h>
-#include <glew.h>
+
+#include <gl/glew.h>
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {

@@ -1,6 +1,7 @@
+#pragma once
 #include <src/voxelizer/mesh.h>
-#include <glext.h>
-#include <imgui_impl_opengl3_loader.h>
+#include <gl/glew.h>
+
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {

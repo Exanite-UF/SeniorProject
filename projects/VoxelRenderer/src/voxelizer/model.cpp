@@ -1,6 +1,7 @@
 #include <src/voxelizer/model.h>
-#include <imgui_impl_opengl3_loader.h>
-#include <glew.h>
+#include <gl/glew.h>
+#include <stb_image.h>
+
 
 void Model::Draw(Shader &shader)
 {
