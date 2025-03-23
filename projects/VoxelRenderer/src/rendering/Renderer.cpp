@@ -280,9 +280,11 @@ void Renderer::_render()
         }
 
         voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+        {
+            std::shared_lock lockScene(scene->getMutex());
 
-        voxelRenderer->executePathTrace(scene->getChunks(), bounces);
-
+            voxelRenderer->executePathTrace(scene->getChunks(), bounces);
+        }
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }
 
