@@ -52,8 +52,12 @@ VoxelChunkManager::ActiveChunk::~ActiveChunk()
     component->getGameObject()->destroy();
 }
 
-VoxelChunkManager::~VoxelChunkManager()
+VoxelChunkManager::~VoxelChunkManager() = default;
+
+void VoxelChunkManager::onSingletonDestroy()
 {
+    Singleton::onSingletonDestroy();
+
     Log::log("Cleaning up VoxelChunkManager");
 
     isRunning = false;

@@ -110,4 +110,7 @@ public:
     void showDebugMenu();
 
     ~VoxelChunkManager() override;
+
+protected:
+    void onSingletonDestroy() override;
 };
