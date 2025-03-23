@@ -287,12 +287,9 @@ void VoxelChunkManager::update(const float deltaTime)
                 auto& chunk = chunkIterator->second;
                 chunk->isLoading = false;
 
-                {
-                    std::lock_guard lockChunkData(chunk->component->getChunkDataMutex());
-                    std::lock_guard lockChunk(chunk->component->getChunkMutex());
+                std::lock_guard lock(chunk->component->getMutex());
 
-                    chunk->component->getChunkDataUnsafe().copyFrom(request->chunkData);
-                }
+                chunk->component->getChunkData().copyFrom(request->chunkData);
                 chunk->component->setExistsOnGpu(true);
             }
         }

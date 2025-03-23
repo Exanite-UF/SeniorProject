@@ -348,17 +348,17 @@ void Program::run()
             {
                 if (input->isKeyHeld(GLFW_KEY_E) && closestChunk->getExistsOnGpu())
                 {
-                    std::lock_guard lock(closestChunk->getChunkMutex());
+                    std::lock_guard lock(closestChunk->getMutex());
 
-                    closestChunk->getChunkUnsafe()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                    closestChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
                 }
 
                 if (isRemakeNoiseRequested && closestChunk->getExistsOnGpu())
                 {
-                    std::lock_guard lock(closestChunk->getChunkMutex());
+                    std::lock_guard lock(closestChunk->getMutex());
 
                     // The noise time (corresponds to the deltaTime parameter) should not be incremented here
-                    closestChunk->getChunkUnsafe()->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                    closestChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
                     isRemakeNoiseRequested = false;
                 }
 

@@ -18,9 +18,9 @@ void WorldGenerator::generate(VoxelChunkComponent& chunk)
 {
     MeasureElapsedTimeScope scope("WorldGenerator::generate");
 
-    std::lock_guard lockChunkData(chunk.getChunkDataMutex());
+    std::lock_guard lock(chunk.getMutex());
 
-    VoxelChunkData& data = chunk.getChunkDataUnsafe();
+    VoxelChunkData& data = chunk.getChunkData();
 
     data.clearOccupancyMap();
     data.clearMaterialMap();
@@ -30,9 +30,7 @@ void WorldGenerator::generate(VoxelChunkComponent& chunk)
 
     if (chunk.getExistsOnGpu())
     {
-        std::lock_guard lockChunk(chunk.getChunkMutex());
-
-        data.writeTo(*chunk.getChunkUnsafe());
+        data.writeTo(*chunk.getChunk());
     }
 }
 
