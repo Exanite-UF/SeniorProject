@@ -48,6 +48,14 @@ private:
     struct ManagerData
     {
     public:
+        // ----- Primary state -----
+
+        std::atomic<bool> isRunning = false;
+
+        // ----- Scene -----
+
+        std::shared_ptr<SceneComponent> scene;
+
         // ----- Rendering -----
 
         // The distance at which chunks begin to be generated on a separate thread
@@ -96,10 +104,7 @@ private:
     };
 
 private:
-    std::atomic<bool> isRunning = false;
-    std::shared_ptr<SceneComponent> scene;
-
-    ManagerData data;
+    ManagerData data {};
 
     void chunkLoaderThreadEntrypoint();
 
