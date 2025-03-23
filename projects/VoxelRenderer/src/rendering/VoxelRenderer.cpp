@@ -240,14 +240,14 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
         for (auto& chunkComponent : chunks)
         {
-            std::shared_lock lock(chunkComponent->getChunkMutex());
+            std::shared_lock lock(chunkComponent->getMutex());
 
             if (!chunkComponent->getExistsOnGpu())
             {
                 continue;
             }
 
-            auto& chunk = chunkComponent->getChunkUnsafe();
+            auto& chunk = chunkComponent->getChunk();
 
             chunk->bindBuffers(4, 5);
             {

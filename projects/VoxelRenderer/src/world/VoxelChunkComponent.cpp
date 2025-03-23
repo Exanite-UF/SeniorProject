@@ -17,24 +17,19 @@ VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderDat
     }
 }
 
-const std::unique_ptr<VoxelChunk>& VoxelChunkComponent::getChunkUnsafe()
+const std::unique_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
 {
     return chunk.value();
 }
 
-std::shared_mutex& VoxelChunkComponent::getChunkMutex()
+std::shared_mutex& VoxelChunkComponent::getMutex()
 {
-    return chunkMutex;
+    return mutex;
 }
 
-VoxelChunkData& VoxelChunkComponent::getChunkDataUnsafe()
+VoxelChunkData& VoxelChunkComponent::getChunkData()
 {
     return chunkData;
-}
-
-std::mutex& VoxelChunkComponent::getChunkDataMutex()
-{
-    return chunkDataMutex;
 }
 
 bool VoxelChunkComponent::getExistsOnGpu() const
@@ -48,9 +43,6 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu)
     {
         return;
     }
-
-    std::lock_guard lockChunk(getChunkMutex());
-    std::lock_guard lockChunkData(getChunkDataMutex());
 
     this->existsOnGpu = existsOnGpu;
 

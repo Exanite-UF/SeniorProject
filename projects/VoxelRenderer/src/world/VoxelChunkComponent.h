@@ -20,21 +20,19 @@ private:
 
     std::atomic<bool> existsOnGpu = false;
 
-    std::shared_mutex chunkMutex {};
-    std::mutex chunkDataMutex {};
+    std::shared_mutex mutex {};
 
 public:
     explicit VoxelChunkComponent();
     explicit VoxelChunkComponent(bool shouldGeneratePlaceholderData);
 
-    // Will throw if chunk data does not exist on the GPU
-    // Caller needs to acquire the corresponding mutex for thread safety
-    const std::unique_ptr<VoxelChunk>& getChunkUnsafe();
-    std::shared_mutex& getChunkMutex();
+    // shared access must be acquired when calling getChunk()
+    // exclusive access must be acquired when calling any non-const method
+    std::shared_mutex& getMutex();
 
-    // Caller needs to acquire the corresponding mutex for thread safety
-    VoxelChunkData& getChunkDataUnsafe();
-    std::mutex& getChunkDataMutex();
+    // Will throw if chunk data does not exist on the GPU
+    const std::unique_ptr<VoxelChunk>& getChunk();
+    VoxelChunkData& getChunkData();
 
     bool getExistsOnGpu() const;
     void setExistsOnGpu(bool existsOnGpu);
