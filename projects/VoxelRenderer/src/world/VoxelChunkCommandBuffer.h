@@ -5,6 +5,8 @@
 // A command buffer for commands related to modifying a VoxelChunkComponent
 class VoxelChunkCommandBuffer
 {
+    // TODO: Implement this API
+
 public:
     void setSize(const glm::ivec3& size);
 
