@@ -556,7 +556,6 @@ void Program::run()
         window->present();
     }
 
-    renderer.stopAsynchronousReprojection();
     sceneObject->destroy();
 }
 
