@@ -70,7 +70,7 @@ void VoxelChunkData::setVoxelOccupancy(const glm::ivec3& position, bool isOccupi
     }
 }
 
-const std::shared_ptr<Material>& VoxelChunkData::getVoxelMaterial(glm::ivec3 position) const
+const std::shared_ptr<Material>& VoxelChunkData::getVoxelMaterial(const glm::ivec3& position) const
 {
     auto& materialManager = MaterialManager::getInstance();
     auto voxelIndex = position.x + data.size.x * (position.y + data.size.y * position.z);
@@ -83,7 +83,7 @@ void VoxelChunkData::setVoxelMaterial(const glm::ivec3& position, const std::sha
     setVoxelMaterialIndex(position, material->getIndex());
 }
 
-uint16_t VoxelChunkData::getVoxelMaterialIndex(glm::ivec3 position) const
+uint16_t VoxelChunkData::getVoxelMaterialIndex(const glm::ivec3& position) const
 {
     // Each material ID is 16 bits, but we only use the lower 12 bits
     auto voxelIndex = position.x + data.size.x * (position.y + data.size.y * position.z);
