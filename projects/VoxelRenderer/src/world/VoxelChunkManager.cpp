@@ -23,7 +23,7 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkData.h>
 
-VoxelChunkManager::ChunkLoadRequest::ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
+VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
 {
     this->chunkPosition = chunkPosition;
     this->chunkSize = chunkSize;
@@ -62,16 +62,16 @@ void VoxelChunkManager::onSingletonDestroy()
 
     Log::log("Cleaning up VoxelChunkManager");
 
-    data.isRunning = false;
+    state.isRunning = false;
 
     {
-        std::lock_guard lock(data.pendingRequestsMutex);
-        data.chunkLoadingThreadCondition.notify_all();
+        std::lock_guard lock(loadingThreadState.pendingTasksMutex);
+        loadingThreadState.runCondition.notify_all();
     }
 
     Log::log("Stopping VoxelChunkManager chunk loading threads");
 
-    for (auto& thread : data.chunkLoadingThreads)
+    for (auto& thread : loadingThreadState.threads)
     {
         if (thread.joinable())
         {
@@ -82,10 +82,10 @@ void VoxelChunkManager::onSingletonDestroy()
 
 void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 {
-    Assert::isTrue(!data.isRunning, "VoxelChunkManager has already been initialized");
+    Assert::isTrue(!state.isRunning, "VoxelChunkManager has already been initialized");
 
-    data.isRunning = true;
-    this->data.scene = scene;
+    state.isRunning = true;
+    this->state.scene = scene;
 
     Log::log("Initializing VoxelChunkManager");
 
@@ -93,7 +93,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
     Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", threadCount));
     for (int i = 0; i < threadCount; ++i)
     {
-        data.chunkLoadingThreads.push_back(std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this));
+        loadingThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this));
     }
 
     Log::log("Initialized VoxelChunkManager");
@@ -103,26 +103,26 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
 {
     Log::log("Started VoxelChunkManager chunk loading thread");
 
-    while (data.isRunning)
+    while (state.isRunning)
     {
         // Create pending requests lock, but don't lock the mutex
         // Locking is done by condition variable below
-        std::unique_lock pendingRequestsLock(data.pendingRequestsMutex);
+        std::unique_lock pendingRequestsLock(loadingThreadState.pendingTasksMutex);
 
         // Wait for new requests to come in
-        data.chunkLoadingThreadCondition.wait(pendingRequestsLock, [&]()
+        loadingThreadState.runCondition.wait(pendingRequestsLock, [&]()
             {
-                return !data.pendingRequests.empty() || !data.isRunning;
+                return !loadingThreadState.pendingTasks.empty() || !state.isRunning;
             });
 
-        if (data.pendingRequests.empty() || !data.isRunning)
+        if (loadingThreadState.pendingTasks.empty() || !state.isRunning)
         {
             continue;
         }
 
         // Take some work
-        auto request = data.pendingRequests.front();
-        data.pendingRequests.pop();
+        auto request = loadingThreadState.pendingTasks.front();
+        loadingThreadState.pendingTasks.pop();
 
         // Unlock the lock
         pendingRequestsLock.unlock();
@@ -148,10 +148,10 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         Log::log(std::format("Generated chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
 
         // Acquire completed requests mutex
-        std::unique_lock completedRequestsLock(data.completedRequestsMutex);
+        std::unique_lock completedRequestsLock(loadingThreadState.completedTasksMutex);
 
         // Publish completed request
-        data.completedRequests.push(request);
+        loadingThreadState.completedTasks.push(request);
     }
 
     Log::log("Stopped VoxelChunkManager chunk loading thread");
@@ -160,36 +160,36 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
 void VoxelChunkManager::update(const float deltaTime)
 {
     // Calculate new camera chunk position
-    data.cameraWorldPosition = data.scene->camera->getTransform()->getGlobalPosition();
+    state.cameraWorldPosition = state.scene->camera->getTransform()->getGlobalPosition();
 
     auto newCameraChunkPosition = glm::ivec2(glm::round(glm::vec2(
-        data.cameraWorldPosition.x / data.chunkSize.x - 0.5f,
-        data.cameraWorldPosition.y / data.chunkSize.y - 0.5f)));
+        state.cameraWorldPosition.x / settings.chunkSize.x - 0.5f,
+        state.cameraWorldPosition.y / settings.chunkSize.y - 0.5f)));
 
-    if (data.cameraChunkPosition != newCameraChunkPosition)
+    if (state.cameraChunkPosition != newCameraChunkPosition)
     {
         // Camera chunk position has changed, we may need to load new chunks
-        data.isChunkLoadingDirty = true;
+        state.isChunkLoadingDirty = true;
     }
 
-    data.cameraChunkPosition = newCameraChunkPosition;
+    state.cameraChunkPosition = newCameraChunkPosition;
 
     // Chunk loading logic
-    if (data.isChunkLoadingDirty && data.isChunkLoadingEnabled)
+    if (state.isChunkLoadingDirty && settings.isChunkLoadingEnabled)
     {
         // Calculate which chunks should be loaded
         std::unordered_set<glm::ivec2> chunksToLoad {};
-        for (int x = -data.renderDistance; x <= data.renderDistance; ++x)
+        for (int x = -settings.renderDistance; x <= settings.renderDistance; ++x)
         {
-            for (int y = -data.renderDistance; y <= data.renderDistance; ++y)
+            for (int y = -settings.renderDistance; y <= settings.renderDistance; ++y)
             {
-                auto chunkPosition = data.cameraChunkPosition + glm::ivec2(x, y);
+                auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y);
                 chunksToLoad.emplace(chunkPosition);
             }
         }
 
         // Unload chunks
-        for (auto& loadedChunk : std::views::values(data.activeChunks))
+        for (auto& loadedChunk : std::views::values(state.activeChunks))
         {
             if (loadedChunk->isUnloading)
             {
@@ -205,7 +205,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
             // Mark the chunk to be unloaded
             loadedChunk->isUnloading = true;
-            data.isChunkUnloadingDirty = true;
+            state.isChunkUnloadingDirty = true;
 
             Log::log(std::format("Preparing to unload chunk at ({}, {})", loadedChunk->chunkPosition.x, loadedChunk->chunkPosition.y));
         }
@@ -213,8 +213,8 @@ void VoxelChunkManager::update(const float deltaTime)
         // Load chunks
         for (auto chunkToLoad : chunksToLoad)
         {
-            auto chunk = data.activeChunks.find(chunkToLoad);
-            if (chunk != data.activeChunks.end())
+            auto chunk = state.activeChunks.find(chunkToLoad);
+            if (chunk != state.activeChunks.end())
             {
                 // Keep the chunk alive if necessary
                 chunk->second->isUnloading = false;
@@ -224,34 +224,34 @@ void VoxelChunkManager::update(const float deltaTime)
             }
 
             // Load the chunk
-            data.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, data.chunkSize, data.scene));
+            state.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, settings.chunkSize, state.scene));
             {
                 // Send a request to a worker thread to either load the chunk
-                std::lock_guard lock(data.pendingRequestsMutex);
-                data.pendingRequests.emplace(std::make_shared<ChunkLoadRequest>(chunkToLoad, data.chunkSize));
-                data.chunkLoadingThreadCondition.notify_one();
+                std::lock_guard lock(loadingThreadState.pendingTasksMutex);
+                loadingThreadState.pendingTasks.emplace(std::make_shared<ChunkLoadTask>(chunkToLoad, settings.chunkSize));
+                loadingThreadState.runCondition.notify_one();
             }
 
             Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
         }
 
-        data.isChunkLoadingDirty = false;
+        state.isChunkLoadingDirty = false;
     }
 
     // Chunk unloading logic
-    if (data.isChunkUnloadingDirty && data.isChunkLoadingEnabled)
+    if (state.isChunkUnloadingDirty && settings.isChunkLoadingEnabled)
     {
         // Check for chunks to unload
         int chunksUpdated = 0;
         std::vector<glm::ivec2> chunksToUnload {};
-        for (auto& chunk : std::ranges::views::values(data.activeChunks))
+        for (auto& chunk : std::ranges::views::values(state.activeChunks))
         {
             if (chunk->isUnloading)
             {
                 chunk->timeSpentWaitingForUnload += deltaTime;
                 chunksUpdated++;
 
-                if (chunk->timeSpentWaitingForUnload > data.chunkUnloadTime)
+                if (chunk->timeSpentWaitingForUnload > settings.chunkUnloadTime)
                 {
                     chunksToUnload.push_back(chunk->chunkPosition);
                 }
@@ -261,28 +261,28 @@ void VoxelChunkManager::update(const float deltaTime)
         for (auto chunkToUnload : chunksToUnload)
         {
             Log::log(std::format("Unloaded chunk at ({}, {})", chunkToUnload.x, chunkToUnload.y));
-            data.activeChunks.erase(chunkToUnload);
+            state.activeChunks.erase(chunkToUnload);
         }
 
         if (chunksUpdated == 0)
         {
             // No chunks have been updated this frame so we can stop checking until we are notified to start checking again
-            data.isChunkUnloadingDirty = false;
+            state.isChunkUnloadingDirty = false;
         }
     }
 
     // Chunk data readback from worker threads
     {
-        std::unique_lock completedRequestsLock(data.completedRequestsMutex, std::defer_lock);
+        std::unique_lock completedRequestsLock(loadingThreadState.completedTasksMutex, std::defer_lock);
         if (completedRequestsLock.try_lock())
         {
-            while (!data.completedRequests.empty())
+            while (!loadingThreadState.completedTasks.empty())
             {
-                const auto request = data.completedRequests.front();
-                data.completedRequests.pop();
+                const auto request = loadingThreadState.completedTasks.front();
+                loadingThreadState.completedTasks.pop();
 
-                auto chunkIterator = data.activeChunks.find(request->chunkPosition);
-                if (chunkIterator == data.activeChunks.end())
+                auto chunkIterator = state.activeChunks.find(request->chunkPosition);
+                if (chunkIterator == state.activeChunks.end())
                 {
                     // Chunk no longer exists (was probably unloaded)
                     // Throw the data away
@@ -306,24 +306,24 @@ void VoxelChunkManager::showDebugMenu()
 {
     if (ImGui::CollapsingHeader("VoxelChunkManager"))
     {
-        if (ImGui::Checkbox("Enable chunk loading", &data.isChunkLoadingEnabled))
+        if (ImGui::Checkbox("Enable chunk loading", &settings.isChunkLoadingEnabled))
         {
-            data.isChunkLoadingDirty = true;
+            state.isChunkLoadingDirty = true;
         }
 
-        if (ImGui::SliderInt("Render distance", &data.renderDistance, 0, 1))
+        if (ImGui::SliderInt("Render distance", &settings.renderDistance, 0, 1))
         {
-            data.isChunkLoadingDirty = true;
+            state.isChunkLoadingDirty = true;
         }
 
-        ImGui::Text("%s", std::format("Render distance: {}", data.renderDistance).c_str());
-        ImGui::Text("%s", std::format("Loaded chunk count: {}", data.activeChunks.size()).c_str());
-        ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", data.cameraChunkPosition.x, data.cameraChunkPosition.y).c_str());
-        ImGui::Text("%s", std::format("Chunk generation threads: {}", data.chunkLoadingThreads.size()).c_str());
+        ImGui::Text("%s", std::format("Render distance: {}", settings.renderDistance).c_str());
+        ImGui::Text("%s", std::format("Loaded chunk count: {}", state.activeChunks.size()).c_str());
+        ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
+        ImGui::Text("%s", std::format("Chunk generation threads: {}", loadingThreadState.threads.size()).c_str());
 
         {
             // Chunk display distance parameters
-            int displayDistance = data.renderDistance + 1;
+            int displayDistance = settings.renderDistance + 1;
 
             glm::ivec2 displaySize = glm::ivec2(displayDistance * 2 + 1);
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
@@ -349,15 +349,15 @@ void VoxelChunkManager::showDebugMenu()
             {
                 for (int y = 0; y < displaySize.y; ++y)
                 {
-                    auto chunkPosition = data.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
+                    auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
 
                     auto topLeft = baseDrawPosition + (squareSize + padding) * glm::vec2(x, y);
                     auto bottomRight = topLeft + glm::vec2(squareSize);
 
                     auto color = unloadedColor;
 
-                    auto chunkIterator = data.activeChunks.find(chunkPosition);
-                    if (chunkIterator != data.activeChunks.end())
+                    auto chunkIterator = state.activeChunks.find(chunkPosition);
+                    if (chunkIterator != state.activeChunks.end())
                     {
                         color = loadedColor;
 
