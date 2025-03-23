@@ -1,5 +1,19 @@
 #include <src/voxelizer/ModelPreviewer.h>
 
+ModelPreviewer::~ModelPreviewer()
+{
+    if (loadedModel)
+    {
+        delete loadedModel;
+    }
+}
+
+void ModelPreviewer::setModel(Model* model_)
+{
+    loadedModel = model_;
+}
+
+
 void ModelPreviewer::CreateWindowTriangle()
 {
     // Create Triangle Window

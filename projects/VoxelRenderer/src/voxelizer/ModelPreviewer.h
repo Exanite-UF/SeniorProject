@@ -7,6 +7,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <src/voxelizer/Shader.h>
+#include <src/voxelizer/Model.h>
 
 
 class ModelPreviewer
@@ -16,7 +18,16 @@ private:
     GLFWwindow* triangleWindow = nullptr;
     GLFWwindow* voxelWindow = nullptr;
 
+    Model* loadedModel = nullptr; // might want to replace with shared ptr
+
+
 public:
+
+    ~ModelPreviewer();
+
+    // Set instead of load since the voxelizer should be the one to load
+    void setModel(Model* model_);
+
     void CreateWindowTriangle();
     void CreateWindowVoxel();
 
