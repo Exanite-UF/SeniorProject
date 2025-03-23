@@ -10,7 +10,7 @@
 
 unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
 
-struct Material {
+struct TriangleMaterial {
     glm::vec3 Diffuse;
     glm::vec3 Specular;
     glm::vec3 Ambient;
@@ -20,7 +20,7 @@ struct Material {
 class Model
 {
 public:
-    std::vector<Texture> textures_loaded;
+    std::vector<TriangleTexture> textures_loaded;
     Model(char* path)
     {
         loadModel(path);
@@ -33,6 +33,6 @@ private:
     void loadModel(std::string path);
     void processNode(aiNode *node, const aiScene *scene);
     Mesh processMesh(aiMesh *mesh, const aiScene *scene);
-    std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
-    Material loadMaterial(aiMaterial* mat);
+    std::vector<TriangleTexture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
+    TriangleMaterial loadMaterial(aiMaterial* mat);
 };

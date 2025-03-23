@@ -49,7 +49,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<Texture> textures;
+    std::vector<TriangleTexture> textures;
 
     //Vertex Data
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -116,25 +116,25 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     {
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        std::vector<TriangleTexture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        std::vector<TriangleTexture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_normal");
+        std::vector<TriangleTexture> normalMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_normal");
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_height");
+        std::vector<TriangleTexture> heightMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
     }
     
     return Mesh(vertices, indices, textures);
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
+std::vector<TriangleTexture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
 {
-    std::vector<Texture> textures;
+    std::vector<TriangleTexture> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
     {
         aiString str;
@@ -151,7 +151,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
         }
         if (!skip)
         {
-            Texture texture;
+            TriangleTexture texture;
             texture.id = TextureFromFile(str.C_Str(), directory);
             std::cout << directory << "/" << str.C_Str() << std::endl;
             texture.type = typeName;
@@ -163,9 +163,9 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
     return textures;
 }
 
-Material loadMaterial(aiMaterial* mat)
+TriangleMaterial loadMaterial(aiMaterial* mat)
 {
-    Material material;
+    TriangleMaterial material;
     aiColor3D color(0.f, 0.f, 0.f);
     float shininess;
 

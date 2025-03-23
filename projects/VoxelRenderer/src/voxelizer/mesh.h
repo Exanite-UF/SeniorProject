@@ -27,7 +27,7 @@ struct Vertex
 };
 
 // Not sure if we'll end up using this
-struct Texture
+struct TriangleTexture
 {
     unsigned int id;
     std::string type;
@@ -42,8 +42,8 @@ private:
 public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<Texture> textures;
+    std::vector<TriangleTexture> textures;
 
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TriangleTexture> textures);
     void Draw(Shader &shader);
 };

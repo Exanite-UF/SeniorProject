@@ -51,6 +51,7 @@
 #include <src/utilities/Log.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/voxelizer/ModelPreviewer.h>
+#include <src/voxelizer/ModelVoxelizer.h>
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/SceneComponent.h>
@@ -268,7 +269,8 @@ void Program::run()
     PrototypeWorldGenerator prototypeWorldGenerator(glm::ivec3(chunkSize), octaveSynthesizer);
 
     // Model Previewer
-    ModelPreviewer modelViewer {};
+    ModelPreviewer modelPreviewer {};
+    ModelVoxelizer modelVoxelizer {};
     bool isModelLoaded = false;
 
     renderer.setScene(scene);
@@ -511,8 +513,9 @@ void Program::run()
                     }
                     case 1:
                     {
-                        std::string modelFileName = "C:/";
-                        
+                        // Should be relative path
+                        std::string modelFileName = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/feyd.obj";
+                        //std::string modelFileName = ".../content/Triangulation/feyd.obj";
 
                         ImGui::Text("Please choose a file.");
                         ImGui::Indent(indentSize);
@@ -523,6 +526,11 @@ void Program::run()
                     
                         if (ImGui::Button("Import"))
                         {
+                            // Loads model
+                            modelVoxelizer.loadModel(const_cast<char*>(modelFileName.c_str()));
+                            
+                            // Sets Model in Preview
+                            modelPreviewer.setModel(modelVoxelizer.getModel());
                         }
 
 
@@ -536,22 +544,21 @@ void Program::run()
                         if (ImGui::Button(originalModelHeader.c_str()))
                         {
                             showOriginalModelMenu = !showOriginalModelMenu;
+                            modelPreviewer.CreateWindowTriangle();
                         }
                         ImGui::PopStyleColor(3);
 
 
                         if (showOriginalModelMenu)
                         {
-                            ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiCond_FirstUseEver);
-                            ImGui::Begin("Original Model Preview", &showOriginalModelMenu, ImGuiWindowFlags_NoCollapse);
-                            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                            ImGui::BeginChild("InvisibleBox",  ImVec2(320, 240), true);
-                            ImGui::EndChild();
-                            ImGui::PopStyleColor(); 
-                            ImGui::End();
+                            // Creates Triangle Window
+                            modelPreviewer.RenderWindowTriangle();
+                        }
+                        else
+                        {
+                            modelPreviewer.CloseWindowTriangle();
                         }
 
-                            
 
                         // Voxel Mesh Preview
                         std::string voxelizedModelHeader = "Preview Voxelized Model";
@@ -568,13 +575,7 @@ void Program::run()
 
                         if (showVoxelizedModelMenu)
                         {
-                            ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiCond_FirstUseEver);
-                            ImGui::Begin("Voxelized Model Preview", &showVoxelizedModelMenu, ImGuiWindowFlags_NoCollapse);
-                            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                            ImGui::BeginChild("InvisibleBox",  ImVec2(320, 240), true);
-                            ImGui::EndChild();
-                            ImGui::PopStyleColor(); 
-                            ImGui::End();
+                            // Put code here
                         }
 
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.253f, 0.540f, 0.248f, 0.5f));
@@ -635,13 +636,14 @@ void Program::run()
         // Render
         {
             renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));
-
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glDepthFunc(GL_GREATER);
+
 
             renderer.pollCamera(camera);
             renderer.render();
             glFinish();
+            
 
             frameCount++;
         }
@@ -650,7 +652,7 @@ void Program::run()
         window->present();
     }
 
-    renderer.stopAsynchronousReprojection();
+    renderer.stopAsynchronousReprojection(); // messing with preview window
     sceneObject->destroy();
 }
 

@@ -1,4 +1,4 @@
-#include <src/voxelizer/shader.h>
+#include <src/voxelizer/Shader.h>
 
 #include <gl/glew.h>
 
