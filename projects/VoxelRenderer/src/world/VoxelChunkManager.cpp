@@ -62,7 +62,7 @@ void VoxelChunkManager::onSingletonDestroy()
 
     Log::log("Cleaning up VoxelChunkManager");
 
-    isRunning = false;
+    data.isRunning = false;
 
     {
         std::lock_guard lock(data.pendingRequestsMutex);
@@ -82,10 +82,10 @@ void VoxelChunkManager::onSingletonDestroy()
 
 void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 {
-    Assert::isTrue(!isRunning, "VoxelChunkManager has already been initialized");
+    Assert::isTrue(!data.isRunning, "VoxelChunkManager has already been initialized");
 
-    isRunning = true;
-    this->scene = scene;
+    data.isRunning = true;
+    this->data.scene = scene;
 
     Log::log("Initializing VoxelChunkManager");
 
@@ -103,7 +103,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
 {
     Log::log("Started VoxelChunkManager chunk loading thread");
 
-    while (isRunning)
+    while (data.isRunning)
     {
         // Create pending requests lock, but don't lock the mutex
         // Locking is done by condition variable below
@@ -112,10 +112,10 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         // Wait for new requests to come in
         data.chunkLoadingThreadCondition.wait(pendingRequestsLock, [&]()
             {
-                return !data.pendingRequests.empty() || !isRunning;
+                return !data.pendingRequests.empty() || !data.isRunning;
             });
 
-        if (data.pendingRequests.empty() || !isRunning)
+        if (data.pendingRequests.empty() || !data.isRunning)
         {
             continue;
         }
@@ -160,7 +160,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
 void VoxelChunkManager::update(const float deltaTime)
 {
     // Calculate new camera chunk position
-    data.cameraWorldPosition = scene->camera->getTransform()->getGlobalPosition();
+    data.cameraWorldPosition = data.scene->camera->getTransform()->getGlobalPosition();
 
     auto newCameraChunkPosition = glm::ivec2(glm::round(glm::vec2(
         data.cameraWorldPosition.x / data.chunkSize.x - 0.5f,
@@ -224,7 +224,7 @@ void VoxelChunkManager::update(const float deltaTime)
             }
 
             // Load the chunk
-            data.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, data.chunkSize, scene));
+            data.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, data.chunkSize, data.scene));
             {
                 // Send a request to a worker thread to either load the chunk
                 std::lock_guard lock(data.pendingRequestsMutex);
