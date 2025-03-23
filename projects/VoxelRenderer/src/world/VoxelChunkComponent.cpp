@@ -64,5 +64,7 @@ void VoxelChunkComponent::onDestroy()
 {
     Component::onDestroy();
 
+    std::lock_guard lock(getMutex());
+
     setExistsOnGpu(false);
 }
