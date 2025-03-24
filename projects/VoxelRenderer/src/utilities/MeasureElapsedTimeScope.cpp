@@ -15,10 +15,10 @@ MeasureElapsedTimeScope::MeasureElapsedTimeScope(const std::string& name, double
 MeasureElapsedTimeScope::~MeasureElapsedTimeScope()
 {
     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-    auto elapsedTime = std::chrono::duration<double>(now - start).count();
+    auto elapsedTimeMs = std::chrono::duration<double>(now - start).count() * 1000;
 
-    if (elapsedTime > minTimeToPrintMs)
+    if (elapsedTimeMs > minTimeToPrintMs)
     {
-        Log::log("Elapsed time for scope '" + name + "': " + std::to_string(elapsedTime * 1000) + " ms");
+        Log::log("Elapsed time for scope '" + name + "': " + std::to_string(elapsedTimeMs) + " ms");
     }
 }
