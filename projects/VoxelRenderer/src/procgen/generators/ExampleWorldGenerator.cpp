@@ -12,7 +12,7 @@ void ExampleWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(materialKey, material))
     {
         material = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find material with id '" + materialKey + "'. Using default material '" + material->getKey() + "' instead.");
+        Log::information("Failed to find material with id '" + materialKey + "'. Using default material '" + material->getKey() + "' instead.");
     }
 
     for (int x = 0; x < data.getSize().x; ++x)

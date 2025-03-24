@@ -19,6 +19,6 @@ MeasureElapsedTimeScope::~MeasureElapsedTimeScope()
 
     if (elapsedTimeMs > minTimeToPrintMs)
     {
-        Log::log("Elapsed time for scope '" + name + "': " + std::to_string(elapsedTimeMs) + " ms");
+        Log::information("Elapsed time for scope '" + name + "': " + std::to_string(elapsedTimeMs) + " ms");
     }
 }

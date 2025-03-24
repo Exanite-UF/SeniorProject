@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-void Log::log(const std::string& value)
+void Log::information(const std::string& value)
 {
     std::cout << value + "\n"
               << std::flush;
