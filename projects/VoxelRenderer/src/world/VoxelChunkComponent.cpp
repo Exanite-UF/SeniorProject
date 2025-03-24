@@ -6,24 +6,15 @@
 VoxelChunkComponent::VoxelChunkComponent()
     : VoxelChunkComponent(false)
 {
-    MeasureElapsedTimeScope scope("VoxelChunkComponent constructor", 10);
-
-    chunkData.setSize(Constants::VoxelChunkComponent::chunkSize);
 }
 
 VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderData)
 {
-    MeasureElapsedTimeScope scope("VoxelChunkComponent constructor", 10);
-
     if (shouldGeneratePlaceholderData)
     {
         existsOnGpu = true;
         chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, shouldGeneratePlaceholderData);
         chunkData.copyFrom(*chunk.value());
-    }
-    else
-    {
-        chunkData.setSize(Constants::VoxelChunkComponent::chunkSize);
     }
 }
 

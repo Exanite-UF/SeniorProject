@@ -382,6 +382,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 chunk->isLoading = false;
 
                 VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.setSize(settings.chunkSize);
                 commandBuffer.copyFrom(task->chunkData);
                 commandBuffer.setExistsOnGpu(true);
 
