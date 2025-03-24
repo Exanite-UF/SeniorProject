@@ -24,6 +24,7 @@ target_link_libraries(VoxelRenderer PRIVATE imgui)
 target_link_libraries(VoxelRenderer PRIVATE assimp)
 target_link_libraries(VoxelRenderer PRIVATE Jolt)
 target_link_libraries(VoxelRenderer PRIVATE stb)
+target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
 
 # Boost is a CGAL dependency
 target_link_libraries(VoxelRenderer PRIVATE boost_config)
@@ -36,10 +37,6 @@ target_link_libraries(VoxelRenderer PRIVATE boost_math)
 target_link_libraries(VoxelRenderer PRIVATE cgal)
 
 target_link_libraries(VoxelRenderer PRIVATE extra)
-
-if(CMAKE_BUILD_TYPE STREQUAL "Profiling")
-    target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
-endif ()
 
 # --- Copy content ---
 

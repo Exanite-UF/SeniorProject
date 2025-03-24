@@ -123,8 +123,13 @@ target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
 
 # Tracy
 # Enable Tracy profiling for a program by linking it with Tracy::TracyClient
-option(TRACY_ENABLE "" ON)
-option(TRACY_ON_DEMAND "" ON)
+
+# Only enable Tracy profiling in the Profiling build configuration is selected
+if(CMAKE_BUILD_TYPE STREQUAL "Profiling")
+    set(TRACY_ENABLE ON)
+endif ()
+
+set(TRACY_ON_DEMAND ON)
 add_subdirectory(./external/tracy)
 
 # Tracy UI
