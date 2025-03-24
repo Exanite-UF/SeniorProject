@@ -100,6 +100,9 @@ add_subdirectory(./external/boost-v1.87.0)
 add_library(cgal INTERFACE)
 target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
 
+# Tracy
+add_subdirectory(./external/tracy)
+
 # Extra libraries
 add_library(extra STATIC)
 target_include_directories(extra PUBLIC ./external/extra/include)
