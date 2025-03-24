@@ -35,10 +35,11 @@ target_link_libraries(VoxelRenderer PRIVATE boost_compute)
 target_link_libraries(VoxelRenderer PRIVATE boost_math)
 target_link_libraries(VoxelRenderer PRIVATE cgal)
 
-target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
-
-
 target_link_libraries(VoxelRenderer PRIVATE extra)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Profiling")
+    target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
+endif ()
 
 # --- Copy content ---
 

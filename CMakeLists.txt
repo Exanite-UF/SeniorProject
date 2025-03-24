@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.28)
 project(SeniorProject LANGUAGES C CXX)
 
+# Define build configurations
+set(CMAKE_CONFIGURATION_TYPES Debug Release Profiling)
+
+# Make the Profiling configuration inherit from the Release configuration
+set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_RELEASE}")
+
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
