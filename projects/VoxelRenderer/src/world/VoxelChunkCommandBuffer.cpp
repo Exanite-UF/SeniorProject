@@ -40,6 +40,12 @@ void VoxelChunkCommandBuffer::copyFrom(const std::shared_ptr<VoxelChunkData>& da
     copyCommands.emplace_back(data);
 }
 
+void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
+{
+    commands.emplace_back(SetExistsOnGpu, setExistsOnGpuCommands.size());
+    setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
+}
+
 void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component) const
 {
     // TODO: Track exact changes for optimized CPU -> GPU copies
@@ -86,6 +92,13 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 auto command = copyCommands.at(entry.index);
                 chunkData.copyFrom(*command.source);
+
+                break;
+            }
+            case SetExistsOnGpu:
+            {
+                auto command = setExistsOnGpuCommands.at(entry.index);
+                component->setExistsOnGpu(command.existsOnGpu, command.writeToGpu);
 
                 break;
             }
