@@ -15,15 +15,20 @@ class Log
         Fatal = 5,
     };
 
+private:
+    static std::string getCurrentTimeText();
+
 public:
-    inline static std::atomic<LogLevel> minimumLevel = Information;
+    inline static std::atomic<LogLevel> minimumLevel = Verbose;
 
-    static void verbose(const std::string& value);
-    static void debug(const std::string& value);
-    static void information(const std::string& value);
-    static void warning(const std::string& value);
-    static void error(const std::string& value);
-    static void fatal(const std::string& value);
+    static void verbose(const std::string& message);
+    static void debug(const std::string& message);
+    static void information(const std::string& message);
+    static void warning(const std::string& message);
+    static void error(const std::string& message);
+    static void fatal(const std::string& message);
 
-    static void write(LogLevel level, const std::string& value);
+    static std::string getLogLevelText(LogLevel level);
+
+    static void write(LogLevel level, const std::string& message);
 };
