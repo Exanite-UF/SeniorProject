@@ -14,6 +14,7 @@ private:
         ClearOccupancy,
         ClearMaterial,
         Copy,
+        SetExistsOnGpu,
     };
 
     struct Command
@@ -72,12 +73,25 @@ private:
         }
     };
 
+    struct SetExistsOnGpuCommand
+    {
+        bool existsOnGpu;
+        bool writeToGpu;
+
+        explicit SetExistsOnGpuCommand(const bool existsOnGpu, const bool writeToGpu)
+        {
+            this->existsOnGpu = existsOnGpu;
+            this->writeToGpu = writeToGpu;
+        }
+    };
+
     std::vector<Command> commands {};
 
     std::vector<SetSizeCommand> setSizeCommands {};
     std::vector<SetOccupancyCommand> setOccupancyCommands {};
     std::vector<SetMaterialCommand> setMaterialCommands {};
     std::vector<CopyCommand> copyCommands {};
+    std::vector<SetExistsOnGpuCommand> setExistsOnGpuCommands {};
 
 public:
     void setSize(const glm::ivec3& size);
@@ -90,6 +104,8 @@ public:
     void clearMaterialMap();
 
     void copyFrom(const std::shared_ptr<VoxelChunkData>& data);
+
+    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
 
 public:
     void apply(const std::shared_ptr<VoxelChunkComponent>& component) const;
