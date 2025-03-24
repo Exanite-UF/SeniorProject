@@ -1,6 +1,7 @@
 #include "VoxelChunkManager.h"
 
 #include <algorithm>
+#include <common/TracySystem.hpp>
 #include <condition_variable>
 #include <format>
 #include <memory>
@@ -121,7 +122,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
         Log::information(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
         for (int i = 0; i < loadingThreadCount; ++i)
         {
-            loadingThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkLoadingThreadEntrypoint, this));
+            loadingThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkLoadingThreadEntrypoint, this, loadingThreadState.threads.size()));
         }
     }
 
@@ -131,15 +132,17 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
         Log::information(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
         for (int i = 0; i < modificationThreadCount; ++i)
         {
-            modificationThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkModificationThreadEntrypoint, this));
+            modificationThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkModificationThreadEntrypoint, this, modificationThreadState.threads.size()));
         }
     }
 
     Log::information("Initialized VoxelChunkManager");
 }
 
-void VoxelChunkManager::chunkLoadingThreadEntrypoint()
+void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
 {
+    tracy::SetThreadName(std::format("Chunk loading {}", threadId).c_str());
+
     Log::debug("Started VoxelChunkManager chunk loading thread");
 
     while (state.isRunning)
@@ -196,8 +199,10 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
     Log::debug("Stopped VoxelChunkManager chunk loading thread");
 }
 
-void VoxelChunkManager::chunkModificationThreadEntrypoint()
+void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 {
+    tracy::SetThreadName(std::format("Chunk modification {}", threadId).c_str());
+
     Log::debug("Started VoxelChunkManager chunk modification thread");
 
     state.modificationThreadContext->makeContextCurrent();

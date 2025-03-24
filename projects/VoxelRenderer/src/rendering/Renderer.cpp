@@ -1,6 +1,7 @@
 #include "Renderer.h"
 
 #include <algorithm>
+#include <common/TracySystem.hpp>
 #include <iostream>
 #include <string>
 
@@ -13,6 +14,8 @@ GLuint Renderer::drawTextureProgram {};
 
 void Renderer::offscreenRenderingFunc()
 {
+    tracy::SetThreadName("Offscreen rendering");
+
     offscreenContext->makeContextCurrent();
 
     while (isRenderingOffscreen)
