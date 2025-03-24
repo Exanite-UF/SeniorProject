@@ -25,10 +25,10 @@
 
 VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
-    const VoxelChunkCommandBuffer& chunkData)
+    const VoxelChunkCommandBuffer& commandBuffer)
 {
     this->component = component;
-    this->chunkData = chunkData;
+    this->commandBuffer = commandBuffer;
 }
 
 VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
