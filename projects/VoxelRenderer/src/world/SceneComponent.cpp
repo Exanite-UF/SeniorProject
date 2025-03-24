@@ -72,10 +72,11 @@ void SceneComponent::removeChunk(const glm::ivec3& chunkPosition)
     auto mapIterator = chunksByChunkPosition.find(chunkPosition);
     if (mapIterator != chunksByChunkPosition.end())
     {
+        auto chunk = mapIterator->second;
         chunksByChunkPosition.erase(mapIterator);
 
         // If removal from chunksByChunkPosition succeeds, also remove it from the flattened vector
-        auto vectorIterator = std::find(chunks.begin(), chunks.end(), mapIterator->second);
+        auto vectorIterator = std::find(chunks.begin(), chunks.end(), chunk);
         if (vectorIterator != chunks.end())
         {
             chunks.erase(vectorIterator);
