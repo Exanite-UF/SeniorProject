@@ -20,7 +20,15 @@ if(IS_IPO_SUPPORTED)
 endif()
 
 # Enable architecture specific optimizations
-add_compile_options(-march=native)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-march=native)
+endif()
+
+if (WIN32)
+    # Support Windows 10 or later
+    # See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
+    add_definitions(-D_WIN32_WINNT=0x0A00)
+endif()
 
 # --- Third party ---
 
