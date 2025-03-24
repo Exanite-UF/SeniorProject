@@ -165,7 +165,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
         auto task = loadingThreadState.pendingTasks.front();
         loadingThreadState.pendingTasks.pop();
 
-        // Unlock the lock
+        // Unlock the mutex
         pendingRequestsLock.unlock();
 
         // Generate chunk
@@ -225,7 +225,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint()
         auto task = modificationThreadState.pendingTasks.front();
         modificationThreadState.pendingTasks.pop();
 
-        // Unlock the lock
+        // Unlock the mutex
         pendingRequestsLock.unlock();
 
         Log::log("Received chunk modification task!");
