@@ -12,6 +12,12 @@ if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
+# Set IPO policy
+# The NEW policy enables IPO flags for all compilers if possible and to error if not
+# We check for compatibility below so using the new policy is safe
+cmake_policy(SET CMP0069 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+
 # Enable Inter-Procedural Optimization (IPO) if supported by the compiler
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IS_IPO_SUPPORTED)
