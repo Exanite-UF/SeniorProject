@@ -8,17 +8,13 @@
 std::string Log::getCurrentTimeText()
 {
     // Get the current time
-    auto now = std::chrono::system_clock::now();
-    auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-    // Convert to a tm structure
-    std::tm buf;
-    localtime_r(&in_time_t, &buf);
+    auto time = std::time(nullptr);
+    auto tm = *std::localtime(&time);
 
     // Format the time as HH:MM:SS
-    std::ostringstream oss;
-    oss << std::put_time(&buf, "%H:%M:%S");
-    return oss.str();
+    std::ostringstream stream;
+    stream << std::put_time(&tm, "%H:%M:%S");
+    return stream.str();
 }
 
 void Log::verbose(const std::string& message)
