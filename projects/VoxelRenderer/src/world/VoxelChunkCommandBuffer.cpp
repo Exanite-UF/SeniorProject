@@ -43,7 +43,6 @@ void VoxelChunkCommandBuffer::copyFrom(const std::shared_ptr<VoxelChunkData>& da
 void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component) const
 {
     // TODO: Track exact changes for optimized CPU -> GPU copies
-    auto& chunk = component->getChunk();
     auto& chunkData = component->getChunkData();
 
     for (const auto entry : commands)
@@ -93,7 +92,11 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
         }
     }
 
-    chunkData.writeTo(*chunk);
+    if (component->getExistsOnGpu())
+    {
+        auto& chunk = component->getChunk();
+        chunkData.writeTo(*chunk);
+    }
 }
 
 void VoxelChunkCommandBuffer::clear()
