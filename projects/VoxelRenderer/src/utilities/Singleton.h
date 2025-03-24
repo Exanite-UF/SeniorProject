@@ -87,10 +87,10 @@ T* Singleton<T>::instance = nullptr;
 template <class T>
 T& Singleton<T>::getInstance()
 {
-    Assert::isTrue(SingletonManager::Internal<T>::getCanCreate(), "SingletonManager::destroyAllSingletons() has been called, can no longer access singletons");
-
     if (instance == nullptr)
     {
+        Assert::isTrue(SingletonManager::Internal<T>::getCanCreate(), "SingletonManager::destroyAllSingletons() has been called, can no longer create new singletons");
+
         instance = new T();
 
         SingletonManager::Internal<T>::addCleanupFunction([&]()
