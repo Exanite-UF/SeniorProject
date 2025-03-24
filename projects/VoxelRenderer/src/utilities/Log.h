@@ -5,6 +5,7 @@
 
 class Log
 {
+public:
     enum LogLevel
     {
         Verbose = 0,
@@ -17,7 +18,7 @@ class Log
 
 private:
     static std::string getCurrentTimeText();
-    static std::string getLogLevelText(LogLevel level);
+    static std::string getLogLevelText(LogLevel logLevel);
 
 public:
     inline static std::atomic<LogLevel> minimumLevel = Information;
@@ -29,5 +30,5 @@ public:
     static void error(const std::string& message);
     static void fatal(const std::string& message);
 
-    static void write(LogLevel level, const std::string& message);
+    static void write(LogLevel logLevel, const std::string& message);
 };

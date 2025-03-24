@@ -4,10 +4,17 @@
 
 #include <src/utilities/Log.h>
 
-MeasureElapsedTimeScope::MeasureElapsedTimeScope(const std::string& name, double minTimeToPrintMs)
+MeasureElapsedTimeScope::MeasureElapsedTimeScope(const std::string& name, const double minTimeToPrintMs)
+    : MeasureElapsedTimeScope(name, Log::Information, minTimeToPrintMs)
+{
+}
+
+MeasureElapsedTimeScope::MeasureElapsedTimeScope(const std::string& name, const Log::LogLevel logLevel,
+    const double minTimeToPrintMs)
 {
     this->name = name;
     this->minTimeToPrintMs = minTimeToPrintMs;
+    this->logLevel = logLevel;
 
     start = std::chrono::high_resolution_clock::now();
 }
@@ -19,6 +26,6 @@ MeasureElapsedTimeScope::~MeasureElapsedTimeScope()
 
     if (elapsedTimeMs > minTimeToPrintMs)
     {
-        Log::information("Elapsed time for scope '" + name + "': " + std::to_string(elapsedTimeMs) + " ms");
+        Log::write(logLevel, "Elapsed time for scope '" + name + "': " + std::to_string(elapsedTimeMs) + " ms");
     }
 }
