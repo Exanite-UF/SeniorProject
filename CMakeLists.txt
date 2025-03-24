@@ -122,7 +122,9 @@ add_subdirectory(./external/tracy)
 
 # Tracy UI
 # Run by running the tracy-profiler target
-add_subdirectory(./external/tracy/profiler)
+if(NOT (DEFINED ENV{GITHUB_ACTIONS}))
+    add_subdirectory(./external/tracy/profiler)
+endif()
 
 # Extra libraries
 add_library(extra STATIC)
