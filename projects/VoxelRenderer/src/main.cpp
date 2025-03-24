@@ -1,8 +1,10 @@
-#include <common/TracySystem.hpp>
+#include <tracy/Tracy.hpp>
+
 #include <iostream>
+#include <stdexcept>
+
 #include <src/Program.h>
 #include <src/utilities/Log.h>
-#include <stdexcept>
 
 int main()
 {

@@ -1,7 +1,8 @@
 #include "Renderer.h"
 
+#include <tracy/Tracy.hpp>
+
 #include <algorithm>
-#include <common/TracySystem.hpp>
 #include <iostream>
 #include <string>
 

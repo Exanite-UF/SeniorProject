@@ -1,7 +1,8 @@
 #include "VoxelChunkManager.h"
 
+#include <tracy/Tracy.hpp>
+
 #include <algorithm>
-#include <common/TracySystem.hpp>
 #include <condition_variable>
 #include <format>
 #include <memory>
