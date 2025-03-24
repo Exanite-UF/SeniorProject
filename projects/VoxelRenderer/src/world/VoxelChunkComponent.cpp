@@ -5,6 +5,7 @@
 VoxelChunkComponent::VoxelChunkComponent()
     : VoxelChunkComponent(false)
 {
+    chunkData.setSize(Constants::VoxelChunkComponent::chunkSize);
 }
 
 VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderData)
@@ -48,7 +49,7 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu)
 
     if (existsOnGpu)
     {
-        chunk = std::make_unique<VoxelChunk>(chunkData.getSize(), false);
+        chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, false);
         chunkData.writeTo(*chunk.value());
     }
     else
