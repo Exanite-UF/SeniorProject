@@ -21,9 +21,9 @@ private:
     {
     public:
         std::shared_ptr<VoxelChunkComponent> component;
-        VoxelChunkCommandBuffer chunkData;
+        VoxelChunkCommandBuffer commandBuffer;
 
-        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& chunkData);
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
     };
 
     struct ChunkLoadTask
