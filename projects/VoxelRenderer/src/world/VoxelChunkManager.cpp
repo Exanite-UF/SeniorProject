@@ -163,7 +163,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
             continue;
         }
 
-        ZoneScoped;
+        ZoneScopedN("Chunk loading task");
 
         // Take some work
         auto task = loadingThreadState.pendingTasks.front();
@@ -176,7 +176,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
         task->chunkData = std::make_shared<VoxelChunkData>(task->chunkSize);
         Log::information(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
         {
-            ZoneScopedN("Generation");
+            ZoneScopedN("Chunk generation");
 
             MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
@@ -229,6 +229,8 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
             continue;
         }
 
+        ZoneScopedN("Chunk modification task");
+
         // Take some work
         auto task = modificationThreadState.pendingTasks.front();
         modificationThreadState.pendingTasks.pop();
@@ -238,6 +240,8 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
         // Apply the chunk command buffer
         {
+            ZoneScopedN("Chunk modification");
+
             MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
             Log::verbose("Applying chunk command buffer");
             std::lock_guard lock(task->component->getMutex());
@@ -250,7 +254,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
 void VoxelChunkManager::update(const float deltaTime)
 {
-    MeasureElapsedTimeScope scope("VoxelChunkManager::update", 10);
+    ZoneScoped;
 
     // Calculate new camera chunk position
     state.cameraWorldPosition = state.scene->camera->getTransform()->getGlobalPosition();
@@ -270,6 +274,8 @@ void VoxelChunkManager::update(const float deltaTime)
     // Chunk loading logic
     if (state.isChunkLoadingDirty && settings.isChunkLoadingEnabled)
     {
+        ZoneScopedN("Chunk loading logic");
+
         // Calculate which chunks should be loaded
         std::unordered_set<glm::ivec2> chunksToLoad {};
         for (int x = -settings.renderDistance; x <= settings.renderDistance; ++x)
@@ -306,11 +312,12 @@ void VoxelChunkManager::update(const float deltaTime)
         // Load chunks
         if (!chunksToLoad.empty())
         {
-            MeasureElapsedTimeScope scope("Chunk load preparation on main thread", 10);
             std::lock_guard lock(loadingThreadState.pendingTasksMutex);
 
             for (auto chunkToLoad : chunksToLoad)
             {
+                ZoneScopedN("Chunk load");
+
                 auto chunk = state.activeChunks.find(chunkToLoad);
                 if (chunk != state.activeChunks.end())
                 {
@@ -339,6 +346,8 @@ void VoxelChunkManager::update(const float deltaTime)
     // Chunk unloading logic
     if (state.isChunkUnloadingDirty && settings.isChunkLoadingEnabled)
     {
+        ZoneScopedN("Chunk unloading logic");
+
         // Check for chunks to unload
         int chunksUpdated = 0;
         std::vector<glm::ivec2> chunksToUnload {};
@@ -358,6 +367,8 @@ void VoxelChunkManager::update(const float deltaTime)
 
         for (auto chunkToUnload : chunksToUnload)
         {
+            ZoneScopedN("Chunk unload");
+
             Log::information(std::format("Unloaded chunk at ({}, {})", chunkToUnload.x, chunkToUnload.y));
             state.activeChunks.erase(chunkToUnload);
         }
@@ -374,8 +385,12 @@ void VoxelChunkManager::update(const float deltaTime)
         std::unique_lock completedRequestsLock(loadingThreadState.completedTasksMutex, std::defer_lock);
         if (completedRequestsLock.try_lock())
         {
+            ZoneScopedN("Chunk load task readback");
+
             while (!loadingThreadState.completedTasks.empty())
             {
+                ZoneScopedN("Chunk modification task creation");
+
                 const auto task = loadingThreadState.completedTasks.front();
                 loadingThreadState.completedTasks.pop();
 

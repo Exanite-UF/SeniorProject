@@ -9,6 +9,8 @@ WorldGenerator::WorldGenerator() = default;
 
 void WorldGenerator::generate(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     data.clearOccupancyMap();
     data.clearMaterialMap();
     {

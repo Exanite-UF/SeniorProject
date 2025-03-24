@@ -21,7 +21,12 @@ void Renderer::offscreenRenderingFunc()
 
     while (isRenderingOffscreen)
     {
+        const char* frameId = "Render offscreen";
+        FrameMarkStart(frameId);
+
         _render();
+
+        FrameMarkEnd(frameId);
     }
 }
 
@@ -267,9 +272,6 @@ void Renderer::render(float fov)
 
 void Renderer::_render()
 {
-    const char* frameId = "Render offscreen";
-    FrameMarkStart(frameId);
-
     if (isSizeDirtyThread)
     {
         makeFramebuffers();
@@ -302,8 +304,6 @@ void Renderer::_render()
     glFinish();
     swapWorkingBuffer();
     renderCount++;
-
-    FrameMarkEnd(frameId);
 }
 
 void Renderer::reproject(float fov)
