@@ -8,10 +8,10 @@
 #include <queue>
 #include <src/Constants.h>
 
-#include <src/utilities/Log.h>
 #include <src/utilities/Singleton.h>
 #include <src/windowing/GlfwContext.h>
 #include <src/world/SceneComponent.h>
+#include <src/world/VoxelChunkCommandBuffer.h>
 #include <src/world/VoxelChunkData.h>
 
 class VoxelChunkManager : public Singleton<VoxelChunkManager>
@@ -20,8 +20,10 @@ private:
     struct ChunkModificationTask
     {
     public:
-        std::shared_ptr<VoxelChunkComponent> chunk;
-        std::shared_ptr<VoxelChunkData> chunkData; // TODO: Change to command buffer
+        std::shared_ptr<VoxelChunkComponent> component;
+        VoxelChunkCommandBuffer chunkData;
+
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& chunkData);
     };
 
     struct ChunkLoadTask
@@ -106,8 +108,8 @@ private:
     {
     public:
         std::vector<std::thread> threads {};
-        std::condition_variable runCondition {};
 
+        std::condition_variable pendingTasksCondition {};
         std::mutex pendingTasksMutex {};
         std::queue<std::shared_ptr<ChunkLoadTask>> pendingTasks {};
 
@@ -118,10 +120,10 @@ private:
     struct ModificationThreadState
     {
     public:
-        std::thread thread {};
-        std::condition_variable runCondition {};
+        std::vector<std::thread> threads {};
 
-        std::mutex pendingTasksMutex {};
+        std::condition_variable_any pendingTasksCondition {};
+        std::recursive_mutex pendingTasksMutex {};
         std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
     };
 
@@ -131,13 +133,17 @@ private:
     LoadingThreadState loadingThreadState {};
     ModificationThreadState modificationThreadState {};
 
-    void chunkLoaderThreadEntrypoint();
+    void chunkLoadingThreadEntrypoint();
+    void chunkModificationThreadEntrypoint();
 
 public:
     void initialize(const std::shared_ptr<SceneComponent>& scene);
 
     void update(float deltaTime);
     void showDebugMenu();
+
+    // Can be called from any thread
+    void submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
 
     ~VoxelChunkManager() override;
 

@@ -3,7 +3,7 @@
 #include <src/world/VoxelChunkComponent.h>
 
 // A command buffer for commands related to modifying a VoxelChunkComponent
-class VoxelChunkCommandBuffer : public NonCopyable
+class VoxelChunkCommandBuffer
 {
 private:
     enum CommandType

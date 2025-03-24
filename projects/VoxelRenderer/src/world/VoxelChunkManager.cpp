@@ -23,6 +23,14 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkData.h>
 
+VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
+    const std::shared_ptr<VoxelChunkComponent>& component,
+    const VoxelChunkCommandBuffer& chunkData)
+{
+    this->component = component;
+    this->chunkData = chunkData;
+}
+
 VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
 {
     this->chunkPosition = chunkPosition;
@@ -65,12 +73,19 @@ void VoxelChunkManager::onSingletonDestroy()
 
     state.isRunning = false;
 
+    Log::log("Stopping VoxelChunkManager chunk loading threads");
+
     {
         std::lock_guard lock(loadingThreadState.pendingTasksMutex);
-        loadingThreadState.runCondition.notify_all();
+        loadingThreadState.pendingTasksCondition.notify_all();
     }
 
-    Log::log("Stopping VoxelChunkManager chunk loading threads");
+    Log::log("Stopping VoxelChunkManager chunk modification threads");
+
+    {
+        std::lock_guard lock(modificationThreadState.pendingTasksMutex);
+        modificationThreadState.pendingTasksCondition.notify_all();
+    }
 
     for (auto& thread : loadingThreadState.threads)
     {
@@ -79,6 +94,16 @@ void VoxelChunkManager::onSingletonDestroy()
             thread.join();
         }
     }
+
+    for (auto& thread : modificationThreadState.threads)
+    {
+        if (thread.joinable())
+        {
+            thread.join();
+        }
+    }
+
+    Log::log("Successfully cleaned up VoxelChunkManager");
 }
 
 void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
@@ -90,17 +115,24 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
 
     Log::log("Initializing VoxelChunkManager");
 
-    auto threadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
-    Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", threadCount));
-    for (int i = 0; i < threadCount; ++i)
+    auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
+    Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
+    for (int i = 0; i < loadingThreadCount; ++i)
     {
-        loadingThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkLoaderThreadEntrypoint, this));
+        loadingThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkLoadingThreadEntrypoint, this));
+    }
+
+    auto modificationThreadCount = 1;
+    Log::log(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
+    for (int i = 0; i < modificationThreadCount; ++i)
+    {
+        modificationThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkModificationThreadEntrypoint, this));
     }
 
     Log::log("Initialized VoxelChunkManager");
 }
 
-void VoxelChunkManager::chunkLoaderThreadEntrypoint()
+void VoxelChunkManager::chunkLoadingThreadEntrypoint()
 {
     Log::log("Started VoxelChunkManager chunk loading thread");
 
@@ -111,7 +143,7 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         std::unique_lock pendingRequestsLock(loadingThreadState.pendingTasksMutex);
 
         // Wait for new requests to come in
-        loadingThreadState.runCondition.wait(pendingRequestsLock, [&]()
+        loadingThreadState.pendingTasksCondition.wait(pendingRequestsLock, [&]()
             {
                 return !loadingThreadState.pendingTasks.empty() || !state.isRunning;
             });
@@ -122,17 +154,17 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
         }
 
         // Take some work
-        auto request = loadingThreadState.pendingTasks.front();
+        auto task = loadingThreadState.pendingTasks.front();
         loadingThreadState.pendingTasks.pop();
 
         // Unlock the lock
         pendingRequestsLock.unlock();
 
         // Generate chunk
-        request->chunkData->setSize(request->chunkSize);
-        Log::log(std::format("Generating chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
+        task->chunkData->setSize(task->chunkSize);
+        Log::log(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
         {
-            MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
+            MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
             int seed = 0;
             int octaves = 3;
@@ -140,22 +172,56 @@ void VoxelChunkManager::chunkLoaderThreadEntrypoint()
             auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
 
             PrototypeWorldGenerator generator(octaveSynthesizer);
-            generator.setChunkSize(request->chunkSize);
-            generator.setChunkPosition(glm::ivec3(request->chunkPosition, 0));
+            generator.setChunkSize(task->chunkSize);
+            generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0));
 
-            generator.generate(*request->chunkData);
+            generator.generate(*task->chunkData);
         }
 
-        Log::log(std::format("Generated chunk at ({}, {})", request->chunkPosition.x, request->chunkPosition.y));
+        Log::log(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
         // Acquire completed requests mutex
         std::unique_lock completedRequestsLock(loadingThreadState.completedTasksMutex);
 
         // Publish completed request
-        loadingThreadState.completedTasks.push(request);
+        loadingThreadState.completedTasks.push(task);
     }
 
     Log::log("Stopped VoxelChunkManager chunk loading thread");
+}
+
+void VoxelChunkManager::chunkModificationThreadEntrypoint()
+{
+    Log::log("Started VoxelChunkManager chunk modification thread");
+
+    while (state.isRunning)
+    {
+        // Create pending requests lock, but don't lock the mutex
+        // Locking is done by condition variable below
+        std::unique_lock pendingRequestsLock(modificationThreadState.pendingTasksMutex);
+
+        // Wait for new requests to come in
+        modificationThreadState.pendingTasksCondition.wait(pendingRequestsLock, [&]()
+            {
+                return !modificationThreadState.pendingTasks.empty() || !state.isRunning;
+            });
+
+        if (modificationThreadState.pendingTasks.empty() || !state.isRunning)
+        {
+            continue;
+        }
+
+        // Take some work
+        auto task = modificationThreadState.pendingTasks.front();
+        modificationThreadState.pendingTasks.pop();
+
+        // Unlock the lock
+        pendingRequestsLock.unlock();
+
+        Log::log("Received chunk modification task!");
+    }
+
+    Log::log("Stopped VoxelChunkManager chunk modification thread");
 }
 
 void VoxelChunkManager::update(const float deltaTime)
@@ -230,7 +296,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 // Send a request to a worker thread to either load the chunk
                 std::lock_guard lock(loadingThreadState.pendingTasksMutex);
                 loadingThreadState.pendingTasks.emplace(std::make_shared<ChunkLoadTask>(chunkToLoad, settings.chunkSize));
-                loadingThreadState.runCondition.notify_one();
+                loadingThreadState.pendingTasksCondition.notify_one();
             }
 
             Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
@@ -279,10 +345,10 @@ void VoxelChunkManager::update(const float deltaTime)
         {
             while (!loadingThreadState.completedTasks.empty())
             {
-                const auto request = loadingThreadState.completedTasks.front();
+                const auto task = loadingThreadState.completedTasks.front();
                 loadingThreadState.completedTasks.pop();
 
-                auto chunkIterator = state.activeChunks.find(request->chunkPosition);
+                auto chunkIterator = state.activeChunks.find(task->chunkPosition);
                 if (chunkIterator == state.activeChunks.end())
                 {
                     // Chunk no longer exists (was probably unloaded)
@@ -294,10 +360,18 @@ void VoxelChunkManager::update(const float deltaTime)
                 auto& chunk = chunkIterator->second;
                 chunk->isLoading = false;
 
+                // TODO: Remove
                 std::lock_guard lock(chunk->component->getMutex());
 
-                chunk->component->getChunkData().copyFrom(*request->chunkData);
+                // TODO: Remove
+                chunk->component->getChunkData().copyFrom(*task->chunkData);
                 chunk->component->setExistsOnGpu(true);
+
+                // TODO: Keep
+                VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.copyFrom(task->chunkData);
+
+                submitCommandBuffer(chunk->component, commandBuffer);
             }
         }
     }
@@ -378,4 +452,12 @@ void VoxelChunkManager::showDebugMenu()
             }
         }
     }
+}
+
+void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
+{
+    std::lock_guard lock(modificationThreadState.pendingTasksMutex);
+
+    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, commandBuffer));
+    modificationThreadState.pendingTasksCondition.notify_one();
 }
