@@ -101,9 +101,14 @@ add_library(cgal INTERFACE)
 target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
 
 # Tracy
+# Enable Tracy profiling for a program by linking it with Tracy::TracyClient
 option(TRACY_ENABLE "" ON)
 option(TRACY_ON_DEMAND "" ON)
 add_subdirectory(./external/tracy)
+
+# Tracy UI
+# Run by running the tracy-profiler target
+add_subdirectory(./external/tracy/profiler)
 
 # Extra libraries
 add_library(extra STATIC)
