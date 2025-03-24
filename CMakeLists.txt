@@ -101,6 +101,8 @@ add_library(cgal INTERFACE)
 target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
 
 # Tracy
+option(TRACY_ENABLE "" ON)
+option(TRACY_ON_DEMAND "" ON)
 add_subdirectory(./external/tracy)
 
 # Extra libraries
