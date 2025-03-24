@@ -228,7 +228,13 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint()
         // Unlock the mutex
         pendingRequestsLock.unlock();
 
-        Log::log("Received chunk modification task!");
+        // Apply the chunk command buffer
+        {
+            MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"));
+            Log::log("Applying chunk command buffer");
+            std::lock_guard lock(task->component->getMutex());
+            task->commandBuffer.apply(task->component);
+        }
     }
 
     Log::log("Stopped VoxelChunkManager chunk modification thread");
@@ -370,16 +376,9 @@ void VoxelChunkManager::update(const float deltaTime)
                 auto& chunk = chunkIterator->second;
                 chunk->isLoading = false;
 
-                // TODO: Remove
-                std::lock_guard lock(chunk->component->getMutex());
-
-                // TODO: Remove
-                chunk->component->getChunkData().copyFrom(*task->chunkData);
-                chunk->component->setExistsOnGpu(true);
-
-                // TODO: Keep
                 VoxelChunkCommandBuffer commandBuffer {};
                 commandBuffer.copyFrom(task->chunkData);
+                commandBuffer.setExistsOnGpu(true);
 
                 submitCommandBuffer(chunk->component, commandBuffer);
             }
