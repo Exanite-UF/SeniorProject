@@ -257,8 +257,8 @@ void Program::run()
 
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
-        constexpr const char* mainLoopId = "Main Loop";
-        FrameMarkStart(mainLoopId);
+        const char* frameId = "Main Loop";
+        FrameMarkStart(frameId);
 
         // Engine time
         auto currentTimestamp = std::chrono::high_resolution_clock::now();
@@ -562,7 +562,7 @@ void Program::run()
         // Present
         window->present();
 
-        FrameMarkEnd(mainLoopId);
+        FrameMarkEnd(frameId);
         FrameMark;
     }
 

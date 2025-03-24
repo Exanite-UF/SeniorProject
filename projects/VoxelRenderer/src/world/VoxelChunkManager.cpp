@@ -163,6 +163,8 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
             continue;
         }
 
+        ZoneScoped;
+
         // Take some work
         auto task = loadingThreadState.pendingTasks.front();
         loadingThreadState.pendingTasks.pop();
@@ -174,6 +176,8 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
         task->chunkData = std::make_shared<VoxelChunkData>(task->chunkSize);
         Log::information(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
         {
+            ZoneScopedN("Generation");
+
             MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
             int seed = 0;

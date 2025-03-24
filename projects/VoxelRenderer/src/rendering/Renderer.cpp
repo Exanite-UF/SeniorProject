@@ -247,6 +247,9 @@ void Renderer::setBounces(const int& bounces)
 
 void Renderer::render(float fov)
 {
+    const char* frameId = "Render to screen";
+    FrameMarkStart(frameId);
+
     if (!isRenderingOffscreen)
     {
         _render();
@@ -258,10 +261,15 @@ void Renderer::render(float fov)
     postProcess();
 
     finalDisplay();
+
+    FrameMarkEnd(frameId);
 }
 
 void Renderer::_render()
 {
+    const char* frameId = "Render offscreen";
+    FrameMarkStart(frameId);
+
     if (isSizeDirtyThread)
     {
         makeFramebuffers();
@@ -294,6 +302,8 @@ void Renderer::_render()
     glFinish();
     swapWorkingBuffer();
     renderCount++;
+
+    FrameMarkEnd(frameId);
 }
 
 void Renderer::reproject(float fov)
