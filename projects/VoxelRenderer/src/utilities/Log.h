@@ -17,6 +17,7 @@ class Log
 
 private:
     static std::string getCurrentTimeText();
+    static std::string getLogLevelText(LogLevel level);
 
 public:
     inline static std::atomic<LogLevel> minimumLevel = Verbose;
@@ -27,8 +28,6 @@ public:
     static void warning(const std::string& message);
     static void error(const std::string& message);
     static void fatal(const std::string& message);
-
-    static std::string getLogLevelText(LogLevel level);
 
     static void write(LogLevel level, const std::string& message);
 };
