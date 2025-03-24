@@ -127,6 +127,8 @@ target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
 # Only enable Tracy profiling in the Profiling build configuration is selected
 if(CMAKE_BUILD_TYPE STREQUAL "Profiling")
     set(TRACY_ENABLE ON)
+else ()
+    set(TRACY_ENABLE OFF)
 endif ()
 
 set(TRACY_ON_DEMAND ON)
