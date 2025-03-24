@@ -104,7 +104,7 @@ void main()
     vec3 right = qtransform(camRotation, vec3(0, -1, 0));
 
     // The random offset allows for temporal accumulation
-    vec2 randOffset = vec2(random(vec3(texelCoord) + jitter.x), random(vec3(texelCoord) + jitter.y)); // Create a random offset using the position of the texel and a provided jitter
+    vec2 randOffset = 0 * vec2(random(vec3(texelCoord) + jitter.x), random(vec3(texelCoord) + jitter.y)); // Create a random offset using the position of the texel and a provided jitter
 
     vec2 uv = ((texelCoord.xy + randOffset) / size.xy - 0.5) * 2.0; //([-1, 1), [-1, 1))
     uv.y *= float(size.y) / size.x; // Correct for aspect ratio

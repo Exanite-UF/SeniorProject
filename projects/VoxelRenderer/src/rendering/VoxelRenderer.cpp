@@ -271,11 +271,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
                 //Load voxel chunk history
                 if(voxelChunkHistories.count(chunkComponent) == 0){
                     //Then no history exists
-                    glUniform1ui(glGetUniformLocation(fullCastProgram, "isHistoryAvailable"), false);
                     //voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
                     voxelChunkHistories.emplace(chunkComponent, VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale()));
-                }else{
-                    glUniform1ui(glGetUniformLocation(fullCastProgram, "isHistoryAvailable"), true);
                 }
 
                 VoxelChunkHistory history = voxelChunkHistories.at(chunkComponent);

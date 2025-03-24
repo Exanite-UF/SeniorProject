@@ -74,6 +74,7 @@ private:
         std::uint8_t ready = 1;
         std::uint8_t working = 2;
     } bufferMapping;
+    std::uint8_t lastRenderedFrameIndex = 0;
 
     bool isNewerFrame = false;
 
@@ -85,9 +86,10 @@ private:
     } bufferLocks {};
 
     std::array<GLuint, 3> colorTextures {};
+    std::array<GLuint, 3> colorSquaredTextures {};
     std::array<GLuint, 3> positionTextures {};
     std::array<GLuint, 3> normalTextures {};
-    std::array<GLuint, 3> materialTextures {};
+    std::array<GLuint, 3> miscTextures {};
 
 private:
     std::shared_ptr<SceneComponent> scene = nullptr;
@@ -109,7 +111,7 @@ private:
     GLuint outputColorTexture {};
     GLuint outputPositionTexture {};
     GLuint outputNormalTexture {};
-    GLuint outputMaterialTexture {};
+    GLuint outputMiscTexture {};
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure

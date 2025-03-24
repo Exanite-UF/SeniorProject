@@ -174,8 +174,8 @@ void main()
         if (resetFirstHit && texelCoord.z == 0)
         {
             setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
-            setFirstHitMaterial(texelCoord, vec3(0, 0, 0)); // The skybox has a roughness of 0
-            setFirstHitNormal(texelCoord, rayDir); // The skybox has a roughness of 0
+            setFirstHitMaterial(texelCoord, vec3(-1, 0, 0)); // The skybox has a roughness of -1
+            setFirstHitNormal(texelCoord, rayDir);
         }
 
         if (drawSkybox)

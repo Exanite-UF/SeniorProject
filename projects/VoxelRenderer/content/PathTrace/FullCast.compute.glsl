@@ -25,7 +25,6 @@ uniform float pastCameraFovTan;
 uniform vec3 pastVoxelWorldPosition;
 uniform vec4 pastVoxelWorldRotation;//quaternion
 uniform vec3 pastVoxelWorldScale;
-uniform bool isHistoryAvailable;
 
 
 uniform ivec3 cellCount;
@@ -699,25 +698,23 @@ void attempt(ivec3 texelCoord)
 
         //If it gets here, then the motion vectors should be calcuated
         
-        /*
+        
         vec3 hitLocation = hit.voxelHitLocation;
 
         // Transform the hit location to world space, using historical information
-        hitLocation -= 0.5 * vec3(pastVoxelWorldSize); // This moves the origin of the voxel world to its center
-        hitLocation *= pastVvoxelWorldScale; // Apply the scale of the voxel world
+        hitLocation -= vec3(cellCount); // This moves the origin of the voxel world to its center
+        hitLocation *= pastVoxelWorldScale; // Apply the scale of the voxel world
         hitLocation = qtransform(pastVoxelWorldRotation, hitLocation); // Rotate back into world space
         hitLocation += pastVoxelWorldPosition; // Apply the voxel world position
+
+        
 
         //Hit location is now in world space using historical information
         //Project into camera space using historical camera data
 
-        //uniform vec3 pastCameraPosition;
-        //uniform vec4 pastCameraRotation;//quaternion
-        //uniform float pastCameraFovTan; 
-
-        hitLocation -= pastCameraFovTan;//Place relative to camera
+        hitLocation -= pastCameraPosition;//Place relative to camera
         hitLocation = qtransform(vec4(pastCameraRotation.xyz, -pastCameraRotation.w), hitLocation);//Rotate into camera space
-        hitLocation.yz /= vec2(1, resolution.y / resolution.x) * pastCameraFovTan;//Warp for fov
+        hitLocation.yz /= vec2(1, float(resolution.y) / resolution.x) * pastCameraFovTan;//Warp for fov
 
         hitLocation.yz /= hitLocation.x;//Put into camera space
 
@@ -726,9 +723,12 @@ void attempt(ivec3 texelCoord)
         //y = y screen space
         //z = depth
 
-        vec2 motionVector = (vec2(texelCoord.xy) / resolution.xy) - hitLocation;
+        hitLocation.xy *= 0.5;
+        hitLocation.xy += 0.5;
+        vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy);//UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
+        //vec2 motionVector = hitLocation.xy;
         setFirstHitMotionVector(texelCoord, motionVector);
-        */
+        
     }
 
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation

@@ -1,15 +1,13 @@
 #version 460 core
 
-layout(binding = 0) uniform sampler2D oldColor;
-layout(binding = 1) uniform sampler2D newColor;
-layout(binding = 2) uniform sampler2D miscData;
+layout(binding = 0) uniform sampler2D tempColor;
+layout(binding = 1) uniform sampler2D miscData;
 
 in vec2 uv;
 
 uniform ivec2 resolution;
 
 layout(location = 0) out vec4 out_color;
-layout(location = 1) out vec4 out_color_squared;
 
 vec4 safeVec4(vec4 v, vec4 fallback) {
     return vec4(
@@ -51,18 +49,8 @@ vec4 bilinearFilter(sampler2D tex, vec2 uv, vec2 texSize) {
 
 void main()
 {
-    vec3 misc = texture(miscData, uv).xyz;
-    vec2 motionVector = misc.yz;
-    vec2 oldUV = uv - motionVector;
+    //This is where the wavelet filter is applied
 
-
-    vec4 color = bilinearFilter(oldColor, oldUV, resolution);
-
-    float alpha = (misc.x < 0) ? 0 : 0.8;
-    if(color.w == 0){
-        alpha = 0;
-    }
-
-    out_color = vec4(color.xyz * alpha + (1 - alpha) * texture(newColor, uv).xyz, 1);
-    out_color_squared = vec4(color.xyz * color.xyz, alpha);
+    vec3 color = texture(tempColor, uv).xyz;    
+    out_color = vec4(color, 1);
 }

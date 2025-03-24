@@ -8,7 +8,7 @@
 
 GLuint AsyncReprojectionRenderer::renderProgram {};
 GLuint AsyncReprojectionRenderer::combineProgram {};
-GLuint AsyncReprojectionRenderer::combineMaskProgram {};
+GLuint AsyncReprojectionRenderer::combine2Program {};
 
 void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 {
@@ -65,8 +65,8 @@ void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 AsyncReprojectionRenderer::AsyncReprojectionRenderer()
 {
     renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader);
-    combineProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::combineReprojectionFragmentShader);
-    combineMaskProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::makeCombineMaskFragmentShader);
+    combineProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::combineReprojectionFragmentShader);
+    combine2Program = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::combineReprojection2FragmentShader);
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -82,42 +82,25 @@ void AsyncReprojectionRenderer::setSize(glm::ivec2 size)
 
     this->size = size;
 
-    generateMesh(size);
-
-    // Create mask texture
-    glDeleteTextures(1, &combineMaskTextureID);
-    glGenTextures(1, &combineMaskTextureID);
-    glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
+    // Create temp color texture
+    glDeleteTextures(1, &tempColorTexture);
+    glGenTextures(1, &tempColorTexture);
+    glBindTexture(GL_TEXTURE_2D, tempColorTexture);
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, this->size.x, this->size.y, 0, GL_RED, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->size.x, this->size.y, 0, GL_RGBA, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    for (int i = 0; i < 2; i++)
-    {
-        // Create frame counter textures
-        glDeleteTextures(1, &frameCountTextures[i]);
-        glGenTextures(1, &frameCountTextures[i]);
-        glBindTexture(GL_TEXTURE_2D, frameCountTextures[i]);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, this->size.x, this->size.y, 0, GL_RED, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
+    generateMesh(size);
 }
 
 void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
-    const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& materialTexture)
+    const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& miscTexture)
 {
     glUseProgram(renderProgram);
 
@@ -131,7 +114,7 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
     glBindTexture(GL_TEXTURE_2D, colorTexture);
 
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, materialTexture);
+    glBindTexture(GL_TEXTURE_2D, miscTexture);
 
     glUniform3fv(glGetUniformLocation(renderProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
     glUniform4f(glGetUniformLocation(renderProgram, "inverseCameraRotation"), cameraRotation.x, cameraRotation.y, cameraRotation.z, -cameraRotation.w);
@@ -160,103 +143,82 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
     glUseProgram(0);
 }
 
-void AsyncReprojectionRenderer::combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
-    const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture)
+void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, const GLuint& newMiscTexture, const GLuint& newColorTexture, const GLuint& newColorSquaredTexture)
 {
     // This runs in the offscreen context
 
     // This is where combination occurs
 
-    // I need to make a new VAO since they cannot be shared across contexts
-    // Luckily they don't use much data
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
-
-    // Make mask
+    // Combine 1
     {
-        glUseProgram(combineMaskProgram);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, oldPositionTexture); // Old position
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, newNormalTexture);
-
-        glUniform3fv(glGetUniformLocation(combineMaskProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
-        glUniform4f(glGetUniformLocation(combineMaskProgram, "inverseCameraRotation"), lastRenderedCameraRotation.x, lastRenderedCameraRotation.y, lastRenderedCameraRotation.z, -lastRenderedCameraRotation.w);
-        glUniform2i(glGetUniformLocation(combineMaskProgram, "resolution"), size.x, size.y);
-        glUniform1f(glGetUniformLocation(combineMaskProgram, "horizontalFovTan"), std::tan(lastRenderedCameraFOV * 0.5));
+        glUseProgram(combineProgram);
 
         // Need to render to a custom framebuffer, that switches its render target every time
         GLuint framebuffer;
         glGenFramebuffers(1, &framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         // Bind new data
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, combineMaskTextureID, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tempColorTexture, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, newColorSquaredTexture, 0);
 
-        glBindVertexArray(VAO);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, oldColorTexture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+        float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, newColorTexture);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, newMiscTexture);
+
+
+        glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
+
+        
+       
         {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glPointSize(3); // I don't know why the points need to be this large
-            glDrawArrays(GL_POINTS, 0, vertices.size());
-        }
-        glBindVertexArray(0);
+            GLuint emptyVertexArray;
+            glGenVertexArrays(1, &emptyVertexArray);
+    
+            glBindVertexArray(emptyVertexArray);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDeleteFramebuffers(1, &framebuffer);
+            // Tell opengl to draw to the texture in the framebuffer
+            const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+            glDrawBuffers(2, buffers);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glDisable(GL_BLEND);
+            glBindVertexArray(0);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDeleteFramebuffers(1, &framebuffer);
+
+            glDeleteVertexArrays(1, &emptyVertexArray);
+        }
+        
+
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+
         glUseProgram(0);
     }
 
-    // Combine
+    // Combine 2
     {
-        glUseProgram(combineProgram);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, oldPositionTexture); // Old position
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, newNormalTexture);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, oldColorTexture); // Old color
-
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, newPositionTexture); // New position
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, newMaterialTexture); // New material
-
-        // Old frame count
-        if (currentBuffer % 2 == 0)
-        {
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, frameCountTextures[0]);
-        }
-        else
-        {
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, frameCountTextures[1]);
-        }
-
-        glActiveTexture(GL_TEXTURE6);
-        glBindTexture(GL_TEXTURE_2D, combineMaskTextureID);
-
-        glUniform3fv(glGetUniformLocation(combineProgram, "cameraMovement"), 1, glm::value_ptr(cameraMovement));
-        glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(lastRenderedCameraPosition));
-        glUniform4f(glGetUniformLocation(combineProgram, "inverseCameraRotation"), lastRenderedCameraRotation.x, lastRenderedCameraRotation.y, lastRenderedCameraRotation.z, -lastRenderedCameraRotation.w);
-        glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
-        glUniform1f(glGetUniformLocation(combineProgram, "horizontalFovTan"), std::tan(lastRenderedCameraFOV * 0.5));
+        glUseProgram(combine2Program);
 
         // Need to render to a custom framebuffer, that switches its render target every time
         GLuint framebuffer;
@@ -264,28 +226,41 @@ void AsyncReprojectionRenderer::combineBuffers(const glm::vec3& cameraMovement, 
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         // Bind new data
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, newColorTexture, 0);
-        if (currentBuffer % 2 == 0)
-        {
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextures[1], 0);
-        }
-        else
-        {
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, frameCountTextures[0], 0);
-        }
 
-        glBindVertexArray(VAO);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        {
-            const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-            glDrawBuffers(2, buffers);
-            glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-        }
-        glDisable(GL_BLEND);
-        glBindVertexArray(0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tempColorTexture);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDeleteFramebuffers(1, &framebuffer);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, newMiscTexture);
+
+
+        glUniform2i(glGetUniformLocation(combine2Program, "resolution"), size.x, size.y);
+
+        
+       
+        {
+            GLuint emptyVertexArray;
+            glGenVertexArrays(1, &emptyVertexArray);
+    
+            glBindVertexArray(emptyVertexArray);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            // Tell opengl to draw to the texture in the framebuffer
+            const GLenum buffers[] = { GL_COLOR_ATTACHMENT0 };
+            glDrawBuffers(1, buffers);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glDisable(GL_BLEND);
+            glBindVertexArray(0);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDeleteFramebuffers(1, &framebuffer);
+
+            glDeleteVertexArrays(1, &emptyVertexArray);
+        }
+        
+
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -293,22 +268,9 @@ void AsyncReprojectionRenderer::combineBuffers(const glm::vec3& cameraMovement, 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glActiveTexture(GL_TEXTURE5);
-        glBindTexture(GL_TEXTURE_2D, 0);
 
         glUseProgram(0);
     }
-
-    glDeleteVertexArrays(1, &VAO);
 
     glFinish();
     currentBuffer++;

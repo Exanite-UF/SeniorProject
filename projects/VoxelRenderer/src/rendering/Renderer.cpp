@@ -67,7 +67,8 @@ void Renderer::makeFramebuffers()
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, positionTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normalTextures[i], 0);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, materialTextures[i], 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, miscTextures[i], 0);
+        //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, colorSquaredTextures[i], 0);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -88,7 +89,7 @@ void Renderer::swapDisplayBuffer()
         std::scoped_lock lock(bufferLocks.display, bufferLocks.ready);
 
         std::swap(bufferMapping.display, bufferMapping.ready);
-
+        lastRenderedFrameIndex = bufferMapping.display;
         isNewerFrame = false;
     }
 }
@@ -102,12 +103,14 @@ void Renderer::swapWorkingBuffer()
     std::scoped_lock lock(bufferLocks.ready, bufferLocks.working);
 
     std::swap(bufferMapping.ready, bufferMapping.working);
+    reprojection->combineBuffers(colorTextures[lastRenderedFrameIndex], miscTextures[bufferMapping.ready], colorTextures[bufferMapping.ready], colorSquaredTextures[bufferMapping.ready]);
+    //reprojection->combineBuffers(lastRenderedPosition - olderRenderedPosition, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
+    //    colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
+    //    positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
+    //    miscTextures[bufferMapping.ready], normalTextures[bufferMapping.ready]);
 
-    reprojection->combineBuffers(lastRenderedPosition - olderRenderedPosition, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
-        colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
-        positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
-        materialTextures[bufferMapping.ready], normalTextures[bufferMapping.ready]);
-
+    lastRenderedFrameIndex = bufferMapping.ready;
+    
     isNewerFrame = true;
 }
 
@@ -118,7 +121,7 @@ GLuint Renderer::getWorkingFramebuffer()
     // This will block if it is unable to lock both the ready and working buffers
     // It will unlock upon destruction
     std::scoped_lock lock(bufferLocks.working);
-
+    
     return framebuffers[bufferMapping.working];
 }
 
@@ -159,6 +162,23 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        // Create color squared texture
+        glDeleteTextures(1, &colorSquaredTextures[i]);
+        glGenTextures(1, &colorSquaredTextures[i]);
+        glBindTexture(GL_TEXTURE_2D, colorSquaredTextures[i]);
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+        }
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         // Create position texture
         glDeleteTextures(1, &positionTextures[i]);
         glGenTextures(1, &positionTextures[i]);
@@ -194,9 +214,9 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Create material texture
-        glDeleteTextures(1, &materialTextures[i]);
-        glGenTextures(1, &materialTextures[i]);
-        glBindTexture(GL_TEXTURE_2D, materialTextures[i]);
+        glDeleteTextures(1, &miscTextures[i]);
+        glGenTextures(1, &miscTextures[i]);
+        glBindTexture(GL_TEXTURE_2D, miscTextures[i]);
         {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -209,6 +229,8 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
+
+
     }
 
     isNewerFrame = false;
@@ -267,10 +289,7 @@ void Renderer::_render()
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         std::scoped_lock lock(cameraMtx);
 
-        olderRenderedPosition = lastRenderedPosition;
-        lastRenderedPosition = currentCameraPosition;
-        lastRenderedRotation = currentCameraRotation;
-        lastRenderedFOV = currentCameraFOV;
+        
 
         if (isRenderingOffscreen)
         {
@@ -278,13 +297,19 @@ void Renderer::_render()
             lastRenderedFOV = std::min(lastRenderedFOV, maxFov);
         }
 
-        voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+        voxelRenderer->prepareRayTraceFromCamera(currentCameraPosition, currentCameraRotation, currentCameraFOV);
         {
             std::shared_lock lockScene(scene->getMutex());
 
             voxelRenderer->executePathTrace(scene->getChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+            //voxelRenderer->executePathTrace(scene->getChunks(), bounces, currentCameraPosition, currentCameraRotation, currentCameraFOV);
         }
-        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+
+        olderRenderedPosition = lastRenderedPosition;
+        lastRenderedPosition = currentCameraPosition;
+        lastRenderedRotation = currentCameraRotation;
+        lastRenderedFOV = currentCameraFOV;
     }
 
     glFinish();
@@ -332,7 +357,7 @@ void Renderer::reproject(float fov)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, outputMaterialTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, outputMiscTexture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -340,7 +365,7 @@ void Renderer::reproject(float fov)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Do the render
-    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], materialTextures[bufferMapping.display]);
+    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);
@@ -355,7 +380,7 @@ void Renderer::postProcess()
     // Do the post processing
     if (postProcessing->hasAnyProcesses())
     {
-        postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMaterialTexture);
+        postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMiscTexture);
     }
 }
 
@@ -441,9 +466,9 @@ void Renderer::makeOutputTextures()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Remake the material texture
-    glDeleteTextures(1, &outputMaterialTexture);
-    glGenTextures(1, &outputMaterialTexture);
-    glBindTexture(GL_TEXTURE_2D, outputMaterialTexture);
+    glDeleteTextures(1, &outputMiscTexture);
+    glGenTextures(1, &outputMiscTexture);
+    glBindTexture(GL_TEXTURE_2D, outputMiscTexture);
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
