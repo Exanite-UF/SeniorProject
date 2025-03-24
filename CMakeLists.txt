@@ -27,7 +27,7 @@ set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 # Enable Inter-Procedural Optimization (IPO) if supported by the compiler
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IS_IPO_SUPPORTED)
-if(IS_IPO_SUPPORTED)
+if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
 
@@ -40,13 +40,6 @@ endif()
 # See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
 if (WIN32)
     add_definitions(-D_WIN32_WINNT=0x0A00)
-endif()
-
-# Always link against the dynamically linked version of C runtime library for MSVC
-# This fixes a few linker errors with MSVC
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif()
 
 # --- Third party ---
