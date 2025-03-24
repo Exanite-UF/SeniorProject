@@ -7,16 +7,16 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # This postfixes a "d" to shared library names in DEBUG mode
 set(CMAKE_DEBUG_POSTFIX d)
 
+# Globally disable shared library prefix for Windows
+if (WIN32)
+    set(CMAKE_SHARED_LIBRARY_PREFIX "")
+endif()
+
 # Enable Inter-Procedural Optimization (IPO) if supported by the compiler
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IS_IPO_SUPPORTED)
 if(IS_IPO_SUPPORTED)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
-# Globally disable shared library prefix for Windows
-if (WIN32)
-    set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
 # --- Third party ---
