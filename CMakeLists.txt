@@ -43,6 +43,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif()
 
+# Set PKG_CONFIG_PATH
+# This is mainly to make tracy-profiler compile properly on Windows
+set(ENV{PKG_CONFIG_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/external/pkg-config")
+
 # --- Third party ---
 
 # OpenGL
