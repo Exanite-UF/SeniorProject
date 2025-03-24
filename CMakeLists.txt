@@ -19,6 +19,9 @@ if(IS_IPO_SUPPORTED)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
 
+# Enable architecture specific optimizations
+add_compile_options(-march=native)
+
 # --- Third party ---
 
 # OpenGL
