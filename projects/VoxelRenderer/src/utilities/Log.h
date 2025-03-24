@@ -20,7 +20,7 @@ private:
     static std::string getLogLevelText(LogLevel level);
 
 public:
-    inline static std::atomic<LogLevel> minimumLevel = Verbose;
+    inline static std::atomic<LogLevel> minimumLevel = Information;
 
     static void verbose(const std::string& message);
     static void debug(const std::string& message);
