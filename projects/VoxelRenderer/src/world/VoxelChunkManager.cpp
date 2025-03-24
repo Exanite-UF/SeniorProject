@@ -240,6 +240,8 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint()
 
 void VoxelChunkManager::update(const float deltaTime)
 {
+    MeasureElapsedTimeScope scope("VoxelChunkManager::update", 10);
+
     // Calculate new camera chunk position
     state.cameraWorldPosition = state.scene->camera->getTransform()->getGlobalPosition();
 
