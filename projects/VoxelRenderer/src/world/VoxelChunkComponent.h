@@ -33,7 +33,7 @@ public:
     VoxelChunkData& getChunkData();
 
     bool getExistsOnGpu() const;
-    void setExistsOnGpu(bool existsOnGpu);
+    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
 
     void onDestroy() override;
 };
