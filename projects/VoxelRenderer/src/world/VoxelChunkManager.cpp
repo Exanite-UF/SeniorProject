@@ -140,7 +140,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
 void VoxelChunkManager::chunkLoadingThreadEntrypoint()
 {
-    Log::information("Started VoxelChunkManager chunk loading thread");
+    Log::debug("Started VoxelChunkManager chunk loading thread");
 
     while (state.isRunning)
     {
@@ -168,7 +168,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
 
         // Generate chunk
         task->chunkData = std::make_shared<VoxelChunkData>(task->chunkSize);
-        Log::information(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
+        Log::verbose(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
         {
             MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
@@ -184,7 +184,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
             generator.generate(*task->chunkData);
         }
 
-        Log::information(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
+        Log::verbose(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
         // Acquire completed requests mutex
         std::unique_lock completedRequestsLock(loadingThreadState.completedTasksMutex);
@@ -193,12 +193,12 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
         loadingThreadState.completedTasks.push(task);
     }
 
-    Log::information("Stopped VoxelChunkManager chunk loading thread");
+    Log::debug("Stopped VoxelChunkManager chunk loading thread");
 }
 
 void VoxelChunkManager::chunkModificationThreadEntrypoint()
 {
-    Log::information("Started VoxelChunkManager chunk modification thread");
+    Log::debug("Started VoxelChunkManager chunk modification thread");
 
     state.modificationThreadContext->makeContextCurrent();
 
@@ -229,13 +229,13 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint()
         // Apply the chunk command buffer
         {
             MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"));
-            Log::information("Applying chunk command buffer");
+            Log::verbose("Applying chunk command buffer");
             std::lock_guard lock(task->component->getMutex());
             task->commandBuffer.apply(task->component);
         }
     }
 
-    Log::information("Stopped VoxelChunkManager chunk modification thread");
+    Log::debug("Stopped VoxelChunkManager chunk modification thread");
 }
 
 void VoxelChunkManager::update(const float deltaTime)
@@ -319,7 +319,7 @@ void VoxelChunkManager::update(const float deltaTime)
                     loadingThreadState.pendingTasksCondition.notify_one();
                 }
 
-                Log::information(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
+                Log::verbose(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
             }
         }
 
