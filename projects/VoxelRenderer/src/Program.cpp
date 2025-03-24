@@ -1,6 +1,8 @@
 #include <src/utilities/ImGui.h>
 #include <src/utilities/OpenGl.h>
 
+#include <tracy/Tracy.hpp>
+
 #include <Jolt/Jolt.h>
 
 #include <Jolt/Core/Factory.h>
@@ -255,6 +257,9 @@ void Program::run()
 
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
+        constexpr const char* mainLoopId = "Main Loop";
+        FrameMarkStart(mainLoopId);
+
         // Engine time
         auto currentTimestamp = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(currentTimestamp - previousTimestamp).count();
@@ -556,6 +561,9 @@ void Program::run()
 
         // Present
         window->present();
+
+        FrameMarkEnd(mainLoopId);
+        FrameMark;
     }
 
     sceneObject->destroy();
