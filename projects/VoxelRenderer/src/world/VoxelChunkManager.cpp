@@ -294,28 +294,33 @@ void VoxelChunkManager::update(const float deltaTime)
         }
 
         // Load chunks
-        for (auto chunkToLoad : chunksToLoad)
+        if (!chunksToLoad.empty())
         {
-            auto chunk = state.activeChunks.find(chunkToLoad);
-            if (chunk != state.activeChunks.end())
+            MeasureElapsedTimeScope scope("Chunk load preparation on main thread", 10);
+            std::lock_guard lock(loadingThreadState.pendingTasksMutex);
+
+            for (auto chunkToLoad : chunksToLoad)
             {
-                // Keep the chunk alive if necessary
-                chunk->second->isUnloading = false;
+                auto chunk = state.activeChunks.find(chunkToLoad);
+                if (chunk != state.activeChunks.end())
+                {
+                    // Keep the chunk alive if necessary
+                    chunk->second->isUnloading = false;
 
-                // Chunk is already loaded, we don't need to load
-                continue;
+                    // Chunk is already loaded, we don't need to load
+                    continue;
+                }
+
+                // Load the chunk
+                state.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, settings.chunkSize, state.scene));
+                {
+                    // Send a request to a worker thread to either load the chunk
+                    loadingThreadState.pendingTasks.emplace(std::make_shared<ChunkLoadTask>(chunkToLoad, settings.chunkSize));
+                    loadingThreadState.pendingTasksCondition.notify_one();
+                }
+
+                Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
             }
-
-            // Load the chunk
-            state.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, settings.chunkSize, state.scene));
-            {
-                // Send a request to a worker thread to either load the chunk
-                std::lock_guard lock(loadingThreadState.pendingTasksMutex);
-                loadingThreadState.pendingTasks.emplace(std::make_shared<ChunkLoadTask>(chunkToLoad, settings.chunkSize));
-                loadingThreadState.pendingTasksCondition.notify_one();
-            }
-
-            Log::log(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
         }
 
         state.isChunkLoadingDirty = false;
