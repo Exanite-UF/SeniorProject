@@ -4,6 +4,7 @@
 #include <semaphore>
 #include <thread>
 #include <vector>
+#include <unordered_map>
 
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/rendering/AsynchronousReprojection.h>
@@ -13,11 +14,24 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkComponent.h>
 
+
 class Renderer;
 
 // The voxel renderer needs to be able to render multiple voxel chunks
 class VoxelRenderer : public NonCopyable
 {
+private:
+    //Voxel chunk history is needed to calculate motion vectors
+    struct VoxelChunkHistory {
+        glm::vec3 position;
+        glm::quat rotation;
+        glm::vec3 scale;
+
+        VoxelChunkHistory(const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale) : position(position), rotation(rotation), scale(scale) {};
+    };
+
+    std::unordered_map<std::shared_ptr<VoxelChunkComponent>, VoxelChunkHistory> voxelChunkHistories;
+
 private:
     // Odd Quirks of Images
     // RGB is not a valid format for an image. They must be either R, RG, or RGBA
@@ -49,7 +63,7 @@ private:
     // Used as the final output buffers
     GraphicsBuffer<glm::vec3> normalBuffer;
     GraphicsBuffer<glm::vec3> positionBuffer;
-    GraphicsBuffer<glm::vec3> materialBuffer; //(roughness, _, _)
+    GraphicsBuffer<glm::vec3> miscBuffer; //(roughness, _, _)
 
     int currentBuffer = 0;
 
@@ -90,9 +104,9 @@ public:
 
     void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
 
-    void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay);
+    void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, bool isFirstRay);
 
-    void executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces);
+    void executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV);
 
     void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 };

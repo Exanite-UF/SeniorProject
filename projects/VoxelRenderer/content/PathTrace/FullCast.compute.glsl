@@ -18,6 +18,16 @@ struct MaterialDefinition
     float padding4;
 };
 
+uniform vec3 pastCameraPosition;
+uniform vec4 pastCameraRotation;//quaternion
+uniform float pastCameraFovTan; 
+
+uniform vec3 pastVoxelWorldPosition;
+uniform vec4 pastVoxelWorldRotation;//quaternion
+uniform vec3 pastVoxelWorldScale;
+uniform bool isHistoryAvailable;
+
+
 uniform ivec3 cellCount;
 uniform uint occupancyMapLayerCount;
 uniform uint occupancyMapIndices[10]; // Assume that at most there are 10 possible mip map textures (This is a massive amount)
@@ -218,18 +228,24 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[2 + index] = value.z;
 }
 
-layout(std430, binding = 14) buffer FirstHitMaterial
+layout(std430, binding = 14) buffer FirstHitMisc
 {
-    writeonly float firstHitMaterial[];
+    writeonly float firstHitMisc[];
 };
 
-void setFirstHitMaterial(ivec3 coord, vec3 value)
+void setFirstHitRoughness(ivec3 coord, float value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
-    firstHitMaterial[0 + index] = value.x;
-    firstHitMaterial[1 + index] = value.y;
-    firstHitMaterial[2 + index] = value.z;
+    firstHitMisc[0 + index] = value.x;
 }
+
+void setFirstHitMotionVector(ivec3 coord, vec2 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitMisc[1 + index] = value.x;
+    firstHitMisc[2 + index] = value.y;
+}
+
 
 struct RayHit
 {
@@ -627,7 +643,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 
     if (texelCoord.z == 0 && isFirstRay)
     {
-        setFirstHitMaterial(texelCoord, vec3(voxelMaterial.roughness, 0, 0));
+        setFirstHitRoughness(texelCoord, voxelMaterial.roughness);
     }
 
     normal = normalize(normal);
@@ -680,6 +696,39 @@ void attempt(ivec3 texelCoord)
     {
         setFirstHitNormal(texelCoord, hit.normal);
         setFirstHitPosition(texelCoord, hit.hitLocation);
+
+        //If it gets here, then the motion vectors should be calcuated
+        
+        /*
+        vec3 hitLocation = hit.voxelHitLocation;
+
+        // Transform the hit location to world space, using historical information
+        hitLocation -= 0.5 * vec3(pastVoxelWorldSize); // This moves the origin of the voxel world to its center
+        hitLocation *= pastVvoxelWorldScale; // Apply the scale of the voxel world
+        hitLocation = qtransform(pastVoxelWorldRotation, hitLocation); // Rotate back into world space
+        hitLocation += pastVoxelWorldPosition; // Apply the voxel world position
+
+        //Hit location is now in world space using historical information
+        //Project into camera space using historical camera data
+
+        //uniform vec3 pastCameraPosition;
+        //uniform vec4 pastCameraRotation;//quaternion
+        //uniform float pastCameraFovTan; 
+
+        hitLocation -= pastCameraFovTan;//Place relative to camera
+        hitLocation = qtransform(vec4(pastCameraRotation.xyz, -pastCameraRotation.w), hitLocation);//Rotate into camera space
+        hitLocation.yz /= vec2(1, resolution.y / resolution.x) * pastCameraFovTan;//Warp for fov
+
+        hitLocation.yz /= hitLocation.x;//Put into camera space
+
+        hitLocation = vec3(-hitLocation.y, hitLocation.z, hitLocation.x);//Blit the data
+        //x = x screen space (possibly flipped, probably not)
+        //y = y screen space
+        //z = depth
+
+        vec2 motionVector = (vec2(texelCoord.xy) / resolution.xy) - hitLocation;
+        setFirstHitMotionVector(texelCoord, motionVector);
+        */
     }
 
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation

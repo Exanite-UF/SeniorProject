@@ -10,6 +10,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
@@ -42,7 +43,7 @@ void VoxelRenderer::remakeTextures()
 
     normalBuffer.setSize(size.x * size.y);
     positionBuffer.setSize(size.x * size.y);
-    materialBuffer.setSize(size.x * size.y);
+    miscBuffer.setSize(size.x * size.y);
 
     // Create a new texture
     rayStartBuffer1.setSize(size1D);
@@ -181,7 +182,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     resetVisualInfo(resetLight, true, true, resetLight);
 }
 
-void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay)
+void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, bool isFirstRay)
 {
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
@@ -227,8 +228,10 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
     normalBuffer.bind(12);
     positionBuffer.bind(13);
-    materialBuffer.bind(14);
+    miscBuffer.bind(14);
 
+
+    std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
         GLuint workGroupsY = (size.y + 8 - 1) / 8;
@@ -237,6 +240,10 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), size.x, size.y, raysPerPixel);
         glUniform1i(glGetUniformLocation(fullCastProgram, "isFirstRay"), isFirstRay);
         glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
+
+        glUniform3fv(glGetUniformLocation(fullCastProgram, "pastCameraPosition"), 1, glm::value_ptr(pastCameraPosition));
+        glUniform4fv(glGetUniformLocation(fullCastProgram, "pastCameraRotation"), 1, glm::value_ptr(pastCameraRotation));
+        glUniform1f(glGetUniformLocation(fullCastProgram, "pastCameraFovTan"), std::tan(pastCameraFOV * 0.5)); // A little bit of randomness for temporal accumulation
 
         for (auto& chunkComponent : chunks)
         {
@@ -261,9 +268,31 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
                 glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
 
+                //Load voxel chunk history
+                if(voxelChunkHistories.count(chunkComponent) == 0){
+                    //Then no history exists
+                    glUniform1ui(glGetUniformLocation(fullCastProgram, "isHistoryAvailable"), false);
+                    //voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
+                    voxelChunkHistories.emplace(chunkComponent, VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale()));
+                }else{
+                    glUniform1ui(glGetUniformLocation(fullCastProgram, "isHistoryAvailable"), true);
+                }
+
+                VoxelChunkHistory history = voxelChunkHistories.at(chunkComponent);
+
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "pastVoxelWorldPosition"), 1, glm::value_ptr(history.position));
+                glUniform4fv(glGetUniformLocation(fullCastProgram, "pastVoxelWorldRotation"), 1, glm::value_ptr(history.rotation));
+                glUniform3fv(glGetUniformLocation(fullCastProgram, "pastVoxelWorldScale"), 1, glm::value_ptr(history.scale));
+
                 glDispatchCompute(workGroupsX, workGroupsY, workGroupsZ);
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+                //Update the history
+                if(isFirstRay){
+                    voxelChunkHistories.at(chunkComponent) = VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale());
+                }
+                renderedChunks.insert(chunkComponent);
             }
             chunk->unbindBuffers();
         }
@@ -286,18 +315,21 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    materialBuffer.unbind();
+    miscBuffer.unbind();
+
+    //Remove any chunks that are not rendered
+    //std::erase_if(voxelChunkHistories, [&renderedChunks](const auto& chunkPointer){return renderedChunks.count(chunkPointer) == 0;});
 
     glUseProgram(0);
 
     currentBuffer++;
 }
 
-void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces)
+void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV)
 {
     for (int i = 0; i <= bounces; i++)
     {
-        executeRayTrace(chunks, i == 0);
+        executeRayTrace(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, i == 0);
         afterCast();
         resetVisualInfo(false, false, false, true);
     }
@@ -350,7 +382,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
     accumulatedLightBuffer2.bind(5);
     normalBuffer.bind(6);
     positionBuffer.bind(7);
-    materialBuffer.bind(8);
+    miscBuffer.bind(8);
 
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (size.y + 8 - 1) / 8;
@@ -387,7 +419,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
     accumulatedLightBuffer2.unbind();
     normalBuffer.unbind();
     positionBuffer.unbind();
-    materialBuffer.unbind();
+    miscBuffer.unbind();
 
     glUseProgram(0);
 }
@@ -407,7 +439,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     normalBuffer.bind(1);
     positionBuffer.bind(2);
-    materialBuffer.bind(3);
+    miscBuffer.bind(3);
 
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, raysPerPixel);
 
@@ -437,7 +469,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    materialBuffer.unbind();
+    miscBuffer.unbind();
 
     glUseProgram(0);
 }
