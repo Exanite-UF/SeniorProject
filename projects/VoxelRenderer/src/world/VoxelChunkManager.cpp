@@ -168,9 +168,9 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
 
         // Generate chunk
         task->chunkData = std::make_shared<VoxelChunkData>(task->chunkSize);
-        Log::verbose(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
+        Log::information(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
         {
-            MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y), Log::Debug);
+            MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
             int seed = 0;
             int octaves = 3;
