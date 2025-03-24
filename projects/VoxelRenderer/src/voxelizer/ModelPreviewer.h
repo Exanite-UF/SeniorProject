@@ -19,7 +19,7 @@ private:
     GLFWwindow* voxelWindow = nullptr;
 
     // Camera Attributes
-    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 5.0f);
     glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -36,7 +36,7 @@ public:
     // Set instead of load since the voxelizer should be the one to load
     void setModel(Model* model_);
 
-    void CreateWindowTriangle();
+    void CreateWindowTriangle(GLFWwindow* sharedContext);
     void CreateWindowVoxel();
 
     void RenderWindowTriangle();

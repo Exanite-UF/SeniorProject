@@ -26,6 +26,7 @@ void Model::loadModel(std::string path)
 
     directory = path.substr(0, path.find_last_of('/'));
     processNode(scene->mRootNode, scene);
+    std::cout << path << " LOADED!" << std::endl;
 }
 
 // recursively travels through assimp's tree structure
