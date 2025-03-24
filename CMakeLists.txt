@@ -30,10 +30,17 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     add_compile_options(-march=native)
 endif()
 
+# Support Windows 10 or later
+# See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
 if (WIN32)
-    # Support Windows 10 or later
-    # See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
     add_definitions(-D_WIN32_WINNT=0x0A00)
+endif()
+
+# Always link against the dynamically linked version of C runtime library for MSVC
+# This fixes a few linker errors with MSVC
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 endif()
 
 # --- Third party ---
