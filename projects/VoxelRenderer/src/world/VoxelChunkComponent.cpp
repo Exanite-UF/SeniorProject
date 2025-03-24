@@ -6,14 +6,14 @@
 VoxelChunkComponent::VoxelChunkComponent()
     : VoxelChunkComponent(false)
 {
-    MeasureElapsedTimeScope("VoxelChunkComponent constructor", 10);
+    MeasureElapsedTimeScope scope("VoxelChunkComponent constructor", 10);
 
     chunkData.setSize(Constants::VoxelChunkComponent::chunkSize);
 }
 
 VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderData)
 {
-    MeasureElapsedTimeScope("VoxelChunkComponent constructor", 10);
+    MeasureElapsedTimeScope scope("VoxelChunkComponent constructor", 10);
 
     if (shouldGeneratePlaceholderData)
     {
