@@ -11,7 +11,7 @@ GameObject::GameObject(const std::string& name)
 {
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
-        Log::log(std::format("GameObject constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+        Log::information(std::format("GameObject constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 
     this->name = name;
@@ -21,7 +21,7 @@ GameObject::~GameObject()
 {
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
-        Log::log(std::format("GameObject destructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+        Log::information(std::format("GameObject destructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 }
 

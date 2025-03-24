@@ -19,7 +19,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(stoneMaterialKey, stoneMaterial))
     {
         stoneMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     std::shared_ptr<Material> dirtMaterial;
@@ -27,7 +27,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(dirtMaterialKey, dirtMaterial))
     {
         dirtMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     std::shared_ptr<Material> grassMaterial;
@@ -35,7 +35,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(grassMaterialKey, grassMaterial))
     {
         grassMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);

@@ -62,7 +62,7 @@ Program::Program()
 {
     // Ensure preconditions are met
     runEarlyStartupTests();
-    Log::log("Starting Voxel Renderer");
+    Log::information("Starting Voxel Renderer");
 
     // Init GLFW
     if (!glfwInit())
@@ -277,7 +277,7 @@ void Program::run()
 
             auto averagedDisplayDeltaTimeMs = averageDisplayDeltaTime * 1000;
             auto averagedRenderDeltaTimeMs = averagedRenderDeltaTime * 1000;
-            Log::log(std::format("{} display FPS ({} ms) | {} render FPS ({} ms)", currentDisplayFps, averagedDisplayDeltaTimeMs, currentRenderFps, averagedRenderDeltaTimeMs));
+            Log::information(std::format("{} display FPS ({} ms) | {} render FPS ({} ms)", currentDisplayFps, averagedDisplayDeltaTimeMs, currentRenderFps, averagedRenderDeltaTimeMs));
 
             fpsCycleTimer = 0;
         }
@@ -568,12 +568,12 @@ void Program::checkForContentFolder()
         throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
     }
 
-    Log::log("Found content folder");
+    Log::information("Found content folder");
 }
 
 void Program::runEarlyStartupTests()
 {
-    Log::log("Running early startup tests (in constructor)");
+    Log::information("Running early startup tests (in constructor)");
 
     {
         // Make sure the content folder exists
@@ -609,7 +609,7 @@ void Program::runEarlyStartupTests()
         // Letting the shared_ptr fall out of scope or explicitly resetting it will unsubscribe from the event
         auto listener = testEvent.subscribe([&](int value)
             {
-                Log::log("Event was successfully called");
+                Log::information("Event was successfully called");
                 counter += value;
             });
 
@@ -632,7 +632,7 @@ void Program::runEarlyStartupTests()
 
         auto listener = testEvent.subscribe([&](int value)
             {
-                Log::log("Buffered event was successfully called");
+                Log::information("Buffered event was successfully called");
                 counter += value;
             });
 
@@ -656,7 +656,7 @@ void Program::runEarlyStartupTests()
 
 void Program::runLateStartupTests()
 {
-    Log::log("Running late startup tests (in run())");
+    Log::information("Running late startup tests (in run())");
 
     {
         // Verify GameObject destroy API
@@ -680,7 +680,7 @@ void Program::runLateStartupTests()
         // Verify shader storage block size is large enough
         GLint size;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
-        Log::log("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
+        Log::information("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
 
         // 134217728 is the GL_MAX_SHADER_STORAGE_BLOCK_SIZE of Exanite's laptop, also equal to 512x512x512
         Assert::isTrue(size >= 134217728, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
@@ -693,14 +693,14 @@ void Program::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workgroupSizes.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workgroupSizes.z);
 
-        Log::log("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
+        Log::information("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
 
         glm::ivec3 workgroupCounts;
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workgroupCounts.x);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &workgroupCounts.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
-        Log::log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+        Log::information("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
     }
 
     {
@@ -713,11 +713,11 @@ void Program::runLateStartupTests()
 
         if (maxShaderBlockSize >= 2 * 512 * 512 * 512)
         {
-            Log::log("512x512x512 sized voxel chunks are supported on this device!");
+            Log::information("512x512x512 sized voxel chunks are supported on this device!");
         }
         else
         {
-            Log::log("512x512x512 sized voxel chunks are NOT supported on this device!");
+            Log::information("512x512x512 sized voxel chunks are NOT supported on this device!");
         }
     }
 
