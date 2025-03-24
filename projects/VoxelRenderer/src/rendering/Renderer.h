@@ -124,6 +124,7 @@ private:
 
 public:
     Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext);
+    ~Renderer();
 
     // This needs to be called on the thread that needs to render to the asynchronous reprojection input
     void makeFramebuffers();

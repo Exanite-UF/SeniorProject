@@ -1,6 +1,7 @@
 #include "VoxelChunkComponent.h"
 
 #include <src/Constants.h>
+#include <src/utilities/MeasureElapsedTimeScope.h>
 
 VoxelChunkComponent::VoxelChunkComponent()
     : VoxelChunkComponent(false)
@@ -22,6 +23,11 @@ const std::unique_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
     return chunk.value();
 }
 
+std::shared_mutex& VoxelChunkComponent::getMutex()
+{
+    return mutex;
+}
+
 VoxelChunkData& VoxelChunkComponent::getChunkData()
 {
     return chunkData;
@@ -32,7 +38,7 @@ bool VoxelChunkComponent::getExistsOnGpu() const
     return existsOnGpu;
 }
 
-void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu)
+void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
 {
     if (this->existsOnGpu == existsOnGpu)
     {
@@ -43,11 +49,27 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu)
 
     if (existsOnGpu)
     {
-        chunk.value().reset();
+        chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, false);
+
+        if (writeToGpu)
+        {
+            chunkData.writeTo(*chunk.value());
+        }
     }
     else
     {
-        chunk = std::make_unique<VoxelChunk>(chunkData.getSize(), false);
-        chunkData.writeTo(*chunk.value());
+        if (chunk.has_value())
+        {
+            chunk.value().reset();
+        }
     }
+}
+
+void VoxelChunkComponent::onDestroy()
+{
+    Component::onDestroy();
+
+    std::lock_guard lock(getMutex());
+
+    setExistsOnGpu(false);
 }

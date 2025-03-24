@@ -33,7 +33,7 @@ MaterialManager::MaterialManager()
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
     }
-    
+
     {
         auto& material = createMaterial("lightStone", "lightStone");
         material->albedo = ColorUtility::htmlToLinear("#6B6B6B");

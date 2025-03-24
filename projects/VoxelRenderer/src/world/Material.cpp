@@ -9,7 +9,7 @@ Material::Material(uint16_t index, const std::string& key, const std::string& na
     this->name = name;
 }
 
-int16_t Material::getIndex() const
+uint16_t Material::getIndex() const
 {
     return index;
 }

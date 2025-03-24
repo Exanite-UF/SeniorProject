@@ -15,5 +15,5 @@ public:
     // The total layers is result.size() - 1
     //
     // The max size of the returned vector is Constants::VoxelChunk::maxOccupancyMapLayerCount + 1
-    static std::vector<uint32_t> getOccupancyMapIndices(glm::ivec3 size);
+    static std::vector<uint32_t> getOccupancyMapIndices(const glm::ivec3& size);
 };

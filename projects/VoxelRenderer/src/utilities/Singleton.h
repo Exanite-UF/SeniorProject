@@ -14,20 +14,30 @@ class SingletonManager
 private:
     inline static bool canCreate = true;
     inline static std::vector<std::function<void()>> singletonCleanupFunctions {};
+    inline static std::vector<std::function<void()>> singletonDestroyFunctions {};
 
 public:
     // Cleanup all singletons, usually when the program is exiting
     static void destroyAllSingletons()
     {
+        // Disable creation of more singletons
         canCreate = false;
 
-        // Call in reverse order
+        // Call cleanup in reverse order
         for (int i = singletonCleanupFunctions.size() - 1; i >= 0; --i)
         {
             singletonCleanupFunctions.at(i)();
         }
 
         singletonCleanupFunctions.clear();
+
+        // Call destroy in reverse order
+        for (int i = singletonDestroyFunctions.size() - 1; i >= 0; --i)
+        {
+            singletonDestroyFunctions.at(i)();
+        }
+
+        singletonDestroyFunctions.clear();
     }
 
     // This makes it so that singletons can access private APIs
@@ -47,6 +57,11 @@ public:
         {
             singletonCleanupFunctions.push_back(cleanup);
         }
+
+        static void addDestroyFunction(const std::function<void()>& destroy)
+        {
+            singletonDestroyFunctions.push_back(destroy);
+        }
     };
 };
 
@@ -60,6 +75,8 @@ protected:
     Singleton() = default;
     ~Singleton() override = default;
 
+    virtual void onSingletonDestroy() {}
+
 public:
     static T& getInstance();
 };
@@ -70,12 +87,18 @@ T* Singleton<T>::instance = nullptr;
 template <class T>
 T& Singleton<T>::getInstance()
 {
-    Assert::isTrue(SingletonManager::Internal<T>::getCanCreate(), "SingletonManager::destroyAllSingletons() has been called, can no longer access singletons");
-
     if (instance == nullptr)
     {
+        Assert::isTrue(SingletonManager::Internal<T>::getCanCreate(), "SingletonManager::destroyAllSingletons() has been called, can no longer create new singletons");
+
         instance = new T();
+
         SingletonManager::Internal<T>::addCleanupFunction([&]()
+            {
+                reinterpret_cast<Singleton*>(instance)->onSingletonDestroy();
+            });
+
+        SingletonManager::Internal<T>::addDestroyFunction([&]()
             {
                 delete instance;
             });

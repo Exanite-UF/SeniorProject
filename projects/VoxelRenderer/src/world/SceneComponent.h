@@ -22,7 +22,11 @@ private:
     std::vector<std::shared_ptr<VoxelChunkComponent>> chunks {};
     std::unordered_map<glm::ivec3, std::shared_ptr<VoxelChunkComponent>> chunksByChunkPosition {};
 
+    std::shared_mutex mutex {};
+
 public:
+    std::shared_mutex& getMutex();
+
     void setCamera(const std::shared_ptr<CameraComponent>& camera);
     const std::shared_ptr<CameraComponent>& getCamera();
 
@@ -31,5 +35,5 @@ public:
     bool tryGetClosestChunk(std::shared_ptr<VoxelChunkComponent>& result);
 
     void addChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk);
-    void removeChunk(const glm::ivec3& chunkPosition, const std::shared_ptr<VoxelChunkComponent>& chunk);
+    void removeChunk(const glm::ivec3& chunkPosition);
 };

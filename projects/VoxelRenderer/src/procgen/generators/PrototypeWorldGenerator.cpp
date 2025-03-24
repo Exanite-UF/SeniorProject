@@ -2,6 +2,7 @@
 
 #include <PerlinNoise/PerlinNoise.hpp>
 
+#include <FastNoiseLite/FastNoiseLite.h>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
@@ -9,12 +10,9 @@
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
-#include <FastNoiseLite/FastNoiseLite.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
-    glm::ivec3 size = { data.getSize().x, data.getSize().y, 1 };
-
     auto& materialManager = MaterialManager::getInstance();
 
     std::shared_ptr<Material> stoneMaterial;
@@ -22,7 +20,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(stoneMaterialKey, stoneMaterial))
     {
         stoneMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     std::shared_ptr<Material> lightStoneMaterial;
@@ -30,15 +28,15 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(lightStoneMaterialKey, lightStoneMaterial))
     {
         stoneMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
-    
+
     std::shared_ptr<Material> darkStoneMaterial;
     std::string darkStoneMaterialKey = "darkStone";
     if (!materialManager.tryGetMaterialByKey(darkStoneMaterialKey, darkStoneMaterial))
     {
         stoneMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find stoneMaterial with id '" + darkStoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find stoneMaterial with id '" + darkStoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     std::shared_ptr<Material> dirtMaterial;
@@ -46,7 +44,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(dirtMaterialKey, dirtMaterial))
     {
         dirtMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     std::shared_ptr<Material> grassMaterial;
@@ -54,16 +52,17 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(grassMaterialKey, grassMaterial))
     {
         grassMaterial = materialManager.getMaterialByIndex(0);
-        Log::log("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
     // For organization
-    auto placeBlock = [&data = data, &blockLength = blockLength](int x, int y, int z, std::function<std::shared_ptr<Material>(int, int, int)> blockFunction){
-        for(int localX = 0; localX < blockLength; ++localX)
+    auto placeBlock = [&data = data, &blockLength = blockLength](int x, int y, int z, std::function<std::shared_ptr<Material>(int, int, int)> blockFunction)
+    {
+        for (int localX = 0; localX < blockLength; ++localX)
         {
-            for(int localY = 0; localY < blockLength; ++localY)
+            for (int localY = 0; localY < blockLength; ++localY)
             {
-                for(int localZ = 0; localZ < blockLength; ++localZ)
+                for (int localZ = 0; localZ < blockLength; ++localZ)
                 {
                     glm::vec3 globalPos = { x + localX, y + localY, z + localZ };
                     data.setVoxelOccupancy(globalPos, true);
@@ -72,9 +71,9 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             }
         }
     };
-    
+
     // Fill texture data with random noise, each block evaluated once
-    TextureData stoneBlockTextureData({blockLength, blockLength, blockLength});
+    TextureData stoneBlockTextureData({ blockLength, blockLength, blockLength });
     FastNoiseLite simplexNoise;
     simplexNoise.SetSeed(seed);
     simplexNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
@@ -83,7 +82,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     {
         for (int localY = 0; localY < blockLength; localY++)
         {
-            for(int localZ = 0; localZ < blockLength; localZ++)
+            for (int localZ = 0; localZ < blockLength; localZ++)
             {
                 // TODO: Analyze noise outputs
                 float noise = simplexNoise.GetNoise(localX * stoneFrequency, localY * stoneFrequency, localZ * stoneFrequency);
@@ -91,33 +90,36 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             }
         }
     }
-    
-    // Capture all materials when evaluating a block? Maybe pass material manager reference on instance creation. 
-    auto stoneBlock = [stoneMaterial, lightStoneMaterial, darkStoneMaterial, &blockLength = blockLength, &stoneBlockTextureData](int localX, int localY, int localZ) {
+
+    // Capture all materials when evaluating a block? Maybe pass material manager reference on instance creation.
+    auto stoneBlock = [stoneMaterial, lightStoneMaterial, darkStoneMaterial, &blockLength = blockLength, &stoneBlockTextureData](int localX, int localY, int localZ)
+    {
         float sample = stoneBlockTextureData.get(localX, localY, localZ);
-        if(sample > 0.7)
+        if (sample > 0.7)
         {
             return lightStoneMaterial;
-        } 
-        else if(sample > 0.2)
+        }
+        else if (sample > 0.2)
         {
             return stoneMaterial;
-        } 
+        }
         else
         {
             return darkStoneMaterial;
         }
     };
-    auto dirtBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ) {        
+    auto dirtBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ)
+    {
         return dirtMaterial;
     };
-    auto grassBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ) {
+    auto grassBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ)
+    {
         return grassMaterial;
     };
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    //TODO: Fille entire space, don't floor
+    // TODO: Fille entire space, don't floor
     int worldSizeBlocksX = std::floor(data.getSize().x / blockLength);
     int worldSizeBlocksY = std::floor(data.getSize().y / blockLength);
     int worldSizeBlocksZ = std::floor(data.getSize().z / blockLength);

@@ -18,7 +18,6 @@ void Renderer::offscreenRenderingFunc()
     while (isRenderingOffscreen)
     {
         _render();
-        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }
 }
 
@@ -42,6 +41,11 @@ Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared
     voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
     reprojection = std::unique_ptr<AsyncReprojectionRenderer>(new AsyncReprojectionRenderer());
     postProcessing = std::unique_ptr<PostProcessRenderer>(new PostProcessRenderer());
+}
+
+Renderer::~Renderer()
+{
+    stopAsynchronousReprojection();
 }
 
 void Renderer::makeFramebuffers()
@@ -275,9 +279,11 @@ void Renderer::_render()
         }
 
         voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+        {
+            std::shared_lock lockScene(scene->getMutex());
 
-        voxelRenderer->executePathTrace(scene->getChunks(), bounces);
-
+            voxelRenderer->executePathTrace(scene->getChunks(), bounces);
+        }
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }
 

@@ -62,7 +62,7 @@ Program::Program()
 {
     // Ensure preconditions are met
     runEarlyStartupTests();
-    Log::log("Starting Voxel Renderer");
+    Log::information("Starting Voxel Renderer");
 
     // Init GLFW
     if (!glfwInit())
@@ -70,8 +70,10 @@ Program::Program()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    offscreenContext = std::make_shared<GlfwContext>();
-    window = std::make_shared<Window>(offscreenContext.get());
+    std::shared_ptr<GlfwContext> previousContext {};
+    previousContext = offscreenContext = std::make_shared<GlfwContext>(previousContext.get());
+    previousContext = chunkModificationThreadContext = std::make_shared<GlfwContext>(previousContext.get());
+    previousContext = window = std::make_shared<Window>(previousContext.get());
 
     window->makeContextCurrent();
 
@@ -111,21 +113,7 @@ void Program::run()
     // Create the scene GameObject
     auto sceneObject = GameObject::createRootObject("Scene");
     auto scene = sceneObject->addComponent<SceneComponent>();
-
-    // Create the chunk GameObjects
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
-    for (int x = 0; x < 3; x++)
-    {
-        for (int y = 0; y < 3; ++y)
-        {
-            auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
-
-            auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
-            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-
-            scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
-        }
-    }
 
     // Create the camera GameObject
     auto cameraObject = sceneObject->createChildObject("Camera");
@@ -135,7 +123,7 @@ void Program::run()
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
 
     // Initialize the chunk manager
-    voxelChunkManager.initialize(scene);
+    voxelChunkManager.initialize(scene, chunkModificationThreadContext);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
@@ -237,16 +225,11 @@ void Program::run()
     double totalElapsedTime = 0;
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
 
-    // Fps counter
-    float fpsCycleTimer = 0;
-    float currentFPS = 0;
-    float averagedDeltaTime = 0;
-
     // Temporal accumulation
     int frameCount = 0;
-    int maxFrames = 0;
+    int maxFrames = 0; // TODO: Currently unused?
 
-    bool shouldRenderPathTrace = true;
+    bool shouldRenderPathTrace = true; // TODO: Currently unused?
 
     // Procedural Generation
     ExampleWorldGenerator exampleWorldGenerator {};
@@ -282,23 +265,21 @@ void Program::run()
         fpsCycleTimer += deltaTime;
         if (fpsCycleTimer > 1)
         {
-            int framesThisCycle = renderer.getReprojectionCounter();
+            int displaysThisCycle = renderer.getReprojectionCounter();
             renderer.resetReprojectionCounter();
-            currentFPS = framesThisCycle / fpsCycleTimer;
-            averagedDeltaTime = fpsCycleTimer / framesThisCycle;
+            currentDisplayFps = displaysThisCycle / fpsCycleTimer;
+            averageDisplayDeltaTime = fpsCycleTimer / displaysThisCycle;
 
-            int framesThisCycle1 = renderer.getRenderCounter();
+            int rendersThisCycle = renderer.getRenderCounter();
             renderer.resetRenderCounter();
-            currentFPS1 = framesThisCycle1 / fpsCycleTimer;
-            averagedDeltaTime1 = fpsCycleTimer / framesThisCycle1;
+            currentRenderFps = rendersThisCycle / fpsCycleTimer;
+            averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
 
-            auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
-            auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
-            Log::log(std::to_string(currentFPS) + " Display FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " Render FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
+            auto averagedDisplayDeltaTimeMs = averageDisplayDeltaTime * 1000;
+            auto averagedRenderDeltaTimeMs = averagedRenderDeltaTime * 1000;
+            Log::information(std::format("{} display FPS ({} ms) | {} render FPS ({} ms)", currentDisplayFps, averagedDisplayDeltaTimeMs, currentRenderFps, averagedRenderDeltaTimeMs));
 
             fpsCycleTimer = 0;
-            framesThisCycle = 0;
-            framesThisCycle1 = 0;
         }
 
         // Update systems
@@ -369,11 +350,15 @@ void Program::run()
             {
                 if (input->isKeyHeld(GLFW_KEY_E) && closestChunk->getExistsOnGpu())
                 {
+                    std::lock_guard lock(closestChunk->getMutex());
+
                     closestChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
                 }
 
                 if (isRemakeNoiseRequested && closestChunk->getExistsOnGpu())
                 {
+                    std::lock_guard lock(closestChunk->getMutex());
+
                     // The noise time (corresponds to the deltaTime parameter) should not be incremented here
                     closestChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
                     isRemakeNoiseRequested = false;
@@ -499,7 +484,7 @@ void Program::run()
 
                         ImGui::Text("\n");
 
-                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentDisplayFps, currentRenderFps);
                         ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
                         ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
                         ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
@@ -573,7 +558,6 @@ void Program::run()
         window->present();
     }
 
-    renderer.stopAsynchronousReprojection();
     sceneObject->destroy();
 }
 
@@ -584,12 +568,12 @@ void Program::checkForContentFolder()
         throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
     }
 
-    Log::log("Found content folder");
+    Log::information("Found content folder");
 }
 
 void Program::runEarlyStartupTests()
 {
-    Log::log("Running early startup tests (in constructor)");
+    Log::information("Running early startup tests (in constructor)");
 
     {
         // Make sure the content folder exists
@@ -625,7 +609,7 @@ void Program::runEarlyStartupTests()
         // Letting the shared_ptr fall out of scope or explicitly resetting it will unsubscribe from the event
         auto listener = testEvent.subscribe([&](int value)
             {
-                Log::log("Event was successfully called");
+                Log::information("Event was successfully called");
                 counter += value;
             });
 
@@ -648,7 +632,7 @@ void Program::runEarlyStartupTests()
 
         auto listener = testEvent.subscribe([&](int value)
             {
-                Log::log("Buffered event was successfully called");
+                Log::information("Buffered event was successfully called");
                 counter += value;
             });
 
@@ -672,7 +656,7 @@ void Program::runEarlyStartupTests()
 
 void Program::runLateStartupTests()
 {
-    Log::log("Running late startup tests (in run())");
+    Log::information("Running late startup tests (in run())");
 
     {
         // Verify GameObject destroy API
@@ -696,7 +680,7 @@ void Program::runLateStartupTests()
         // Verify shader storage block size is large enough
         GLint size;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
-        Log::log("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
+        Log::information("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
 
         // 134217728 is the GL_MAX_SHADER_STORAGE_BLOCK_SIZE of Exanite's laptop, also equal to 512x512x512
         Assert::isTrue(size >= 134217728, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
@@ -709,14 +693,14 @@ void Program::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workgroupSizes.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workgroupSizes.z);
 
-        Log::log("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
+        Log::information("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
 
         glm::ivec3 workgroupCounts;
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workgroupCounts.x);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &workgroupCounts.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
-        Log::log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+        Log::information("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
     }
 
     {
@@ -729,11 +713,11 @@ void Program::runLateStartupTests()
 
         if (maxShaderBlockSize >= 2 * 512 * 512 * 512)
         {
-            Log::log("512x512x512 sized voxel chunks are supported on this device!");
+            Log::information("512x512x512 sized voxel chunks are supported on this device!");
         }
         else
         {
-            Log::log("512x512x512 sized voxel chunks are NOT supported on this device!");
+            Log::information("512x512x512 sized voxel chunks are NOT supported on this device!");
         }
     }
 

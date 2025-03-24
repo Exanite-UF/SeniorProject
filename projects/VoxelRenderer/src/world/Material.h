@@ -81,8 +81,6 @@ public:
     float roughness = 1;
     float metallic = 0;
 
-    std::vector<uint16_t> ids {};
-
     Material();
     Material(uint16_t index, const std::string& key, const std::string& name = "UNNAMED");
 
@@ -93,6 +91,6 @@ public:
 
     // GLuint textureId = 0;
 
-    [[nodiscard]] int16_t getIndex() const;
+    [[nodiscard]] uint16_t getIndex() const;
     [[nodiscard]] const std::string& getKey() const;
 };
