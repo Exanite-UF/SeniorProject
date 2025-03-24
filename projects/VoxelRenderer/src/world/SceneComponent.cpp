@@ -1,7 +1,6 @@
 #include <src/world/SceneComponent.h>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/quaternion.hpp"
+#include <glm/gtx/quaternion.hpp>
 
 std::shared_mutex& SceneComponent::getMutex()
 {

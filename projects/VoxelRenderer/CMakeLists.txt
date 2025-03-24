@@ -16,13 +16,15 @@ target_include_directories(VoxelRenderer PRIVATE .)
 
 target_link_libraries(VoxelRenderer PRIVATE ${OPENGL_LIBRARY})
 target_link_libraries(VoxelRenderer PRIVATE glfw)
-target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 target_link_libraries(VoxelRenderer PRIVATE imgui)
 target_link_libraries(VoxelRenderer PRIVATE assimp)
 target_link_libraries(VoxelRenderer PRIVATE Jolt)
 target_link_libraries(VoxelRenderer PRIVATE stb)
 target_link_libraries(VoxelRenderer PRIVATE extra)
+
+target_link_libraries(VoxelRenderer PRIVATE glm::glm)
+target_compile_definitions(VoxelRenderer PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 # Boost is a CGAL dependency
 target_link_libraries(VoxelRenderer PRIVATE boost_config)
