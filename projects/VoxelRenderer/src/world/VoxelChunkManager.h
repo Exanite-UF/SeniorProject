@@ -83,7 +83,7 @@ private:
         // ----- Primary state -----
 
         std::atomic<bool> isRunning = false;
-        std::shared_ptr<GlfwContext> chunkManagerContext;
+        std::shared_ptr<GlfwContext> modificationThreadContext;
 
         // ----- Scene -----
 
@@ -137,7 +137,7 @@ private:
     void chunkModificationThreadEntrypoint();
 
 public:
-    void initialize(const std::shared_ptr<SceneComponent>& scene);
+    void initialize(const std::shared_ptr<SceneComponent>& scene, const std::shared_ptr<GlfwContext>& modificationThreadContext);
 
     void update(float deltaTime);
     void showDebugMenu();

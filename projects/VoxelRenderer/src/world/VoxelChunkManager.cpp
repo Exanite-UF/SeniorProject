@@ -106,27 +106,35 @@ void VoxelChunkManager::onSingletonDestroy()
     Log::log("Successfully cleaned up VoxelChunkManager");
 }
 
-void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene)
+void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene, const std::shared_ptr<GlfwContext>& modificationThreadContext)
 {
     Assert::isTrue(!state.isRunning, "VoxelChunkManager has already been initialized");
+
+    state.modificationThreadContext = modificationThreadContext;
 
     state.isRunning = true;
     this->state.scene = scene;
 
     Log::log("Initializing VoxelChunkManager");
 
-    auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
-    Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
-    for (int i = 0; i < loadingThreadCount; ++i)
+    // Create chunk loading threads
     {
-        loadingThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkLoadingThreadEntrypoint, this));
+        auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
+        Log::log(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
+        for (int i = 0; i < loadingThreadCount; ++i)
+        {
+            loadingThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkLoadingThreadEntrypoint, this));
+        }
     }
 
-    auto modificationThreadCount = 1;
-    Log::log(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
-    for (int i = 0; i < modificationThreadCount; ++i)
+    // Create chunk modification threads
     {
-        modificationThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkModificationThreadEntrypoint, this));
+        auto modificationThreadCount = 1; // Note: We can only have 1 thread max right now. Each thread must have its own GlfwContext.
+        Log::log(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
+        for (int i = 0; i < modificationThreadCount; ++i)
+        {
+            modificationThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkModificationThreadEntrypoint, this));
+        }
     }
 
     Log::log("Initialized VoxelChunkManager");
@@ -193,6 +201,8 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
 void VoxelChunkManager::chunkModificationThreadEntrypoint()
 {
     Log::log("Started VoxelChunkManager chunk modification thread");
+
+    state.modificationThreadContext->makeContextCurrent();
 
     while (state.isRunning)
     {
