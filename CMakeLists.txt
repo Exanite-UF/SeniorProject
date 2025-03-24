@@ -132,6 +132,7 @@ else ()
 endif ()
 
 set(TRACY_ON_DEMAND ON)
+set(TRACY_CALLSTACK ON)
 add_subdirectory(./external/tracy)
 
 # Tracy UI
