@@ -25,9 +25,14 @@ const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getChun
 bool SceneComponent::tryGetChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& result)
 {
     auto iterator = chunksByChunkPosition.find(chunkPosition);
+    if (iterator == chunksByChunkPosition.end())
+    {
+        return false;
+    }
+
     result = iterator->second;
 
-    return iterator != chunksByChunkPosition.end();
+    return true;
 }
 
 bool SceneComponent::tryGetClosestChunk(std::shared_ptr<VoxelChunkComponent>& result)
