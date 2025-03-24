@@ -170,7 +170,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint()
         task->chunkData = std::make_shared<VoxelChunkData>(task->chunkSize);
         Log::verbose(std::format("Generating chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
         {
-            MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
+            MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y), Log::Debug);
 
             int seed = 0;
             int octaves = 3;
@@ -228,7 +228,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint()
 
         // Apply the chunk command buffer
         {
-            MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"));
+            MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
             Log::verbose("Applying chunk command buffer");
             std::lock_guard lock(task->component->getMutex());
             task->commandBuffer.apply(task->component);
