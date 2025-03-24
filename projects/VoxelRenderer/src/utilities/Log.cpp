@@ -51,10 +51,10 @@ void Log::fatal(const std::string& message)
     write(Fatal, message);
 }
 
-std::string Log::getLogLevelText(const Log::LogLevel level)
+std::string Log::getLogLevelText(const Log::LogLevel logLevel)
 {
     std::string logLevelText;
-    switch (level)
+    switch (logLevel)
     {
         case Verbose:
         {
@@ -87,15 +87,15 @@ std::string Log::getLogLevelText(const Log::LogLevel level)
     }
 }
 
-void Log::write(const LogLevel level, const std::string& message)
+void Log::write(const LogLevel logLevel, const std::string& message)
 {
-    if (level < minimumLevel)
+    if (logLevel < minimumLevel)
     {
         return;
     }
 
     std::string timeText = getCurrentTimeText();
-    std::string levelText = getLogLevelText(level);
+    std::string levelText = getLogLevelText(logLevel);
 
     std::cout << std::format("[{} {}] {}\n", timeText, levelText, message) << std::flush;
 }
