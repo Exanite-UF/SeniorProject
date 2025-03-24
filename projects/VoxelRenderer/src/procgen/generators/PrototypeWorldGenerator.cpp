@@ -119,18 +119,19 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    // TODO: Fille entire space, don't floor
+    // TODO: Fill entire space, don't floor
     int worldSizeBlocksX = std::floor(data.getSize().x / blockLength);
     int worldSizeBlocksY = std::floor(data.getSize().y / blockLength);
     int worldSizeBlocksZ = std::floor(data.getSize().z / blockLength);
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
+    glm::vec2 offset = chunkSize * chunkPosition;
     for (int x = 0; x < worldSizeBlocksX; ++x)
     {
         for (int y = 0; y < worldSizeBlocksY; ++y)
         {
             // Stone Terrain, retain same shape as using voxels of blockLength 1
-            float perlinNoiseSample = perlinNoise.octave2D_01((x * blockLength) * frequency, (y * blockLength) * frequency, octaves, persistence);
+            float perlinNoiseSample = perlinNoise.octave2D_01((x * blockLength + offset.x) * frequency, (y * blockLength + offset.y) * frequency, octaves, persistence);
             int offsetBlocks = (int)(baseHeightBlocks + (perlinNoiseSample * terrainMaxAmplitudeBlocks));
             int heightBlocks = glm::min(data.getSize().z, offsetBlocks);
 
