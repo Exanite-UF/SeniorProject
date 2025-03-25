@@ -11,7 +11,6 @@ private:
     std::shared_ptr<TextureData> textureData;
 
     int seed = 0;
-    int blockLength = 8;
 
     // Stone Terrain
     int octaves = 3;

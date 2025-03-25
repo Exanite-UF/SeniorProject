@@ -23,22 +23,6 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         Log::information("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
-    std::shared_ptr<Material> lightStoneMaterial;
-    std::string lightStoneMaterialKey = "lightStone";
-    if (!materialManager.tryGetMaterialByKey(lightStoneMaterialKey, lightStoneMaterial))
-    {
-        stoneMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
-    }
-
-    std::shared_ptr<Material> darkStoneMaterial;
-    std::string darkStoneMaterialKey = "darkStone";
-    if (!materialManager.tryGetMaterialByKey(darkStoneMaterialKey, darkStoneMaterial))
-    {
-        stoneMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find stoneMaterial with id '" + darkStoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
-    }
-
     std::shared_ptr<Material> dirtMaterial;
     std::string dirtMaterialKey = "dirt";
     if (!materialManager.tryGetMaterialByKey(dirtMaterialKey, dirtMaterial))
@@ -55,103 +39,46 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         Log::information("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
     }
 
-    // For organization
-    auto placeBlock = [&data = data, &blockLength = blockLength](int x, int y, int z, std::function<std::shared_ptr<Material>(int, int, int)> blockFunction)
-    {
-        for (int localX = 0; localX < blockLength; ++localX)
-        {
-            for (int localY = 0; localY < blockLength; ++localY)
-            {
-                for (int localZ = 0; localZ < blockLength; ++localZ)
-                {
-                    glm::vec3 globalPos = { x + localX, y + localY, z + localZ };
-                    data.setVoxelOccupancy(globalPos, true);
-                    data.setVoxelMaterial(globalPos, blockFunction(localX, localY, localZ));
-                }
-            }
-        }
-    };
-
     // Fill texture data with random noise, each block evaluated once
-    TextureData stoneBlockTextureData({ blockLength, blockLength, blockLength });
     FastNoiseLite simplexNoise;
     simplexNoise.SetSeed(seed);
     simplexNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
     float stoneFrequency = 0.01;
-    for (int localX = 0; localX < blockLength; localX++)
-    {
-        for (int localY = 0; localY < blockLength; localY++)
-        {
-            for (int localZ = 0; localZ < blockLength; localZ++)
-            {
-                // TODO: Analyze noise outputs
-                float noise = simplexNoise.GetNoise(localX * stoneFrequency, localY * stoneFrequency, localZ * stoneFrequency);
-                stoneBlockTextureData.set(noise, localX, localY, localZ);
-            }
-        }
-    }
-
-    // Capture all materials when evaluating a block? Maybe pass material manager reference on instance creation.
-    auto stoneBlock = [stoneMaterial, lightStoneMaterial, darkStoneMaterial, &blockLength = blockLength, &stoneBlockTextureData](int localX, int localY, int localZ)
-    {
-        float sample = stoneBlockTextureData.get(localX, localY, localZ);
-        if (sample > 0.7)
-        {
-            return lightStoneMaterial;
-        }
-        else if (sample > 0.2)
-        {
-            return stoneMaterial;
-        }
-        else
-        {
-            return darkStoneMaterial;
-        }
-    };
-    auto dirtBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ)
-    {
-        return dirtMaterial;
-    };
-    auto grassBlock = [grassMaterial, dirtMaterial, stoneMaterial, &blockLength = blockLength](int localX, int localY, int localZ)
-    {
-        return grassMaterial;
-    };
+    // float noise = simplexNoise.GetNoise(localX * stoneFrequency, localY * stoneFrequency, localZ * stoneFrequency);
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    // TODO: Fill entire space, don't floor
-    int worldSizeBlocksX = std::floor(data.getSize().x / blockLength);
-    int worldSizeBlocksY = std::floor(data.getSize().y / blockLength);
-    int worldSizeBlocksZ = std::floor(data.getSize().z / blockLength);
-
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
     glm::vec2 offset = chunkSize * chunkPosition;
-    for (int x = 0; x < worldSizeBlocksX; ++x)
+    for (int x = 0; x < data.getSize().x; ++x)
     {
-        for (int y = 0; y < worldSizeBlocksY; ++y)
+        for (int y = 0; y < data.getSize().y; ++y)
         {
             // Stone Terrain, retain same shape as using voxels of blockLength 1
-            float perlinNoiseSample = perlinNoise.octave2D_01((x * blockLength + offset.x) * frequency, (y * blockLength + offset.y) * frequency, octaves, persistence);
-            int offsetBlocks = (int)(baseHeightBlocks + (perlinNoiseSample * terrainMaxAmplitudeBlocks));
-            int heightBlocks = glm::min(data.getSize().z, offsetBlocks);
+            float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
+            int offsetVoxels = (int)(baseHeightBlocks + (perlinNoiseSample * terrainMaxAmplitudeBlocks));
+            int heightVoxels = glm::min(data.getSize().z, offsetVoxels);
 
-            for (int z = 0; z < heightBlocks; ++z)
+            for (int z = 0; z < heightVoxels; ++z)
             {
-                placeBlock(x * blockLength, y * blockLength, z * blockLength, stoneBlock);
+                data.setVoxelOccupancy({x, y, z}, true);
+                data.setVoxelMaterial({x, y, z}, stoneMaterial);
             }
 
             // Replace surface with grass
-            int lastHeightBlocks = heightBlocks - 1;
+            int lastHeightBlocks = heightVoxels - 1;
             for (int z = lastHeightBlocks; z >= lastHeightBlocks - grassDepth && z >= 0; --z)
             {
-                placeBlock(x * blockLength, y * blockLength, z * blockLength, grassBlock);
+                data.setVoxelOccupancy({x, y, z}, true);
+                data.setVoxelMaterial({x, y, z}, grassMaterial);
             }
             lastHeightBlocks -= grassDepth;
 
             // Replace surface with dirt
             for (int z = lastHeightBlocks; z >= lastHeightBlocks - dirtDepth && z >= 0; --z)
             {
-                placeBlock(x * blockLength, y * blockLength, z * blockLength, dirtBlock);
+                data.setVoxelOccupancy({x, y, z}, true);
+                data.setVoxelMaterial({x, y, z}, dirtMaterial);
             }
             lastHeightBlocks -= dirtDepth;
         }

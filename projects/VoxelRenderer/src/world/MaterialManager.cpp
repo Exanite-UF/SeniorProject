@@ -17,26 +17,8 @@ MaterialManager::MaterialManager()
     }
 
     {
-        auto& material = createMaterial("darkStone", "darkStone");
-        material->albedo = ColorUtility::htmlToLinear("#4D4D4D");
-        material->emission = glm::vec3(0);
-        material->metallic = 0;
-        material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;
-    }
-
-    {
         auto& material = createMaterial("stone", "stone");
         material->albedo = ColorUtility::htmlToLinear("#5F5F5F");
-        material->emission = glm::vec3(0);
-        material->metallic = 0;
-        material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;
-    }
-
-    {
-        auto& material = createMaterial("lightStone", "lightStone");
-        material->albedo = ColorUtility::htmlToLinear("#6B6B6B");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
