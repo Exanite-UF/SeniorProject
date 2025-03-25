@@ -406,12 +406,16 @@ void VoxelChunkManager::update(const float deltaTime)
                 auto& chunk = chunkIterator->second;
                 chunk->isLoading = false;
 
-                VoxelChunkCommandBuffer commandBuffer {};
-                commandBuffer.setSize(settings.chunkSize);
-                commandBuffer.copyFrom(task->chunkData);
-                commandBuffer.setExistsOnGpu(true);
+                {
+                    ZoneScopedN("Chunk modification task creation - Command buffer creation");
 
-                submitCommandBuffer(chunk->component, commandBuffer);
+                    VoxelChunkCommandBuffer commandBuffer {};
+                    commandBuffer.setSize(settings.chunkSize);
+                    commandBuffer.copyFrom(task->chunkData);
+                    commandBuffer.setExistsOnGpu(true);
+
+                    submitCommandBuffer(chunk->component, commandBuffer);
+                }
             }
         }
     }
