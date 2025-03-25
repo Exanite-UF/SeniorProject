@@ -3,7 +3,7 @@
 layout(binding = 0) uniform sampler2D inputTexture;
 layout(binding = 1) uniform sampler2D positionTexture;
 layout(binding = 2) uniform sampler2D normalTexture;
-layout(binding = 3) uniform sampler2D materialTexture;
+layout(binding = 3) uniform sampler2D miscTexture;
 
 layout(location = 0) out vec4 out_color;
 
@@ -25,14 +25,15 @@ void main()
 
     vec3 position = texelFetch(positionTexture, ivec2(gl_FragCoord.xy), 0).xyz;
     vec3 normal = texelFetch(normalTexture, ivec2(gl_FragCoord.xy), 0).xyz;
-    vec3 material = texelFetch(materialTexture, ivec2(gl_FragCoord.xy), 0).xyz;
+    vec3 material = texelFetch(miscTexture, ivec2(gl_FragCoord.xy), 0).xyz;
 
     vec3 cameraSpacePosition = qtransform(vec4(cameraRotation.xyz, -cameraRotation.w), position - cameraPosition);
 
     float stdev = material.x * ((cameraSpacePosition.x) * 0.002 + 0.01);
 
-    if (stdev == 0)
+    if (stdev <= 0)
     {
+        //This will be true for materials with 0 roughness or the sky box
         out_color = texelFetch(inputTexture, ivec2(gl_FragCoord.x, gl_FragCoord.y), 0);
         return;
     }
@@ -50,11 +51,6 @@ void main()
 
     int kernelSize = int(ceil(length(screenDist)));
 
-    // out_color = vec4(abs(screenDist / resolution.xy), cameraSpacePosition.x / 100.0, 1);
-    // out_color = vec4(vec3(kernelSize / 100.0), 1);
-    // return;
-    //  int(0.5 * resolution.x * ceil(neededDist / abs(cameraSpacePostion.x)));//How many pixels do we need to move to get to a distance 2 standard deviation away in world space
-
     kernelSize = max(min(10, kernelSize), 0);
 
     if (kernelSize == 0)
@@ -70,9 +66,9 @@ void main()
 
         vec3 samplePosition = texelFetch(positionTexture, ivec2(gl_FragCoord.x + i * temp, gl_FragCoord.y + i * temp2), 0).xyz;
         vec3 sampleNormal = texelFetch(normalTexture, ivec2(gl_FragCoord.x + i * temp, gl_FragCoord.y + i * temp2), 0).xyz;
-        vec3 sampleMaterial = texelFetch(materialTexture, ivec2(gl_FragCoord.x + i * temp, gl_FragCoord.y + i * temp2), 0).xyz;
+        vec3 sampleMaterial = texelFetch(miscTexture, ivec2(gl_FragCoord.x + i * temp, gl_FragCoord.y + i * temp2), 0).xyz;
 
-        if (!all(equal(sampleMaterial, material)))
+        if (sampleMaterial.x != material.x)
         {
             continue;
         }
@@ -101,7 +97,6 @@ void main()
         total += multiplier;
     }
 
-    // total = max(1, total);
-
+    //out_color = vec4(vec3(kernelSize / 10.0), 1);
     out_color = sum / total;
 }

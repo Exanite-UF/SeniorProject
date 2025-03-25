@@ -87,12 +87,9 @@ private:
 
     GLuint latestColorTexture = 0;//This exists because of how SVGF works
     std::array<GLuint, 3> colorTextures {};
-    std::array<GLuint, 3> colorSquaredTextures {};
     std::array<GLuint, 3> positionTextures {};
     std::array<GLuint, 3> normalTextures {};
     std::array<GLuint, 3> miscTextures {};
-
-    std::array<GLuint, 3> varianceTextures {};
 
 private:
     std::shared_ptr<SceneComponent> scene = nullptr;

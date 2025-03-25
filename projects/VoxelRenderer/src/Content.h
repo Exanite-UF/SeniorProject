@@ -25,8 +25,6 @@ public:
     constexpr static std::string_view renderReprojectionVertexShader = "content/Reprojection/ReprojectionRender.vertex.glsl";
     constexpr static std::string_view renderReprojectionFragmentShader = "content/Reprojection/ReprojectionRender.fragment.glsl";
     constexpr static std::string_view combineReprojectionFragmentShader = "content/Reprojection/CombineFrames.fragment.glsl";
-    constexpr static std::string_view combineReprojection2FragmentShader = "content/Reprojection/CombineFrames2.fragment.glsl";
-    constexpr static std::string_view denoiseFragmentShader = "content/Reprojection/Denoise.fragment.glsl";
 
     // Voxel Manipulation
     constexpr static std::string_view makeMipMapComputeShader = "content/VoxelManipulation/MakeMipMap.compute.glsl";
@@ -38,6 +36,7 @@ public:
 
     // Post Processing
     constexpr static std::string_view applyKernelLineFragmentShader = "content/PostProcessing/ApplyKernelLine.fragment.glsl";
+    constexpr static std::string_view showOtherFragmentShader = "content/PostProcessing/ShowOther.fragment.glsl";
 
     constexpr static std::string_view denoiseShader = "content/PostProcessing/Denoise.fragment.glsl";
     constexpr static std::string_view denoise2Shader = "content/PostProcessing/Denoise2.fragment.glsl";

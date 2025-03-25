@@ -90,11 +90,6 @@ void Renderer::swapDisplayBuffer()
 
         std::swap(bufferMapping.display, bufferMapping.ready);
         lastRenderedFrameIndex = bufferMapping.display;
-
-
-        reprojection->denoise(colorTextures[lastRenderedFrameIndex], varianceTextures[lastRenderedFrameIndex], positionTextures[lastRenderedFrameIndex], normalTextures[lastRenderedFrameIndex], lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
-
-
         
         isNewerFrame = false;
     }
@@ -109,12 +104,7 @@ void Renderer::swapWorkingBuffer()
     std::scoped_lock lock(bufferLocks.ready, bufferLocks.working);
 
     std::swap(bufferMapping.ready, bufferMapping.working);
-    reprojection->combineBuffers(latestColorTexture, colorTextures[lastRenderedFrameIndex], miscTextures[bufferMapping.ready], colorTextures[bufferMapping.ready], colorSquaredTextures[lastRenderedFrameIndex], colorSquaredTextures[bufferMapping.ready],
-        positionTextures[lastRenderedFrameIndex], positionTextures[bufferMapping.ready], normalTextures[bufferMapping.ready], lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, varianceTextures[bufferMapping.ready]);
-    //reprojection->combineBuffers(lastRenderedPosition - olderRenderedPosition, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
-    //    colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
-    //    positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
-    //    miscTextures[bufferMapping.ready], normalTextures[bufferMapping.ready]);
+    reprojection->combineBuffers(colorTextures[lastRenderedFrameIndex], colorTextures[bufferMapping.ready], miscTextures[bufferMapping.ready], positionTextures[lastRenderedFrameIndex], positionTextures[bufferMapping.ready], lastRenderedPosition);
 
     lastRenderedFrameIndex = bufferMapping.ready;
 
@@ -151,21 +141,6 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
     // Lock all the buffers
     std::scoped_lock lock(bufferLocks.display, bufferLocks.ready, bufferLocks.working);
 
-
-    // Create color texture
-    glDeleteTextures(1, &latestColorTexture);
-    glGenTextures(1, &latestColorTexture);
-    glBindTexture(GL_TEXTURE_2D, latestColorTexture);
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-    }
-    glBindTexture(GL_TEXTURE_2D, 0);
-
     // std::cout << renderResolution.x << " " << renderResolution.y << std::endl;
     // Remake all the render textures
     for (int i = 0; i < 3; i++)
@@ -174,20 +149,6 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
         glDeleteTextures(1, &colorTextures[i]);
         glGenTextures(1, &colorTextures[i]);
         glBindTexture(GL_TEXTURE_2D, colorTextures[i]);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Create color squared texture
-        glDeleteTextures(1, &colorSquaredTextures[i]);
-        glGenTextures(1, &colorSquaredTextures[i]);
-        glBindTexture(GL_TEXTURE_2D, colorSquaredTextures[i]);
         {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -244,20 +205,6 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Create variance texture
-        glDeleteTextures(1, &varianceTextures[i]);
-        glGenTextures(1, &varianceTextures[i]);
-        glBindTexture(GL_TEXTURE_2D, varianceTextures[i]);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
         }

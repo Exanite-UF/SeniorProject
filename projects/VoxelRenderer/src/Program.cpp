@@ -234,6 +234,14 @@ void Program::run()
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
         }
+    
+        //Show other
+        if(false){
+            auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            showOther->setUniforms = [&renderer](GLuint program){
+                glUniform1i(glGetUniformLocation(program, "whichTexture"), 2);
+            };
+        }
     }
 
     // Engine time

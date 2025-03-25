@@ -40,7 +40,7 @@ void main()
                 continue;
             }
 
-            if (!all(equal(material, sampleMaterial)))
+            if (material.x != sampleMaterial.x)
             {
                 continue;
             }
