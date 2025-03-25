@@ -21,7 +21,6 @@ private:
     static GLuint renderProgram;
     static GLuint combineProgram;
 
-
     int currentBuffer = 0;
 
     glm::ivec2 size {}; // The size of the offscreen render
@@ -38,8 +37,9 @@ private:
     AsyncReprojectionRenderer(); // This is only supposed to be ran by Renderer
 
     friend class Renderer;
+
 public:
-    void setSize(glm::ivec2 size);//This sets the render resolution that is expected as input
+    void setSize(glm::ivec2 size); // This sets the render resolution that is expected as input
 
     GLuint getColorTexture() const;
     GLuint getPositionTexture() const;
@@ -50,6 +50,4 @@ public:
 
     void combineBuffers(const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& newMiscTexture,
         const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const glm::vec3& cameraPosition);
-
-
 };

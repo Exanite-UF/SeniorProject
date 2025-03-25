@@ -19,13 +19,12 @@ struct MaterialDefinition
 };
 
 uniform vec3 pastCameraPosition;
-uniform vec4 pastCameraRotation;//quaternion
-uniform float pastCameraFovTan; 
+uniform vec4 pastCameraRotation; // quaternion
+uniform float pastCameraFovTan;
 
 uniform vec3 pastVoxelWorldPosition;
-uniform vec4 pastVoxelWorldRotation;//quaternion
+uniform vec4 pastVoxelWorldRotation; // quaternion
 uniform vec3 pastVoxelWorldScale;
-
 
 uniform ivec3 cellCount;
 uniform uint occupancyMapLayerCount;
@@ -244,7 +243,6 @@ void setFirstHitMotionVector(ivec3 coord, vec2 value)
     firstHitMisc[1 + index] = value.x;
     firstHitMisc[2 + index] = value.y;
 }
-
 
 struct RayHit
 {
@@ -692,9 +690,8 @@ void attempt(ivec3 texelCoord)
         setFirstHitNormal(texelCoord, hit.normal);
         setFirstHitPosition(texelCoord, hit.hitLocation);
 
-        //If it gets here, then the motion vectors should be calcuated
-        
-        
+        // If it gets here, then the motion vectors should be calcuated
+
         vec3 hitLocation = hit.voxelHitLocation;
 
         // Transform the hit location to world space, using historical information
@@ -703,28 +700,25 @@ void attempt(ivec3 texelCoord)
         hitLocation = qtransform(pastVoxelWorldRotation, hitLocation); // Rotate back into world space
         hitLocation += pastVoxelWorldPosition; // Apply the voxel world position
 
-        
+        // Hit location is now in world space using historical information
+        // Project into camera space using historical camera data
 
-        //Hit location is now in world space using historical information
-        //Project into camera space using historical camera data
+        hitLocation -= pastCameraPosition; // Place relative to camera
+        hitLocation = qtransform(vec4(pastCameraRotation.xyz, -pastCameraRotation.w), hitLocation); // Rotate into camera space
+        hitLocation.yz /= vec2(1, float(resolution.y) / resolution.x) * pastCameraFovTan; // Warp for fov
 
-        hitLocation -= pastCameraPosition;//Place relative to camera
-        hitLocation = qtransform(vec4(pastCameraRotation.xyz, -pastCameraRotation.w), hitLocation);//Rotate into camera space
-        hitLocation.yz /= vec2(1, float(resolution.y) / resolution.x) * pastCameraFovTan;//Warp for fov
+        hitLocation.yz /= hitLocation.x; // Put into camera space
 
-        hitLocation.yz /= hitLocation.x;//Put into camera space
-
-        hitLocation = vec3(-hitLocation.y, hitLocation.z, hitLocation.x);//Blit the data
-        //x = x screen space (possibly flipped, probably not)
-        //y = y screen space
-        //z = depth
+        hitLocation = vec3(-hitLocation.y, hitLocation.z, hitLocation.x); // Blit the data
+        // x = x screen space (possibly flipped, probably not)
+        // y = y screen space
+        // z = depth
 
         hitLocation.xy *= 0.5;
         hitLocation.xy += 0.5;
-        vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy);//UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
-        //vec2 motionVector = hitLocation.xy;
+        vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
+        // vec2 motionVector = hitLocation.xy;
         setFirstHitMotionVector(texelCoord, motionVector);
-        
     }
 
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation

@@ -33,7 +33,7 @@ void main()
 
     if (stdev <= 0)
     {
-        //This will be true for materials with 0 roughness or the sky box
+        // This will be true for materials with 0 roughness or the sky box
         out_color = texelFetch(inputTexture, ivec2(gl_FragCoord.x, gl_FragCoord.y), 0);
         return;
     }
@@ -97,6 +97,6 @@ void main()
         total += multiplier;
     }
 
-    //out_color = vec4(vec3(kernelSize / 10.0), 1);
+    // out_color = vec4(vec3(kernelSize / 10.0), 1);
     out_color = sum / total;
 }

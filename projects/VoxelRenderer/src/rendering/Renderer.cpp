@@ -68,7 +68,7 @@ void Renderer::makeFramebuffers()
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, positionTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normalTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, miscTextures[i], 0);
-        //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, colorSquaredTextures[i], 0);
+        // glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, colorSquaredTextures[i], 0);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -90,7 +90,7 @@ void Renderer::swapDisplayBuffer()
 
         std::swap(bufferMapping.display, bufferMapping.ready);
         lastRenderedFrameIndex = bufferMapping.display;
-        
+
         isNewerFrame = false;
     }
 }
@@ -118,7 +118,7 @@ GLuint Renderer::getWorkingFramebuffer()
     // This will block if it is unable to lock both the ready and working buffers
     // It will unlock upon destruction
     std::scoped_lock lock(bufferLocks.working);
-    
+
     return framebuffers[bufferMapping.working];
 }
 
@@ -267,8 +267,6 @@ void Renderer::_render()
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         std::scoped_lock lock(cameraMtx);
 
-        
-
         if (isRenderingOffscreen)
         {
             lastRenderedFOV += overdrawFOV;
@@ -280,7 +278,7 @@ void Renderer::_render()
             std::shared_lock lockScene(scene->getMutex());
 
             voxelRenderer->executePathTrace(scene->getChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
-            //voxelRenderer->executePathTrace(scene->getChunks(), bounces, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+            // voxelRenderer->executePathTrace(scene->getChunks(), bounces, currentCameraPosition, currentCameraRotation, currentCameraFOV);
         }
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
 
@@ -342,10 +340,9 @@ void Renderer::reproject(float fov)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, outputDepthTexture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    
     // Do the render
     reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
-    //reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, varianceTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
+    // reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, varianceTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);

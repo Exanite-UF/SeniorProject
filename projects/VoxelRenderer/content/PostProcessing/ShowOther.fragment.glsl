@@ -13,7 +13,8 @@ uniform int whichTexture;
 
 void main()
 {
-    switch(whichTexture){
+    switch (whichTexture)
+    {
         case 0:
             out_color = texture(inputTexture, uv);
             break;
@@ -31,5 +32,5 @@ void main()
             break;
     }
 
-    //out_color = vec4(1);
+    // out_color = vec4(1);
 }

@@ -85,7 +85,7 @@ private:
         std::recursive_mutex working {};
     } bufferLocks {};
 
-    GLuint latestColorTexture = 0;//This exists because of how SVGF works
+    GLuint latestColorTexture = 0; // This exists because of how SVGF works
     std::array<GLuint, 3> colorTextures {};
     std::array<GLuint, 3> positionTextures {};
     std::array<GLuint, 3> normalTextures {};
