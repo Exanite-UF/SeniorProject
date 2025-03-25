@@ -73,7 +73,7 @@ AsyncReprojectionRenderer::AsyncReprojectionRenderer()
     glGenBuffers(1, &EBO);
 }
 
-void AsyncReprojectionRenderer::setSize(glm::ivec2 size)
+void AsyncReprojectionRenderer::setRenderResolution(glm::ivec2 size)
 {
     if (this->size == size)
     {

@@ -7,6 +7,8 @@
 
 #include <src/Content.h>
 
+#include <iostream>
+
 ShaderManager::~ShaderManager()
 {
     for (const auto& computeProgram : computePrograms)
@@ -70,6 +72,8 @@ GLuint ShaderManager::getShaderModule(const std::string_view& shaderPath, GLenum
 
         glGetShaderInfoLog(shader, message.size(), nullptr, message.data());
 
+        std::cout << "Failed to compile shader (" + std::string(shaderPath) + "): " + message << std::endl;
+
         throw std::runtime_error("Failed to compile shader (" + std::string(shaderPath) + "): " + message);
     }
 
@@ -131,6 +135,7 @@ GLuint ShaderManager::getPostProcessProgram(const std::string_view& fragmentShad
 {
     return getGraphicsProgram(Content::screenTriVertexShader, fragmentShaderPath);
 }
+
 GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPath)
 {
     // Use cached program if available

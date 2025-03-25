@@ -35,11 +35,11 @@ private:
 
     void generateMesh(const glm::ivec2& size);
 
-    AsyncReprojectionRenderer(); // This is only supposed to be ran by Renderer
+    AsyncReprojectionRenderer(); // This is only supposed to be run by Renderer
 
     friend class Renderer;
 public:
-    void setSize(glm::ivec2 size);//This sets the render resolution that is expected as input
+    void setRenderResolution(glm::ivec2 size);//This sets the render resolution that is expected as input
 
     GLuint getColorTexture() const;
     GLuint getPositionTexture() const;

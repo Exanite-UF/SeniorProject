@@ -423,6 +423,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
 
 void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
+    //std::cout << "VoxelRenderer display" << std::endl;
     glUseProgram(pathTraceToFramebufferProgram);
 
     if (currentBuffer % 2 == 0)

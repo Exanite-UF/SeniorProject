@@ -41,6 +41,7 @@ Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared
     voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
     reprojection = std::unique_ptr<AsyncReprojectionRenderer>(new AsyncReprojectionRenderer());
     postProcessing = std::unique_ptr<PostProcessRenderer>(new PostProcessRenderer());
+    svgf = std::unique_ptr<SVGF>(new SVGF());
 }
 
 Renderer::~Renderer()
@@ -104,7 +105,7 @@ void Renderer::swapWorkingBuffer()
     std::scoped_lock lock(bufferLocks.ready, bufferLocks.working);
 
     std::swap(bufferMapping.ready, bufferMapping.working);
-    reprojection->combineBuffers(colorTextures[lastRenderedFrameIndex], colorTextures[bufferMapping.ready], miscTextures[bufferMapping.ready], positionTextures[lastRenderedFrameIndex], positionTextures[bufferMapping.ready], lastRenderedPosition);
+    //reprojection->combineBuffers(colorTextures[lastRenderedFrameIndex], colorTextures[bufferMapping.ready], miscTextures[bufferMapping.ready], positionTextures[lastRenderedFrameIndex], positionTextures[bufferMapping.ready], lastRenderedPosition);
 
     lastRenderedFrameIndex = bufferMapping.ready;
 
@@ -212,8 +213,9 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
     }
 
     isNewerFrame = false;
-    reprojection->setSize(renderResolution);
+    reprojection->setRenderResolution(renderResolution);
     voxelRenderer->setResolution(renderResolution);
+    svgf->setRenderResolution(renderResolution);
 
     isSizeDirtyThread = true;
 }
@@ -261,6 +263,7 @@ void Renderer::_render()
     if (isSizeDirtyThread)
     {
         makeFramebuffers();
+        svgf->makeFramebuffer();
     }
 
     {
@@ -282,7 +285,16 @@ void Renderer::_render()
             voxelRenderer->executePathTrace(scene->getChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
             //voxelRenderer->executePathTrace(scene->getChunks(), bounces, currentCameraPosition, currentCameraRotation, currentCameraFOV);
         }
-        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+
+        //This need SVGF's framebuffer
+        //voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV);
+
+        //SVGF
+        svgf->lock();
+        svgf->integrateFrame(currentCameraPosition, currentCameraRotation);
+        svgf->display(getWorkingFramebuffer(), drawBuffers, 0);
+        svgf->unlock();
 
         olderRenderedPosition = lastRenderedPosition;
         lastRenderedPosition = currentCameraPosition;

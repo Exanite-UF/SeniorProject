@@ -11,6 +11,7 @@
 #include <mutex>
 #include <thread>
 
+#include <src/rendering/SVGF.h>
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/PostProcessing.h>
 #include <src/rendering/VoxelRenderer.h>
@@ -22,6 +23,7 @@
 
 class VoxelRenderer;
 class AsyncReprojectionRenderer;
+class SVGF;
 
 class Renderer
 {
@@ -85,7 +87,11 @@ private:
         std::recursive_mutex working {};
     } bufferLocks {};
 
-    GLuint latestColorTexture = 0;//This exists because of how SVGF works
+
+
+
+    //These are used to triple buffer the data displayed by asynchronous reprojection
+    GLuint latestColorTexture = 0;
     std::array<GLuint, 3> colorTextures {};
     std::array<GLuint, 3> positionTextures {};
     std::array<GLuint, 3> normalTextures {};
@@ -98,6 +104,7 @@ private:
     std::unique_ptr<VoxelRenderer> voxelRenderer = nullptr;
     std::unique_ptr<AsyncReprojectionRenderer> reprojection = nullptr;
     std::unique_ptr<PostProcessRenderer> postProcessing = nullptr;
+    std::unique_ptr<SVGF> svgf = nullptr;
 
     static GLuint drawTextureProgram;
 

@@ -22,6 +22,7 @@ vec4 safeVec4(vec4 v, vec4 fallback) {
     );
 }
 
+
 void main()
 {
     vec3 misc = texture(miscData, uv).xyz;

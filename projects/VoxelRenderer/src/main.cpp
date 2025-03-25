@@ -3,6 +3,7 @@
 #include <src/utilities/Log.h>
 #include <stdexcept>
 
+
 int main()
 {
     try
@@ -14,7 +15,6 @@ int main()
     {
         // TODO: No idea why this prints gibberish on Windows
         Log::information("Program crashed: Runtime error: " + std::string(e.what()));
-
         return 1;
     }
     catch (...)
