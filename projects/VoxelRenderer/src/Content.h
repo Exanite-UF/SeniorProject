@@ -26,7 +26,7 @@ public:
     constexpr static std::string_view renderReprojectionFragmentShader = "content/Reprojection/ReprojectionRender.fragment.glsl";
     constexpr static std::string_view combineReprojectionFragmentShader = "content/Reprojection/CombineFrames.fragment.glsl";
     constexpr static std::string_view combineReprojection2FragmentShader = "content/Reprojection/CombineFrames2.fragment.glsl";
-
+    constexpr static std::string_view denoiseFragmentShader = "content/Reprojection/Denoise.fragment.glsl";
 
     // Voxel Manipulation
     constexpr static std::string_view makeMipMapComputeShader = "content/VoxelManipulation/MakeMipMap.compute.glsl";
