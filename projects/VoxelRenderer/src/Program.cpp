@@ -115,6 +115,21 @@ void Program::run()
     auto scene = sceneObject->addComponent<SceneComponent>();
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
+    // Create the chunk GameObjects
+    voxelChunkManager.settings.isChunkLoadingEnabled = false;
+    for (int x = 0; x < 3; x++)
+    {
+        for (int y = 0; y < 3; ++y)
+        {
+            auto voxelChunkObject = sceneObject->createChildObject(std::format("Chunk ({}, {})", x, y));
+
+            auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
+            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
+
+            scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
+        }
+    }
+
     // Create the camera GameObject
     auto cameraObject = sceneObject->createChildObject("Camera");
     auto camera = cameraObject->addComponent<CameraComponent>();

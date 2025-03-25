@@ -16,6 +16,29 @@
 
 class VoxelChunkManager : public Singleton<VoxelChunkManager>
 {
+public:
+    struct ManagerSettings
+    {
+    public:
+        // ----- Rendering -----
+
+        // The distance at which chunks begin to be generated on a separate thread
+        int generationDistance = 2; // TODO
+
+        // The distance at which chunks are loaded and uploaded to the GPU
+        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
+
+        // ----- Chunks -----
+
+        // False prevents chunks from loading and unloading
+        bool isChunkLoadingEnabled = true;
+
+        // Delay before a chunk marked for unloading is actually unloaded
+        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+
+        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
+    };
+
 private:
     struct ChunkModificationTask
     {
@@ -53,28 +76,6 @@ private:
 
         explicit ActiveChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
         ~ActiveChunk() override;
-    };
-
-    struct ManagerSettings
-    {
-    public:
-        // ----- Rendering -----
-
-        // The distance at which chunks begin to be generated on a separate thread
-        int generationDistance = 2; // TODO
-
-        // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
-
-        // ----- Chunks -----
-
-        // False prevents chunks from loading and unloading
-        bool isChunkLoadingEnabled = true;
-
-        // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
-
-        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
     };
 
     struct ManagerState
@@ -127,8 +128,10 @@ private:
         std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
     };
 
-private:
+public:
     ManagerSettings settings {};
+
+private:
     ManagerState state {};
     LoadingThreadState loadingThreadState {};
     ModificationThreadState modificationThreadState {};
