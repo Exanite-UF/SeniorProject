@@ -7,6 +7,37 @@
     },
     "configurePresets": [
         {
+            "name": "Linux-Clang-Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/linux-clang-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "Linux-Clang-Release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/linux-clang-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "Linux-Clang-Profiling",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/linux-clang-profiling",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SP_ENABLE_PROFILING": "ON"
+            }
+        },
+        {
             "name": "Linux-GCC-Debug",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/linux-gcc-debug",
@@ -107,6 +138,21 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "Linux-Clang-Debug",
+            "configurePreset": "Linux-Clang-Debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "Linux-Clang-Release",
+            "configurePreset": "Linux-Clang-Release",
+            "configuration": "Release"
+        },
+        {
+            "name": "Linux-Clang-Profiling",
+            "configurePreset": "Linux-Clang-Profiling",
+            "configuration": "RelWithDebInfo"
+        },
         {
             "name": "Linux-GCC-Debug",
             "configurePreset": "Linux-GCC-Debug",
