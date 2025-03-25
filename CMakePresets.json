@@ -7,9 +7,40 @@
     },
     "configurePresets": [
         {
-            "name": "Debug-VS2022",
+            "name": "Linux-GCC-Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/linux-gcc-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "Linux-GCC-Release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/linux-gcc-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "Linux-GCC-Profiling",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/linux-gcc-profiling",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SP_ENABLE_PROFILING": "ON"
+            }
+        },
+        {
+            "name": "Windows-VS2022-Debug",
             "generator": "Visual Studio 17 2022",
-            "binaryDir": "${sourceDir}/build/debug-vs2022",
+            "binaryDir": "${sourceDir}/build/windows-vs2022-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "cl",
@@ -18,9 +49,9 @@
             }
         },
         {
-            "name": "Release-VS2022",
+            "name": "Windows-VS2022-Release",
             "generator": "Visual Studio 17 2022",
-            "binaryDir": "${sourceDir}/build/release-vs2022",
+            "binaryDir": "${sourceDir}/build/windows-vs2022-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "cl",
@@ -29,9 +60,9 @@
             }
         },
         {
-            "name": "Profiling-VS2022",
+            "name": "Windows-VS2022-Profiling",
             "generator": "Visual Studio 17 2022",
-            "binaryDir": "${sourceDir}/build/profiling-vs2022",
+            "binaryDir": "${sourceDir}/build/windows-vs2022-profiling",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_C_COMPILER": "cl",
@@ -41,9 +72,9 @@
             }
         },
         {
-            "name": "Debug-VS2019",
+            "name": "Windows-VS2019-Debug",
             "generator": "Visual Studio 16 2019",
-            "binaryDir": "${sourceDir}/build/debug-vs2019",
+            "binaryDir": "${sourceDir}/build/windows-vs2019-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "cl",
@@ -52,9 +83,9 @@
             }
         },
         {
-            "name": "Release-VS2019",
+            "name": "Windows-VS2019-Release",
             "generator": "Visual Studio 16 2019",
-            "binaryDir": "${sourceDir}/build/release-vs2019",
+            "binaryDir": "${sourceDir}/build/windows-vs2019-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "cl",
@@ -63,9 +94,9 @@
             }
         },
         {
-            "name": "Profiling-VS2019",
+            "name": "Windows-VS2019-Profiling",
             "generator": "Visual Studio 16 2019",
-            "binaryDir": "${sourceDir}/build/profiling-vs2019",
+            "binaryDir": "${sourceDir}/build/windows-vs2019-profiling",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_C_COMPILER": "cl",
@@ -77,33 +108,48 @@
     ],
     "buildPresets": [
         {
-            "name": "Debug-VS2022",
-            "configurePreset": "Debug-VS2022",
+            "name": "Linux-GCC-Debug",
+            "configurePreset": "Linux-GCC-Debug",
             "configuration": "Debug"
         },
         {
-            "name": "Release-VS2022",
-            "configurePreset": "Release-VS2022",
+            "name": "Linux-GCC-Release",
+            "configurePreset": "Linux-GCC-Release",
             "configuration": "Release"
         },
         {
-            "name": "Profiling-VS2022",
-            "configurePreset": "Profiling-VS2022",
+            "name": "Linux-GCC-Profiling",
+            "configurePreset": "Linux-GCC-Profiling",
             "configuration": "RelWithDebInfo"
         },
         {
-            "name": "Debug-VS2019",
-            "configurePreset": "Debug-VS2019",
+            "name": "Windows-VS2022-Debug",
+            "configurePreset": "Windows-VS2022-Debug",
             "configuration": "Debug"
         },
         {
-            "name": "Release-VS2019",
-            "configurePreset": "Release-VS2019",
+            "name": "Windows-VS2022-Release",
+            "configurePreset": "Windows-VS2022-Release",
             "configuration": "Release"
         },
         {
-            "name": "Profiling-VS2019",
-            "configurePreset": "Profiling-VS2019",
+            "name": "Windows-VS2022-Profiling",
+            "configurePreset": "Windows-VS2022-Profiling",
+            "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "Windows-VS2019-Debug",
+            "configurePreset": "Windows-VS2019-Debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "Windows-VS2019-Release",
+            "configurePreset": "Windows-VS2019-Release",
+            "configuration": "Release"
+        },
+        {
+            "name": "Windows-VS2019-Profiling",
+            "configurePreset": "Windows-VS2019-Profiling",
             "configuration": "RelWithDebInfo"
         }
     ]
