@@ -13,7 +13,8 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_GENERATOR_TOOLSET": "v143"
             }
         },
         {
@@ -23,7 +24,8 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_GENERATOR_TOOLSET": "v143"
             }
         },
         {
@@ -33,7 +35,8 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Profiling",
                 "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_GENERATOR_TOOLSET": "v143"
             }
         },
         {
@@ -43,7 +46,8 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_GENERATOR_TOOLSET": "v142"
             }
         },
         {
@@ -53,7 +57,8 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_GENERATOR_TOOLSET": "v142"
             }
         },
         {
@@ -63,7 +68,8 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Profiling",
                 "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_GENERATOR_TOOLSET": "v142"
             }
         }
     ],
