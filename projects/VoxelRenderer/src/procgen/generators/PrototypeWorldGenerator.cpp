@@ -4,6 +4,7 @@
 
 #include <FastNoiseLite/FastNoiseLite.h>
 #include <src/procgen/PrintUtility.h>
+#include <src/procgen/data/FlatArrayData.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
@@ -36,7 +37,15 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(grassMaterialKey, grassMaterial))
     {
         grassMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + grassMaterial->getKey() + "' instead.");
+    }
+    
+    std::shared_ptr<Material> oakLogMaterial;
+    std::string oakLogMaterialKey = "oak_log";
+    if (!materialManager.tryGetMaterialByKey(oakLogMaterialKey, oakLogMaterial))
+    {
+        oakLogMaterial = materialManager.getMaterialByIndex(0);
+        Log::information("Failed to find Material with id '" + oakLogMaterialKey + "'. Using default oakLogMaterial '" + oakLogMaterial->getKey() + "' instead.");
     }
 
     // Fill texture data with random noise, each block evaluated once
@@ -47,6 +56,37 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     // float noise = simplexNoise.GetNoise(localX * stoneFrequency, localY * stoneFrequency, localZ * stoneFrequency);
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
+
+    glm::vec3 treeLocation({data.getSize().x/2, data.getSize().y/2, 0});
+    int voxelsPerMeter = 8;
+    int treeHeightVoxels = 7 * voxelsPerMeter;
+    int treeWidthVoxels = 1 * voxelsPerMeter;
+
+    FlatArrayData<int> leafStructure({4, 4, 4});
+    int maxP = 10;
+    leafStructure.copyList(
+        {
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+            maxP, maxP, maxP, maxP,
+        }
+    );
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
     glm::vec2 offset = chunkSize * chunkPosition;
@@ -81,6 +121,38 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 data.setVoxelMaterial({x, y, z}, dirtMaterial);
             }
             lastHeightBlocks -= dirtDepth;
+
+            if(treeLocation.x == x && treeLocation.y == y)
+            {
+                glm::vec3 startVoxel = {x, y, heightVoxels};
+                
+                // Tree Trunk
+                int treeWidthRadius= treeWidthVoxels/2;
+                for(int localX = -treeWidthRadius; localX <= treeWidthRadius; ++localX)
+                {
+                    for(int localY = -treeWidthRadius; localY <= treeWidthRadius; ++localY)
+                    {
+                        for(int localZ = 0; localZ <= treeHeightVoxels; ++localZ)
+                        {
+                            glm::vec3 localVoxel = {startVoxel.y + localX, startVoxel.y + localY, startVoxel.z + localZ};
+                            
+                            // Fall through
+                            if(localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
+                            {
+                                continue;
+                            }
+
+                            if(localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
+                            {
+                                continue;
+                            }
+
+                            data.setVoxelOccupancy(localVoxel, true);
+                            data.setVoxelMaterial(localVoxel, oakLogMaterial);
+                        }
+                    }
+                }
+            }
         }
     }
 }
