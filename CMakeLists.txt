@@ -131,6 +131,7 @@ endif ()
 
 set(TRACY_ON_DEMAND ON)
 set(TRACY_CALLSTACK ON)
+set(TRACY_DEBUGINFOD ON)
 add_subdirectory(./external/tracy)
 
 # Tracy UI
@@ -138,6 +139,9 @@ add_subdirectory(./external/tracy)
 if(NOT ((DEFINED ENV{GITHUB_ACTIONS}) OR (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")))
     add_subdirectory(./external/tracy/profiler)
 endif()
+
+# debuginfod
+find_library(DEBUGINFOD_LIBRARY NAMES debuginfod)
 
 # Extra libraries
 add_library(extra STATIC)

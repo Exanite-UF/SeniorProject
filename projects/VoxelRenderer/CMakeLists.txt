@@ -24,7 +24,7 @@ target_link_libraries(VoxelRenderer PRIVATE imgui)
 target_link_libraries(VoxelRenderer PRIVATE assimp)
 target_link_libraries(VoxelRenderer PRIVATE Jolt)
 target_link_libraries(VoxelRenderer PRIVATE stb)
-target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
+target_link_libraries(VoxelRenderer PRIVATE extra)
 
 # Boost is a CGAL dependency
 target_link_libraries(VoxelRenderer PRIVATE boost_config)
@@ -36,7 +36,16 @@ target_link_libraries(VoxelRenderer PRIVATE boost_compute)
 target_link_libraries(VoxelRenderer PRIVATE boost_math)
 target_link_libraries(VoxelRenderer PRIVATE cgal)
 
-target_link_libraries(VoxelRenderer PRIVATE extra)
+# Tracy compiler
+target_compile_definitions(VoxelRenderer PUBLIC TRACY_DEBUGINFOD=1)
+target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
+
+if (DEBUGINFOD_LIBRARY)
+    message(STATUS "Found libdebuginfod. Linking VoxelRenderer with libdebuginfod")
+    target_link_libraries(VoxelRenderer PRIVATE ${DEBUGINFOD_LIBRARY})
+else()
+    message(FATAL_ERROR "Did not find libdebuginfod. Linking VoxelRenderer with libdebuginfod")
+endif()
 
 # --- Copy content ---
 
