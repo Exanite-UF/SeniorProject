@@ -664,10 +664,6 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
 }
 
-float sunSize = 0.99;
-vec3 sunDir = normalize(vec3(1, -1, 1));
-float sunBrightness = 1;
-
 void attempt(ivec3 texelCoord)
 {
     // if(!shouldCast(texelCoord)){

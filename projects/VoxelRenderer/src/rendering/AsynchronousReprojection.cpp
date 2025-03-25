@@ -214,6 +214,7 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& latestColorTexture,
         glBindTexture(GL_TEXTURE_2D, newPositionTexture);
 
 
+        glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
         glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
 
         

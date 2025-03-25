@@ -10,6 +10,7 @@ layout(binding = 5) uniform sampler2D newPosData;
 
 in vec2 uv;
 
+uniform vec3 cameraPosition;
 uniform ivec2 resolution;
 
 layout(location = 0) out vec4 out_color;
@@ -66,12 +67,12 @@ void main()
     vec3 oldPos = texture(oldPosData, oldUV).xyz;
     vec3 newPos = texture(newPosData, uv).xyz;
 
-    float alpha = (misc.x < 0) ? 0 : 0.8;
+    float alpha = (misc.x < 0) ? 0 : 0.9;
     if(color.w == 0){
         alpha = 0;
     }
 
-    if(length(oldPos - newPos) > 1){
+    if(length(oldPos - newPos) / length(newPos - cameraPosition) > 0.1 || length(oldPos - newPos) > 1){
         alpha = 0;
     }
 
