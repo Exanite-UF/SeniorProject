@@ -29,7 +29,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     if (!materialManager.tryGetMaterialByKey(dirtMaterialKey, dirtMaterial))
     {
         dirtMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + stoneMaterial->getKey() + "' instead.");
+        Log::information("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + dirtMaterial->getKey() + "' instead.");
     }
 
     std::shared_ptr<Material> grassMaterial;
@@ -48,6 +48,14 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         Log::information("Failed to find Material with id '" + oakLogMaterialKey + "'. Using default oakLogMaterial '" + oakLogMaterial->getKey() + "' instead.");
     }
 
+    std::shared_ptr<Material> oakLeafMaterial;
+    std::string oakLeafMaterialKey = "oak_leaf";
+    if (!materialManager.tryGetMaterialByKey(oakLeafMaterialKey, oakLeafMaterial))
+    {
+        oakLeafMaterial = materialManager.getMaterialByIndex(0);
+        Log::information("Failed to find Material with id '" + oakLeafMaterialKey + "'. Using default oakLeafMaterial '" + oakLeafMaterial->getKey() + "' instead.");
+    }
+
     // Fill texture data with random noise, each block evaluated once
     FastNoiseLite simplexNoise;
     simplexNoise.SetSeed(seed);
@@ -62,31 +70,10 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     int treeHeightVoxels = 7 * voxelsPerMeter;
     int treeWidthVoxels = 1 * voxelsPerMeter;
 
-    FlatArrayData<int> leafStructure({4, 4, 4});
-    int maxP = 10;
-    leafStructure.copyList(
-        {
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-            maxP, maxP, maxP, maxP,
-        }
-    );
+    int leafWidthX = 4 * voxelsPerMeter;
+    int leafWidthY = 4 * voxelsPerMeter;
+    int leafWidthExtentBelowZ = 1 * voxelsPerMeter;
+    int leafWidthExtentAboveZ = 4 * voxelsPerMeter;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
     glm::vec2 offset = chunkSize * chunkPosition;
@@ -127,7 +114,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 glm::vec3 startVoxel = {x, y, heightVoxels};
                 
                 // Tree Trunk
-                int treeWidthRadius= treeWidthVoxels/2;
+                int treeWidthRadius = treeWidthVoxels/2;
+                
                 for(int localX = -treeWidthRadius; localX <= treeWidthRadius; ++localX)
                 {
                     for(int localY = -treeWidthRadius; localY <= treeWidthRadius; ++localY)
@@ -149,6 +137,39 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
                             data.setVoxelOccupancy(localVoxel, true);
                             data.setVoxelMaterial(localVoxel, oakLogMaterial);
+                        }
+                    }
+                }
+
+                glm::vec3 startOffset = {0, 0, treeHeightVoxels + 1};
+                startVoxel += startOffset;
+
+                int leafWidthRadiusX = leafWidthX/2;
+                int leafWidthRadiusY = leafWidthY/2;
+
+                for(int localX = -leafWidthRadiusX; localX <= leafWidthRadiusX; ++localX)
+                {
+                    for(int localY = -leafWidthRadiusY; localY <= leafWidthRadiusY; ++localY)
+                    {
+                        for(int localZ = -leafWidthExtentBelowZ; localZ <= leafWidthExtentAboveZ; ++localZ)
+                        {
+                            glm::vec3 localVoxel = {startVoxel.y + localX, startVoxel.y + localY, startVoxel.z + localZ};
+                            
+                            // Fall through
+                            if(localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
+                            {
+                                continue;
+                            }
+
+                            if(localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
+                            {
+                                continue;
+                            }
+
+                            if(data.getVoxelMaterial(localVoxel) != oakLogMaterial){
+                                data.setVoxelOccupancy(localVoxel, true);
+                                data.setVoxelMaterial(localVoxel, oakLogMaterial);
+                            }
                         }
                     }
                 }
