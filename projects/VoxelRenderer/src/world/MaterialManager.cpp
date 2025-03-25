@@ -33,6 +33,24 @@ MaterialManager::MaterialManager()
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
     }
+    
+    {
+        auto& material = createMaterial("oak_log", "oak_log");
+        material->albedo = ColorUtility::htmlToLinear("#473621");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+    
+    {
+        auto& material = createMaterial("oak_leaf", "oak_leaf");
+        material->albedo = ColorUtility::htmlToLinear("#40732B");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
 
     {
         auto& material = createMaterial("blue_light", "Blue Light");
