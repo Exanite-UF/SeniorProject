@@ -1,13 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(SeniorProject LANGUAGES C CXX)
 
-# Define build configurations
-set(CMAKE_CONFIGURATION_TYPES Debug Release Profiling)
-
-# Make the Profiling configuration inherit from the Release configuration
-set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_RELEASE}")
-set(CMAKE_EXE_LINKER_FLAGS_PROFILING "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
-
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -129,8 +122,8 @@ target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
 # Tracy
 # Enable Tracy profiling for a program by linking it with Tracy::TracyClient
 
-# Only enable Tracy profiling in the Profiling build configuration is selected
-if(CMAKE_BUILD_TYPE STREQUAL "Profiling")
+# Only enable Tracy profiling if SP_ENABLE_PROFILING=ON
+if(SP_ENABLE_PROFILING)
     set(TRACY_ENABLE ON)
 else ()
     set(TRACY_ENABLE OFF)
