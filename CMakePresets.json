@@ -1,0 +1,84 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 28,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "Debug-VS2022",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Release-VS2022",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "Profiling-VS2022",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/profiling",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Profiling"
+            }
+        },
+        {
+            "name": "Debug-VS2019",
+            "generator": "Visual Studio 16 2019",
+            "binaryDir": "${sourceDir}/build/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Release-VS2019",
+            "generator": "Visual Studio 16 2019",
+            "binaryDir": "${sourceDir}/build/release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "Profiling-VS2019",
+            "generator": "Visual Studio 16 2019",
+            "binaryDir": "${sourceDir}/build/profiling",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Profiling"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "Debug-VS2022",
+            "configurePreset": "Debug-VS2022"
+        },
+        {
+            "name": "Release-VS2022",
+            "configurePreset": "Release-VS2022"
+        },
+        {
+            "name": "Profiling-VS2022",
+            "configurePreset": "Profiling-VS2022"
+        },
+        {
+            "name": "Debug-VS2019",
+            "configurePreset": "Debug-VS2019"
+        },
+        {
+            "name": "Release-VS2019",
+            "configurePreset": "Release-VS2019"
+        },
+        {
+            "name": "Profiling-VS2019",
+            "configurePreset": "Profiling-VS2019"
+        }
+    ]
+}
