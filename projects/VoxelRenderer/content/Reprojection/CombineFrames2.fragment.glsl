@@ -96,6 +96,17 @@ void main()
     vec3 color = texture(tempColor, uv).xyz;
     vec3 variance = texture(colorSquared, uv).xyz - color * color;
 
+    {
+        vec4 outColor = vec4(color, 1);
+        //if(any(lessThan(variance, vec3(0)))){
+        //    outColor = vec4(0,1, 1, 1);
+        //}
+        out_color = outColor;
+        out_color_2 = outColor;
+        return;
+    }
+    
+
     vec3 sampledVariance = sampleVariance();
 
     vec3 position = texture(posData, uv).xyz;

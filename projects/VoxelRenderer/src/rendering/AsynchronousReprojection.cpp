@@ -344,7 +344,7 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& latestColorTexture,
 void AsyncReprojectionRenderer::denoise(const GLuint& colorTexture, const GLuint& varianceTexture, const GLuint& positionTexture, const GLuint& normalTexture, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
     
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < 0; i++){
         _denoise(2 * i, colorTexture, varianceTexture, tempColorTexture, tempVarianceTexture, positionTexture, normalTexture, cameraPosition, cameraRotation, cameraFOV);
         _denoise(2 * i + 1, tempColorTexture, tempVarianceTexture, colorTexture, varianceTexture, positionTexture, normalTexture, cameraPosition, cameraRotation, cameraFOV);
     }

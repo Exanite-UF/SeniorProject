@@ -66,7 +66,7 @@ void main()
     vec3 oldPos = texture(oldPosData, oldUV).xyz;
     vec3 newPos = texture(newPosData, uv).xyz;
 
-    float alpha = (misc.x < 0) ? 0 : 0.9;
+    float alpha = (misc.x < 0) ? 0 : 0.8;
     if(color.w == 0){
         alpha = 0;
     }
