@@ -11,6 +11,7 @@
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
+#include <cstdlib>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
@@ -67,6 +68,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
     glm::vec3 treeLocation({data.getSize().x/2, data.getSize().y/2, 0});
     int voxelsPerMeter = 8;
+
     int treeHeightVoxels = 7 * voxelsPerMeter;
     int treeWidthVoxels = 1 * voxelsPerMeter;
 
@@ -111,6 +113,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
             if(treeLocation.x == x && treeLocation.y == y)
             {
+                // Naive seeding. Is there a better way?
+                std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + x * 11 + y * 11);
                 glm::vec3 startVoxel = {x, y, heightVoxels};
                 
                 // Tree Trunk
@@ -147,6 +151,11 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 int leafWidthRadiusX = leafWidthX/2;
                 int leafWidthRadiusY = leafWidthY/2;
 
+                // Setup tree function
+                int height = leafWidthExtentAboveZ;
+                int heightToWidthXRatio = (height) / leafWidthX; 
+                int heightToWidthYRatio = (height) / leafWidthY; 
+
                 for(int localX = -leafWidthRadiusX; localX <= leafWidthRadiusX; ++localX)
                 {
                     for(int localY = -leafWidthRadiusY; localY <= leafWidthRadiusY; ++localY)
@@ -165,10 +174,17 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                             {
                                 continue;
                             }
+                            
+                            // Sample from tree function
+                            float treeFunctionSample = height - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY) - localZ;
+                            // Simple random function. Probably better to clump and also add so it looks more organic.
+                            int randomSample = (rand() % 10);
 
-                            if(data.getVoxelMaterial(localVoxel) != oakLogMaterial){
-                                data.setVoxelOccupancy(localVoxel, true);
-                                data.setVoxelMaterial(localVoxel, oakLogMaterial);
+                            if(treeFunctionSample > 0 && randomSample > 6){
+                                if(data.getVoxelMaterial(localVoxel) != oakLogMaterial){
+                                    data.setVoxelOccupancy(localVoxel, true);
+                                    data.setVoxelMaterial(localVoxel, oakLeafMaterial);
+                                }   
                             }
                         }
                     }
