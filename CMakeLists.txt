@@ -43,6 +43,11 @@ if (WIN32)
     add_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
 
+# Set option variable policy
+# The NEW policy enables the use of the option() function
+cmake_policy(SET CMP0077 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 # --- Third party ---
 
 # OpenGL
