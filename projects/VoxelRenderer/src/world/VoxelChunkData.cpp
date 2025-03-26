@@ -1,9 +1,11 @@
 #include "VoxelChunkData.h"
 
+#include <chrono>
 #include <set>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkUtility.h>
 #include <stdexcept>
+#include <thread>
 #include <tracy/Tracy.hpp>
 
 VoxelChunkData::VoxelChunkData()
@@ -169,9 +171,10 @@ void VoxelChunkData::writeTo(VoxelChunk& chunk)
             ZoneScopedN("Chunked material data upload");
 
             int remainingByteCount = byteCount - i * uploadChunkSize;
+            int offset = i * uploadChunkSize;
 
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, i * uploadChunkSize, std::min(uploadChunkSize, remainingByteCount), data.materialMap.data());
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.materialMap.data()) + offset);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
             {
