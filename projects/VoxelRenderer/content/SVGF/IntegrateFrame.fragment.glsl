@@ -64,11 +64,7 @@ void main()
     if(length(oldPos - newPos) / length(newPos - cameraPosition) > 0.1){
         alpha = 0;
     }
-
-    //if(length(oldPos - newPos) > 1){
-    //    alpha = 0;
-    //}
-
+    
     vec3 newColor = safeVec4(texture(inputColor, uv), vec4(0)).xyz;//Get the incoming color
 
     //Set the outputs
