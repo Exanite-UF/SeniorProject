@@ -6,7 +6,7 @@
 
 // 2D or 3D array of single values
 // AKA Texture but that's already used.
-template <typename T> 
+template <typename T>
 class FlatArrayData
 {
 private:
@@ -32,7 +32,7 @@ FlatArrayData<T>::FlatArrayData(glm::ivec3 inSize)
 template <typename T>
 bool FlatArrayData<T>::copyList(std::initializer_list<T> list)
 {
-    if(list.size() != size.x * size.y * size.z)
+    if (list.size() != size.x * size.y * size.z)
     {
         return false;
     }
@@ -58,4 +58,3 @@ const glm::ivec3& FlatArrayData<T>::getSize()
 {
     return size;
 }
-
