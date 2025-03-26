@@ -73,11 +73,11 @@ void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string
                 triangleThreadRunning = false;
                 break; 
             }
+            glfwMakeContextCurrent(triangleWindow);
             glfwPollEvents();
 
             // Initial render
             RenderWindowTriangle();
-            glfwSwapBuffers(triangleWindow);
 
 
             static auto last_frame = std::chrono::steady_clock::now();
@@ -87,6 +87,8 @@ void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string
                 std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
             }
             last_frame = now;
+
+            glfwSwapBuffers(triangleWindow);
         }
 
         // Cleanup in the rendering thread
@@ -152,6 +154,7 @@ void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
                 voxelThreadRunning = false;
                 break; 
             }
+
             glfwPollEvents();
 
             // Initial render
@@ -229,8 +232,7 @@ void ModelPreviewer::RenderWindowVoxel()
         // Camera Setup
         glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
         glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
-        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), instancePos); //FIX
-        shader.setMat4("model", modelMatrix);
+        glm::mat4 model = glm::mat4(1.0f);
 
         voxelShader->use();
 

@@ -14,8 +14,8 @@ uniform mat4 view;
 
 void main()
 {
-    //model = glm::translate(mat4(1.0f), instancePos); // Translate each voxel to its position
-    gl_Position = projection * view * model * vec4(aPos, 1.0f); // Apply transformations
+    vec4 worldPosition = model * vec4(aPos, 1.0) + vec4(instancePos, 0.0); // Add per-instance position
+    gl_Position = projection * view * worldPosition;
     Normal = mat3(transpose(inverse(model))) * aNormal; //ineficient but good for now
     //gl_Position.z = 2.0 * log(gl_Position.w/0.001)/log(1000/0.001) - 1;
     //gl_Position.z *= gl_Position.w;
