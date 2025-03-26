@@ -4,6 +4,7 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkUtility.h>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 
 VoxelChunkData::VoxelChunkData()
 {
@@ -11,6 +12,8 @@ VoxelChunkData::VoxelChunkData()
 
 VoxelChunkData::VoxelChunkData(const glm::ivec3& size)
 {
+    ZoneScoped;
+
     setSize(size);
 }
 
@@ -21,6 +24,8 @@ const glm::ivec3& VoxelChunkData::getSize() const
 
 void VoxelChunkData::setSize(const glm::ivec3& size)
 {
+    ZoneScoped;
+
     this->data.size = size;
 
     data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
@@ -109,6 +114,8 @@ void VoxelChunkData::clearMaterialMap()
 
 void VoxelChunkData::copyFrom(VoxelChunk& chunk)
 {
+    ZoneScoped;
+
     if (data.size != chunk.getSize())
     {
         setSize(chunk.getSize());
@@ -125,6 +132,8 @@ void VoxelChunkData::copyFrom(VoxelChunk& chunk)
 
 void VoxelChunkData::writeTo(VoxelChunk& chunk)
 {
+    ZoneScoped;
+
     if (chunk.getSize() != data.size)
     {
         throw std::runtime_error("Target chunk does not have the same size");
@@ -143,10 +152,14 @@ void VoxelChunkData::writeTo(VoxelChunk& chunk)
 
 void VoxelChunkData::copyFrom(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     this->data = data.data;
 }
 
 void VoxelChunkData::writeTo(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     data.data = this->data;
 }
