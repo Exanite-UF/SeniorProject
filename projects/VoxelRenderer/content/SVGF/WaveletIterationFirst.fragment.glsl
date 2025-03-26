@@ -4,7 +4,7 @@ layout(binding = 0) uniform sampler2D inputColor;//tempColorTexture
 layout(binding = 1) uniform sampler2D inputVariance;//tempVarianceTexture
 layout(binding = 2) uniform sampler2D inputClipPosition;//clipPositionTexture
 layout(binding = 3) uniform sampler2D inputNormal;//normalInputTexture
-layout(binding = 4) uniform sampler2D inputMotion;//motionInputTexture (Send the albedo to this shader instead)
+layout(binding = 4) uniform sampler2D inputMotion;//motionInputTexture
 layout(binding = 5) uniform sampler2D inputPosition;//positionInputTexture
 
 
