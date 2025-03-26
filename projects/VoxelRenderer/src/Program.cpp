@@ -515,7 +515,7 @@ void Program::run()
                     case 1:
                     {
                         // Should be relative path
-                        std::string modelFileName = "R:/Code/SeniorProject/projects/VoxelRenderer/content/triangulation/suzanne.obj";
+                        std::string modelFileName = "R:/Repos/SeniorProject/projects/VoxelRenderer/content/Triangulation/suzanne.obj";
 
                         ImGui::Text("Please choose a file.");
                         ImGui::Indent(indentSize);

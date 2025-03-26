@@ -191,38 +191,39 @@ void ModelVoxelizer::voxelizeModel(int option)
 void ModelVoxelizer::generateVoxelMesh()
 {
     printf("GENERATING VOXEL MESH\n");
-    const float cubeVertices[] = {
+
+    std::vector<float> cubeVertices = {
         -0.5f, -0.5f, -0.5f,    1.0f, 0.0f,     0.0f, 0.0f, -1.0f, //BACK
          0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, 0.0f, -1.0f,
          0.5f,  0.5f, -0.5f,    0.0f, 1.0f,     0.0f, 0.0f, -1.0f,
         -0.5f,  0.5f, -0.5f,    1.0f, 1.0f,     0.0f, 0.0f, -1.0f,
- 
+    
         -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,     0.0f, 0.0f, 1.0f, //FRONT
          0.5f, -0.5f,  0.5f,    1.0f, 0.0f,     0.0f, 0.0f, 1.0f,
          0.5f,  0.5f,  0.5f,    1.0f, 1.0f,     0.0f, 0.0f, 1.0f,
         -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,     0.0f, 0.0f, 1.0f,
- 
+    
         -0.5f,  0.5f,  0.5f,    1.0f, 1.0f,     -1.0f, 0.0f, 0.0f, //LEFT
         -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,     -1.0f, 0.0f, 0.0f,
         -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     -1.0f, 0.0f, 0.0f,
         -0.5f, -0.5f,  0.5f,    1.0f, 0.0f,     -1.0f, 0.0f, 0.0f,
- 
+    
         0.5f,  0.5f,  0.5f,     0.0f, 1.0f,     1.0f,  0.0f,  0.0f, //RIGHT
         0.5f,  0.5f, -0.5f,     1.0f, 1.0f,     1.0f,  0.0f,  0.0f,
         0.5f, -0.5f, -0.5f,     1.0f, 0.0f,     1.0f,  0.0f,  0.0f,
         0.5f, -0.5f,  0.5f,     0.0f, 0.0f,     1.0f,  0.0f,  0.0f,
- 
+    
         -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, -1.0f,  0.0f, //bottom
          0.5f, -0.5f, -0.5f,    1.0f, 0.0f,     0.0f, -1.0f,  0.0f,
          0.5f, -0.5f,  0.5f,    1.0f, 1.0f,     0.0f, -1.0f,  0.0f,
         -0.5f, -0.5f,  0.5f,    0.0f, 1.0f,     0.0f, -1.0f,  0.0f,
- 
+    
         -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,     0.0f,  1.0f,  0.0f, // TOP FACE
          0.5f,  0.5f, -0.5f,    1.0f, 1.0f,     0.0f,  1.0f,  0.0f,
          0.5f,  0.5f,  0.5f,    1.0f, 0.0f,     0.0f,  1.0f,  0.0f,
         -0.5f,  0.5f,  0.5f,    0.0f, 0.0f,     0.0f,  1.0f,  0.0f
     };
-
+    
     const unsigned int cubeIndices[] = {
         0, 1, 2,
         2, 3, 0,
@@ -242,6 +243,7 @@ void ModelVoxelizer::generateVoxelMesh()
         20, 21, 22,
         22, 23, 20
     };
+
 
     for (int z = 0; z < gridSize.z; ++z) {
         for (int y = 0; y < gridSize.y; ++y) {
@@ -266,8 +268,49 @@ void ModelVoxelizer::generateVoxelMesh()
     }
 
     // Setup
+    //glGenVertexArrays(1, &voxelVAO);
+    //glGenBuffers(1, &instanceVBO);
+    //glBindVertexArray(voxelVAO);
+
     glGenVertexArrays(1, &voxelVAO);
+    glGenBuffers(1, &voxelVBO);
+    glGenBuffers(1, &voxelEBO);
     glGenBuffers(1, &instanceVBO);
+
+    glBindVertexArray(voxelVAO);
+
+    // Cube VBO (positions)
+    glBindBuffer(GL_ARRAY_BUFFER, voxelVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices.data(), GL_STATIC_DRAW);
+
+    // Cube EBO (indices)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, voxelEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices), cubeIndices, GL_STATIC_DRAW);
+
+    // Position attribute (location = 0)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+    // Texture Coordinate attribute (location = 2)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    // Normal attribute (location = 3)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+
+    // Generate and bind instance VBO for voxel positions
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+
+    // Instance Position attribute (location = 1)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+    glVertexAttribDivisor(1, 1);  // Tell OpenGL this is per-instance data
+
+    // Unbind VAO
+    glBindVertexArray(0);
 
     isVoxelized = true;
     std::cout << "VOXELIZED!" << std::endl;
@@ -291,16 +334,12 @@ void ModelVoxelizer::DrawVoxels(Shader& shader)
         }
     }
 
-    // Update instance buffer
-    // Render call
-    glBindVertexArray(voxelVAO);
+    // Update instance buffer with active voxel positions
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, 
-                activeVoxels.size() * sizeof(glm::vec3),
-                activeVoxels.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), 
+                 activeVoxels.data(), GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-    glEnableVertexAttribArray(1);
-
-    glDrawArraysInstanced(GL_TRIANGLES, 0, 36, activeVoxels.size());
+    // Render voxels with instancing
+    glBindVertexArray(voxelVAO);
+    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
 }

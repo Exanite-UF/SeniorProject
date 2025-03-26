@@ -9,7 +9,8 @@ ModelPreviewer::~ModelPreviewer()
     if (loadedModel)
     {
         delete loadedModel;
-        delete shader;
+        delete triangleShader;
+        delete voxelShader;
     }
     CloseWindowTriangle();
 }
@@ -17,7 +18,8 @@ ModelPreviewer::~ModelPreviewer()
 void ModelPreviewer::setModel(Model* model_)
 {
     loadedModel = model_;
-    shader = new Shader(vertShaderPath.c_str(), fragShaderPath.c_str());
+    triangleShader = new Shader(vertShaderPathTriangle.c_str(), fragShaderPathTriangle.c_str());
+    voxelShader = new Shader(vertShaderPathVoxel.c_str(), fragShaderPathVoxel.c_str());
 }
 
 
@@ -189,27 +191,27 @@ void ModelPreviewer::RenderWindowTriangle()
         glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
         glm::mat4 model = glm::mat4(1.0f);
 
-        shader->use();
+        triangleShader->use();
 
-        glUniformMatrix4fv(glGetUniformLocation(shader->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shader->ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shader->ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         //// Material Settings for Phong Shader
         glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glUniform3fv(glGetUniformLocation(shader->ID, "defaultMaterial.diffuseColor"),  1,  glm::value_ptr(diffuseColor));
-        glUniform3fv(glGetUniformLocation(shader->ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
-        glUniform3fv(glGetUniformLocation(shader->ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
+        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.diffuseColor"),  1,  glm::value_ptr(diffuseColor));
+        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
+        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
         float materialSpecFactor = 0.0f;
         float materialEmisFactor = 0.0f;
         float materialShininess = 32.0f;
-        glUniform1f(glGetUniformLocation(shader->ID, "defaultMaterial.specularFactor"), materialSpecFactor);
-        glUniform1f(glGetUniformLocation(shader->ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
-        glUniform1f(glGetUniformLocation(shader->ID, "defaultMaterial.shininess"), materialShininess);
+        glUniform1f(glGetUniformLocation(triangleShader->ID, "defaultMaterial.specularFactor"), materialSpecFactor);
+        glUniform1f(glGetUniformLocation(triangleShader->ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
+        glUniform1f(glGetUniformLocation(triangleShader->ID, "defaultMaterial.shininess"), materialShininess);
 
-        loadedModel->Draw(*shader);
+        loadedModel->Draw(*triangleShader);
 
         glfwSwapBuffers(triangleWindow);
     }
@@ -227,30 +229,31 @@ void ModelPreviewer::RenderWindowVoxel()
         // Camera Setup
         glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
         glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
-        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), instancePos); //FIX
+        shader.setMat4("model", modelMatrix);
 
-        shader->use();
+        voxelShader->use();
 
-        glUniformMatrix4fv(glGetUniformLocation(shader->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shader->ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shader->ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(voxelShader->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(voxelShader->ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(voxelShader->ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         //// Material Settings for Phong Shader
         glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glUniform3fv(glGetUniformLocation(shader->ID, "defaultMaterial.diffuseColor"),  1,  glm::value_ptr(diffuseColor));
-        glUniform3fv(glGetUniformLocation(shader->ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
-        glUniform3fv(glGetUniformLocation(shader->ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
+        glUniform3fv(glGetUniformLocation(voxelShader->ID, "defaultMaterial.diffuseColor"),  1,  glm::value_ptr(diffuseColor));
+        glUniform3fv(glGetUniformLocation(voxelShader->ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
+        glUniform3fv(glGetUniformLocation(voxelShader->ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
         float materialSpecFactor = 0.0f;
         float materialEmisFactor = 0.0f;
         float materialShininess = 32.0f;
-        glUniform1f(glGetUniformLocation(shader->ID, "defaultMaterial.specularFactor"), materialSpecFactor);
-        glUniform1f(glGetUniformLocation(shader->ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
-        glUniform1f(glGetUniformLocation(shader->ID, "defaultMaterial.shininess"), materialShininess);
+        glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.specularFactor"), materialSpecFactor);
+        glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
+        glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.shininess"), materialShininess);
 
         //loadedModel->Draw(*shader);
-        modelVox->DrawVoxels(*shader);
+        modelVox->DrawVoxels(*voxelShader);
 
         glfwSwapBuffers(voxelWindow);
     }

@@ -32,7 +32,7 @@ private:
 
     //Voxel Rendering
     GLuint instanceVBO;
-    unsigned int voxelVAO;
+    unsigned int voxelVAO, voxelVBO, voxelEBO;
     std::vector<glm::vec3> activeVoxels;
 
     void setupBoundingBox();

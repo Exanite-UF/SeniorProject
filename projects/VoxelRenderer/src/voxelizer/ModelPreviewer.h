@@ -29,15 +29,18 @@ private:
     std::thread voxelThread;
 
     // Camera Attributes
-    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 Position = glm::vec3(0.0f, 3.0f, 10.0f);
     glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
     Model* loadedModel = nullptr; // might want to replace with shared ptr
-    std::string vertShaderPath = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.vertex.glsl";
-    std::string fragShaderPath = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.fragment.glsl";
+    std::string vertShaderPathTriangle = "R:/Repos/SeniorProject/projects/VoxelRenderer/content/Triangulation/Phong.vertex.glsl";
+    std::string fragShaderPathTriangle = "R:/Repos/SeniorProject/projects/VoxelRenderer/content/Triangulation/Phong.fragment.glsl";
+    std::string vertShaderPathVoxel = "R:/Repos/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.vertex.glsl";
+    std::string fragShaderPathVoxel = "R:/Repos/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.fragment.glsl";
     
-    Shader* shader = nullptr;
+    Shader* triangleShader = nullptr;
+    Shader* voxelShader = nullptr;
 
     ModelVoxelizer* modelVox = nullptr;
 
