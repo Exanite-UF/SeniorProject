@@ -56,7 +56,11 @@ void main()
     }
 
     //Reject old data that comes from a difference location
-    if(length(oldPos - newPos) / length(newPos - cameraPosition) > 0.1 || length(oldPos - newPos) > 1){
+    //if(length(oldPos - newPos) / length(newPos - cameraPosition) > 0.1 || length(oldPos - newPos) > 1){
+    //    alpha = 0;
+    //}
+
+    if(length(oldPos - newPos) > 1){
         alpha = 0;
     }
 

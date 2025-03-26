@@ -24,18 +24,19 @@ vec4 safeVec4(vec4 v, vec4 fallback) {
     );
 }
 
+const vec3 luminanceVector = vec3(0.2126, 0.7152, 0.0722);
 
 //samples a 3x3 area around the pixel for the luminace variance
 float getLuminanceVariance(){
     float result = 0;
     float total = 0;
-    const float kernel[3] = float[3](1.0 / 4.0, 3.0 / 8.0, 1.0 / 4.0);
+    const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
 
     for(int i = 0; i < 3; i++){
         for(int j = 0; j < 3; j++){
             vec2 coord = (uv * resolution + vec2(i - 1, j - 1)) /  resolution;
             float multiplier = kernel[i] * kernel[j];
-            float temp = length(texture(inputVariance, coord).xyz);
+            float temp = dot(texture(inputVariance, coord).xyz, luminanceVector);
             if(!isnan(temp)){
                 result += temp * multiplier;
                 total += multiplier;
@@ -44,33 +45,11 @@ float getLuminanceVariance(){
     }
 
     if(total == 0){
-        return length(texture(inputVariance, uv).xyz);
+        return dot(texture(inputVariance, uv).xyz, luminanceVector);
     }
     return result / total;
 }
 
-vec3 getColorVariance(){
-    vec3 result = vec3(0);
-    float total = 0;
-    const float kernel[3] = float[3](1.0 / 4.0, 3.0 / 8.0, 1.0 / 4.0);
-
-    for(int i = 0; i < 3; i++){
-        for(int j = 0; j < 3; j++){
-            vec2 coord = (uv * resolution + vec2(i - 1, j - 1)) /  resolution;
-            float multiplier = kernel[i] * kernel[j];
-            vec3 temp = texture(inputVariance, coord).xyz;
-            if(!any(isnan(temp))){
-                result += temp * multiplier;
-                total += multiplier;
-            }
-        }
-    }
-
-    if(total == 0){
-        return texture(inputVariance, uv).xyz;
-    }
-    return result / total;
-}
 
 const float paramDepthRejection = 1;
 const float paramNormalRejection = 128;
@@ -90,15 +69,13 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
     depthGradient = -(depthGradient * clipPosition.x + vec2(-clipPosition.y, clipPosition.z)) * (cameraFovTan * aspectRatio) / pow((cameraFovTan * aspectRatio) * (2 * uv - 1) + depthGradient, vec2(2));
     depthGradient *= 2.0 / vec2(resolution);//Put into a per pixel basis
 
-    //float luminanceVariance = getLuminanceVariance();
-    vec3 luminanceVariance = getColorVariance();
+    float luminanceVariance = getLuminanceVariance();
 
     const float kernel[5] = float[5](1.0 / 16.0, 1.0 / 4.0, 3.0 / 8.0, 1.0 / 4.0, 1.0 / 16.0);
     
     vec3 colorSum = vec3(0);
     vec3 varianceSum = vec3(0);
-    //float total = 0;
-    vec3 total = vec3(0);
+    float total = 0;
 
     for(int i = 0; i < 5; i++){
         for(int j = 0; j < 5; j++){
@@ -113,11 +90,9 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
 
             float weightZ = exp(-abs(otherClipPosition.x - clipPosition.x) / (paramDepthRejection * abs(dot(depthGradient, offset)) + 0.000001));
             float weightN = pow(max(0, dot(normal, otherNormal)), paramNormalRejection);
-            //float weightL = exp(-abs(length(otherColor) - length(color)) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
-            vec3 weightL = exp(-abs(otherColor - color) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
+            float weightL = exp(-abs(dot(otherColor, luminanceVector) - dot(color, luminanceVector)) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
             float weightR = exp(-paramRoughnessRejection * abs(roughness - otherRoughness));
-            //float weight = weightZ * weightN * weightL;
-            vec3 weight = weightZ * weightN * weightL * weightR;
+            float weight = weightZ * weightN * weightL * weightR;
 
             float multiplier = kernel[i] * kernel[j];
 
@@ -129,14 +104,11 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
 
     vec3 outColor = color;
     vec3 outVariance = texture(inputVariance, uv).xyz;
-    //if(total > 0){
-    //    outColor = colorSum / total;
-    //    outVariance = varianceSum / (total * total);
-    //}
-    if(all(greaterThan(total, vec3(0)))){
+    if(total > 0){
         outColor = colorSum / total;
         outVariance = varianceSum / (total * total);
     }
+
     out_color = vec4(outColor, 1);
     out_variance = vec4(outVariance, 1);
     return outColor;

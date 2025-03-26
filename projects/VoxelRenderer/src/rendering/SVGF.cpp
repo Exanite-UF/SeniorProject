@@ -606,9 +606,15 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
             if(activeTempBuffer % 2 == 0){
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[0]);
+
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, tempVarianceTexture[0]);
             }else{
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[1]);
+
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, tempVarianceTexture[1]);
             }
 
             glActiveTexture(GL_TEXTURE1);
