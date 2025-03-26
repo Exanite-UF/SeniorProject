@@ -298,6 +298,13 @@ void Program::run()
             currentRenderFps = rendersThisCycle / fpsCycleTimer;
             averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
 
+            //This lets you find the resolution at which 30fps is possible
+            //if(currentRenderFps - 30 > 10){
+            //    renderRatio *= 1.05;
+            //}else if(currentRenderFps - 30 < -5){
+            //    renderRatio *= 0.95;
+            //}
+
             auto averagedDisplayDeltaTimeMs = averageDisplayDeltaTime * 1000;
             auto averagedRenderDeltaTimeMs = averagedRenderDeltaTime * 1000;
             Log::information(std::format("{} display FPS ({} ms) | {} render FPS ({} ms)", currentDisplayFps, averagedDisplayDeltaTimeMs, currentRenderFps, averagedRenderDeltaTimeMs));
