@@ -67,12 +67,13 @@ layout(std430, binding = 8) buffer FirstHitMaterial
     writeonly float firstHitMaterial[];
 };
 
-void setFirstHitMaterial(ivec3 coord, vec3 value)
+void setFirstHitMaterial(ivec3 coord, vec4 value)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
     firstHitMaterial[0 + index] = value.x;
     firstHitMaterial[1 + index] = value.y;
     firstHitMaterial[2 + index] = value.z;
+    firstHitMaterial[3 + index] = value.w;
 }
 
 void setAttenuation(ivec3 coord, vec3 value)
@@ -175,7 +176,7 @@ void main()
         if (resetFirstHit && texelCoord.z == 0)
         {
             setFirstHitPosition(texelCoord, startPos + rayDir * 100000);
-            setFirstHitMaterial(texelCoord, vec3(-1, 0, 0)); // The skybox has a roughness of -1
+            setFirstHitMaterial(texelCoord, vec4(-1, 0, 0, 0)); // The skybox has a roughness of -1
             setFirstHitNormal(texelCoord, rayDir);
         }
 

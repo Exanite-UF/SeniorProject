@@ -63,7 +63,7 @@ private:
     // Used as the final output buffers
     GraphicsBuffer<glm::vec3> normalBuffer;
     GraphicsBuffer<glm::vec3> positionBuffer;
-    GraphicsBuffer<glm::vec3> miscBuffer; //(roughness, _, _)
+    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue)
 
     int currentBuffer = 0;
 

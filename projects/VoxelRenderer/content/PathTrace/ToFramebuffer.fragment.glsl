@@ -45,11 +45,11 @@ vec3 getPosition(ivec3 coord)
     return vec3(firstHitPosition[0 + index], firstHitPosition[1 + index], firstHitPosition[2 + index]);
 }
 
-vec3 getMisc(ivec3 coord)
+vec4 getMisc(ivec3 coord)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
 
-    return vec3(firstHitMisc[0 + index], firstHitMisc[1 + index], firstHitMisc[2 + index]);
+    return vec4(firstHitMisc[0 + index], firstHitMisc[1 + index], firstHitMisc[2 + index], firstHitMisc[3 + index]);
 }
 
 vec3 qtransform(vec4 q, vec3 v)
@@ -70,7 +70,7 @@ in vec2 uv;
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec3 posBuffer;
 layout(location = 2) out vec3 normalBuffer;
-layout(location = 3) out vec3 miscBuffer;
+layout(location = 3) out vec4 miscBuffer;
 
 void main()
 {
@@ -79,7 +79,7 @@ void main()
 
     vec3 normal = getNormal(ivec3(gl_FragCoord.xy, 0));
     vec3 position = getPosition(ivec3(gl_FragCoord.xy, 0));
-    vec3 material = getMisc(ivec3(gl_FragCoord.xy, 0));
+    vec4 material = getMisc(ivec3(gl_FragCoord.xy, 0));
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
     // normal is now in camera space

@@ -24,6 +24,15 @@ vec4 safeVec4(vec4 v, vec4 fallback) {
     );
 }
 
+vec3 hueToRGB(float hue)
+{
+    hue = mod(hue, 1.0);
+    float r = abs(hue * 6.0 - 3.0) - 1.0;
+    float g = 2.0 - abs(hue * 6.0 - 2.0);
+    float b = 2.0 - abs(hue * 6.0 - 4.0);
+    return clamp(vec3(r, g, b), 0.0, 1.0);
+}
+
 const vec3 luminanceVector = vec3(0.2126, 0.7152, 0.0722);
 
 //samples a 3x3 area around the pixel for the luminace variance
@@ -63,7 +72,8 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
     vec3 clipPosition = texture(inputClipPosition, uv).xyz;
     vec2 aspectRatio = vec2(1, float(resolution.y) / resolution.x);
     vec3 color = texture(inputColor, uv).xyz;
-    float roughness = texture(inputMotion, uv).x;
+    vec2 tempMaterial = texture(inputMotion, uv).xw;
+    vec4 material = vec4(tempMaterial.x, hueToRGB(tempMaterial.y));
 
     vec2 depthGradient = normal.x / vec2(-normal.y, normal.z);
     depthGradient = -(depthGradient * clipPosition.x + vec2(-clipPosition.y, clipPosition.z)) * (cameraFovTan * aspectRatio) / pow((cameraFovTan * aspectRatio) * (2 * uv - 1) + depthGradient, vec2(2));
@@ -86,13 +96,14 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
             vec3 otherNormal = texture(inputNormal, coord).xyz;
             vec3 otherColor = texture(inputColor, coord).xyz;
             vec3 otherVariance = texture(inputVariance, coord).xyz;
-            float otherRoughness = texture(inputMotion, coord).x;
+            tempMaterial = texture(inputMotion, coord).xw;
+            vec4 otherMaterial = vec4(tempMaterial.x, hueToRGB(tempMaterial.y));
 
             float weightZ = exp(-abs(otherClipPosition.x - clipPosition.x) / (paramDepthRejection * abs(dot(depthGradient, offset)) + 0.000001));
             float weightN = pow(max(0, dot(normal, otherNormal)), paramNormalRejection);
             float weightL = exp(-abs(dot(otherColor, luminanceVector) - dot(color, luminanceVector)) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
-            float weightR = exp(-paramRoughnessRejection * abs(roughness - otherRoughness));
-            float weight = weightZ * weightN * weightL * weightR;
+            float weightM = exp(-paramRoughnessRejection * length(material - otherMaterial));
+            float weight = weightZ * weightN * weightL * weightM;
 
             float multiplier = kernel[i] * kernel[j];
 

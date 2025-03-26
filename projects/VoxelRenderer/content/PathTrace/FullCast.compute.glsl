@@ -234,17 +234,22 @@ layout(std430, binding = 14) buffer FirstHitMisc
 
 void setFirstHitRoughness(ivec3 coord, float value)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
     firstHitMisc[0 + index] = value.x;
 }
 
 void setFirstHitMotionVector(ivec3 coord, vec2 value)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
     firstHitMisc[1 + index] = value.x;
     firstHitMisc[2 + index] = value.y;
 }
 
+void setFirstHitHue(ivec3 coord, float value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
+    firstHitMisc[3 + index] = value.x;
+}
 
 struct RayHit
 {
@@ -592,6 +597,28 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
     return fresnelComponent * geometricComponent * albedo / abs(dotOfViewAndNormal);
 }
 
+float rgbToHue(vec3 rgb) {
+    float minC = min(rgb.r, min(rgb.g, rgb.b));
+    float maxC = max(rgb.r, max(rgb.g, rgb.b));
+    float delta = maxC - minC;
+
+    float hue = 0.0;
+
+    if (delta > 0.0) {
+        if (maxC == rgb.r) {
+            hue = mod((rgb.g - rgb.b) / delta, 6.0);
+        } else if (maxC == rgb.g) {
+            hue = ((rgb.b - rgb.r) / delta) + 2.0;
+        } else { // maxC == rgb.b
+            hue = ((rgb.r - rgb.g) / delta) + 4.0;
+        }
+        hue *= 60.0;
+        if (hue < 0.0) hue += 360.0;
+    }
+
+    return hue / 360.;
+}
+
 // It is guaranteeed to be a hit
 void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 {
@@ -643,6 +670,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     if (texelCoord.z == 0 && isFirstRay)
     {
         setFirstHitRoughness(texelCoord, voxelMaterial.roughness);
+        setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));
     }
 
     normal = normalize(normal);
@@ -691,7 +719,6 @@ void attempt(ivec3 texelCoord)
     {
         setFirstHitNormal(texelCoord, hit.normal);
         setFirstHitPosition(texelCoord, hit.hitLocation);
-
         //If it gets here, then the motion vectors should be calcuated
         
         
