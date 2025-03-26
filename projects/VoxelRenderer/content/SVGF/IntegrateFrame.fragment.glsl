@@ -19,7 +19,7 @@ layout(location = 0) out vec4 out_color;//tempColorTexture
 layout(location = 1) out vec4 out_moment_1;//moment 1 texture
 layout(location = 2) out vec4 out_moment_2;//moment 2 texture
 layout(location = 3) out vec4 out_variance;//tempVarianceTexture
-layout(location = 4) out vec4 out_depth;//depthTexture
+layout(location = 4) out vec4 out_clip_position;//clipPositionTexture
 
 vec4 safeVec4(vec4 v, vec4 fallback) {
     return vec4(
@@ -50,7 +50,7 @@ void main()
     vec3 newPos = texture(inputPosition, uv).xyz;
 
     //Alpha is how much of the old data to carry into the rolling average
-    float alpha = (misc.x < 0) ? 0 : 0.9;//If the material has a negative roughness then it is part of the skybox
+    float alpha = (misc.x < 0) ? 0 : 0.8;//If the material has a negative roughness then it is part of the skybox
     if(oldColor.w == 0){//If the old color value failed to sample, then do not use the old data
         alpha = 0;
     }
@@ -73,6 +73,6 @@ void main()
 
     out_variance = vec4(newMoment2 - newMoment1 * newMoment1, 1);
 
-    //This is the depth in clip space
-    out_depth = vec4(qtransform(vec4(cameraRotation.xyz, -cameraRotation.w), newPos - cameraPosition).x, 0, 0, 1);
+    //This is the position in clip space
+    out_clip_position = vec4(qtransform(vec4(cameraRotation.xyz, -cameraRotation.w), newPos - cameraPosition), 1);
 }

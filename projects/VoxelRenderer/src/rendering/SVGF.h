@@ -41,7 +41,7 @@ private:
 
     //These are needed for the wavelet integration
     int activeTempBuffer = 0;
-    GLuint depthTexture = 0;//This one doesn't change with wavelet iterations
+    GLuint clipPositionTexture = 0;//This one doesn't change with wavelet iterations
     std::array<GLuint, 2> tempColorTexture = { 0 };
     std::array<GLuint, 2> tempVarianceTexture = { 0 };
 
@@ -88,11 +88,11 @@ public:
     //Assumes that new data is present in the input
     //It combines it with the internal data
     //Requires owning the lock
-    void integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation);
+    void integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 
     //Performs the requested number of additional wavelet iterations, then renders to the framebuffer
     //Requires owning the lock
-    void display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, int iterations);
+    void display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, int iterations, const float& cameraFOV);
 
     //Locks everything
     void lock();

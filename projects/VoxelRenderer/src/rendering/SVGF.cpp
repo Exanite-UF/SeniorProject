@@ -180,17 +180,17 @@ void SVGF::remakeTextures()
 
         //Make temp textures
 
-        // Create color texture
-        glDeleteTextures(1, &depthTexture);
-        glGenTextures(1, &depthTexture);
-        glBindTexture(GL_TEXTURE_2D, depthTexture);
+        // Create clip position texture
+        glDeleteTextures(1, &clipPositionTexture);
+        glGenTextures(1, &clipPositionTexture);
+        glBindTexture(GL_TEXTURE_2D, clipPositionTexture);
         {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, this->renderResolution.x, this->renderResolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -267,7 +267,7 @@ void SVGF::setRenderResolution(glm::ivec2 size)
     remakeTextures();
 }
 
-void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation)
+void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
     isLockOwningThreadCheck();
     //Integrate the frame
@@ -329,10 +329,10 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, moment2HistoryTexture[0], 0);
             }
 
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, clipPositionTexture, 0);
         }
 
-        const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+        const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 
 
         glUniform3fv(glGetUniformLocation(integrateFrameProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
@@ -341,6 +341,8 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
 
         //Run the shader
         {
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);  // Ensures depth is written to the depth buffer
             GLuint emptyVertexArray;
             glGenVertexArrays(1, &emptyVertexArray);
     
@@ -349,13 +351,15 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             // Tell opengl to draw to the texture in the framebuffer
-            glDrawBuffers(4, buffers);
+            glDrawBuffers(5, buffers);
             glDrawArrays(GL_TRIANGLES, 0, 3);
 
             glDisable(GL_BLEND);
             glBindVertexArray(0);
 
             glDeleteVertexArrays(1, &emptyVertexArray);
+            glDepthMask(GL_FALSE); 
+            glDisable(GL_DEPTH_TEST);
         }
 
         //Delete the frame buffer
@@ -413,12 +417,15 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
             }
 
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, depthTexture);
+            glBindTexture(GL_TEXTURE_2D, clipPositionTexture);
 
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, normalInputTexture);
 
             glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, motionInputTexture);
+
+            glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, positionInputTexture);
         }
 
@@ -443,7 +450,8 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
 
         const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 
-        glUniform2i(glGetUniformLocation(integrateFrameProgram, "resolution"), this->renderResolution.x, this->renderResolution.y);
+        glUniform2i(glGetUniformLocation(firstWaveletIterationProgram, "resolution"), this->renderResolution.x, this->renderResolution.y);
+        glUniform1f(glGetUniformLocation(firstWaveletIterationProgram, "cameraFovTan"), std::tan(cameraFOV * 0.5));
 
         //Run the shader
         {
@@ -492,7 +500,7 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
     }
 }
 
-void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, int iterations)
+void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, int iterations, const float& cameraFOV)
 {
     isLockOwningThreadCheck();
     for(int i = 0; i < iterations; i++){
@@ -515,10 +523,13 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
             }
 
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, depthTexture);
+            glBindTexture(GL_TEXTURE_2D, clipPositionTexture);
 
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, normalHistoryTexture);
+
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, motionInputTexture);
         }
 
         //Make framebuffer
@@ -538,7 +549,9 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
 
         const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
-        glUniform2i(glGetUniformLocation(integrateFrameProgram, "resolution"), this->renderResolution.x, this->renderResolution.y);
+        glUniform2i(glGetUniformLocation(waveletIterationProgram, "resolution"), this->renderResolution.x, this->renderResolution.y);
+        glUniform1f(glGetUniformLocation(waveletIterationProgram, "cameraFovTan"), std::tan(cameraFOV * 0.5));
+        glUniform1i(glGetUniformLocation(waveletIterationProgram, "iteration"), i + 1);
 
         //Run the shader
         {
