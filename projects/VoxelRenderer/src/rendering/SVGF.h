@@ -88,7 +88,7 @@ public:
     //Assumes that new data is present in the input
     //It combines it with the internal data
     //Requires owning the lock
-    void integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
+    void integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const glm::vec3& cameraMovement);
 
     //Performs the requested number of additional wavelet iterations, then renders to the framebuffer
     //Requires owning the lock

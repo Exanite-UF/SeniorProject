@@ -13,6 +13,7 @@ in vec2 uv;
 
 uniform vec3 cameraPosition;
 uniform vec4 cameraRotation;
+uniform vec3 cameraMovement;
 uniform ivec2 resolution;
 
 layout(location = 0) out vec4 out_color;//tempColorTexture
@@ -54,6 +55,10 @@ void main()
     if(oldColor.w == 0){//If the old color value failed to sample, then do not use the old data
         alpha = 0;
     }
+
+    float dist = length(newPos - cameraPosition);
+    float angle = atan(length(cameraMovement), dist);
+    alpha *= exp(-(50 / (500 * misc.x + 1) + 1) * angle);//Cos of the change in angle between frames
 
     //Reject old data that comes from a difference location
     //if(length(oldPos - newPos) / length(newPos - cameraPosition) > 0.1 || length(oldPos - newPos) > 1){

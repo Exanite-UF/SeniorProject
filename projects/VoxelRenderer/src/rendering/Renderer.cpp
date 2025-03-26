@@ -292,7 +292,7 @@ void Renderer::_render()
 
         //SVGF
         svgf->lock();
-        svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
         svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
         svgf->unlock();
 

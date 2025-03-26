@@ -267,7 +267,7 @@ void SVGF::setRenderResolution(glm::ivec2 size)
     remakeTextures();
 }
 
-void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
+void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const glm::vec3& cameraMovement)
 {
     isLockOwningThreadCheck();
     //Integrate the frame
@@ -337,6 +337,7 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
 
         glUniform3fv(glGetUniformLocation(integrateFrameProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
         glUniform4f(glGetUniformLocation(integrateFrameProgram, "cameraRotation"), cameraRotation.x, cameraRotation.y, cameraRotation.z, cameraRotation.w);
+        glUniform3fv(glGetUniformLocation(integrateFrameProgram, "cameraMovement"), 1, glm::value_ptr(cameraMovement));
         glUniform2i(glGetUniformLocation(integrateFrameProgram, "resolution"), this->renderResolution.x, this->renderResolution.y);
 
         //Run the shader
