@@ -37,14 +37,12 @@ target_link_libraries(VoxelRenderer PRIVATE boost_math)
 target_link_libraries(VoxelRenderer PRIVATE cgal)
 
 # Tracy compiler
-target_compile_definitions(VoxelRenderer PUBLIC TRACY_DEBUGINFOD=1)
 target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
 
 if (DEBUGINFOD_LIBRARY)
     message(STATUS "Found libdebuginfod. Linking VoxelRenderer with libdebuginfod")
+    target_compile_definitions(VoxelRenderer PUBLIC TRACY_DEBUGINFOD=1)
     target_link_libraries(VoxelRenderer PRIVATE ${DEBUGINFOD_LIBRARY})
-else()
-    message(STATUS "Did not find libdebuginfod. Not linking VoxelRenderer with libdebuginfod")
 endif()
 
 # --- Copy content ---
