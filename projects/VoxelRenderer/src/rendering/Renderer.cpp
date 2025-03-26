@@ -296,7 +296,7 @@ void Renderer::_render()
         {
             std::shared_lock lockScene(scene->getMutex());
 
-            voxelRenderer->executePathTrace(scene->getVisibleChunks(), bounces);
+            voxelRenderer->executePathTrace(scene->getChunks(), bounces);
         }
         voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
     }
