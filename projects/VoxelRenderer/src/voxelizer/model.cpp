@@ -135,7 +135,45 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         std::vector<TriangleTexture> heightMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
     }
-    
+
+    //Triangle Data
+    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+    {
+        aiFace face = mesh->mFaces[i];
+
+        if (face.mNumIndices == 3)
+        {
+            Triangle triangle;
+
+            // Populate triangle vertices
+            for (int j = 0; j < 3; j++)
+            {
+                unsigned int index = face.mIndices[j];
+
+                // Vertex position
+                aiVector3D pos = mesh->mVertices[index];
+                triangle.vertices[j].Position = glm::vec3(pos.x, pos.y, pos.z);
+
+                // Vertex normal (if available)
+                if (mesh->HasNormals())
+                {
+                    aiVector3D normal = mesh->mNormals[index];
+                    triangle.vertices[j].Normal = glm::vec3(normal.x, normal.y, normal.z);
+                }
+
+                // Vertex texture coordinates (if available)
+                if (mesh->HasTextureCoords(0))
+                {
+                    aiVector3D texCoord = mesh->mTextureCoords[0][index];
+                    triangle.vertices[j].TexCoords = glm::vec2(texCoord.x, texCoord.y);
+                }
+            }
+
+            // Add the triangle after it has all 3 vertices populated
+            triangles.push_back(triangle);
+        }
+    }
+
     return Mesh(vertices, indices, textures);
 }
 
@@ -229,4 +267,9 @@ unsigned int TextureFromFile(const char *path, const std::string &directory, boo
     }
 
     return textureID;
+}
+
+std::vector<Triangle> Model::getTriangles()
+{
+    return triangles;
 }

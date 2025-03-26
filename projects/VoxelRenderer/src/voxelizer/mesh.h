@@ -26,6 +26,27 @@ struct Vertex
     glm::vec3 Bitangent;
 };
 
+struct Triangle
+{
+    Vertex vertices[3];
+
+    glm::vec3 minPoint() const {
+        glm::vec3 minPoint;
+        minPoint.x = std::min({vertices[0].Position.x, vertices[1].Position.x, vertices[2].Position.x});
+        minPoint.y = std::min({vertices[0].Position.y, vertices[1].Position.y, vertices[2].Position.y});
+        minPoint.z = std::min({vertices[0].Position.z, vertices[1].Position.z, vertices[2].Position.z});
+        return minPoint;
+    }
+
+    glm::vec3 maxPoint() const {
+        glm::vec3 maxPoint;
+        maxPoint.x = std::max({vertices[0].Position.x, vertices[1].Position.x, vertices[2].Position.x});
+        maxPoint.y = std::max({vertices[0].Position.y, vertices[1].Position.y, vertices[2].Position.y});
+        maxPoint.z = std::max({vertices[0].Position.z, vertices[1].Position.z, vertices[2].Position.z});
+        return maxPoint;
+    }
+};
+
 // Not sure if we'll end up using this
 struct TriangleTexture
 {

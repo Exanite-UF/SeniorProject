@@ -272,6 +272,7 @@ void Program::run()
     ModelPreviewer modelPreviewer {};
     ModelVoxelizer modelVoxelizer {};
     bool isModelLoaded = false;
+    bool isModelVoxelized = false;
 
     renderer.setScene(scene);
     //renderer.startAsynchronousReprojection();
@@ -539,52 +540,58 @@ void Program::run()
                             {
                                 // make this set and load model so that the VAO/VBO work on same thread
                                 modelPreviewer.CreateWindowTriangle(&modelVoxelizer, modelFileName);
+                                isModelLoaded = true;
                             }
                             else
                             {
                                 modelPreviewer.CloseWindowTriangle();
+                                isModelLoaded = false;
                             }
                         }
                         ImGui::PopStyleColor(3);
 
 
-                        if (showOriginalModelMenu)
-                        {
-                            // Creates Triangle Window
-                            //modelPreviewer.RenderWindowTriangle();
-                        }
-                        else
-                        {
-                            //modelPreviewer.CloseWindowTriangle();
-                        }
-
-
                         // Voxel Mesh Preview
-                        std::string voxelizedModelHeader = "Preview Voxelized Model";
+                        std::string voxelizedModelHeader = "Voxelize & Preview Model";
                         HeaderCondenser(voxelizedModelHeader);
 
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.770f, 0.372f, 0.0f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.510f, 0.320f, 0.143f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
-                        if (ImGui::Button(voxelizedModelHeader.c_str()))
+
+                        if (isModelLoaded)
                         {
-                            showVoxelizedModelMenu = !showVoxelizedModelMenu;
+                            if (ImGui::Button(voxelizedModelHeader.c_str()))
+                            {
+                                showVoxelizedModelMenu = !showVoxelizedModelMenu;
+                                
+                                if (showVoxelizedModelMenu)
+                                {
+                                    modelPreviewer.CreateWindowVoxel(&modelVoxelizer);
+                                    isModelVoxelized = true;
+                                }
+                                else
+                                {
+                                    modelPreviewer.CloseWindowVoxel();
+                                    isModelVoxelized = false;
+                                }
+                            }
                         }
                         ImGui::PopStyleColor(3);
 
-                        if (showVoxelizedModelMenu)
-                        {
-                            // Put code here
-                        }
 
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.253f, 0.540f, 0.248f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.313f, 0.450f, 0.310f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f)); 
 
-                        if (ImGui::Button("Add to world"))
+                        if (isModelVoxelized)
                         {
-                            
+                            if (ImGui::Button("Add to world"))
+                            {
+                                
+                            }
                         }
+
                         ImGui::PopStyleColor(3);
 
                         break;

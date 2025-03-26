@@ -3,6 +3,8 @@
 #include <gl/glew.h>
 
 
+
+
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TriangleTexture> textures)
 {
     this->vertices = vertices;

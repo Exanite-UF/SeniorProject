@@ -34,9 +34,12 @@ private:
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
     Model* loadedModel = nullptr; // might want to replace with shared ptr
-    std::string vertShaderPath = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Phong.vertex.glsl";
-    std::string fragShaderPath = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Phong.fragment.glsl";
+    std::string vertShaderPath = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.vertex.glsl";
+    std::string fragShaderPath = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.fragment.glsl";
+    
     Shader* shader = nullptr;
+
+    ModelVoxelizer* modelVox = nullptr;
 
 
 public:
@@ -47,7 +50,7 @@ public:
     void setModel(Model* model_);
 
     void CreateWindowTriangle(ModelVoxelizer* modelVox, std::string modelPath);
-    void CreateWindowVoxel();
+    void CreateWindowVoxel(ModelVoxelizer* modelVox);
 
     void RenderWindowTriangle();
     void RenderWindowVoxel();
