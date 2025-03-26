@@ -119,14 +119,15 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
     }
 
     vec3 outColor = color;
-    vec3 outVariance = texture(inputVariance, uv).xyz;
+    vec3 initialVariance = texture(inputVariance, uv).xyz;
+    vec3 outVariance = initialVariance;
     if(total > 0){
         outColor = colorSum / total;
         outVariance = varianceSum / (total * total);
     }
 
-    out_color = vec4(outColor, 1);
-    out_variance = vec4(outVariance, 1);
+    out_color = safeVec4(vec4(outColor, 1), vec4(color, 1));
+    out_variance = safeVec4(vec4(outVariance, 1), vec4(initialVariance, 1));
     return outColor;
 }
 

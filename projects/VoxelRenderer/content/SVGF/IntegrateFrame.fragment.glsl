@@ -50,7 +50,7 @@ void main()
     vec3 newPos = texture(inputPosition, uv).xyz;
 
     //Alpha is how much of the old data to carry into the rolling average
-    float alpha = (misc.x < 0) ? 0 : 0.9;//If the material has a negative roughness then it is part of the skybox
+    float alpha = (misc.x < 0) ? 0 : 0.8;//If the material has a negative roughness then it is part of the skybox
     if(oldColor.w == 0){//If the old color value failed to sample, then do not use the old data
         alpha = 0;
     }
