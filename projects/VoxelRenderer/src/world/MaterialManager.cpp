@@ -9,7 +9,7 @@ MaterialManager::MaterialManager()
     // Define custom materials
     {
         auto& material = createMaterial("dirt", "Dirt");
-        material->albedo = glm::vec3(1,1,1);//ColorUtility::htmlToLinear("#70381c");
+        material->albedo = glm::vec3(1, 1, 1); // ColorUtility::htmlToLinear("#70381c");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);

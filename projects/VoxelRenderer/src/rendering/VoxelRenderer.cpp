@@ -230,7 +230,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     positionBuffer.bind(13);
     miscBuffer.bind(14);
 
-
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -268,10 +267,11 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
                 glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
 
-                //Load voxel chunk history
-                if(voxelChunkHistories.count(chunkComponent) == 0){
-                    //Then no history exists
-                    //voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
+                // Load voxel chunk history
+                if (voxelChunkHistories.count(chunkComponent) == 0)
+                {
+                    // Then no history exists
+                    // voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
                     voxelChunkHistories.emplace(chunkComponent, VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale()));
                 }
 
@@ -285,8 +285,9 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-                //Update the history
-                if(isFirstRay){
+                // Update the history
+                if (isFirstRay)
+                {
                     voxelChunkHistories.at(chunkComponent) = VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale());
                 }
                 renderedChunks.insert(chunkComponent);
@@ -314,8 +315,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     positionBuffer.unbind();
     miscBuffer.unbind();
 
-    //Remove any chunks that are not rendered
-    //std::erase_if(voxelChunkHistories, [&renderedChunks](const auto& chunkPointer){return renderedChunks.count(chunkPointer) == 0;});
+    // Remove any chunks that are not rendered
+    // std::erase_if(voxelChunkHistories, [&renderedChunks](const auto& chunkPointer){return renderedChunks.count(chunkPointer) == 0;});
 
     glUseProgram(0);
 
@@ -423,7 +424,7 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
 
 void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
-    //std::cout << "VoxelRenderer display" << std::endl;
+    // std::cout << "VoxelRenderer display" << std::endl;
     glUseProgram(pathTraceToFramebufferProgram);
 
     if (currentBuffer % 2 == 0)

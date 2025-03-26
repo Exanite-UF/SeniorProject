@@ -41,7 +41,7 @@ SVGF::SVGF()
 
 void SVGF::remakeTextures()
 {
-    //Create input textures
+    // Create input textures
     {
         // Create color texture
         glDeleteTextures(1, &colorInputTexture);
@@ -99,12 +99,12 @@ void SVGF::remakeTextures()
         }
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-    
 
-    //Create internal textures
+    // Create internal textures
     {
-        //Make moment history textures
-        for(int i = 0; i < 2; i++){
+        // Make moment history textures
+        for (int i = 0; i < 2; i++)
+        {
             // Create moment 1 texture
             glDeleteTextures(1, &moment1HistoryTexture[i]);
             glGenTextures(1, &moment1HistoryTexture[i]);
@@ -133,7 +133,6 @@ void SVGF::remakeTextures()
             }
             glBindTexture(GL_TEXTURE_2D, 0);
         }
-        
 
         // Create color texture
         glDeleteTextures(1, &colorHistoryTexture);
@@ -163,7 +162,6 @@ void SVGF::remakeTextures()
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        
         // Create position texture
         glDeleteTextures(1, &positionHistoryTexture);
         glGenTextures(1, &positionHistoryTexture);
@@ -178,7 +176,7 @@ void SVGF::remakeTextures()
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        //Make temp textures
+        // Make temp textures
 
         // Create clip position texture
         glDeleteTextures(1, &clipPositionTexture);
@@ -194,7 +192,8 @@ void SVGF::remakeTextures()
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        for(int i = 0; i < 2; i++){
+        for (int i = 0; i < 2; i++)
+        {
             // Create moment 1 texture
             glDeleteTextures(1, &tempColorTexture[i]);
             glGenTextures(1, &tempColorTexture[i]);
@@ -259,7 +258,8 @@ std::array<GLenum, 4> SVGF::getDrawBuffer() const
 
 void SVGF::setRenderResolution(glm::ivec2 size)
 {
-    if(this->renderResolution == size){
+    if (this->renderResolution == size)
+    {
         return;
     }
 
@@ -270,61 +270,69 @@ void SVGF::setRenderResolution(glm::ivec2 size)
 void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, const glm::vec3& cameraMovement)
 {
     isLockOwningThreadCheck();
-    //Integrate the frame
+    // Integrate the frame
     {
         glUseProgram(integrateFrameProgram);
 
-        //Bind textures
+        // Bind textures
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorInputTexture);
-    
+
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, motionInputTexture);
-    
+
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, positionInputTexture);
-    
-    
+
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, colorHistoryTexture);
-    
+
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, positionHistoryTexture);
-    
-            if(activeMomentTexture % 2 == 0){
+
+            if (activeMomentTexture % 2 == 0)
+            {
                 glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_2D, moment1HistoryTexture[0]);
-    
+
                 glActiveTexture(GL_TEXTURE6);
                 glBindTexture(GL_TEXTURE_2D, moment2HistoryTexture[0]);
-            }else{
+            }
+            else
+            {
                 glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_2D, moment1HistoryTexture[1]);
-    
+
                 glActiveTexture(GL_TEXTURE6);
                 glBindTexture(GL_TEXTURE_2D, moment2HistoryTexture[1]);
             }
         }
-        
-        //Make framebuffer
+
+        // Make framebuffer
         GLuint framebuffer;
         glGenFramebuffers(1, &framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        //Bind the output textures
+        // Bind the output textures
         {
-            if(activeTempBuffer % 2 == 0){
+            if (activeTempBuffer % 2 == 0)
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tempColorTexture[0], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, tempVarianceTexture[0], 0);
-            }else{
+            }
+            else
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tempColorTexture[1], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, tempVarianceTexture[1], 0);
             }
 
-            if(activeMomentTexture % 2 == 0){
+            if (activeMomentTexture % 2 == 0)
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, moment1HistoryTexture[1], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, moment2HistoryTexture[1], 0);
-            }else{
+            }
+            else
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, moment1HistoryTexture[0], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, moment2HistoryTexture[0], 0);
             }
@@ -334,19 +342,18 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
 
         const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 
-
         glUniform3fv(glGetUniformLocation(integrateFrameProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
         glUniform4f(glGetUniformLocation(integrateFrameProgram, "cameraRotation"), cameraRotation.x, cameraRotation.y, cameraRotation.z, cameraRotation.w);
         glUniform3fv(glGetUniformLocation(integrateFrameProgram, "cameraMovement"), 1, glm::value_ptr(cameraMovement));
         glUniform2i(glGetUniformLocation(integrateFrameProgram, "resolution"), this->renderResolution.x, this->renderResolution.y);
 
-        //Run the shader
+        // Run the shader
         {
             glEnable(GL_DEPTH_TEST);
-            glDepthMask(GL_TRUE);  // Ensures depth is written to the depth buffer
+            glDepthMask(GL_TRUE); // Ensures depth is written to the depth buffer
             GLuint emptyVertexArray;
             glGenVertexArrays(1, &emptyVertexArray);
-    
+
             glBindVertexArray(emptyVertexArray);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -359,57 +366,60 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
             glBindVertexArray(0);
 
             glDeleteVertexArrays(1, &emptyVertexArray);
-            glDepthMask(GL_FALSE); 
+            glDepthMask(GL_FALSE);
             glDisable(GL_DEPTH_TEST);
         }
 
-        //Delete the frame buffer
+        // Delete the frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDeleteFramebuffers(1, &framebuffer);
 
-        //Unbind textures
+        // Unbind textures
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE6);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
-        
-        activeMomentTexture++;//The moments have been updated, so change the active buffer
+
+        activeMomentTexture++; // The moments have been updated, so change the active buffer
 
         glUseProgram(0);
     }
 
-    //Perform first wavelet integration
+    // Perform first wavelet integration
     {
-        
+
         glUseProgram(firstWaveletIterationProgram);
 
-        //Bind textures
+        // Bind textures
         {
-            if(activeTempBuffer % 2 == 0){
+            if (activeTempBuffer % 2 == 0)
+            {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[0]);
 
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, tempVarianceTexture[0]);
-            }else{
+            }
+            else
+            {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[1]);
 
@@ -430,16 +440,19 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
             glBindTexture(GL_TEXTURE_2D, positionInputTexture);
         }
 
-        //Make framebuffer
+        // Make framebuffer
         GLuint framebuffer;
         glGenFramebuffers(1, &framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        //Bind the output textures
+        // Bind the output textures
         {
-            if(activeTempBuffer % 2 == 0){
+            if (activeTempBuffer % 2 == 0)
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tempColorTexture[1], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tempVarianceTexture[1], 0);
-            }else{
+            }
+            else
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tempColorTexture[0], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tempVarianceTexture[0], 0);
             }
@@ -454,11 +467,11 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
         glUniform2i(glGetUniformLocation(firstWaveletIterationProgram, "resolution"), this->renderResolution.x, this->renderResolution.y);
         glUniform1f(glGetUniformLocation(firstWaveletIterationProgram, "cameraFovTan"), std::tan(cameraFOV * 0.5));
 
-        //Run the shader
+        // Run the shader
         {
             GLuint emptyVertexArray;
             glGenVertexArrays(1, &emptyVertexArray);
-    
+
             glBindVertexArray(emptyVertexArray);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -473,29 +486,29 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
             glDeleteVertexArrays(1, &emptyVertexArray);
         }
 
-        //Delete the frame buffer
+        // Delete the frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDeleteFramebuffers(1, &framebuffer);
 
-        //Unbind textures
+        // Unbind textures
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
-        
-        activeTempBuffer++;//The temp buffer have been updated to their next valid state, so change the active buffer
+
+        activeTempBuffer++; // The temp buffer have been updated to their next valid state, so change the active buffer
 
         glUseProgram(0);
     }
@@ -504,18 +517,22 @@ void SVGF::integrateFrame(const glm::vec3& cameraPosition, const glm::quat& came
 void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, int iterations, const float& cameraFOV)
 {
     isLockOwningThreadCheck();
-    for(int i = 0; i < iterations; i++){
+    for (int i = 0; i < iterations; i++)
+    {
         glUseProgram(waveletIterationProgram);
 
-        //Bind textures
+        // Bind textures
         {
-            if(activeTempBuffer % 2 == 0){
+            if (activeTempBuffer % 2 == 0)
+            {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[0]);
 
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, tempVarianceTexture[0]);
-            }else{
+            }
+            else
+            {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[1]);
 
@@ -533,16 +550,19 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
             glBindTexture(GL_TEXTURE_2D, motionInputTexture);
         }
 
-        //Make framebuffer
+        // Make framebuffer
         GLuint framebuffer;
         glGenFramebuffers(1, &framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        //Bind the output textures
+        // Bind the output textures
         {
-            if(activeTempBuffer % 2 == 0){
+            if (activeTempBuffer % 2 == 0)
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tempColorTexture[1], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tempVarianceTexture[1], 0);
-            }else{
+            }
+            else
+            {
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tempColorTexture[0], 0);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tempVarianceTexture[0], 0);
             }
@@ -554,11 +574,11 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
         glUniform1f(glGetUniformLocation(waveletIterationProgram, "cameraFovTan"), std::tan(cameraFOV * 0.5));
         glUniform1i(glGetUniformLocation(waveletIterationProgram, "iteration"), i + 1);
 
-        //Run the shader
+        // Run the shader
         {
             GLuint emptyVertexArray;
             glGenVertexArrays(1, &emptyVertexArray);
-    
+
             glBindVertexArray(emptyVertexArray);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -573,44 +593,47 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
             glDeleteVertexArrays(1, &emptyVertexArray);
         }
 
-        //Delete the frame buffer
+        // Delete the frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDeleteFramebuffers(1, &framebuffer);
 
-        //Unbind textures
+        // Unbind textures
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, 0);
-    
+
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
-        
-        activeTempBuffer++;//The temp buffer have been updated to their next valid state, so change the active buffer
+
+        activeTempBuffer++; // The temp buffer have been updated to their next valid state, so change the active buffer
 
         glUseProgram(0);
     }
 
-    //std::cout << "SVGF display" << std::endl;
-    //Display to the framebuffer
+    // std::cout << "SVGF display" << std::endl;
+    // Display to the framebuffer
     {
         glUseProgram(toFramebufferProgram);
 
-        //Bind textures
+        // Bind textures
         {
-            if(activeTempBuffer % 2 == 0){
+            if (activeTempBuffer % 2 == 0)
+            {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[0]);
 
                 glActiveTexture(GL_TEXTURE4);
                 glBindTexture(GL_TEXTURE_2D, tempVarianceTexture[0]);
-            }else{
+            }
+            else
+            {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tempColorTexture[1]);
 
@@ -628,13 +651,12 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
             glBindTexture(GL_TEXTURE_2D, motionInputTexture);
         }
 
-
-        //Run the shader
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);        
+        // Run the shader
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         {
             GLuint emptyVertexArray;
             glGenVertexArrays(1, &emptyVertexArray);
-    
+
             glBindVertexArray(emptyVertexArray);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -651,7 +673,7 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        //unbind textures
+        // unbind textures
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -673,7 +695,7 @@ void SVGF::display(const GLuint& framebuffer, const std::array<GLenum, 4>& drawB
 void SVGF::unlock()
 {
     mtx.unlock();
-    lockOwningThread = std::thread::id();//Default constructed id, doesn't correspond to any thread
+    lockOwningThread = std::thread::id(); // Default constructed id, doesn't correspond to any thread
 }
 
 void SVGF::lock()

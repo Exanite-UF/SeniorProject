@@ -234,11 +234,13 @@ void Program::run()
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
         }
-    
-        //Show other
-        if(false){
+
+        // Show other
+        if (false)
+        {
             auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-            showOther->setUniforms = [&renderer](GLuint program){
+            showOther->setUniforms = [&renderer](GLuint program)
+            {
                 glUniform1i(glGetUniformLocation(program, "whichTexture"), 2);
             };
         }
@@ -298,12 +300,12 @@ void Program::run()
             currentRenderFps = rendersThisCycle / fpsCycleTimer;
             averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
 
-            //This lets you find the resolution at which 30fps is possible
-            //if(currentRenderFps - 30 > 10){
-            //    renderRatio *= 1.05;
-            //}else if(currentRenderFps - 30 < -5){
-            //    renderRatio *= 0.95;
-            //}
+            // This lets you find the resolution at which 30fps is possible
+            // if(currentRenderFps - 30 > 10){
+            //     renderRatio *= 1.05;
+            // }else if(currentRenderFps - 30 < -5){
+            //     renderRatio *= 0.95;
+            // }
 
             auto averagedDisplayDeltaTimeMs = averageDisplayDeltaTime * 1000;
             auto averagedRenderDeltaTimeMs = averagedRenderDeltaTime * 1000;

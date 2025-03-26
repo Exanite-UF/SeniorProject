@@ -3,7 +3,6 @@
 #include <src/utilities/Log.h>
 #include <stdexcept>
 
-
 int main()
 {
     try

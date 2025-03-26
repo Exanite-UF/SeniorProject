@@ -3,8 +3,8 @@
 #include <mutex>
 #include <semaphore>
 #include <thread>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include <src/graphics/GraphicsBuffer.h>
 #include <src/rendering/AsynchronousReprojection.h>
@@ -14,20 +14,23 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkComponent.h>
 
-
 class Renderer;
 
 // The voxel renderer needs to be able to render multiple voxel chunks
 class VoxelRenderer : public NonCopyable
 {
 private:
-    //Voxel chunk history is needed to calculate motion vectors
-    struct VoxelChunkHistory {
+    // Voxel chunk history is needed to calculate motion vectors
+    struct VoxelChunkHistory
+    {
         glm::vec3 position;
         glm::quat rotation;
         glm::vec3 scale;
 
-        VoxelChunkHistory(const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale) : position(position), rotation(rotation), scale(scale) {};
+        VoxelChunkHistory(const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale)
+            : position(position)
+            , rotation(rotation)
+            , scale(scale) {};
     };
 
     std::unordered_map<std::shared_ptr<VoxelChunkComponent>, VoxelChunkHistory> voxelChunkHistories;
