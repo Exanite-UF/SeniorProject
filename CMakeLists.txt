@@ -127,11 +127,16 @@ if(SP_ENABLE_PROFILING)
     set(TRACY_ENABLE ON)
 else ()
     set(TRACY_ENABLE OFF)
-endif ()
+endif()
 
 set(TRACY_ON_DEMAND ON)
 set(TRACY_CALLSTACK ON)
-set(TRACY_DEBUGINFOD ON)
+
+if (DEBUGINFOD_LIBRARY)
+    message(STATUS "Found libdebuginfod. Setting TRACY_DEBUGINFOD to ON")
+    set(TRACY_DEBUGINFOD ON)
+endif()
+
 add_subdirectory(./external/tracy)
 
 # Tracy UI
