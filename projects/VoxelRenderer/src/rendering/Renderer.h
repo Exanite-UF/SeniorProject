@@ -11,9 +11,9 @@
 #include <mutex>
 #include <thread>
 
-#include <src/rendering/SVGF.h>
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/PostProcessing.h>
+#include <src/rendering/SVGF.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/OpenGl.h>
 #include <src/windowing/GlfwContext.h>
@@ -87,10 +87,7 @@ private:
         std::recursive_mutex working {};
     } bufferLocks {};
 
-
-
-
-    //These are used to triple buffer the data displayed by asynchronous reprojection
+    // These are used to triple buffer the data displayed by asynchronous reprojection
     GLuint latestColorTexture = 0;
     std::array<GLuint, 3> colorTextures {};
     std::array<GLuint, 3> positionTextures {};

@@ -1,7 +1,6 @@
 #include <src/world/SceneComponent.h>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/quaternion.hpp"
+#include <glm/gtx/quaternion.hpp>
 
 std::shared_mutex& SceneComponent::getMutex()
 {
@@ -21,6 +20,11 @@ const std::shared_ptr<CameraComponent>& SceneComponent::getCamera()
 const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getChunks()
 {
     return chunks;
+}
+
+const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getVisibleChunks()
+{
+    return visibleChunks;
 }
 
 bool SceneComponent::tryGetChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& result)

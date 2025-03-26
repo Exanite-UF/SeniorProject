@@ -4,6 +4,7 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkUtility.h>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 
 VoxelChunkData::VoxelChunkData()
 {
@@ -11,6 +12,8 @@ VoxelChunkData::VoxelChunkData()
 
 VoxelChunkData::VoxelChunkData(const glm::ivec3& size)
 {
+    ZoneScoped;
+
     setSize(size);
 }
 
@@ -21,6 +24,8 @@ const glm::ivec3& VoxelChunkData::getSize() const
 
 void VoxelChunkData::setSize(const glm::ivec3& size)
 {
+    ZoneScoped;
+
     this->data.size = size;
 
     data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
@@ -109,6 +114,8 @@ void VoxelChunkData::clearMaterialMap()
 
 void VoxelChunkData::copyFrom(VoxelChunk& chunk)
 {
+    ZoneScoped;
+
     if (data.size != chunk.getSize())
     {
         setSize(chunk.getSize());
@@ -125,28 +132,68 @@ void VoxelChunkData::copyFrom(VoxelChunk& chunk)
 
 void VoxelChunkData::writeTo(VoxelChunk& chunk)
 {
+    ZoneScoped;
+
+    constexpr int sleepTime = 10;
+
     if (chunk.getSize() != data.size)
     {
         throw std::runtime_error("Target chunk does not have the same size");
     }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    {
+        ZoneScopedN("Occupancy data upload");
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.materialMap.size() * 2, data.materialMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    chunk.updateMipMaps();
+        chunk.updateMipMaps();
+
+        {
+            ZoneScopedN("Sleep");
+
+            glFlush();
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+        }
+    }
+
+    // Upload in 32 MB sized chunks
+    {
+        constexpr int uploadChunkSize = 32 * 1024 * 1024;
+
+        int byteCount = data.materialMap.size() * 2;
+        int uploadChunkCount = byteCount / uploadChunkSize;
+        for (int i = 0; i < uploadChunkCount; ++i)
+        {
+            ZoneScopedN("Chunked material data upload");
+
+            int remainingByteCount = byteCount - i * uploadChunkSize;
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, i * uploadChunkSize, std::min(uploadChunkSize, remainingByteCount), data.materialMap.data());
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+            {
+                ZoneScopedN("Sleep");
+
+                glFlush();
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+            }
+        }
+    }
 }
 
 void VoxelChunkData::copyFrom(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     this->data = data.data;
 }
 
 void VoxelChunkData::writeTo(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     data.data = this->data;
 }

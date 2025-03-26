@@ -2,6 +2,7 @@
 
 #include <src/Constants.h>
 #include <src/utilities/MeasureElapsedTimeScope.h>
+#include <tracy/Tracy.hpp>
 
 VoxelChunkComponent::VoxelChunkComponent()
     : VoxelChunkComponent(false)
@@ -10,6 +11,8 @@ VoxelChunkComponent::VoxelChunkComponent()
 
 VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderData)
 {
+    ZoneScoped;
+
     if (shouldGeneratePlaceholderData)
     {
         existsOnGpu = true;
@@ -40,6 +43,8 @@ bool VoxelChunkComponent::getExistsOnGpu() const
 
 void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
 {
+    ZoneScoped;
+
     if (this->existsOnGpu == existsOnGpu)
     {
         return;
@@ -67,6 +72,8 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writ
 
 void VoxelChunkComponent::onDestroy()
 {
+    ZoneScoped;
+
     Component::onDestroy();
 
     std::lock_guard lock(getMutex());

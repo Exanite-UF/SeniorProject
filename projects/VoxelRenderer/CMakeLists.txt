@@ -14,9 +14,11 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./src/*.cpp)
 target_sources(VoxelRenderer PRIVATE ${sources})
 target_include_directories(VoxelRenderer PRIVATE .)
 
+target_link_libraries(VoxelRenderer PRIVATE glm::glm)
+target_compile_definitions(VoxelRenderer PRIVATE GLM_ENABLE_EXPERIMENTAL)
+
 target_link_libraries(VoxelRenderer PRIVATE ${OPENGL_LIBRARY})
 target_link_libraries(VoxelRenderer PRIVATE glfw)
-target_link_libraries(VoxelRenderer PRIVATE glm::glm)
 target_link_libraries(VoxelRenderer PRIVATE glew)
 target_link_libraries(VoxelRenderer PRIVATE imgui)
 target_link_libraries(VoxelRenderer PRIVATE assimp)
@@ -33,6 +35,17 @@ target_link_libraries(VoxelRenderer PRIVATE boost_functional)
 target_link_libraries(VoxelRenderer PRIVATE boost_compute)
 target_link_libraries(VoxelRenderer PRIVATE boost_math)
 target_link_libraries(VoxelRenderer PRIVATE cgal)
+
+# Tracy compiler
+target_compile_definitions(VoxelRenderer PUBLIC TRACY_DEBUGINFOD=1)
+target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
+
+if (DEBUGINFOD_LIBRARY)
+    message(STATUS "Found libdebuginfod. Linking VoxelRenderer with libdebuginfod")
+    target_link_libraries(VoxelRenderer PRIVATE ${DEBUGINFOD_LIBRARY})
+else()
+    message(FATAL_ERROR "Did not find libdebuginfod. Linking VoxelRenderer with libdebuginfod")
+endif()
 
 # --- Copy content ---
 

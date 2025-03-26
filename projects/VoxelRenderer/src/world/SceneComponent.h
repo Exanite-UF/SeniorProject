@@ -1,6 +1,5 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include <memory>
@@ -22,6 +21,9 @@ private:
     std::vector<std::shared_ptr<VoxelChunkComponent>> chunks {};
     std::unordered_map<glm::ivec3, std::shared_ptr<VoxelChunkComponent>> chunksByChunkPosition {};
 
+    // Chunks that should be rendered
+    std::vector<std::shared_ptr<VoxelChunkComponent>> visibleChunks {};
+
     std::shared_mutex mutex {};
 
 public:
@@ -31,6 +33,7 @@ public:
     const std::shared_ptr<CameraComponent>& getCamera();
 
     const std::vector<std::shared_ptr<VoxelChunkComponent>>& getChunks();
+    const std::vector<std::shared_ptr<VoxelChunkComponent>>& getVisibleChunks();
     bool tryGetChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& result);
     bool tryGetClosestChunk(std::shared_ptr<VoxelChunkComponent>& result);
 

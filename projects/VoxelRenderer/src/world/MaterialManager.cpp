@@ -9,7 +9,7 @@ MaterialManager::MaterialManager()
     // Define custom materials
     {
         auto& material = createMaterial("dirt", "Dirt");
-        material->albedo = glm::vec3(1,1,1);//ColorUtility::htmlToLinear("#70381c");
+        material->albedo = glm::vec3(1, 1, 1); // ColorUtility::htmlToLinear("#70381c");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -18,7 +18,7 @@ MaterialManager::MaterialManager()
 
     {
         auto& material = createMaterial("stone", "stone");
-        material->albedo = ColorUtility::htmlToLinear("#ababab");
+        material->albedo = ColorUtility::htmlToLinear("#5F5F5F");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -28,6 +28,24 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("grass", "grass");
         material->albedo = ColorUtility::htmlToLinear("#41b000");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
+        auto& material = createMaterial("oak_log", "oak_log");
+        material->albedo = ColorUtility::htmlToLinear("#473621");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
+        auto& material = createMaterial("oak_leaf", "oak_leaf");
+        material->albedo = ColorUtility::htmlToLinear("#40732B");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);

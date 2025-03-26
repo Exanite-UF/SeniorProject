@@ -1,5 +1,7 @@
 #include "Renderer.h"
 
+#include <tracy/Tracy.hpp>
+
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -13,11 +15,18 @@ GLuint Renderer::drawTextureProgram {};
 
 void Renderer::offscreenRenderingFunc()
 {
+    tracy::SetThreadName("Offscreen rendering");
+
     offscreenContext->makeContextCurrent();
 
     while (isRenderingOffscreen)
     {
+        const char* frameId = "Render offscreen";
+        FrameMarkStart(frameId);
+
         _render();
+
+        FrameMarkEnd(frameId);
     }
 }
 
@@ -69,7 +78,7 @@ void Renderer::makeFramebuffers()
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, positionTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normalTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, miscTextures[i], 0);
-        //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, colorSquaredTextures[i], 0);
+        // glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, colorSquaredTextures[i], 0);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -91,7 +100,7 @@ void Renderer::swapDisplayBuffer()
 
         std::swap(bufferMapping.display, bufferMapping.ready);
         lastRenderedFrameIndex = bufferMapping.display;
-        
+
         isNewerFrame = false;
     }
 }
@@ -105,7 +114,7 @@ void Renderer::swapWorkingBuffer()
     std::scoped_lock lock(bufferLocks.ready, bufferLocks.working);
 
     std::swap(bufferMapping.ready, bufferMapping.working);
-    //reprojection->combineBuffers(colorTextures[lastRenderedFrameIndex], colorTextures[bufferMapping.ready], miscTextures[bufferMapping.ready], positionTextures[lastRenderedFrameIndex], positionTextures[bufferMapping.ready], lastRenderedPosition);
+    // reprojection->combineBuffers(colorTextures[lastRenderedFrameIndex], colorTextures[bufferMapping.ready], miscTextures[bufferMapping.ready], positionTextures[lastRenderedFrameIndex], positionTextures[bufferMapping.ready], lastRenderedPosition);
 
     lastRenderedFrameIndex = bufferMapping.ready;
 
@@ -119,7 +128,7 @@ GLuint Renderer::getWorkingFramebuffer()
     // This will block if it is unable to lock both the ready and working buffers
     // It will unlock upon destruction
     std::scoped_lock lock(bufferLocks.working);
-    
+
     return framebuffers[bufferMapping.working];
 }
 
@@ -245,6 +254,9 @@ void Renderer::setBounces(const int& bounces)
 
 void Renderer::render(float fov)
 {
+    const char* frameId = "Render to screen";
+    FrameMarkStart(frameId);
+
     if (!isRenderingOffscreen)
     {
         _render();
@@ -256,6 +268,8 @@ void Renderer::render(float fov)
     postProcess();
 
     finalDisplay();
+
+    FrameMarkEnd(frameId);
 }
 
 void Renderer::_render()
@@ -270,8 +284,6 @@ void Renderer::_render()
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         std::scoped_lock lock(cameraMtx);
 
-        
-
         if (isRenderingOffscreen)
         {
             lastRenderedFOV += overdrawFOV;
@@ -283,14 +295,14 @@ void Renderer::_render()
             std::shared_lock lockScene(scene->getMutex());
 
             voxelRenderer->executePathTrace(scene->getChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
-            //voxelRenderer->executePathTrace(scene->getChunks(), bounces, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+            // voxelRenderer->executePathTrace(scene->getChunks(), bounces, currentCameraPosition, currentCameraRotation, currentCameraFOV);
         }
 
-        //This need SVGF's framebuffer
-        //voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        // This need SVGF's framebuffer
+        // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
         voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV);
 
-        //SVGF
+        // SVGF
         svgf->lock();
         svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
         svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
@@ -354,10 +366,9 @@ void Renderer::reproject(float fov)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, outputDepthTexture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    
     // Do the render
     reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
-    //reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, varianceTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
+    // reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, varianceTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);

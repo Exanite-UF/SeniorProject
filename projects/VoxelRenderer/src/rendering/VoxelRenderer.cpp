@@ -21,6 +21,7 @@
 #include <src/world/Material.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunk.h>
+#include <tracy/Tracy.hpp>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
@@ -31,6 +32,8 @@ GLuint VoxelRenderer::afterCastProgram;
 
 void VoxelRenderer::remakeTextures()
 {
+    ZoneScoped;
+
     isSizingDirty = false;
 
     // This will delete the texture currently bound to this variable, and set the variable equal to 0
@@ -59,6 +62,8 @@ void VoxelRenderer::remakeTextures()
 
 void VoxelRenderer::handleDirtySizing()
 {
+    ZoneScoped;
+
     if (!isSizingDirty)
     {
         return;
@@ -82,6 +87,8 @@ VoxelRenderer::VoxelRenderer()
 
 void VoxelRenderer::afterCast()
 {
+    ZoneScoped;
+
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
@@ -134,6 +141,8 @@ void VoxelRenderer::setRaysPerPixel(int number)
 
 void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight)
 {
+    ZoneScoped;
+
     handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -184,6 +193,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
 
 void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, bool isFirstRay)
 {
+    ZoneScoped;
+
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
 
@@ -230,7 +241,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     positionBuffer.bind(13);
     miscBuffer.bind(14);
 
-
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -247,6 +257,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
         for (auto& chunkComponent : chunks)
         {
+            ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
+
             std::shared_lock lock(chunkComponent->getMutex());
 
             if (!chunkComponent->getExistsOnGpu())
@@ -268,10 +280,11 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
                 glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
 
-                //Load voxel chunk history
-                if(voxelChunkHistories.count(chunkComponent) == 0){
-                    //Then no history exists
-                    //voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
+                // Load voxel chunk history
+                if (voxelChunkHistories.count(chunkComponent) == 0)
+                {
+                    // Then no history exists
+                    // voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
                     voxelChunkHistories.emplace(chunkComponent, VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale()));
                 }
 
@@ -285,8 +298,9 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-                //Update the history
-                if(isFirstRay){
+                // Update the history
+                if (isFirstRay)
+                {
                     voxelChunkHistories.at(chunkComponent) = VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale());
                 }
                 renderedChunks.insert(chunkComponent);
@@ -314,8 +328,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     positionBuffer.unbind();
     miscBuffer.unbind();
 
-    //Remove any chunks that are not rendered
-    //std::erase_if(voxelChunkHistories, [&renderedChunks](const auto& chunkPointer){return renderedChunks.count(chunkPointer) == 0;});
+    // Remove any chunks that are not rendered
+    // std::erase_if(voxelChunkHistories, [&renderedChunks](const auto& chunkPointer){return renderedChunks.count(chunkPointer) == 0;});
 
     glUseProgram(0);
 
@@ -324,6 +338,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
 void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV)
 {
+    ZoneScoped;
+
     for (int i = 0; i <= bounces; i++)
     {
         executeRayTrace(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, i == 0);
@@ -334,6 +350,8 @@ void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChun
 
 void VoxelRenderer::resetHitInfo()
 {
+    ZoneScoped;
+
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
@@ -359,6 +377,8 @@ void VoxelRenderer::resetHitInfo()
 
 void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool resetFirstHit, bool drawSkyBox)
 {
+    ZoneScoped;
+
     glUseProgram(resetVisualInfoProgram);
 
     // bind rayStart info
@@ -423,7 +443,9 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
 
 void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
-    //std::cout << "VoxelRenderer display" << std::endl;
+    ZoneScoped;
+
+    // std::cout << "VoxelRenderer display" << std::endl;
     glUseProgram(pathTraceToFramebufferProgram);
 
     if (currentBuffer % 2 == 0)

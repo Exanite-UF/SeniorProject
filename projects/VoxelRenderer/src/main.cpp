@@ -1,13 +1,17 @@
+#include <tracy/Tracy.hpp>
+
 #include <iostream>
-#include <src/Program.h>
-#include <src/utilities/Log.h>
 #include <stdexcept>
 
+#include <src/Program.h>
+#include <src/utilities/Log.h>
 
 int main()
 {
     try
     {
+        tracy::SetThreadName("Main");
+
         Program program;
         program.run();
     }

@@ -1,5 +1,7 @@
 #include "VoxelChunkCommandBuffer.h"
 
+#include <tracy/Tracy.hpp>
+
 void VoxelChunkCommandBuffer::setSize(const glm::ivec3& size)
 {
     commands.emplace_back(SetSize, setSizeCommands.size());
@@ -48,8 +50,13 @@ void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool 
 
 void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component) const
 {
-    // TODO: Track exact changes for optimized CPU -> GPU copies
+    ZoneScoped;
+
     auto& chunkData = component->getChunkData();
+
+    // TODO: Track exact changes for optimized CPU -> GPU copies
+    // Change tracking
+    bool isGpuUpToDate = true;
 
     for (const auto entry : commands)
     {
@@ -57,56 +64,89 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
         {
             case SetSize:
             {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetSize");
+
                 auto command = setSizeCommands.at(entry.index);
                 chunkData.setSize(command.size);
+
+                isGpuUpToDate = false;
 
                 break;
             }
             case SetOccupancy:
             {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetOccupancy");
+
                 auto command = setOccupancyCommands.at(entry.index);
                 chunkData.setVoxelOccupancy(command.position, command.isOccupied);
+
+                isGpuUpToDate = false;
 
                 break;
             }
             case SetMaterial:
             {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaterial");
+
                 auto command = setMaterialCommands.at(entry.index);
                 chunkData.setVoxelMaterialIndex(command.position, command.materialIndex);
+
+                isGpuUpToDate = false;
 
                 break;
             }
             case ClearOccupancy:
             {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - ClearOccupancy");
+
                 chunkData.clearOccupancyMap();
+
+                isGpuUpToDate = false;
 
                 break;
             }
             case ClearMaterial:
             {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - ClearMaterial");
+
                 chunkData.clearMaterialMap();
+
+                isGpuUpToDate = false;
 
                 break;
             }
             case Copy:
             {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - Copy");
+
                 auto command = copyCommands.at(entry.index);
                 chunkData.copyFrom(*command.source);
+
+                isGpuUpToDate = false;
 
                 break;
             }
             case SetExistsOnGpu:
             {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
+
                 auto command = setExistsOnGpuCommands.at(entry.index);
                 component->setExistsOnGpu(command.existsOnGpu, command.writeToGpu);
+
+                if (command.writeToGpu)
+                {
+                    isGpuUpToDate = true;
+                }
 
                 break;
             }
         }
     }
 
-    if (component->getExistsOnGpu())
+    if (!isGpuUpToDate && component->getExistsOnGpu())
     {
+        ZoneScopedN("VoxelChunkCommandBuffer::apply - Write to GPU");
+
         auto& chunk = component->getChunk();
         chunkData.writeTo(*chunk);
     }
@@ -114,6 +154,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
 void VoxelChunkCommandBuffer::clear()
 {
+    ZoneScoped;
+
     setSizeCommands.clear();
     setOccupancyCommands.clear();
     setMaterialCommands.clear();

@@ -1,3 +1,5 @@
+#include <tracy/Tracy.hpp>
+
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkComponent.h>
@@ -7,6 +9,8 @@ WorldGenerator::WorldGenerator() = default;
 
 void WorldGenerator::generate(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     data.clearOccupancyMap();
     data.clearMaterialMap();
     {
@@ -16,6 +20,8 @@ void WorldGenerator::generate(VoxelChunkData& data)
 
 void WorldGenerator::generate(VoxelChunkComponent& chunk)
 {
+    ZoneScoped;
+
     MeasureElapsedTimeScope scope("WorldGenerator::generate");
 
     std::lock_guard lock(chunk.getMutex());

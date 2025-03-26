@@ -1,6 +1,8 @@
 #include <src/utilities/ImGui.h>
 #include <src/utilities/OpenGl.h>
 
+#include <tracy/Tracy.hpp>
+
 #include <Jolt/Jolt.h>
 
 #include <Jolt/Core/Factory.h>
@@ -234,11 +236,13 @@ void Program::run()
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
         }
-    
-        //Show other
-        if(false){
+
+        // Show other
+        if (false)
+        {
             auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
-            showOther->setUniforms = [&renderer](GLuint program){
+            showOther->setUniforms = [&renderer](GLuint program)
+            {
                 glUniform1i(glGetUniformLocation(program, "whichTexture"), 2);
             };
         }
@@ -278,6 +282,9 @@ void Program::run()
 
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
+        const char* frameId = "Main Loop";
+        FrameMarkStart(frameId);
+
         // Engine time
         auto currentTimestamp = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(currentTimestamp - previousTimestamp).count();
@@ -579,6 +586,9 @@ void Program::run()
 
         // Present
         window->present();
+
+        FrameMarkEnd(frameId);
+        FrameMark;
     }
 
     sceneObject->destroy();

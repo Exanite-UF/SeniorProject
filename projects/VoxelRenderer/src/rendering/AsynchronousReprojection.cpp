@@ -9,8 +9,6 @@
 GLuint AsyncReprojectionRenderer::renderProgram {};
 GLuint AsyncReprojectionRenderer::combineProgram {};
 
-
-
 void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 {
     vertices.resize(size.x * size.y * 3);
@@ -147,7 +145,6 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, co
         // Bind new data
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, newColorTexture, 0);
 
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, oldColorTexture);
 
@@ -166,16 +163,13 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, co
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, newPositionTexture);
 
-
         glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
         glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
 
-        
-       
         {
             GLuint emptyVertexArray;
             glGenVertexArrays(1, &emptyVertexArray);
-    
+
             glBindVertexArray(emptyVertexArray);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -193,8 +187,6 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, co
 
             glDeleteVertexArrays(1, &emptyVertexArray);
         }
-        
-
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -210,7 +202,7 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, co
 
         glUseProgram(0);
     }
-    
+
     glFinish();
     currentBuffer++;
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include <condition_variable>
@@ -136,8 +135,8 @@ private:
     LoadingThreadState loadingThreadState {};
     ModificationThreadState modificationThreadState {};
 
-    void chunkLoadingThreadEntrypoint();
-    void chunkModificationThreadEntrypoint();
+    void chunkLoadingThreadEntrypoint(int threadId);
+    void chunkModificationThreadEntrypoint(int threadId);
 
 public:
     void initialize(const std::shared_ptr<SceneComponent>& scene, const std::shared_ptr<GlfwContext>& modificationThreadContext);
