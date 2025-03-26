@@ -29,12 +29,16 @@ VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
     const VoxelChunkCommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     this->component = component;
     this->commandBuffer = commandBuffer;
 }
 
 VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
 {
+    ZoneScoped;
+
     this->chunkPosition = chunkPosition;
     this->chunkSize = chunkSize;
 }
@@ -44,6 +48,8 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
     const glm::ivec3& chunkSize,
     const std::shared_ptr<SceneComponent>& scene)
 {
+    ZoneScoped;
+
     this->chunkPosition = chunkPosition;
     this->scene = scene;
 
@@ -57,6 +63,8 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
 
 VoxelChunkManager::ActiveChunk::~ActiveChunk()
 {
+    ZoneScoped;
+
     std::lock_guard lock(scene->getMutex());
 
     scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
@@ -423,6 +431,8 @@ void VoxelChunkManager::update(const float deltaTime)
 
 void VoxelChunkManager::showDebugMenu()
 {
+    ZoneScoped;
+
     if (ImGui::CollapsingHeader("VoxelChunkManager"))
     {
         if (ImGui::Checkbox("Enable chunk loading", &settings.isChunkLoadingEnabled))

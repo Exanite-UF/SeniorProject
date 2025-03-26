@@ -20,6 +20,7 @@
 #include <src/world/Material.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunk.h>
+#include <tracy/Tracy.hpp>
 
 GLuint VoxelRenderer::prepareRayTraceFromCameraProgram;
 GLuint VoxelRenderer::resetHitInfoProgram;
@@ -30,6 +31,8 @@ GLuint VoxelRenderer::afterCastProgram;
 
 void VoxelRenderer::remakeTextures()
 {
+    ZoneScoped;
+
     isSizingDirty = false;
 
     // This will delete the texture currently bound to this variable, and set the variable equal to 0
@@ -58,6 +61,8 @@ void VoxelRenderer::remakeTextures()
 
 void VoxelRenderer::handleDirtySizing()
 {
+    ZoneScoped;
+
     if (!isSizingDirty)
     {
         return;
@@ -81,6 +86,8 @@ VoxelRenderer::VoxelRenderer()
 
 void VoxelRenderer::afterCast()
 {
+    ZoneScoped;
+
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
@@ -133,6 +140,8 @@ void VoxelRenderer::setRaysPerPixel(int number)
 
 void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight)
 {
+    ZoneScoped;
+
     handleDirtySizing(); // Handle dirty sizing, this function is supposed to prepare data for rendering, as such it needs to prepare the correct amount of data
 
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -183,6 +192,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
 
 void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay)
 {
+    ZoneScoped;
+
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
 
@@ -240,6 +251,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
         for (auto& chunkComponent : chunks)
         {
+            ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
+
             std::shared_lock lock(chunkComponent->getMutex());
 
             if (!chunkComponent->getExistsOnGpu())
@@ -295,6 +308,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
 void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces)
 {
+    ZoneScoped;
+
     for (int i = 0; i <= bounces; i++)
     {
         executeRayTrace(chunks, i == 0);
@@ -305,6 +320,8 @@ void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChun
 
 void VoxelRenderer::resetHitInfo()
 {
+    ZoneScoped;
+
     GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
     GLuint workGroupsY = (size.y + 8 - 1) / 8;
     GLuint workGroupsZ = raysPerPixel;
@@ -330,6 +347,8 @@ void VoxelRenderer::resetHitInfo()
 
 void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool resetFirstHit, bool drawSkyBox)
 {
+    ZoneScoped;
+
     glUseProgram(resetVisualInfoProgram);
 
     // bind rayStart info
@@ -394,6 +413,8 @@ void VoxelRenderer::resetVisualInfo(bool resetLight, bool resetAttenuation, bool
 
 void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
 {
+    ZoneScoped;
+
     glUseProgram(pathTraceToFramebufferProgram);
 
     if (currentBuffer % 2 == 0)
