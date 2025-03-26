@@ -25,7 +25,7 @@ public:
     constexpr static std::string_view integrateFrameFragmentShader = "content/SVGF/IntegrateFrame.fragment.glsl";
     constexpr static std::string_view firstWaveletIterationFragmentShader = "content/SVGF/WaveletIterationFirst.fragment.glsl";
     constexpr static std::string_view waveletIterationFragmentShader = "content/SVGF/WaveletIteration.fragment.glsl";
-    constexpr static std::string_view toFramebufferSVGFFragmentShader = "content/SVGF/toFramebuffer.fragment.glsl";
+    constexpr static std::string_view toFramebufferSVGFFragmentShader = "content/SVGF/ToFramebuffer.fragment.glsl";
 
     // Reprojection
     constexpr static std::string_view renderReprojectionVertexShader = "content/Reprojection/ReprojectionRender.vertex.glsl";
