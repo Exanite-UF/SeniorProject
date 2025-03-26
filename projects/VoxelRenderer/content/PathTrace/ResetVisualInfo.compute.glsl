@@ -149,7 +149,7 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[2 + index] = value.z;
 }
 
-float sunAngularSize = 5;//The angle of the sun in diameter
+float sunAngularSize = 20;//The angle of the sun in diameter
 float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
 vec3 sunDir = normalize(vec3(1, -1, 1));
 float sunBrightness = 5;
