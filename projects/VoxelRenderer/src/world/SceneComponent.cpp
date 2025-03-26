@@ -22,6 +22,11 @@ const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getChun
     return chunks;
 }
 
+const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getVisibleChunks()
+{
+    return visibleChunks;
+}
+
 bool SceneComponent::tryGetChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& result)
 {
     auto iterator = chunksByChunkPosition.find(chunkPosition);
