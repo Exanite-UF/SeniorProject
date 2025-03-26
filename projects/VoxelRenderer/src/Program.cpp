@@ -514,8 +514,7 @@ void Program::run()
                     case 1:
                     {
                         // Should be relative path
-                        std::string modelFileName = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Cube.fbx";
-                        //std::string modelFileName = ".../content/Triangulation/feyd.obj";
+                        std::string modelFileName = "R:/Code/SeniorProject/projects/VoxelRenderer/content/triangulation/suzanne.obj";
 
                         ImGui::Text("Please choose a file.");
                         ImGui::Indent(indentSize);
@@ -523,20 +522,10 @@ void Program::run()
                         ImGui::InputText("", &modelFileName);
                         ImGui::PopID();
                         ImGui::Unindent(indentSize);
-                    
-                        if (ImGui::Button("Import"))
-                        {
-                            
-                            // Loads model
-                            modelVoxelizer.loadModel(const_cast<char*>(modelFileName.c_str()));
-                            
-                            // Sets Model in Preview
-                            modelPreviewer.setModel(modelVoxelizer.getModel());
-                        }
 
 
                         // Polygnol Mesh Preview
-                        std::string originalModelHeader = "Preview Original Model";
+                        std::string originalModelHeader = "Import & Preview Model";
                         HeaderCondenser(originalModelHeader);
 
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.750f, 0.625f, 0.5f));
@@ -544,11 +533,12 @@ void Program::run()
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
                         if (ImGui::Button(originalModelHeader.c_str()))
                         {
+                            //static std::string lastFile = modelFileName;
                             showOriginalModelMenu = !showOriginalModelMenu;
                             if (showOriginalModelMenu)
                             {
                                 // make this set and load model so that the VAO/VBO work on same thread
-                                modelPreviewer.CreateWindowTriangle(offscreenContext->getGlfwWindowHandle());
+                                modelPreviewer.CreateWindowTriangle(&modelVoxelizer, modelFileName);
                             }
                             else
                             {

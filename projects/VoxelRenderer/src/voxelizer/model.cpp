@@ -16,7 +16,8 @@ void Model::loadModel(std::string path)
     Assimp::Importer import;
     const aiScene *scene = import.ReadFile(path,
     aiProcess_Triangulate |
-    aiProcess_FlipUVs); // watch out for these flags
+    aiProcess_CalcTangentSpace |
+    aiProcess_FlipUVs); 
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -60,9 +61,14 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
+
+        if (glm::length(vector) < 0.1f) {
+            vector = glm::vec3(0.0f, 1.0f, 0.0f);
+        }
+
         vertex.Position = vector;
 
-        if (mesh->mNormals)
+        if (mesh->HasNormals())
         {
             vector.x = mesh->mNormals[i].x;
             vector.y = mesh->mNormals[i].y;
@@ -123,10 +129,10 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         std::vector<TriangleTexture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-        std::vector<TriangleTexture> normalMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_normal");
+        std::vector<TriangleTexture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-        std::vector<TriangleTexture> heightMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_height");
+        std::vector<TriangleTexture> heightMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
     }
     

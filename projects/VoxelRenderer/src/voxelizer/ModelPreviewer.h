@@ -7,8 +7,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <src/windowing/Window.h>
 #include <src/voxelizer/Shader.h>
 #include <src/voxelizer/Model.h>
+#include <src/voxelizer/ModelVoxelizer.h>
+
+#include <thread> 
+#include <atomic>
 
 
 class ModelPreviewer
@@ -18,8 +23,13 @@ private:
     GLFWwindow* triangleWindow = nullptr;
     GLFWwindow* voxelWindow = nullptr;
 
+    std::atomic<bool> triangleThreadRunning{false};
+    std::atomic<bool> voxelThreadRunning{false};
+    std::thread triangleThread;
+    std::thread voxelThread;
+
     // Camera Attributes
-    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 5.0f);
+    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 3.0f);
     glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -36,7 +46,7 @@ public:
     // Set instead of load since the voxelizer should be the one to load
     void setModel(Model* model_);
 
-    void CreateWindowTriangle(GLFWwindow* sharedContext);
+    void CreateWindowTriangle(ModelVoxelizer* modelVox, std::string modelPath);
     void CreateWindowVoxel();
 
     void RenderWindowTriangle();

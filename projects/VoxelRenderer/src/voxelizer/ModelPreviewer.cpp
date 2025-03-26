@@ -1,5 +1,7 @@
 #include <src/voxelizer/ModelPreviewer.h>
 #include <thread>
+#include <chrono>
+#include <thread>
 
 
 ModelPreviewer::~ModelPreviewer()
@@ -9,6 +11,7 @@ ModelPreviewer::~ModelPreviewer()
         delete loadedModel;
         delete shader;
     }
+    CloseWindowTriangle();
 }
 
 void ModelPreviewer::setModel(Model* model_)
@@ -18,50 +21,77 @@ void ModelPreviewer::setModel(Model* model_)
 }
 
 
-void ModelPreviewer::CreateWindowTriangle(GLFWwindow* sharedContext)
+void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox, std::string modelPath)
 {
-    std::thread([=]() {
-        if (!glfwInit())
+    if (triangleThreadRunning)
+    {
+        return;
+    }
+
+    // Ensure GLFW is initialized in the main thread
+    if (!glfwInit())
+    {
+        printf("FAILED TO INIT GLFW!\n");
+        return;
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // Create Triangle Window in the Main Thread
+    triangleWindow = glfwCreateWindow(windowSize.x, windowSize.y, "Model Triangle View", nullptr, NULL);
+    if (!triangleWindow)
+    {
+        printf("FAILED TO CREATE MODEL TRIANGLE VIEW WINDOW!\n");
+        return;
+    }
+
+    triangleThreadRunning = true;
+    triangleThread = std::thread([this, modelVox, modelPath]() {
+        glfwMakeContextCurrent(triangleWindow);
+
+        modelVox->loadModel(const_cast<char*>(modelPath.c_str()));
+        setModel(modelVox->getModel());
+
+        glewExperimental = GL_TRUE;
+        if (glewInit() != GLEW_OK)
         {
-            printf("FAILED TO INIT GLFW!\n");
+            printf("FAILED TO INITIALIZE GLEW!\n");
+            triangleThreadRunning = false;
             return;
         }
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        // Create Triangle Window
-        if (!triangleWindow)
-        {
-            triangleWindow = glfwCreateWindow(windowSize.x, windowSize.y, "Model Triangle View", NULL, sharedContext);
-
-            glfwMakeContextCurrent(triangleWindow);  // Bind OpenGL context to this thread
-            glewExperimental = GL_TRUE;
-            if (glewInit() != GLEW_OK)
-            {
-                printf("FAILED TO INITIALIZE GLEW!\n");
-                return;
+        // Render Loop
+        while (triangleThreadRunning && !glfwWindowShouldClose(triangleWindow)) {
+            if (glfwWindowShouldClose(triangleWindow)) {
+                triangleThreadRunning = false;
+                break; 
             }
+            glfwPollEvents();
 
-            if (!triangleWindow)
-            {
-                printf("FAILED TO CREATE MODEL TRIANGLE VIEW WINDOW!\n");
-                return;
+            // Initial render
+            RenderWindowTriangle();
+            glfwSwapBuffers(triangleWindow);
+
+
+            static auto last_frame = std::chrono::steady_clock::now();
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
+            if (elapsed.count() < 33) {  // ~30 FPS
+                std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
             }
-
-            // Render Loop
-            while (!glfwWindowShouldClose(triangleWindow))
-            {
-                RenderWindowTriangle();  // Call your rendering function
-                glfwPollEvents();
-            }
-
-            glfwDestroyWindow(triangleWindow);
-            triangleWindow = nullptr;
+            last_frame = now;
         }
 
-    }).detach();
+        // Cleanup in the rendering thread
+        glfwDestroyWindow(triangleWindow);
+        triangleWindow = nullptr;
+        triangleThreadRunning = false;
+
+    });
+
 }
 
 void ModelPreviewer::CreateWindowVoxel()
@@ -89,7 +119,7 @@ void ModelPreviewer::RenderWindowTriangle()
 
         // Camera Setup
         glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
-        glm::mat4 projection = glm::perspective(glm::radians(120.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
         glm::mat4 model = glm::mat4(1.0f);
 
         shader->use();
@@ -115,12 +145,6 @@ void ModelPreviewer::RenderWindowTriangle()
         loadedModel->Draw(*shader);
 
         glfwSwapBuffers(triangleWindow);
-
-        //if (glfwWindowShouldClose(triangleWindow))
-        //{
-        //    glfwDestroyWindow(triangleWindow);
-        //    triangleWindow = nullptr;
-        //}
     }
 }
 
@@ -144,9 +168,20 @@ void ModelPreviewer::RenderWindowVoxel()
 
 void ModelPreviewer::CloseWindowTriangle()
 {
+    if (!triangleThreadRunning) return;
+
+    //Signal thead to stop
+    triangleThreadRunning = false;
+
+    //Ensure window gets closed
     if (triangleWindow)
     {
         glfwSetWindowShouldClose(triangleWindow, true);
+    }
+
+    // Wait for thread to finish
+    if (triangleThread.joinable()) {
+        triangleThread.join();
     }
 }
 

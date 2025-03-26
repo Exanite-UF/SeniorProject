@@ -157,7 +157,7 @@ void main()
     ptLight.intensity = 1.0f;
 
     DirectionalLight dirLight;
-    dirLight.direction = vec3(0.3f, -1.0f, 0.7f);
+    dirLight.direction = vec3(0.5f, -1.0f, -0.7f);
     dirLight.color = vec3(1.0f);
     dirLight.intensity = 1.0f;
 
@@ -172,12 +172,13 @@ void main()
 
     vec3 result = vec3(0.0f);
     //result += PointLightResult(ptLight, material);
-    //result += DirectionalLightResult(dirLight, defaultMaterial);
+    result += DirectionalLightResult(dirLight, defaultMaterial);
     //result += SpotLightResult(spotLight, material);
     //result += NoLightResult(material);
     result += ambient;
 
-    //FragColor = vec4(result, 1.0f);
-    FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    FragColor = vec4(result, 1.0f);
+    //FragColor = vec4(1.0, 0.0, 0.0, 1.0);
     //FragColor = vec4(normalize(Normal) * 0.5 + 0.5, 1.0);
+    //FragColor = vec4(Normal, 1.0);
 }
