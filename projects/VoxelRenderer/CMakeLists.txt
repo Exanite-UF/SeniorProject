@@ -44,7 +44,7 @@ if (DEBUGINFOD_LIBRARY)
     message(STATUS "Found libdebuginfod. Linking VoxelRenderer with libdebuginfod")
     target_link_libraries(VoxelRenderer PRIVATE ${DEBUGINFOD_LIBRARY})
 else()
-    message(FATAL_ERROR "Did not find libdebuginfod. Linking VoxelRenderer with libdebuginfod")
+    message(STATUS "Did not find libdebuginfod. Not linking VoxelRenderer with libdebuginfod")
 endif()
 
 # --- Copy content ---
