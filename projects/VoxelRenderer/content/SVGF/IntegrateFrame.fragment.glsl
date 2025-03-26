@@ -61,13 +61,13 @@ void main()
     alpha *= exp(-(50 / (500 * misc.x + 1) + 1) * angle);//Cos of the change in angle between frames
 
     //Reject old data that comes from a difference location
-    //if(length(oldPos - newPos) / length(newPos - cameraPosition) > 0.1 || length(oldPos - newPos) > 1){
-    //    alpha = 0;
-    //}
-
-    if(length(oldPos - newPos) > 1){
+    if(length(oldPos - newPos) / length(newPos - cameraPosition) > 0.1){
         alpha = 0;
     }
+
+    //if(length(oldPos - newPos) > 1){
+    //    alpha = 0;
+    //}
 
     vec3 newColor = safeVec4(texture(inputColor, uv), vec4(0)).xyz;//Get the incoming color
 
