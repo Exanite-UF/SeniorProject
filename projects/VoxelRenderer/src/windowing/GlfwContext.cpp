@@ -1,3 +1,4 @@
+#include <glm/vec2.hpp>
 #include <src/utilities/Log.h>
 #include <stdexcept>
 #include <string>
@@ -21,8 +22,9 @@ GlfwContext::GlfwContext(bool isWindow, const GlfwContext* shareWith)
     glfwWindowHint(GLFW_VISIBLE, isWindow ? GLFW_TRUE : GLFW_FALSE); // Show window only if the context is to be used for a window
 
     // Create window/context
+    auto windowSize = isWindow ? glm::ivec2(1024, 1024) : glm::ivec2(1, 1);
     auto shareWithHandle = shareWith != nullptr ? shareWith->glfwWindowHandle : nullptr;
-    glfwWindowHandle = glfwCreateWindow(1024, 1024, "", nullptr, shareWithHandle);
+    glfwWindowHandle = glfwCreateWindow(windowSize.x, windowSize.y, "", nullptr, shareWithHandle);
     if (glfwWindowHandle == nullptr)
     {
         throw std::runtime_error("Failed to create GLFW window");
