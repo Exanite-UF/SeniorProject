@@ -60,7 +60,7 @@ private:
         explicit ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
 
-    class ActiveChunk : public NonCopyable
+    class ActiveWorldChunk : public NonCopyable
     {
     public:
         std::shared_ptr<VoxelChunkComponent> component {};
@@ -74,8 +74,8 @@ private:
         bool isDisplayed = false;
         std::shared_ptr<SceneComponent> scene;
 
-        explicit ActiveChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
-        ~ActiveChunk() override;
+        explicit ActiveWorldChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
+        ~ActiveWorldChunk() override;
     };
 
     struct ManagerState
@@ -89,7 +89,7 @@ private:
         // ----- Scene -----
 
         std::shared_ptr<SceneComponent> scene;
-        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveChunk>> activeChunks {};
+        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveWorldChunk>> activeChunks {};
 
         // ----- Camera -----
 

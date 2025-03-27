@@ -44,7 +44,7 @@ VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition,
     this->chunkSize = chunkSize;
 }
 
-VoxelChunkManager::ActiveChunk::ActiveChunk(
+VoxelChunkManager::ActiveWorldChunk::ActiveWorldChunk(
     const glm::ivec2& chunkPosition,
     const glm::ivec3& chunkSize,
     const std::shared_ptr<SceneComponent>& scene)
@@ -62,7 +62,7 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
     scene->addWorldChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), component);
 }
 
-VoxelChunkManager::ActiveChunk::~ActiveChunk()
+VoxelChunkManager::ActiveWorldChunk::~ActiveWorldChunk()
 {
     ZoneScoped;
 
@@ -337,7 +337,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 }
 
                 // Load the chunk
-                state.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, settings.chunkSize, state.scene));
+                state.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveWorldChunk>(chunkToLoad, settings.chunkSize, state.scene));
                 {
                     // Send a request to a worker thread to either load the chunk
                     loadingThreadState.pendingTasks.emplace(std::make_shared<ChunkLoadTask>(chunkToLoad, settings.chunkSize));
