@@ -59,7 +59,7 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
 
     component->getTransform()->setGlobalPosition(glm::vec3(chunkSize.x * chunkPosition.x, chunkSize.y * chunkPosition.y, 0) + (glm::vec3(chunkSize) / 2.0f));
 
-    scene->addChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), component);
+    scene->addWorldChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), component);
 }
 
 VoxelChunkManager::ActiveChunk::~ActiveChunk()
@@ -68,7 +68,7 @@ VoxelChunkManager::ActiveChunk::~ActiveChunk()
 
     std::lock_guard lock(scene->getMutex());
 
-    scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
+    scene->removeWorldChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
     component->getGameObject()->destroy();
 }
 
