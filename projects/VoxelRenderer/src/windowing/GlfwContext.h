@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
 
