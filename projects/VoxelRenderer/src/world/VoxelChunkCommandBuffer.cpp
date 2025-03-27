@@ -48,9 +48,12 @@ void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool 
     setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component) const
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene) const
 {
     ZoneScoped;
+
+    // Acquire lock for component, but not for the scene
+    std::lock_guard lockComponent(component->getMutex());
 
     auto& chunkData = component->getChunkData();
 

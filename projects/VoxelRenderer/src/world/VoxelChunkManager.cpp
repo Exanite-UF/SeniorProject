@@ -13,7 +13,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <src/Constants.h>
 #include <src/gameobjects/GameObject.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
@@ -27,11 +26,13 @@
 
 VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
+    const std::shared_ptr<SceneComponent>& scene,
     const VoxelChunkCommandBuffer& commandBuffer)
 {
     ZoneScoped;
 
     this->component = component;
+    this->scene = scene;
     this->commandBuffer = commandBuffer;
 }
 
@@ -252,8 +253,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
             MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
             Log::verbose("Applying chunk command buffer");
-            std::lock_guard lock(task->component->getMutex());
-            task->commandBuffer.apply(task->component);
+            task->commandBuffer.apply(task->component, task->scene);
         }
     }
 
@@ -512,6 +512,6 @@ void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComp
 {
     std::lock_guard lock(modificationThreadState.pendingTasksMutex);
 
-    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, commandBuffer));
+    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer));
     modificationThreadState.pendingTasksCondition.notify_one();
 }
