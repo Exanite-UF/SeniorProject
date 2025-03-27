@@ -53,7 +53,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     ZoneScoped;
 
     // Acquire lock for component, but not for the scene
-    std::lock_guard lockComponent(component->getMutex());
+    std::unique_lock lockComponent(component->getMutex());
 
     auto& chunkData = component->getChunkData();
 
@@ -134,11 +134,44 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
 
                 auto command = setExistsOnGpuCommands.at(entry.index);
-                component->setExistsOnGpu(command.existsOnGpu, command.writeToGpu);
+                auto previouslyExistedOnGpu = component->getExistsOnGpu();
 
-                if (command.writeToGpu)
+                // Never write to GPU using setExistsOnGpu, we can handle it better here
+                component->setExistsOnGpu(command.existsOnGpu, false);
+
+                // Write if needed
+                if (command.existsOnGpu && command.writeToGpu)
                 {
-                    isGpuUpToDate = true;
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Write to GPU");
+
+                    // We only need shared access because we are modifying a GPU resource
+                    // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
+                    lockComponent.unlock();
+                    {
+                        std::shared_lock sharedLockComponent(component->getMutex());
+
+                        component->getChunkData().writeTo(*component->getChunk());
+
+                        isGpuUpToDate = true;
+                    }
+                    lockComponent.lock();
+                }
+
+                // Check if we need to update list of uploaded chunks
+                if (previouslyExistedOnGpu != command.existsOnGpu)
+                {
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Update uploaded chunks list");
+
+                    // Lock the scene mutex
+                    std::lock_guard lockScene(scene->getMutex());
+                    if (command.existsOnGpu)
+                    {
+                        scene->uploadedChunks.push_back(component);
+                    }
+                    else
+                    {
+                        std::erase(scene->uploadedChunks, component);
+                    }
                 }
 
                 break;

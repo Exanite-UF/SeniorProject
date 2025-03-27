@@ -12,6 +12,7 @@
 class SceneComponent : public Component
 {
     friend class VoxelChunkManager;
+    friend class VoxelChunkCommandBuffer;
 
 private:
     // The currently active camera
