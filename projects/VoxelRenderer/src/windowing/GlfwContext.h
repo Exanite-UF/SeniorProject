@@ -12,8 +12,7 @@ protected:
     // Pointer returned by glfwCreateWindow
     GLFWwindow* glfwWindowHandle;
 
-    // Not thread safe
-    static int nextId;
+    inline static std::atomic<int> nextId;
 
     // Stores ID for logging and debugging purposes
     int id;
