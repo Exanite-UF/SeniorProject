@@ -26,12 +26,17 @@ const std::unique_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
     return chunk.value();
 }
 
+const VoxelChunkData& VoxelChunkComponent::getChunkData()
+{
+    return chunkData;
+}
+
 std::shared_mutex& VoxelChunkComponent::getMutex()
 {
     return mutex;
 }
 
-VoxelChunkData& VoxelChunkComponent::getChunkData()
+VoxelChunkData& VoxelChunkComponent::getRawChunkData()
 {
     return chunkData;
 }

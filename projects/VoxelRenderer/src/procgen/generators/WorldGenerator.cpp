@@ -26,7 +26,7 @@ void WorldGenerator::generate(VoxelChunkComponent& chunk)
 
     std::lock_guard lock(chunk.getMutex());
 
-    VoxelChunkData& data = chunk.getChunkData();
+    VoxelChunkData& data = chunk.getRawChunkData();
 
     data.clearOccupancyMap();
     data.clearMaterialMap();

@@ -55,7 +55,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     // Acquire lock for component, but not for the scene
     std::unique_lock lockComponent(component->getMutex());
 
-    auto& chunkData = component->getChunkData();
+    auto& chunkData = component->getRawChunkData();
 
     // TODO: Track exact changes for optimized CPU -> GPU copies
     // Change tracking
@@ -150,7 +150,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     {
                         std::shared_lock sharedLockComponent(component->getMutex());
 
-                        component->getChunkData().writeTo(*component->getChunk());
+                        component->getRawChunkData().writeTo(*component->getChunk());
 
                         isGpuUpToDate = true;
                     }
