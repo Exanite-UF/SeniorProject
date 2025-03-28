@@ -79,6 +79,8 @@ void Component::notifyDestroy()
 
     if (!wasCreateCalled)
     {
+        Log::verbose("Skipping Component::onDestroy call since Component::onCreate was not called");
+
         return;
     }
 
