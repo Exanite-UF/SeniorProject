@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 
 #include <src/utilities/NonCopyable.h>
@@ -15,9 +16,10 @@ private:
     std::shared_ptr<GameObject> gameObject;
     std::shared_ptr<TransformComponent> transform;
 
-    bool isAlive = true;
-    bool wasCreateCalled = false;
-    bool isDestroyPending = false;
+    // Components aren't supposed to be thread safe, but this provides a bit of extra safety
+    std::atomic<bool> isAlive = true;
+    std::atomic<bool> wasCreateCalled = false;
+    std::atomic<bool> isDestroyPending = false;
 
     void notifyCreate();
     void notifyDestroy();

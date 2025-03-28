@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -12,8 +13,9 @@ class TransformComponent;
 class GameObject : public NonCopyable, public std::enable_shared_from_this<GameObject>
 {
 private:
-    bool isAlive = true;
-    bool isDestroyPending = false;
+    // GameObjects aren't supposed to be thread safe, but this provides a bit of extra safety
+    std::atomic<bool> isAlive = true;
+    std::atomic<bool> isDestroyPending = false;
 
     std::string name {};
 
