@@ -122,7 +122,7 @@ void GameObject::actualDestroy()
 
     // Then destroy self
     isAlive = false;
-    isDestroyComplete = false;
+    isDestroyComplete = true;
 }
 
 void GameObject::destroy()

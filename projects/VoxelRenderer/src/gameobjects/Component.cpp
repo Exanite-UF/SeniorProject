@@ -107,7 +107,7 @@ void Component::actualDestroy()
     transform.reset();
 
     isAlive = false;
-    isDestroyComplete = false;
+    isDestroyComplete = true;
 }
 
 void Component::destroy()
