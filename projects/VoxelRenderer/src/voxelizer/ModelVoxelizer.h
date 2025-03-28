@@ -31,8 +31,7 @@ private:
     std::vector<Vertex> voxelMesh;
 
     //Voxel Rendering
-    GLuint instanceVBO;
-    unsigned int voxelVAO, voxelVBO, voxelEBO;
+    unsigned int voxelVAO, voxelVBO, voxelEBO, instanceVBO;
     std::vector<glm::vec3> activeVoxels;
 
     void setupBoundingBox();

@@ -13,6 +13,7 @@ ModelPreviewer::~ModelPreviewer()
         delete voxelShader;
     }
     CloseWindowTriangle();
+    CloseWindowVoxel();
 }
 
 void ModelPreviewer::setModel(Model* model_)
@@ -131,7 +132,7 @@ void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
     voxelThreadRunning = true;
     voxelThread = std::thread([this]() {
         glfwMakeContextCurrent(voxelWindow);
-
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
         glewExperimental = GL_TRUE;
@@ -186,7 +187,7 @@ void ModelPreviewer::RenderWindowTriangle()
 {
     if (triangleWindow && loadedModel && !glfwWindowShouldClose(triangleWindow))
     {
-        //glfwMakeContextCurrent(triangleWindow);
+        glfwMakeContextCurrent(triangleWindow);
         glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
         glEnable(GL_DEPTH_TEST); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
@@ -226,8 +227,8 @@ void ModelPreviewer::RenderWindowVoxel()
 {
     if (voxelWindow && modelVox->isVoxelized && !glfwWindowShouldClose(voxelWindow))
     {
-        //glfwMakeContextCurrent(voxelWindow);
-        glClearColor(0.5f, 0.2f, 0.2f, 0.2f);
+        glfwMakeContextCurrent(voxelWindow);
+        glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
         glEnable(GL_DEPTH_TEST); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 

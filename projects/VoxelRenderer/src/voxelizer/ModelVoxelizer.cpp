@@ -128,7 +128,7 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
             for (int y = minCell.y; y <= maxCell.y; ++y)
                 for (int x = minCell.x; x <= maxCell.x; ++x)
                 {
-                    std::cout << z << " " << y << " " << x << std::endl;
+                    //std::cout << z << " " << y << " " << x << std::endl;
                     spatialGrid[{x, y, z}].push_back(tri); // Store the triangle in the corresponding grid cell
                 }
     }
@@ -142,7 +142,7 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
         {
             for (int x = 0; x < gridSize.x; ++x)
             {
-                std::cout << z << " " << y << " " << x << std::endl;
+                //std::cout << z << " " << y << " " << x << std::endl;
                 glm::vec3 voxelMin = minBounds + glm::vec3(x, y, z) * voxelSize;
                 glm::ivec3 gridCell = worldToGrid(voxelMin); //
 
@@ -182,7 +182,7 @@ void ModelVoxelizer::voxelizeModel(int option)
 
     setupBoundingBox();
 
-    triangleVoxelization(voxelGrid);
+    //triangleVoxelization(voxelGrid);
 
     generateVoxelMesh();
 
@@ -245,32 +245,34 @@ void ModelVoxelizer::generateVoxelMesh()
     };
 
 
-    for (int z = 0; z < gridSize.z; ++z) {
-        for (int y = 0; y < gridSize.y; ++y) {
-            for (int x = 0; x < gridSize.x; ++x) {
-
-                if (!voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) 
-                {
-                    continue;
-                }
-
-                glm::vec3 voxelCenter = minBounds + glm::vec3(x + 0.5f, y + 0.5f, z + 0.5f) * voxelSize;
-
-                // Transform template vertices to world space
-                for (const auto& index : cubeIndices) {
-                    Vertex v;
-                    v.Position = glm::vec3(cubeVertices[index], cubeVertices[index + 1], cubeVertices[index + 2]);
-                    v.Position = v.Position * voxelSize + voxelCenter;
-                    voxelMesh.push_back(v);
-                }
-            }
-        }
-    }
+    //for (int z = 0; z < gridSize.z; ++z) {
+    //    for (int y = 0; y < gridSize.y; ++y) {
+    //        for (int x = 0; x < gridSize.x; ++x) {
+//
+    //            if (!voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) 
+    //            {
+    //                continue;
+    //            }
+//
+    //            glm::vec3 voxelCenter = minBounds + glm::vec3(x + 0.5f, y + 0.5f, z + 0.5f) * voxelSize;
+//
+    //            // Transform template vertices to world space
+    //            for (const auto& index : cubeIndices) {
+    //                Vertex v;
+    //                v.Position = glm::vec3(cubeVertices[(index * 8)], cubeVertices[(index * 8) + 1], cubeVertices[(index * 8) + 2]);
+    //                v.TexCoords = glm::vec2(cubeVertices[(index * 8) + 3], cubeVertices[(index * 8) + 4]);
+    //                v.Normal = glm::vec3(cubeVertices[(index * 8) + 5], cubeVertices[(index * 8) + 6], cubeVertices[(index * 8) + 7]);
+    //                v.Position = v.Position * voxelSize + voxelCenter;
+    //                voxelMesh.push_back(v);
+    //            }
+    //        }
+    //    }
+    //}
 
     // Setup
-    //glGenVertexArrays(1, &voxelVAO);
-    //glGenBuffers(1, &instanceVBO);
-    //glBindVertexArray(voxelVAO);
+
+    activeVoxels.clear();
+    activeVoxels.push_back(glm::vec3(0, 0, 0));
 
     glGenVertexArrays(1, &voxelVAO);
     glGenBuffers(1, &voxelVBO);
@@ -300,7 +302,6 @@ void ModelVoxelizer::generateVoxelMesh()
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
 
     // Generate and bind instance VBO for voxel positions
-    glGenBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
 
@@ -310,6 +311,21 @@ void ModelVoxelizer::generateVoxelMesh()
     glVertexAttribDivisor(1, 1);  // Tell OpenGL this is per-instance data
 
     // Unbind VAO
+
+    //activeVoxels.clear();
+    //for (int z = 0; z < gridSize.z; ++z) {
+    //    for (int y = 0; y < gridSize.y; ++y) {
+    //        for (int x = 0; x < gridSize.x; ++x) {
+    //            if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
+    //                activeVoxels.emplace_back(x, y, z);
+    //            }
+    //        }
+    //    }
+    //}
+
+
+    //DEBUG
+
     glBindVertexArray(0);
 
     isVoxelized = true;
@@ -323,23 +339,16 @@ void ModelVoxelizer::DrawVoxels(Shader& shader)
         return;
     }
 
-    activeVoxels.clear();
-    for (int z = 0; z < gridSize.z; ++z) {
-        for (int y = 0; y < gridSize.y; ++y) {
-            for (int x = 0; x < gridSize.x; ++x) {
-                if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
-                    activeVoxels.emplace_back(x, y, z);
-                }
-            }
-        }
-    }
 
     // Update instance buffer with active voxel positions
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), 
-                 activeVoxels.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+
+    //glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
+
 
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
+    //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
 }
