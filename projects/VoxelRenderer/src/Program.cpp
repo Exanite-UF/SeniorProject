@@ -718,9 +718,14 @@ void Program::runLateStartupTests()
     {
         // Verify GameObject destroy API
         auto root = GameObject::createRootObject("Root");
+        auto rootTransform = root->getTransform();
 
         auto child1 = root->createChildObject("Child1");
+        auto child1Transform = child1->getTransform();
+
         auto child2 = root->createChildObject("Child2");
+        auto child2Transform = child2->getTransform();
+
         Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
 
         child1->destroy();
