@@ -253,6 +253,17 @@ void Program::run()
                 glUniform1i(glGetUniformLocation(program, "whichTexture"), 2);
             };
         }
+
+        // Tonemap
+        if (true)
+        {
+
+            auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            toneMap->setUniforms = [&renderer](GLuint program)
+            {
+                glUniform1f(glGetUniformLocation(program, "exposure"), 1.5);
+            };
+        }
     }
 
     // Engine time
