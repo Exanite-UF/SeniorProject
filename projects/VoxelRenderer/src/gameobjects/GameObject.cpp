@@ -121,8 +121,8 @@ void GameObject::actualDestroy()
     }
 
     transform.reset();
-    components.clear();
-    componentsCopy.clear();
+
+    Assert::isTrue(components.size() == 0, "All components should have been destroyed and removed");
 
     // Then destroy self
     isDestroyComplete = true;
