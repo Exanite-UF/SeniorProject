@@ -18,8 +18,8 @@ private:
 
     // Components aren't supposed to be thread safe, but this provides a bit of extra safety
     std::atomic<bool> isAlive = true;
-    std::atomic<bool> wasCreateCalled = false;
-    std::atomic<bool> isDestroyPending = false;
+    std::atomic<bool> wasCreateNotified = false;
+    std::atomic<bool> wasPublicDestroyCalled = false;
     std::atomic<bool> wasDestroyNotified = false;
 
     void notifyCreate();

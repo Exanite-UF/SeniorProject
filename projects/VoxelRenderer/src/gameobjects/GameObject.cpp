@@ -122,19 +122,19 @@ void GameObject::actualDestroy()
 
     // Then destroy self
     isAlive = false;
-    isDestroyPending = false;
+    wasPublicDestroyCalled = false;
 }
 
 void GameObject::destroy()
 {
     ZoneScoped;
 
-    if (!isAlive || isDestroyPending)
+    if (!isAlive || wasPublicDestroyCalled)
     {
         return;
     }
 
-    isDestroyPending = true;
+    wasPublicDestroyCalled = true;
 
     // Notify first
     notifyDestroy();

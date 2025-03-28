@@ -63,12 +63,12 @@ void Component::notifyCreate()
 {
     ZoneScoped;
 
-    if (wasCreateCalled)
+    if (wasCreateNotified)
     {
         return;
     }
 
-    wasCreateCalled = true;
+    wasCreateNotified = true;
     onCreate();
 }
 
@@ -76,14 +76,14 @@ void Component::notifyDestroy()
 {
     ZoneScoped;
 
-    if (!wasCreateCalled && !wasDestroyNotified)
+    if (!wasCreateNotified && !wasDestroyNotified)
     {
         Log::verbose("Skipping Component::onDestroy call since Component::onCreate was not called");
 
         return;
     }
 
-    wasCreateCalled = false;
+    wasCreateNotified = false;
     wasDestroyNotified = true;
 
     onDestroy();
@@ -107,19 +107,19 @@ void Component::actualDestroy()
     transform.reset();
 
     isAlive = false;
-    isDestroyPending = false;
+    wasPublicDestroyCalled = false;
 }
 
 void Component::destroy()
 {
     ZoneScoped;
 
-    if (!isAlive || isDestroyPending)
+    if (!isAlive || wasPublicDestroyCalled)
     {
         return;
     }
 
-    isDestroyPending = true;
+    wasPublicDestroyCalled = true;
 
     // Notify first
     notifyDestroy();
