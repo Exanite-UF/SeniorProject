@@ -1,9 +1,5 @@
-#pragma once
-#include <src/voxelizer/mesh.h>
-#include <gl/glew.h>
-
-
-
+#include <src/voxelizer/Mesh.h>
+#include <src/utilities/OpenGl.h>
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TriangleTexture> textures)
 {

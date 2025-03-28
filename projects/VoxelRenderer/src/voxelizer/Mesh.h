@@ -1,7 +1,6 @@
 #pragma once
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include <src/utilities/OpenGl.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,7 +14,7 @@
 #include <cmath>
 #include <chrono>
 
-#include <src/voxelizer/shader.h>
+#include <src/voxelizer/Shader.h>
 
 struct Vertex
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <src/voxelizer/mesh.h>
+#include <src/voxelizer/Mesh.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 

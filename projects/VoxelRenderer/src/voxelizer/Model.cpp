@@ -1,5 +1,5 @@
-#include <src/voxelizer/model.h>
-#include <gl/glew.h>
+#include <src/voxelizer/Model.h>
+#include <src/utilities/OpenGl.h>
 #include <stb_image.h>
 
 
