@@ -733,6 +733,9 @@ void Program::runLateStartupTests()
         Assert::isTrue(!child2->getIsAlive(), "Child2 GameObject should have been destroyed");
     }
 
+    Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
+    Assert::isTrue(Component::getInstanceCount() == 0, "No Components should be currently alive");
+
     {
         // Verify Transform setParent API
         auto root = GameObject::createRootObject("Root");
@@ -745,7 +748,13 @@ void Program::runLateStartupTests()
         Assert::isTrue(child2->getTransform()->getParent() == nullptr, "Child2 GameObject should not have a parent");
         Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
         Assert::isTrue(root->getTransform()->getChildren().at(0)->getGameObject() == child1, "Root GameObject have Child1 as its only child");
+
+        child2->destroy();
+        root->destroy();
     }
+
+    Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
+    Assert::isTrue(Component::getInstanceCount() == 0, "No Components should be currently alive");
 
     {
         // Verify shader storage block size is large enough

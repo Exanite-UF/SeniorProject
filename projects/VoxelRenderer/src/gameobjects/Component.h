@@ -3,12 +3,13 @@
 #include <atomic>
 #include <memory>
 
+#include <src/utilities/CountInstances.h>
 #include <src/utilities/NonCopyable.h>
 
 class GameObject;
 class TransformComponent;
 
-class Component : public NonCopyable
+class Component : public NonCopyable, public CountInstances
 {
     friend class GameObject;
 

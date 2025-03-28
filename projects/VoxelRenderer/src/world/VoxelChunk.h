@@ -6,10 +6,11 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/utilities/CountInstances.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
 
-class VoxelChunk : public NonCopyable
+class VoxelChunk : public NonCopyable, public CountInstances
 {
 private:
     glm::ivec3 size; // Size of the voxel chunk in voxels
@@ -19,12 +20,8 @@ private:
 
     GraphicsBuffer<uint16_t> materialMap; // This stores the voxel material data
 
-    // Counts the number of VoxelChunk instances for debugging purposes
-    inline static std::atomic<int> debugChunkInstanceCount = 0;
-
 public:
     explicit VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData);
-    ~VoxelChunk() override;
 
     void setSize(glm::ivec3 size);
     [[nodiscard]] glm::ivec3 getSize() const;
@@ -48,7 +45,4 @@ public:
     // generateNoiseOccupancyMap also needs to bind textures. So calling this and then generateNoiseOccupancyMapAndMipMaps will result in some of the textures that this functions binds being unbound
     void bindBuffers(int occupancyMapIndex = 0, int materialMapIndex = 1);
     void unbindBuffers() const;
-
-public:
-    static int getDebugChunkInstanceCount();
 };

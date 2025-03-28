@@ -30,13 +30,6 @@ VoxelChunk::VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData)
         // Generates initial material map
         generatePlaceholderMaterialMap();
     }
-
-    debugChunkInstanceCount++;
-}
-
-VoxelChunk::~VoxelChunk()
-{
-    debugChunkInstanceCount--;
 }
 
 glm::ivec3 VoxelChunk::getSize() const
@@ -174,9 +167,4 @@ void VoxelChunk::unbindBuffers() const
 {
     occupancyMap.unbind();
     materialMap.unbind();
-}
-
-int VoxelChunk::getDebugChunkInstanceCount()
-{
-    return debugChunkInstanceCount;
 }

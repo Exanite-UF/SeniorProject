@@ -6,11 +6,12 @@
 #include <vector>
 
 #include <src/gameobjects/Component.h>
+#include <src/utilities/CountInstances.h>
 #include <src/utilities/NonCopyable.h>
 
 class TransformComponent;
 
-class GameObject : public NonCopyable, public std::enable_shared_from_this<GameObject>
+class GameObject : public NonCopyable, public CountInstances, public std::enable_shared_from_this<GameObject>
 {
 private:
     // GameObjects aren't supposed to be thread safe, but this provides a bit of extra safety
