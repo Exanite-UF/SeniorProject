@@ -13,6 +13,8 @@ class TransformComponent;
 
 class GameObject : public NonCopyable, public CountInstances<GameObject>, public std::enable_shared_from_this<GameObject>
 {
+    friend class Component;
+
 private:
     // GameObjects aren't supposed to be thread safe, but this provides a bit of extra safety
     std::atomic<bool> isAlive = true;
@@ -63,16 +65,6 @@ std::shared_ptr<T> GameObject::addComponent(Args&&... args)
     assertIsAlive();
 
     std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
-    std::weak_ptr<T> weakComponent = component;
-    component->internalDestroyed.subscribePermanently([weakComponent, this](int unused)
-        {
-            auto lockedComponent = weakComponent.lock();
-            if (lockedComponent)
-            {
-                std::erase(components, lockedComponent);
-            }
-        });
-
     components.push_back(component);
 
     // Initialize the component's gameObject and transform fields

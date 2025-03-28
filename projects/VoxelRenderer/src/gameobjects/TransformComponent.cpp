@@ -46,7 +46,7 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     const auto previousParent = this->parent;
     if (previousParent)
     {
-        std::erase(previousParent->children, shared_from_this());
+        std::erase(previousParent->children, std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
     }
 
     // Update parent of self
@@ -55,7 +55,7 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     // Update children of new parent
     if (parent)
     {
-        parent->children.push_back(shared_from_this());
+        parent->children.push_back(std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
     }
 }
 

@@ -4,13 +4,12 @@
 #include <memory>
 
 #include <src/utilities/CountInstances.h>
-#include <src/utilities/Event.h>
 #include <src/utilities/NonCopyable.h>
 
 class GameObject;
 class TransformComponent;
 
-class Component : public NonCopyable, public CountInstances<Component>
+class Component : public NonCopyable, public CountInstances<Component>, public std::enable_shared_from_this<Component>
 {
     friend class GameObject;
 
@@ -24,8 +23,6 @@ private:
     std::atomic<bool> wasPublicDestroyCalled = false;
     std::atomic<bool> wasDestroyNotified = false;
     std::atomic<bool> isDestroyComplete = false;
-
-    Event<int> internalDestroyed {};
 
     void notifyCreate();
 

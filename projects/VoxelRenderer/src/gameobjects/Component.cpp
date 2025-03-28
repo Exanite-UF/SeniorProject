@@ -3,11 +3,10 @@
 #include <format>
 
 #include <src/Constants.h>
+#include <src/gameobjects/GameObject.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
-
-#include "GameObject.h"
 
 Component::Component()
 {
@@ -111,9 +110,8 @@ void Component::actualDestroy()
 
     isAlive = false;
 
-    // destroyed is internal facing so we need it to be called exactly once
-    internalDestroyed.raise(0);
-    internalDestroyed.clearPermanentSubscriptions();
+    // Remove self from GameObject
+    std::erase(gameObject->components, shared_from_this());
 
     // Destroy self
     gameObject.reset();
