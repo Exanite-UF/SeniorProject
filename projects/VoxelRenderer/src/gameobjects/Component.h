@@ -21,6 +21,7 @@ private:
     std::atomic<bool> wasCreateNotified = false;
     std::atomic<bool> wasPublicDestroyCalled = false;
     std::atomic<bool> wasDestroyNotified = false;
+    std::atomic<bool> isDestroyComplete = false;
 
     void notifyCreate();
 

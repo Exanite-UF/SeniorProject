@@ -17,6 +17,7 @@ private:
     std::atomic<bool> isAlive = true;
     std::atomic<bool> wasPublicDestroyCalled = false;
     std::atomic<bool> wasDestroyNotified = false;
+    std::atomic<bool> isDestroyComplete = false;
 
     std::string name {};
 
