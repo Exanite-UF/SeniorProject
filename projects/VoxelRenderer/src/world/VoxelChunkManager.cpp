@@ -69,7 +69,10 @@ VoxelChunkManager::ActiveWorldChunk::~ActiveWorldChunk()
     std::lock_guard lock(scene->getMutex());
 
     scene->removeWorldChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
-    component->getGameObject()->destroy();
+    if (component->getIsAlive())
+    {
+        component->getGameObject()->destroy();
+    }
 }
 
 VoxelChunkManager::~VoxelChunkManager() = default;
