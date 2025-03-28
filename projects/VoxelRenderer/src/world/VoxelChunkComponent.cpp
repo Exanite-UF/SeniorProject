@@ -81,9 +81,9 @@ void VoxelChunkComponent::onDestroy()
 {
     ZoneScoped;
 
-    Component::onDestroy();
-
     std::lock_guard lock(getMutex());
 
     setExistsOnGpu(false);
+
+    Component::onDestroy();
 }

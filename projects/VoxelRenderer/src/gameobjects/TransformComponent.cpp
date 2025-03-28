@@ -67,8 +67,6 @@ void TransformComponent::onDestroy()
 {
     ZoneScoped;
 
-    Component::onDestroy();
-
     setParent(nullptr);
 
     // Destroy all children GameObjects in reverse order
@@ -76,13 +74,19 @@ void TransformComponent::onDestroy()
     auto childrenCopy = children;
     for (int i = childrenCopy.size() - 1; i >= 0; --i)
     {
-        childrenCopy[i]->getGameObject()->destroy();
+        auto child = childrenCopy[i];
+        if (child->getIsAlive())
+        {
+            child->getGameObject()->destroy();
+        }
     }
 
     children.clear();
 
     // Destroy own GameObject to ensure the TransformComponent is never destroyed without its GameObject being destroyed
     getGameObject()->destroy();
+
+    Component::onDestroy();
 }
 
 const glm::vec3& TransformComponent::getLocalPosition() const
