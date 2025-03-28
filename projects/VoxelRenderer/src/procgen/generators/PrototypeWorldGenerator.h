@@ -27,6 +27,9 @@ private:
 
     void generateData(VoxelChunkData& data) override;
 
+    int randomBetween(int min, int max);
+    void generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafWidthExtentBelowZ, int leafWidthExtentAboveZ);
+
 public:
     explicit PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
 

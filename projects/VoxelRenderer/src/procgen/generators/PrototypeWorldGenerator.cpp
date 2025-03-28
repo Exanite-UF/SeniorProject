@@ -69,13 +69,23 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     glm::vec3 treeLocation({ data.getSize().x / 2, data.getSize().y / 2, 0 });
     int voxelsPerMeter = 8;
 
-    int treeHeightVoxels = 7 * voxelsPerMeter;
-    int treeWidthVoxels = 1 * voxelsPerMeter;
+    int minTreeHeightVoxels = 5 * voxelsPerMeter;
+    int maxTreeHeightVoxels = 7 * voxelsPerMeter;
 
-    int leafWidthX = 4 * voxelsPerMeter;
-    int leafWidthY = 4 * voxelsPerMeter;
-    int leafWidthExtentBelowZ = 1 * voxelsPerMeter;
-    int leafWidthExtentAboveZ = 4 * voxelsPerMeter;
+    int minTreeWidthVoxels = 1 * voxelsPerMeter;
+    int maxTreeWidthVoxels = 2 * voxelsPerMeter;
+
+    int minLeafWidthX = 4 * voxelsPerMeter;
+    int maxLeafWidthX = 6 * voxelsPerMeter;
+    
+    int minLeafWidthY = 4 * voxelsPerMeter;
+    int maxLeafWidthY = 6 * voxelsPerMeter;
+
+    int minLeafExtentBelowZ = 0 * voxelsPerMeter;
+    int maxLeafExtentBelowZ = 0 * voxelsPerMeter;
+
+    int minLeafExtentAboveZ = 1 * voxelsPerMeter;
+    int maxLeafExtentAboveZ = 1 * voxelsPerMeter;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
     glm::vec2 offset = chunkSize * chunkPosition;
@@ -112,83 +122,102 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             lastHeightBlocks -= dirtDepth;
 
             if (treeLocation.x == x && treeLocation.y == y)
-            {
+            { 
+                glm::vec3 originVoxel({ x, y, heightVoxels });
+
                 // Naive seeding. Is there a better way?
-                std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + x * 11 + y * 11);
-                glm::vec3 startVoxel = { x, y, heightVoxels };
+                std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
 
-                // Tree Trunk
-                int treeWidthRadius = treeWidthVoxels / 2;
+                int treeHeightVoxels = randomBetween(minTreeHeightVoxels, maxTreeHeightVoxels); 
+                int treeWidthVoxels = randomBetween(minTreeWidthVoxels, maxTreeWidthVoxels);
+                int leafWidthX = randomBetween(minLeafWidthX, maxLeafWidthX);
+                int leafWidthY = randomBetween(minLeafWidthY, maxLeafWidthY);
+                int leafExtentBelowZ = randomBetween(minLeafExtentBelowZ, maxLeafExtentBelowZ);
+                int leafExtentAboveZ = randomBetween(minLeafExtentAboveZ, maxLeafExtentAboveZ);
 
-                for (int localX = -treeWidthRadius; localX <= treeWidthRadius; ++localX)
+                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ);
+            }
+        }
+    }
+}
+
+
+int PrototypeWorldGenerator::randomBetween(int min, int max)
+{
+    return min + rand() % (max - min + 1);
+}
+
+void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafWidthExtentBelowZ, int leafWidthExtentAboveZ)
+{
+    // Tree Trunk
+    int treeWidthRadius = treeWidthVoxels / 2;
+
+    for (int localX = -treeWidthRadius; localX <= treeWidthRadius; ++localX)
+    {
+        for (int localY = -treeWidthRadius; localY <= treeWidthRadius; ++localY)
+        {
+            for (int localZ = 0; localZ <= treeHeightVoxels; ++localZ)
+            {
+                glm::vec3 localVoxel = { originVoxel.y + localX, originVoxel.y + localY, originVoxel.z + localZ };
+
+                // Fall through
+                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
                 {
-                    for (int localY = -treeWidthRadius; localY <= treeWidthRadius; ++localY)
-                    {
-                        for (int localZ = 0; localZ <= treeHeightVoxels; ++localZ)
-                        {
-                            glm::vec3 localVoxel = { startVoxel.y + localX, startVoxel.y + localY, startVoxel.z + localZ };
-
-                            // Fall through
-                            if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
-                            {
-                                continue;
-                            }
-
-                            if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
-                            {
-                                continue;
-                            }
-
-                            data.setVoxelOccupancy(localVoxel, true);
-                            data.setVoxelMaterial(localVoxel, oakLogMaterial);
-                        }
-                    }
+                    continue;
                 }
 
-                glm::vec3 startOffset = { 0, 0, treeHeightVoxels + 1 };
-                startVoxel += startOffset;
-
-                int leafWidthRadiusX = leafWidthX / 2;
-                int leafWidthRadiusY = leafWidthY / 2;
-
-                // Setup tree function
-                int height = leafWidthExtentAboveZ;
-                int heightToWidthXRatio = (height) / leafWidthX;
-                int heightToWidthYRatio = (height) / leafWidthY;
-
-                for (int localX = -leafWidthRadiusX; localX <= leafWidthRadiusX; ++localX)
+                if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
                 {
-                    for (int localY = -leafWidthRadiusY; localY <= leafWidthRadiusY; ++localY)
+                    continue;
+                }
+
+                data.setVoxelOccupancy(localVoxel, true);
+                data.setVoxelMaterial(localVoxel, logMaterial);
+            }
+        }
+    }
+
+    glm::vec3 originOffset = { 0, 0, treeHeightVoxels + 1 };
+    originVoxel += originOffset;
+
+    int leafWidthRadiusX = leafWidthX / 2;
+    int leafWidthRadiusY = leafWidthY / 2;
+
+    // Setup tree function
+    int height = leafWidthExtentAboveZ;
+    int heightToWidthXRatio = (height) / leafWidthX;
+    int heightToWidthYRatio = (height) / leafWidthY;
+
+    for (int localX = -leafWidthRadiusX; localX <= leafWidthRadiusX; ++localX)
+    {
+        for (int localY = -leafWidthRadiusY; localY <= leafWidthRadiusY; ++localY)
+        {
+            for (int localZ = -leafWidthExtentBelowZ; localZ <= leafWidthExtentAboveZ; ++localZ)
+            {
+                glm::vec3 localVoxel = { originVoxel.y + localX, originVoxel.y + localY, originVoxel.z + localZ };
+
+                // Fall through
+                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
+                {
+                    continue;
+                }
+
+                if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
+                {
+                    continue;
+                }
+
+                // Sample from tree function
+                float treeFunctionSample = height - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY) - localZ;
+                // Simple random function. Probably better to clump and also add so it looks more organic.
+                int randomSample = (rand() % 10);
+
+                if (treeFunctionSample > 0 && randomSample > 6)
+                {
+                    if (data.getVoxelMaterial(localVoxel) != logMaterial)
                     {
-                        for (int localZ = -leafWidthExtentBelowZ; localZ <= leafWidthExtentAboveZ; ++localZ)
-                        {
-                            glm::vec3 localVoxel = { startVoxel.y + localX, startVoxel.y + localY, startVoxel.z + localZ };
-
-                            // Fall through
-                            if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
-                            {
-                                continue;
-                            }
-
-                            if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
-                            {
-                                continue;
-                            }
-
-                            // Sample from tree function
-                            float treeFunctionSample = height - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY) - localZ;
-                            // Simple random function. Probably better to clump and also add so it looks more organic.
-                            int randomSample = (rand() % 10);
-
-                            if (treeFunctionSample > 0 && randomSample > 6)
-                            {
-                                if (data.getVoxelMaterial(localVoxel) != oakLogMaterial)
-                                {
-                                    data.setVoxelOccupancy(localVoxel, true);
-                                    data.setVoxelMaterial(localVoxel, oakLeafMaterial);
-                                }
-                            }
-                        }
+                        data.setVoxelOccupancy(localVoxel, true);
+                        data.setVoxelMaterial(localVoxel, leafMaterial);
                     }
                 }
             }
