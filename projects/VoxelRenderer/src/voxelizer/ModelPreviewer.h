@@ -34,10 +34,10 @@ private:
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
     Model* loadedModel = nullptr; // might want to replace with shared ptr
-    std::string vertShaderPathTriangle = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Phong.vertex.glsl";
-    std::string fragShaderPathTriangle = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Phong.fragment.glsl";
-    std::string vertShaderPathVoxel = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.vertex.glsl";
-    std::string fragShaderPathVoxel = "R:/Code/SeniorProject/projects/VoxelRenderer/content/Triangulation/Voxel.fragment.glsl";
+    std::string vertShaderPathTriangle = "content/Triangulation/Phong.vertex.glsl";
+    std::string fragShaderPathTriangle = "content/Triangulation/Phong.fragment.glsl";
+    std::string vertShaderPathVoxel = "content/Triangulation/Voxel.vertex.glsl";
+    std::string fragShaderPathVoxel = "content/Triangulation/Voxel.fragment.glsl";
     
     Shader* triangleShader = nullptr;
     Shader* voxelShader = nullptr;
