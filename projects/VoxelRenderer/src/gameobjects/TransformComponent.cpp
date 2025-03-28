@@ -1,6 +1,7 @@
 #include "TransformComponent.h"
 
 #include <src/gameobjects/GameObject.h>
+#include <tracy/Tracy.hpp>
 
 const std::shared_ptr<TransformComponent>& TransformComponent::getParent() const
 {
@@ -14,6 +15,8 @@ const std::vector<std::shared_ptr<TransformComponent>>& TransformComponent::getC
 
 void TransformComponent::updateTransform() const
 {
+    ZoneScoped;
+
     auto localTransform = glm::translate(glm::mat4(1.0f), localPosition) * glm::mat4_cast(localRotation) * glm::scale(glm::mat4(1.0f), localScale);
 
     if (parent)
@@ -37,6 +40,8 @@ void TransformComponent::updateTransform() const
 
 void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& parent)
 {
+    ZoneScoped;
+
     // Remove self from parent's child list
     const auto previousParent = this->parent;
     if (previousParent)
@@ -60,6 +65,8 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
 
 void TransformComponent::onDestroy()
 {
+    ZoneScoped;
+
     Component::onDestroy();
 
     setParent(nullptr);

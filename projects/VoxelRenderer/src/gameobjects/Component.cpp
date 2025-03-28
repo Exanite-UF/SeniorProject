@@ -5,11 +5,14 @@
 #include <src/Constants.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
+#include <tracy/Tracy.hpp>
 
 #include "GameObject.h"
 
 Component::Component()
 {
+    ZoneScoped;
+
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::information(std::format("Component constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
@@ -18,6 +21,8 @@ Component::Component()
 
 Component::~Component()
 {
+    ZoneScoped;
+
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::information(std::format("Component destructor called for {:s} @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
@@ -50,6 +55,8 @@ void Component::onUpdate()
 
 void Component::notifyCreate()
 {
+    ZoneScoped;
+
     if (wasCreateCalled)
     {
         return;
@@ -61,6 +68,8 @@ void Component::notifyCreate()
 
 void Component::notifyDestroy()
 {
+    ZoneScoped;
+
     if (isDestroyPending)
     {
         return;
@@ -80,11 +89,15 @@ void Component::notifyDestroy()
 
 void Component::notifyUpdate()
 {
+    ZoneScoped;
+
     onUpdate();
 }
 
 void Component::actualDestroy()
 {
+    ZoneScoped;
+
     assertIsAlive();
 
     // Destroy self
@@ -97,6 +110,8 @@ void Component::actualDestroy()
 
 void Component::destroy()
 {
+    ZoneScoped;
+
     if (!isAlive || isDestroyPending)
     {
         return;

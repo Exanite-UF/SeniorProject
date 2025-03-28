@@ -6,9 +6,12 @@
 #include <src/gameobjects/TransformComponent.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
+#include <tracy/Tracy.hpp>
 
 GameObject::GameObject(const std::string& name)
 {
+    ZoneScoped;
+
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::information(std::format("GameObject constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
@@ -19,6 +22,8 @@ GameObject::GameObject(const std::string& name)
 
 GameObject::~GameObject()
 {
+    ZoneScoped;
+
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::information(std::format("GameObject destructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
@@ -34,6 +39,8 @@ std::shared_ptr<TransformComponent>& GameObject::getTransform()
 
 void GameObject::update()
 {
+    ZoneScoped;
+
     assertIsAlive();
 
     // Update own components
@@ -51,6 +58,8 @@ void GameObject::update()
 
 std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name)
 {
+    ZoneScoped;
+
     auto gameObject = std::make_shared<GameObject>(name);
 
     // Add default Transform component
@@ -70,6 +79,8 @@ std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name
 
 std::shared_ptr<GameObject> GameObject::createChildObject(const std::string& name)
 {
+    ZoneScoped;
+
     auto child = createRootObject(name);
     child->getTransform()->setParent(getTransform());
 
@@ -78,6 +89,8 @@ std::shared_ptr<GameObject> GameObject::createChildObject(const std::string& nam
 
 void GameObject::notifyDestroy()
 {
+    ZoneScoped;
+
     if (isDestroyPending)
     {
         return;
@@ -94,6 +107,8 @@ void GameObject::notifyDestroy()
 
 void GameObject::actualDestroy()
 {
+    ZoneScoped;
+
     assertIsAlive();
 
     // Destroy components in reverse order
@@ -112,6 +127,8 @@ void GameObject::actualDestroy()
 
 void GameObject::destroy()
 {
+    ZoneScoped;
+
     if (!isAlive || isDestroyPending)
     {
         return;
