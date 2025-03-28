@@ -91,12 +91,12 @@ void GameObject::notifyDestroy()
 {
     ZoneScoped;
 
-    if (isDestroyPending)
+    if (wasDestroyNotified)
     {
         return;
     }
 
-    isDestroyPending = true;
+    wasDestroyNotified = true;
 
     // Notify components in reverse order
     for (int i = components.size() - 1; i >= 0; --i)
@@ -133,6 +133,8 @@ void GameObject::destroy()
     {
         return;
     }
+
+    isDestroyPending = true;
 
     // Notify first
     notifyDestroy();

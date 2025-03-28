@@ -16,6 +16,7 @@ private:
     // GameObjects aren't supposed to be thread safe, but this provides a bit of extra safety
     std::atomic<bool> isAlive = true;
     std::atomic<bool> isDestroyPending = false;
+    std::atomic<bool> wasDestroyNotified = false;
 
     std::string name {};
 

@@ -76,14 +76,7 @@ void Component::notifyDestroy()
 {
     ZoneScoped;
 
-    if (isDestroyPending)
-    {
-        return;
-    }
-
-    isDestroyPending = true;
-
-    if (!wasCreateCalled)
+    if (!wasCreateCalled && !wasDestroyNotified)
     {
         Log::verbose("Skipping Component::onDestroy call since Component::onCreate was not called");
 
@@ -91,6 +84,7 @@ void Component::notifyDestroy()
     }
 
     wasCreateCalled = false;
+    wasDestroyNotified = true;
 
     onDestroy();
 }
@@ -124,6 +118,8 @@ void Component::destroy()
     {
         return;
     }
+
+    isDestroyPending = true;
 
     // Notify first
     notifyDestroy();

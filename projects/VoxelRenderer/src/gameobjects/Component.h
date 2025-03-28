@@ -20,15 +20,19 @@ private:
     std::atomic<bool> isAlive = true;
     std::atomic<bool> wasCreateCalled = false;
     std::atomic<bool> isDestroyPending = false;
+    std::atomic<bool> wasDestroyNotified = false;
 
     void notifyCreate();
+
     void notifyDestroy();
+
     void notifyUpdate();
 
     void actualDestroy();
 
 protected:
     Component();
+
     ~Component() override;
 
     // Certain calls are paired
@@ -38,7 +42,9 @@ protected:
 
     // Note: A component is not considered destroyed until after onDestroy is called, specifically it is not destroyed until the internal actualDestroy call.
     virtual void onCreate();
+
     virtual void onDestroy();
+
     virtual void onUpdate();
 
 public:
@@ -72,8 +78,10 @@ public:
     void destroy();
 
     std::shared_ptr<TransformComponent>& getTransform();
+
     std::shared_ptr<GameObject>& getGameObject();
 
     bool getIsAlive() const;
+
     void assertIsAlive() const;
 };
