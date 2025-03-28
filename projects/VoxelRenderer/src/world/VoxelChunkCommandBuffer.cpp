@@ -1,5 +1,6 @@
 #include "VoxelChunkCommandBuffer.h"
 
+#include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
 
 void VoxelChunkCommandBuffer::setSize(const glm::ivec3& size)
@@ -54,6 +55,12 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
     // Acquire lock for component, but not for the scene
     std::unique_lock lockComponent(component->getMutex());
+    if (!component->getIsAlive())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent was destroyed.");
+
+        return;
+    }
 
     auto& chunkData = component->getRawChunkData();
 
@@ -149,12 +156,25 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     lockComponent.unlock();
                     {
                         std::shared_lock sharedLockComponent(component->getMutex());
+                        if (!component->getIsAlive())
+                        {
+                            Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent was destroyed.");
+
+                            return;
+                        }
 
                         component->getRawChunkData().writeTo(*component->getChunk());
 
                         isGpuUpToDate = true;
                     }
+
                     lockComponent.lock();
+                    if (!component->getIsAlive())
+                    {
+                        Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent was destroyed.");
+
+                        return;
+                    }
                 }
 
                 // Check if we need to update list of uploaded chunks
