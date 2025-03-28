@@ -46,4 +46,6 @@ public:
 
     constexpr static std::string_view denoiseShader = "content/PostProcessing/Denoise.fragment.glsl";
     constexpr static std::string_view denoise2Shader = "content/PostProcessing/Denoise2.fragment.glsl";
+
+    constexpr static std::string_view toneMapShader = "content/PostProcessing/ToneMap.fragment.glsl";
 };
