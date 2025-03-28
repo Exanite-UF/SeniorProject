@@ -62,6 +62,8 @@
 
 Program::Program()
 {
+    ZoneScoped;
+
     // Ensure preconditions are met
     runEarlyStartupTests();
     Log::information("Starting Voxel Renderer");
@@ -84,6 +86,8 @@ Program::Program()
 
 Program::~Program()
 {
+    ZoneScoped;
+
     // Cleanup singletons
     SingletonManager::destroyAllSingletons();
 
@@ -601,11 +605,17 @@ void Program::run()
         FrameMark;
     }
 
-    sceneObject->destroy();
+    {
+        ZoneScopedN("Destroy scene");
+
+        sceneObject->destroy();
+    }
 }
 
 void Program::checkForContentFolder()
 {
+    ZoneScoped;
+
     if (!std::filesystem::is_directory("content"))
     {
         throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
@@ -616,6 +626,8 @@ void Program::checkForContentFolder()
 
 void Program::runEarlyStartupTests()
 {
+    ZoneScoped;
+
     Log::information("Running early startup tests (in constructor)");
 
     {
@@ -699,6 +711,8 @@ void Program::runEarlyStartupTests()
 
 void Program::runLateStartupTests()
 {
+    ZoneScoped;
+
     Log::information("Running late startup tests (in run())");
 
     {
