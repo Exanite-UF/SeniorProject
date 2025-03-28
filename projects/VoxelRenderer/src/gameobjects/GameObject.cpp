@@ -111,6 +111,8 @@ void GameObject::actualDestroy()
 
     assertIsAlive();
 
+    isAlive = false;
+
     // Destroy components in reverse order
     auto componentsCopy = components;
     for (int i = componentsCopy.size() - 1; i >= 0; --i)
@@ -120,9 +122,9 @@ void GameObject::actualDestroy()
 
     transform.reset();
     components.clear();
+    componentsCopy.clear();
 
     // Then destroy self
-    isAlive = false;
     isDestroyComplete = true;
 }
 

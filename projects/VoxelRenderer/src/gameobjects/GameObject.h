@@ -62,6 +62,16 @@ std::shared_ptr<T> GameObject::addComponent(Args&&... args)
     assertIsAlive();
 
     std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
+    std::weak_ptr<T> weakComponent = component;
+    component->internalDestroyed.subscribePermanently([weakComponent, this](int unused)
+        {
+            auto lockedComponent = weakComponent.lock();
+            if (lockedComponent)
+            {
+                std::erase(components, lockedComponent);
+            }
+        });
+
     components.push_back(component);
 
     // Initialize the component's gameObject and transform fields

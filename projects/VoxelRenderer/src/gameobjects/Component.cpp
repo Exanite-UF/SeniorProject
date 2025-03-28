@@ -76,7 +76,14 @@ void Component::notifyDestroy()
 {
     ZoneScoped;
 
-    if (!wasCreateNotified && !wasDestroyNotified)
+    if (wasDestroyNotified)
+    {
+        return;
+    }
+
+    wasDestroyNotified = true;
+
+    if (!wasCreateNotified)
     {
         Log::verbose("Skipping Component::onDestroy call since Component::onCreate was not called");
 
@@ -84,8 +91,8 @@ void Component::notifyDestroy()
     }
 
     wasCreateNotified = false;
-    wasDestroyNotified = true;
 
+    // onDestroy is user facing so we should only call it when onCreate was also called
     onDestroy();
 }
 
@@ -102,11 +109,16 @@ void Component::actualDestroy()
 
     assertIsAlive();
 
+    isAlive = false;
+
+    // destroyed is internal facing so we need it to be called exactly once
+    internalDestroyed.raise(0);
+    internalDestroyed.clearPermanentSubscriptions();
+
     // Destroy self
     gameObject.reset();
     transform.reset();
 
-    isAlive = false;
     isDestroyComplete = true;
 }
 
