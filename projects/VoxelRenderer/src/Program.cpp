@@ -142,7 +142,7 @@ void Program::run()
     // Create the camera GameObject
     auto cameraObject = sceneObject->createChildObject("Camera");
     auto camera = cameraObject->addComponent<CameraComponent>();
-    auto& cameraTransform = camera->getTransform();
+    auto cameraTransform = camera->getTransform();
     scene->setCamera(camera);
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
 
