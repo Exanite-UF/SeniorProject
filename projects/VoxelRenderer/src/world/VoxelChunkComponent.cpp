@@ -50,6 +50,8 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writ
 {
     ZoneScoped;
 
+    assertIsAlive();
+
     if (this->existsOnGpu == existsOnGpu)
     {
         return;
