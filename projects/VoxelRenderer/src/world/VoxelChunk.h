@@ -10,7 +10,7 @@
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
 
-class VoxelChunk : public NonCopyable, public CountInstances
+class VoxelChunk : public NonCopyable, public CountInstances<VoxelChunk>
 {
 private:
     glm::ivec3 size; // Size of the voxel chunk in voxels

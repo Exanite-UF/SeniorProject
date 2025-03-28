@@ -9,7 +9,7 @@
 class GameObject;
 class TransformComponent;
 
-class Component : public NonCopyable, public CountInstances
+class Component : public NonCopyable, public CountInstances<Component>
 {
     friend class GameObject;
 

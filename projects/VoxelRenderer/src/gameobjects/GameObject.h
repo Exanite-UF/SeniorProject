@@ -11,7 +11,7 @@
 
 class TransformComponent;
 
-class GameObject : public NonCopyable, public CountInstances, public std::enable_shared_from_this<GameObject>
+class GameObject : public NonCopyable, public CountInstances<GameObject>, public std::enable_shared_from_this<GameObject>
 {
 private:
     // GameObjects aren't supposed to be thread safe, but this provides a bit of extra safety
