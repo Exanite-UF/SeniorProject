@@ -9,7 +9,8 @@ private:
 
 public:
     CountInstances();
-    ~CountInstances();
+
+    virtual ~CountInstances();
 
     static int getInstanceCount();
 };
