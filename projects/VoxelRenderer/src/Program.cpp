@@ -734,6 +734,20 @@ void Program::runLateStartupTests()
     }
 
     {
+        // Verify Transform setParent API
+        auto root = GameObject::createRootObject("Root");
+
+        auto child1 = root->createChildObject("Child1");
+        auto child2 = root->createChildObject("Child2");
+        Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
+
+        child2->getTransform()->setParent(nullptr);
+        Assert::isTrue(child2->getTransform()->getParent() == nullptr, "Child2 GameObject should not have a parent");
+        Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
+        Assert::isTrue(root->getTransform()->getChildren().at(0)->getGameObject() == child1, "Root GameObject have Child1 as its only child");
+    }
+
+    {
         // Verify shader storage block size is large enough
         GLint size;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
