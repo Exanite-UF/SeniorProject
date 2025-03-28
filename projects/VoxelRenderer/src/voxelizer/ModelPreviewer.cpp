@@ -88,7 +88,7 @@ void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string
             }
             last_frame = now;
 
-            glfwSwapBuffers(triangleWindow);
+            //glfwSwapBuffers(triangleWindow);
         }
 
         // Cleanup in the rendering thread
@@ -159,18 +159,18 @@ void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
 
             // Initial render
             RenderWindowVoxel();
-            glfwSwapBuffers(voxelWindow);
+            //glfwSwapBuffers(voxelWindow);
 
 
-            //static auto last_frame = std::chrono::steady_clock::now();
-            //auto now = std::chrono::steady_clock::now();
-            //auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
-            //if (elapsed.count() < 33) {  // ~30 FPS
-            //    std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
-            //}
-            //last_frame = now;
+            static auto last_frame = std::chrono::steady_clock::now();
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
+            if (elapsed.count() < 33) {  // ~30 FPS
+                std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
+            }
+            last_frame = now;
 
-            glfwSwapInterval(1); // Enable V-Sync to sync frames with monitor refresh rate
+            //glfwSwapInterval(1); // Enable V-Sync to sync frames with monitor refresh rate
         }
 
         // Cleanup in the rendering thread
@@ -226,8 +226,8 @@ void ModelPreviewer::RenderWindowVoxel()
 {
     if (voxelWindow && modelVox->isVoxelized && !glfwWindowShouldClose(voxelWindow))
     {
-        glfwMakeContextCurrent(voxelWindow);
-        glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
+        //glfwMakeContextCurrent(voxelWindow);
+        glClearColor(0.5f, 0.2f, 0.2f, 0.2f);
         glEnable(GL_DEPTH_TEST); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 
