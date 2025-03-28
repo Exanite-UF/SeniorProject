@@ -39,8 +39,8 @@ target_link_libraries(VoxelRenderer PRIVATE cgal)
 # Tracy compiler
 target_link_libraries(VoxelRenderer PRIVATE Tracy::TracyClient)
 
-if (DEBUGINFOD_LIBRARY)
-    message(STATUS "Found libdebuginfod. Linking VoxelRenderer with libdebuginfod")
+if (DEBUGINFOD_LIBRARY AND SP_ENABLE_PROFILING)
+    message(STATUS "Found libdebuginfod and SP_ENABLE_PROFILING is ON. Linking VoxelRenderer with libdebuginfod")
     target_compile_definitions(VoxelRenderer PUBLIC TRACY_DEBUGINFOD=1)
     target_link_libraries(VoxelRenderer PRIVATE ${DEBUGINFOD_LIBRARY})
 endif()
