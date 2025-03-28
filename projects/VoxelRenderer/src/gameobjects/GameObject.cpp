@@ -60,7 +60,7 @@ std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name
 {
     ZoneScoped;
 
-    auto gameObject = std::make_shared<GameObject>(name);
+    auto gameObject = std::shared_ptr<GameObject>(new GameObject(name));
 
     // Add default Transform component
     auto transform = gameObject->addComponent<TransformComponent>();

@@ -31,8 +31,9 @@ private:
 
     void actualDestroy();
 
-public:
     explicit GameObject(const std::string& name = defaultName);
+
+public:
     ~GameObject() override;
 
     void update();
