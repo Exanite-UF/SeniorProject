@@ -118,6 +118,7 @@ void GameObject::actualDestroy()
         componentsCopy.at(i)->destroy();
     }
 
+    transform.reset();
     components.clear();
 
     // Then destroy self
