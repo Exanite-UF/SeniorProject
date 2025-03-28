@@ -34,6 +34,7 @@ protected:
     // constructor + destructor
     // onCreate + onDestroy
 
+    // Note: A component is not considered destroyed until after onDestroy is called, specifically it is not destroyed until the internal actualDestroy call.
     virtual void onCreate();
     virtual void onDestroy();
     virtual void onUpdate();
