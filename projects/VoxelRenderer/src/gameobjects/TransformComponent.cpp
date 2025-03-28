@@ -46,11 +46,7 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     const auto previousParent = this->parent;
     if (previousParent)
     {
-        auto self = std::find(previousParent->children.begin(), previousParent->children.end(), shared_from_this());
-        if (self != previousParent->children.end())
-        {
-            previousParent->children.erase(self);
-        }
+        std::erase(previousParent->children, shared_from_this());
     }
 
     // Update parent of self
