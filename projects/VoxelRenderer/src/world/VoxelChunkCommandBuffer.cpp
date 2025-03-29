@@ -57,7 +57,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     std::unique_lock lockComponent(component->getMutex());
     if (!component->getIsPartOfWorld())
     {
-        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent was destroyed.");
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
         return;
     }
@@ -158,7 +158,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                         std::shared_lock sharedLockComponent(component->getMutex());
                         if (!component->getIsPartOfWorld())
                         {
-                            Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent was destroyed.");
+                            Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
                             return;
                         }
@@ -171,7 +171,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     lockComponent.lock();
                     if (!component->getIsPartOfWorld())
                     {
-                        Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent was destroyed.");
+                        Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
                         return;
                     }
