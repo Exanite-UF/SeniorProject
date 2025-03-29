@@ -150,32 +150,7 @@ int PrototypeWorldGenerator::randomBetween(int min, int max)
 void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafExtentBelowZ, int leafExtentAboveZ)
 {
     // Tree Trunk
-    int treeWidthRadius = treeWidthVoxels / 2;
-
-    for (int localX = -treeWidthRadius; localX <= treeWidthRadius; ++localX)
-    {
-        for (int localY = -treeWidthRadius; localY <= treeWidthRadius; ++localY)
-        {
-            for (int localZ = 0; localZ <= treeHeightVoxels; ++localZ)
-            {
-                glm::vec3 localVoxel = { originVoxel.y + localX, originVoxel.y + localY, originVoxel.z + localZ };
-
-                // Fall through
-                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
-                {
-                    continue;
-                }
-
-                if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
-                {
-                    continue;
-                }
-
-                data.setVoxelOccupancy(localVoxel, true);
-                data.setVoxelMaterial(localVoxel, logMaterial);
-            }
-        }
-    }
+    generateRectangle(data, logMaterial, originVoxel, treeWidthVoxels, treeWidthVoxels, treeHeightVoxels);
 
     glm::vec3 originOffset = { 0, 0, treeHeightVoxels + 1 };
     originVoxel += originOffset;
@@ -223,6 +198,37 @@ void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr
                         data.setVoxelMaterial(localVoxel, leafMaterial);
                     }
                 }
+            }
+        }
+    }
+}
+
+void PrototypeWorldGenerator::generateRectangle(VoxelChunkData& data, std::shared_ptr<Material>& material, glm::vec3 originVoxel, int widthX, int widthY, int height)
+{
+    int widthXOffset = widthX/2;
+    int widthYOffset = widthY/2;
+
+    for (int localX = 0; localX <= widthX; ++localX)
+    {
+        for (int localY = 0; localY <= widthY; ++localY)
+        {
+            for (int localZ = 0; localZ <= height; ++localZ)
+            {
+                glm::vec3 localVoxel = { originVoxel.y + localX - widthXOffset, originVoxel.y + localY - widthYOffset, originVoxel.z + localZ };
+
+                // Fall through
+                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
+                {
+                    continue;
+                }
+
+                if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
+                {
+                    continue;
+                }
+
+                data.setVoxelOccupancy(localVoxel, true);
+                data.setVoxelMaterial(localVoxel, material);
             }
         }
     }
