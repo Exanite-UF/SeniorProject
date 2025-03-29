@@ -67,26 +67,6 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
     glm::vec3 treeLocation({ data.getSize().x / 2, data.getSize().y / 2, 0 });
-    int voxelsPerMeter = 8;
-
-    int minTreeHeightVoxels = 5 * voxelsPerMeter;
-    int maxTreeHeightVoxels = 7 * voxelsPerMeter;
-
-    int minTreeWidthVoxels = 1 * voxelsPerMeter;
-    int maxTreeWidthVoxels = 2 * voxelsPerMeter;
-
-    int minLeafWidthX = 4 * voxelsPerMeter;
-    int maxLeafWidthX = 6 * voxelsPerMeter;
-    
-    int minLeafWidthY = 4 * voxelsPerMeter;
-    int maxLeafWidthY = 6 * voxelsPerMeter;
-
-    int minLeafExtentBelowZ = 0 * voxelsPerMeter;
-    int maxLeafExtentBelowZ = 0 * voxelsPerMeter;
-
-    int minLeafExtentAboveZ = 4 * voxelsPerMeter;
-    int maxLeafExtentAboveZ = 10 * voxelsPerMeter;
-
     float probabilityToFill = 0.6;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
@@ -130,12 +110,12 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 // Naive seeding. Is there a better way?
                 std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
 
-                int treeHeightVoxels = randomBetween(minTreeHeightVoxels, maxTreeHeightVoxels); 
-                int treeWidthVoxels = randomBetween(minTreeWidthVoxels, maxTreeWidthVoxels);
-                int leafWidthX = randomBetween(minLeafWidthX, maxLeafWidthX);
-                int leafWidthY = randomBetween(minLeafWidthY, maxLeafWidthY);
-                int leafExtentBelowZ = randomBetween(minLeafExtentBelowZ, maxLeafExtentBelowZ);
-                int leafExtentAboveZ = randomBetween(minLeafExtentAboveZ, maxLeafExtentAboveZ);
+                int treeHeightVoxels = randomBetween(treeHeightRangeMeters.x * voxelsPerMeter, treeHeightRangeMeters.y * voxelsPerMeter);
+                int treeWidthVoxels = randomBetween(treeWidthRangeMeters.x * voxelsPerMeter, treeWidthRangeMeters.y * voxelsPerMeter);
+                int leafWidthX = randomBetween(leafWidthXRangeMeters.x * voxelsPerMeter, leafWidthXRangeMeters.y * voxelsPerMeter);
+                int leafWidthY = randomBetween(leafWidthYRangeMeters.x * voxelsPerMeter, leafWidthYRangeMeters.y * voxelsPerMeter);
+                int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
+                int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
                 generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill); 
             }
@@ -264,6 +244,18 @@ void PrototypeWorldGenerator::showDebugMenu()
             {
                 ImGui::SliderInt("Grass Depth", &grassDepth, 0, 20);
                 ImGui::SliderInt("Dirt Depth", &dirtDepth, 0, 20);
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Surface Trees"))
+            {
+                ImGui::DragFloatRange2("Tree Height Range (Meters)", &treeHeightRangeMeters.x, &treeHeightRangeMeters.y);
+                ImGui::DragFloatRange2("Tree Width Range (Meters)", &treeWidthRangeMeters.x, &treeWidthRangeMeters.y);
+                ImGui::DragFloatRange2("Leaf Width X Range (Meters)", &leafWidthXRangeMeters.x, &leafWidthXRangeMeters.y);
+                ImGui::DragFloatRange2("Leaf Width Y Range (Meters)", &leafWidthYRangeMeters.x, &leafWidthYRangeMeters.y);
+                ImGui::DragFloatRange2("Leaf Extent Above Range (Meters)", &leafExtentAboveZRangeMeters.x, &leafExtentAboveZRangeMeters.y);
+                ImGui::DragFloatRange2("Leaf Extent Below Range (Meters)", &leafExtentBelowZRangeMeters.x, &leafExtentBelowZRangeMeters.y);
 
                 ImGui::EndMenu();
             }
