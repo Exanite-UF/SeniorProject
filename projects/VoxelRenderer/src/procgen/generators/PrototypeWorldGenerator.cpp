@@ -87,6 +87,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     int minLeafExtentAboveZ = 4 * voxelsPerMeter;
     int maxLeafExtentAboveZ = 10 * voxelsPerMeter;
 
+    float probabilityToFill = 0.6;
+
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
     glm::vec2 offset = chunkSize * chunkPosition;
     for (int x = 0; x < data.getSize().x; ++x)
@@ -135,7 +137,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 int leafExtentBelowZ = randomBetween(minLeafExtentBelowZ, maxLeafExtentBelowZ);
                 int leafExtentAboveZ = randomBetween(minLeafExtentAboveZ, maxLeafExtentAboveZ);
 
-                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ);
+                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill); 
             }
         }
     }
@@ -147,7 +149,7 @@ int PrototypeWorldGenerator::randomBetween(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
-void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafExtentBelowZ, int leafExtentAboveZ)
+void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafExtentBelowZ, int leafExtentAboveZ, float leafProbabilityToFill)
 {
     // Tree Trunk
     generateRectangle(data, logMaterial, originVoxel, treeWidthVoxels, treeWidthVoxels, treeHeightVoxels);
@@ -155,58 +157,13 @@ void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr
     glm::vec3 originOffset = { 0, 0, treeHeightVoxels + 1 };
     originVoxel += originOffset;
 
-    int leafWidthRadiusX = leafWidthX / 2;
-    int leafWidthRadiusY = leafWidthY / 2;
-
-    // Setup tree function
-    int heightZ = leafExtentAboveZ;
-    float heightToWidthXRatio = ((float)heightZ) / leafWidthX;
-    float heightToWidthYRatio = ((float)heightZ) / leafWidthY;
-
-    for (int localX = -leafWidthRadiusX; localX <= leafWidthRadiusX; ++localX)
-    {
-        for (int localY = -leafWidthRadiusY; localY <= leafWidthRadiusY; ++localY)
-        {
-            for (int localZ = -leafExtentBelowZ; localZ <= leafExtentAboveZ; ++localZ)
-            {
-                glm::vec3 localVoxel = { originVoxel.y + localX, originVoxel.y + localY, originVoxel.z + localZ };
-
-                // Fall through
-                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
-                {
-                    continue;
-                }
-
-                if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
-                {
-                    continue;
-                }
-
-                // Sample from tree function
-                // x = localX
-                // y = 
-
-                int treeFunctionSample = heightZ - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY);
-                // Simple random function. Probably better to clump and also add so it looks more organic.
-                int randomSample = (rand() % 10);
-
-                if (localZ <= treeFunctionSample && randomSample > 6)
-                {
-                    if (data.getVoxelMaterial(localVoxel) != logMaterial)
-                    {
-                        data.setVoxelOccupancy(localVoxel, true);
-                        data.setVoxelMaterial(localVoxel, leafMaterial);
-                    }
-                }
-            }
-        }
-    }
+    generateAbsPyramid(data, leafMaterial, originVoxel, leafWidthX, leafWidthY, leafExtentAboveZ, leafExtentBelowZ, leafProbabilityToFill);
 }
 
 void PrototypeWorldGenerator::generateRectangle(VoxelChunkData& data, std::shared_ptr<Material>& material, glm::vec3 originVoxel, int widthX, int widthY, int height)
 {
-    int widthXOffset = widthX/2;
-    int widthYOffset = widthY/2;
+    int widthXOffset = widthX / 2;
+    int widthYOffset = widthY / 2;
 
     for (int localX = 0; localX <= widthX; ++localX)
     {
@@ -229,6 +186,52 @@ void PrototypeWorldGenerator::generateRectangle(VoxelChunkData& data, std::share
 
                 data.setVoxelOccupancy(localVoxel, true);
                 data.setVoxelMaterial(localVoxel, material);
+            }
+        }
+    }
+}
+
+void PrototypeWorldGenerator::generateAbsPyramid(VoxelChunkData& data, std::shared_ptr<Material>& material, glm::vec3 originVoxel, int widthX, int widthY, int extentAboveZ, int extentBelowZ, float probabilityToFill)
+{
+    int leafWidthRadiusX = widthX / 2;
+    int leafWidthRadiusY = widthY / 2;
+
+    // Setup tree function
+    int heightZ = extentAboveZ;
+    float heightToWidthXRatio = ((float)heightZ) / widthX;
+    float heightToWidthYRatio = ((float)heightZ) / widthY;
+
+    for (int localX = -leafWidthRadiusX; localX <= leafWidthRadiusX; ++localX)
+    {
+        for (int localY = -leafWidthRadiusY; localY <= leafWidthRadiusY; ++localY)
+        {
+            for (int localZ = -extentBelowZ; localZ <= extentAboveZ; ++localZ)
+            {
+                glm::vec3 localVoxel = { originVoxel.y + localX, originVoxel.y + localY, originVoxel.z + localZ };
+
+                // Fall through
+                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
+                {
+                    continue;
+                }
+
+                if (localVoxel.x > data.getSize().x || localVoxel.y > data.getSize().y || localVoxel.z > data.getSize().z)
+                {
+                    continue;
+                }
+
+                int treeFunctionSample = heightZ - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY);
+                // Simple random function. Probably better to clump and also add so it looks more organic.
+                bool randomSample = ((float) rand() / RAND_MAX) >= probabilityToFill;
+
+                if (localZ <= treeFunctionSample && randomSample)
+                {
+                    if (data.getVoxelMaterial(localVoxel) != material)
+                    {
+                        data.setVoxelOccupancy(localVoxel, true);
+                        data.setVoxelMaterial(localVoxel, material);
+                    }
+                }
             }
         }
     }
