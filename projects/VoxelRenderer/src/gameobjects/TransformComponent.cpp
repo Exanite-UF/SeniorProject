@@ -78,8 +78,8 @@ void TransformComponent::onRemovingFromWorld()
 
     setParent(nullptr);
 
-    // Destroy all children GameObjects in reverse order
-    // Note that this is very different from destroying just the TransformComponent
+    // Remove all children GameObjects in reverse order
+    // Note that this is different from removing just the TransformComponent from each child GameObject
     auto childrenCopy = children;
     for (int i = childrenCopy.size() - 1; i >= 0; --i)
     {
@@ -93,7 +93,7 @@ void TransformComponent::onRemovingFromWorld()
     children.clear();
     ownedGameObjects.clear();
 
-    // Destroy own GameObject to ensure the TransformComponent is never destroyed without its GameObject being destroyed
+    // Remove own GameObject to ensure the TransformComponent is never removed without its GameObject being removed
     getGameObject()->removeFromWorld();
 
     Component::onRemovingFromWorld();

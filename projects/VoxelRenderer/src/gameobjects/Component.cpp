@@ -97,7 +97,7 @@ void Component::notifyRemovingFromWorld()
 
     wasAddedToWorldNotified = false;
 
-    // onDestroy is user facing so we should only call it when onCreate was also called
+    // onRemovingFromWorld is user facing so we should only call it when onAddedToWorld was also called
     onRemovingFromWorld();
 }
 
@@ -134,7 +134,7 @@ void Component::removeFromWorld()
     // Notify first
     notifyRemovingFromWorld();
 
-    // Then destroy self
+    // Then remove self
     actualRemoveFromWorld();
 }
 

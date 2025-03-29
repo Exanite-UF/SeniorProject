@@ -727,7 +727,7 @@ void Program::runLateStartupTests()
     Log::information("Running late startup tests (in run())");
 
     {
-        // Verify GameObject destroy API
+        // Verify GameObject removeFromWorld API
         auto root = GameObject::createRootObject("Root");
         auto rootTransform = root->getTransform();
 
@@ -741,12 +741,12 @@ void Program::runLateStartupTests()
 
         child1->removeFromWorld();
         Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
-        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been destroyed");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been removed from the world");
 
         root->removeFromWorld();
-        Assert::isTrue(!root->getIsPartOfWorld(), "Root GameObject should have been destroyed");
-        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been destroyed");
-        Assert::isTrue(!child2->getIsPartOfWorld(), "Child2 GameObject should have been destroyed");
+        Assert::isTrue(!root->getIsPartOfWorld(), "Root GameObject should have been removed from the world");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been removed from the world");
+        Assert::isTrue(!child2->getIsPartOfWorld(), "Child2 GameObject should have been removed from the world");
     }
 
     Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
