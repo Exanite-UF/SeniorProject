@@ -12,6 +12,7 @@
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
+#include <PoissonDiskGenerator/PoissonGenerator.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
@@ -66,7 +67,26 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-    glm::vec3 treeLocation({ data.getSize().x / 2, data.getSize().y / 2, 0 });
+    int numPoints = 20;
+    PoissonGenerator::DefaultPRNG PRNG(seed);
+    // Generated points between 0-1
+    const auto points = PoissonGenerator::generatePoissonPoints(numPoints, PRNG, false); 
+
+    // Scale to chunk size
+    std::vector<glm::vec3> treeLocations;
+    for(int i = 0; i < points.size(); i++)
+    {
+        const PoissonGenerator::Point& point = points.at(i);
+        treeLocations.push_back(glm::vec3({std::ceil(point.x * data.getSize().x), std::ceil(point.y * data.getSize().y), 0 }));
+    }
+    
+    // Lexicographic sort
+    std::sort(treeLocations.begin(), treeLocations.end(), [](const glm::vec3& a, const glm::vec3& b) {
+        return a.x < b.x || (a.x == b.x && a.y < b.y); 
+    });
+
+    int treeIndex = 0;
+    glm::vec3 treeLocation(treeLocations.at(treeIndex));
     float probabilityToFill = 0.6;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
@@ -118,6 +138,15 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
                 generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill); 
+
+                treeIndex++;
+                if(treeIndex < treeLocations.size())
+                {
+                    treeLocation = treeLocations.at(treeIndex);
+                } else
+                {
+                    treeLocation = {-1,-1,-1};
+                }
             }
         }
     }

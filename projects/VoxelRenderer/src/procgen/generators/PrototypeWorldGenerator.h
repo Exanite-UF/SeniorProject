@@ -10,7 +10,7 @@ private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureData> textureData;
 
-    int seed = 0;
+    int seed = 1;
 
     // Stone Terrain
     int octaves = 3;
