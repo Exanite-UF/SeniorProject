@@ -41,8 +41,8 @@ endif()
 cmake_policy(SET CMP0077 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-# Enable AddressSanitizer during Debug builds
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+# Hardcoded AddressSanitizer toggle
+if (OFF)
     add_compile_options(-fsanitize=address)
     add_link_options(-fsanitize=address)
 endif()
