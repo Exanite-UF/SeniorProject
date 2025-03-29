@@ -46,6 +46,8 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
 {
     ZoneScoped;
 
+    assertIsPartOfWorld();
+
     // Remove self from parent's child list
     const auto previousParent = this->parent.lock();
     if (previousParent)
