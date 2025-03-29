@@ -28,20 +28,35 @@ GameObject::~GameObject()
     {
         Log::information(std::format("GameObject destructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
+
+    if (isPartOfWorld)
+    {
+        Log::error("A GameObject that was part of the world was destroyed without being first removed from the world. Please remove the GameObject from the world first!");
+    }
+
+    if (!isRemovalFromWorldComplete)
+    {
+        Log::error("A GameObject was destroyed while being removed from the world. This means the internal GameObject code was incorrectly implemented!");
+    }
 }
 
 std::shared_ptr<TransformComponent>& GameObject::getTransform()
 {
-    assertIsAlive();
+    assertIsPartOfWorld();
 
     return transform;
+}
+
+bool GameObject::getIsWorldRoot() const
+{
+    return !transform->hasParent();
 }
 
 void GameObject::update()
 {
     ZoneScoped;
 
-    assertIsAlive();
+    assertIsPartOfWorld();
 
     // Update own components
     for (auto component : components)
@@ -87,73 +102,70 @@ std::shared_ptr<GameObject> GameObject::createChildObject(const std::string& nam
     return child;
 }
 
-void GameObject::notifyDestroy()
+void GameObject::notifyRemovingFromWorld()
 {
     ZoneScoped;
 
-    if (wasDestroyNotified)
+    if (wasRemovingFromWorldNotified)
     {
         return;
     }
 
-    wasDestroyNotified = true;
+    wasRemovingFromWorldNotified = true;
 
     // Notify components in reverse order
     for (int i = components.size() - 1; i >= 0; --i)
     {
-        components.at(i)->notifyDestroy();
+        components.at(i)->notifyRemovingFromWorld();
     }
 }
 
-void GameObject::actualDestroy()
+void GameObject::actualRemoveFromWorld()
 {
     ZoneScoped;
 
-    assertIsAlive();
+    assertIsPartOfWorld();
 
-    isAlive = false;
-
-    // Destroy components in reverse order
+    // Remove components in reverse order
     auto componentsCopy = components;
     for (int i = componentsCopy.size() - 1; i >= 0; --i)
     {
-        componentsCopy.at(i)->destroy();
+        componentsCopy.at(i)->removeFromWorld();
     }
 
-    transform.reset();
+    Assert::isTrue(components.size() == 0, "All components should have been removed at this point");
 
-    Assert::isTrue(components.size() == 0, "All components should have been destroyed and removed");
-
-    // Then destroy self
-    isDestroyComplete = true;
+    // Then remove self
+    isPartOfWorld = false;
 }
 
-void GameObject::destroy()
+void GameObject::removeFromWorld()
 {
     ZoneScoped;
 
-    if (!isAlive || wasPublicDestroyCalled)
+    if (!isPartOfWorld || wasRemoveFromWorldCalled)
     {
         return;
     }
 
-    wasPublicDestroyCalled = true;
+    wasRemoveFromWorldCalled = true;
 
     // Notify first
-    notifyDestroy();
+    notifyRemovingFromWorld();
 
-    // Then destroy self
-    actualDestroy();
+    // Then remove self
+    actualRemoveFromWorld();
+    isRemovalFromWorldComplete = true;
 }
 
-bool GameObject::getIsAlive() const
+bool GameObject::getIsPartOfWorld() const
 {
-    return isAlive;
+    return isPartOfWorld;
 }
 
-void GameObject::assertIsAlive() const
+void GameObject::assertIsPartOfWorld() const
 {
-    Assert::isTrue(isAlive, "GameObject has been destroyed");
+    Assert::isTrue(isPartOfWorld, "GameObject is no longer part of the world");
 }
 
 void GameObject::setName(const std::string& name)

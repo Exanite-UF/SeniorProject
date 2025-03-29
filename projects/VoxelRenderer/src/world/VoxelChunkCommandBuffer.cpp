@@ -55,7 +55,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
     // Acquire lock for component, but not for the scene
     std::unique_lock lockComponent(component->getMutex());
-    if (!component->getIsAlive())
+    if (!component->getIsPartOfWorld())
     {
         Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent was destroyed.");
 
@@ -156,7 +156,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     lockComponent.unlock();
                     {
                         std::shared_lock sharedLockComponent(component->getMutex());
-                        if (!component->getIsAlive())
+                        if (!component->getIsPartOfWorld())
                         {
                             Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent was destroyed.");
 
@@ -169,7 +169,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     }
 
                     lockComponent.lock();
-                    if (!component->getIsAlive())
+                    if (!component->getIsPartOfWorld())
                     {
                         Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent was destroyed.");
 

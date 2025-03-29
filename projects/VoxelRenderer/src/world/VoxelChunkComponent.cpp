@@ -50,7 +50,7 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writ
 {
     ZoneScoped;
 
-    assertIsAlive();
+    assertIsPartOfWorld();
 
     if (this->existsOnGpu == existsOnGpu)
     {
@@ -77,7 +77,7 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writ
     }
 }
 
-void VoxelChunkComponent::onDestroy()
+void VoxelChunkComponent::onRemovingFromWorld()
 {
     ZoneScoped;
 
@@ -85,5 +85,5 @@ void VoxelChunkComponent::onDestroy()
 
     setExistsOnGpu(false);
 
-    Component::onDestroy();
+    Component::onRemovingFromWorld();
 }

@@ -3,9 +3,12 @@
 #include <src/gameobjects/GameObject.h>
 #include <tracy/Tracy.hpp>
 
-const std::shared_ptr<TransformComponent>& TransformComponent::getParent() const
+bool TransformComponent::tryGetParent(std::shared_ptr<TransformComponent>& outParent) const
 {
-    return parent;
+    assertIsPartOfWorld();
+
+    outParent = this->parent.lock();
+    return !!outParent;
 }
 
 const std::vector<std::shared_ptr<TransformComponent>>& TransformComponent::getChildren() const
@@ -19,7 +22,8 @@ void TransformComponent::updateTransform() const
 
     auto localTransform = glm::translate(glm::mat4(1.0f), localPosition) * glm::mat4_cast(localRotation) * glm::scale(glm::mat4(1.0f), localScale);
 
-    if (parent)
+    std::shared_ptr<TransformComponent> parent;
+    if (tryGetParent(parent))
     {
         globalTransform = parent->getGlobalTransform() * localTransform;
         globalRotation = parent->getGlobalRotation() * localRotation;
@@ -43,7 +47,7 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     ZoneScoped;
 
     // Remove self from parent's child list
-    const auto previousParent = this->parent;
+    const auto previousParent = this->parent.lock();
     if (previousParent)
     {
         std::erase(previousParent->children, std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
@@ -59,7 +63,12 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     }
 }
 
-void TransformComponent::onDestroy()
+bool TransformComponent::hasParent() const
+{
+    return !this->parent.expired();
+}
+
+void TransformComponent::onRemovingFromWorld()
 {
     ZoneScoped;
 
@@ -71,18 +80,18 @@ void TransformComponent::onDestroy()
     for (int i = childrenCopy.size() - 1; i >= 0; --i)
     {
         auto child = childrenCopy[i];
-        if (child->getIsAlive())
+        if (child->getIsPartOfWorld())
         {
-            child->getGameObject()->destroy();
+            child->getGameObject()->removeFromWorld();
         }
     }
 
     children.clear();
 
     // Destroy own GameObject to ensure the TransformComponent is never destroyed without its GameObject being destroyed
-    getGameObject()->destroy();
+    getGameObject()->removeFromWorld();
 
-    Component::onDestroy();
+    Component::onRemovingFromWorld();
 }
 
 const glm::vec3& TransformComponent::getLocalPosition() const
@@ -183,52 +192,52 @@ void TransformComponent::multiplyLocalScale(const glm::vec3& value)
 
 void TransformComponent::setGlobalPosition(const glm::vec3& value)
 {
-    if (parent == nullptr)
+    std::shared_ptr<TransformComponent> parent;
+    if (tryGetParent(parent))
     {
-        setLocalPosition(value);
+        setLocalPosition(parent->getGlobalTransform() * glm::vec4(value, 1));
     }
     else
     {
-        // TODO: Verify
-        setLocalPosition(parent->getGlobalTransform() * glm::vec4(value, 1));
+        setLocalPosition(value);
     }
 }
 
 void TransformComponent::addGlobalPosition(const glm::vec3& value)
 {
-    if (parent == nullptr)
+    std::shared_ptr<TransformComponent> parent;
+    if (tryGetParent(parent))
     {
-        addLocalPosition(value);
+        setLocalPosition(parent->getGlobalTransform() * glm::vec4(getGlobalPosition() + value, 1));
     }
     else
     {
-        // TODO: Verify
-        setLocalPosition(parent->getGlobalTransform() * glm::vec4(getGlobalPosition() + value, 1));
+        addLocalPosition(value);
     }
 }
 
 void TransformComponent::setGlobalRotation(const glm::quat& value)
 {
-    if (parent == nullptr)
+    std::shared_ptr<TransformComponent> parent;
+    if (tryGetParent(parent))
     {
-        setLocalRotation(value);
+        setLocalRotation(value * parent->getGlobalRotation());
     }
     else
     {
-        // TODO: Verify
-        setLocalRotation(value * parent->getGlobalRotation());
+        setLocalRotation(value);
     }
 }
 
 void TransformComponent::addGlobalRotation(const glm::quat& value)
 {
-    if (parent == nullptr)
+    std::shared_ptr<TransformComponent> parent;
+    if (tryGetParent(parent))
     {
-        addLocalRotation(value);
+        setLocalRotation(value * localRotation * parent->getGlobalRotation());
     }
     else
     {
-        // TODO: Verify
-        setLocalRotation(value * localRotation * parent->getGlobalRotation());
+        addLocalRotation(value);
     }
 }

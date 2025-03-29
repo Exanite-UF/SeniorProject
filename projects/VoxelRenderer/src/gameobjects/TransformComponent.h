@@ -2,13 +2,12 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <glm/vec3.hpp>
 #include <src/gameobjects/Component.h>
 
 class TransformComponent : public Component
 {
 private:
-    std::shared_ptr<TransformComponent> parent {};
+    std::weak_ptr<TransformComponent> parent {};
     std::vector<std::shared_ptr<TransformComponent>> children {};
 
     glm::vec3 localPosition = glm::vec3(0, 0, 0);
@@ -23,11 +22,12 @@ private:
 
 public:
     void setParent(const std::shared_ptr<TransformComponent>& parent);
-    [[nodiscard]] const std::shared_ptr<TransformComponent>& getParent() const;
+    [[nodiscard]] bool hasParent() const;
+    [[nodiscard]] bool tryGetParent(std::shared_ptr<TransformComponent>& outParent) const;
 
     [[nodiscard]] const std::vector<std::shared_ptr<TransformComponent>>& getChildren() const;
 
-    void onDestroy() override;
+    void onRemovingFromWorld() override;
 
     [[nodiscard]] const glm::vec3& getLocalPosition() const;
     [[nodiscard]] const glm::quat& getLocalRotation() const;

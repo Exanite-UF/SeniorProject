@@ -45,7 +45,7 @@ public:
     bool getExistsOnGpu() const;
 
 protected:
-    void onDestroy() override;
+    void onRemovingFromWorld() override;
 
 private:
     void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);

@@ -6,6 +6,7 @@
 #include <src/gameobjects/GameObject.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
+#include <src/utilities/PointerUtility.h>
 #include <tracy/Tracy.hpp>
 
 Component::Component()
@@ -26,25 +27,35 @@ Component::~Component()
     {
         Log::verbose(std::format("Component destructor called for {:s} @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
-}
 
-void Component::onCreate()
-{
-    ZoneScoped;
-
-    if constexpr (Constants::GameObject::isEventLoggingEnabled)
+    if (isPartOfWorld)
     {
-        Log::verbose(std::format("Component::onCreate called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+        Log::error("A Component that was part of the world was destroyed without being first removed from the world. Please remove the Component from the world first!");
+    }
+
+    if (!isRemovalFromWorldComplete)
+    {
+        Log::error("A Component was destroyed while being removed from the world. This means the internal Component code was incorrectly implemented!");
     }
 }
 
-void Component::onDestroy()
+void Component::onAddedToWorld()
 {
     ZoneScoped;
 
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
-        Log::verbose(std::format("Component::onDestroy called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+        Log::verbose(std::format("Component::onAddedToWorld called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+    }
+}
+
+void Component::onRemovingFromWorld()
+{
+    ZoneScoped;
+
+    if constexpr (Constants::GameObject::isEventLoggingEnabled)
+    {
+        Log::verbose(std::format("Component::onRemovingFromWorld called called for '{:s}' ({:s}) at @{:x}", getGameObject()->getName(), typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -58,41 +69,41 @@ void Component::onUpdate()
     }
 }
 
-void Component::notifyCreate()
+void Component::notifyAddedToWorld()
 {
     ZoneScoped;
 
-    if (wasCreateNotified)
+    if (wasAddedToWorldNotified)
     {
         return;
     }
 
-    wasCreateNotified = true;
-    onCreate();
+    wasAddedToWorldNotified = true;
+    onAddedToWorld();
 }
 
-void Component::notifyDestroy()
+void Component::notifyRemovingFromWorld()
 {
     ZoneScoped;
 
-    if (wasDestroyNotified)
+    if (wasRemovingFromWorldNotified)
     {
         return;
     }
 
-    wasDestroyNotified = true;
+    wasRemovingFromWorldNotified = true;
 
-    if (!wasCreateNotified)
+    if (!wasAddedToWorldNotified)
     {
-        Log::verbose("Skipping Component::onDestroy call since Component::onCreate was not called");
+        Log::verbose("Skipping Component::onRemovingFromWorld call since Component::onAddedToWorld was not called");
 
         return;
     }
 
-    wasCreateNotified = false;
+    wasAddedToWorldNotified = false;
 
     // onDestroy is user facing so we should only call it when onCreate was also called
-    onDestroy();
+    onRemovingFromWorld();
 }
 
 void Component::notifyUpdate()
@@ -102,62 +113,57 @@ void Component::notifyUpdate()
     onUpdate();
 }
 
-void Component::actualDestroy()
+void Component::actualRemoveFromWorld()
 {
     ZoneScoped;
 
-    assertIsAlive();
-
-    isAlive = false;
+    assertIsPartOfWorld();
 
     // Remove self from GameObject
-    std::erase(gameObject->components, shared_from_this());
+    std::erase(getGameObject()->components, shared_from_this());
 
-    // Destroy self
-    gameObject.reset();
-    transform.reset();
-
-    isDestroyComplete = true;
+    isPartOfWorld = false;
 }
 
-void Component::destroy()
+void Component::removeFromWorld()
 {
     ZoneScoped;
 
-    if (!isAlive || wasPublicDestroyCalled)
+    if (!isPartOfWorld || wasRemoveFromGameObjectCalled)
     {
         return;
     }
 
-    wasPublicDestroyCalled = true;
+    wasRemoveFromGameObjectCalled = true;
 
     // Notify first
-    notifyDestroy();
+    notifyRemovingFromWorld();
 
     // Then destroy self
-    actualDestroy();
+    actualRemoveFromWorld();
+    isRemovalFromWorldComplete = true;
 }
 
-std::shared_ptr<TransformComponent>& Component::getTransform()
+std::shared_ptr<TransformComponent> Component::getTransform() const
 {
-    assertIsAlive();
+    assertIsPartOfWorld();
 
-    return transform;
+    return PointerUtility::safeLock(transform, "Transform pointer has expired");
 }
 
-std::shared_ptr<GameObject>& Component::getGameObject()
+std::shared_ptr<GameObject> Component::getGameObject() const
 {
-    assertIsAlive();
+    assertIsPartOfWorld();
 
-    return gameObject;
+    return PointerUtility::safeLock(gameObject, "GameObject pointer has expired");
 }
 
-bool Component::getIsAlive() const
+bool Component::getIsPartOfWorld() const
 {
-    return isAlive;
+    return isPartOfWorld;
 }
 
-void Component::assertIsAlive() const
+void Component::assertIsPartOfWorld() const
 {
-    Assert::isTrue(isAlive, "Component has been destroyed");
+    Assert::isTrue(isPartOfWorld, "Component is no longer part of the world");
 }

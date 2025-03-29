@@ -16,44 +16,44 @@ class GameObject : public NonCopyable, public CountInstances<GameObject>, public
     friend class Component;
 
 private:
-    // GameObjects aren't supposed to be thread safe, but this provides a bit of extra safety
-    std::atomic<bool> isAlive = true;
-    std::atomic<bool> wasPublicDestroyCalled = false;
-    std::atomic<bool> wasDestroyNotified = false;
-    std::atomic<bool> isDestroyComplete = false;
-
+    static constexpr const char* defaultName = "GameObject";
     std::string name {};
+
+    // GameObjects aren't supposed to be thread safe, but atomic provides a bit of extra safety
+    std::atomic<bool> isPartOfWorld = true;
+
+    std::atomic<bool> wasRemovingFromWorldNotified = false;
+
+    std::atomic<bool> wasRemoveFromWorldCalled = false;
+    std::atomic<bool> isRemovalFromWorldComplete = false;
 
     std::shared_ptr<TransformComponent> transform {};
     std::vector<std::shared_ptr<Component>> components {};
 
-    static constexpr const char* defaultName = "GameObject";
-
-    void notifyDestroy();
-
-    void actualDestroy();
-
     explicit GameObject(const std::string& name = defaultName);
+
+    void notifyRemovingFromWorld();
+    void actualRemoveFromWorld();
 
 public:
     ~GameObject() override;
 
-    void update();
-    void destroy();
-
     static std::shared_ptr<GameObject> createRootObject(const std::string& name = defaultName);
     std::shared_ptr<GameObject> createChildObject(const std::string& name = defaultName);
+
+    void update();
+    void removeFromWorld();
 
     template <typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args);
 
     template <typename T>
     std::shared_ptr<T> getComponent();
-
     std::shared_ptr<TransformComponent>& getTransform();
 
-    bool getIsAlive() const;
-    void assertIsAlive() const;
+    bool getIsWorldRoot() const;
+    bool getIsPartOfWorld() const;
+    void assertIsPartOfWorld() const;
 
     void setName(const std::string& name);
     const std::string& getName();
@@ -62,7 +62,7 @@ public:
 template <typename T, typename... Args>
 std::shared_ptr<T> GameObject::addComponent(Args&&... args)
 {
-    assertIsAlive();
+    assertIsPartOfWorld();
 
     std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
     components.push_back(component);
@@ -71,8 +71,8 @@ std::shared_ptr<T> GameObject::addComponent(Args&&... args)
     component->gameObject = shared_from_this();
     component->transform = transform;
 
-    // Notify component of creation
-    component->notifyCreate();
+    // Notify component
+    component->notifyAddedToWorld();
 
     return component;
 }
@@ -80,7 +80,7 @@ std::shared_ptr<T> GameObject::addComponent(Args&&... args)
 template <typename T>
 std::shared_ptr<T> GameObject::getComponent()
 {
-    assertIsAlive();
+    assertIsPartOfWorld();
 
     for (const auto& component : components)
     {

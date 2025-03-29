@@ -619,7 +619,7 @@ void Program::run()
     {
         ZoneScopedN("Destroy scene");
 
-        sceneObject->destroy();
+        sceneObject->removeFromWorld();
     }
 }
 
@@ -739,14 +739,14 @@ void Program::runLateStartupTests()
 
         Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
 
-        child1->destroy();
+        child1->removeFromWorld();
         Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
-        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been destroyed");
 
-        root->destroy();
-        Assert::isTrue(!root->getIsAlive(), "Root GameObject should have been destroyed");
-        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
-        Assert::isTrue(!child2->getIsAlive(), "Child2 GameObject should have been destroyed");
+        root->removeFromWorld();
+        Assert::isTrue(!root->getIsPartOfWorld(), "Root GameObject should have been destroyed");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been destroyed");
+        Assert::isTrue(!child2->getIsPartOfWorld(), "Child2 GameObject should have been destroyed");
     }
 
     Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
@@ -761,12 +761,12 @@ void Program::runLateStartupTests()
         Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
 
         child2->getTransform()->setParent(nullptr);
-        Assert::isTrue(child2->getTransform()->getParent() == nullptr, "Child2 GameObject should not have a parent");
+        Assert::isTrue(!child2->getTransform()->hasParent(), "Child2 GameObject should not have a parent");
         Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
         Assert::isTrue(root->getTransform()->getChildren().at(0)->getGameObject() == child1, "Root GameObject have Child1 as its only child");
 
-        child2->destroy();
-        root->destroy();
+        child2->removeFromWorld();
+        root->removeFromWorld();
     }
 
     Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
