@@ -3,6 +3,7 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 
 #include <FastNoiseLite/FastNoiseLite.h>
+#include <PoissonDiskGenerator/PoissonGenerator.h>
 #include <cstdlib>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/data/FlatArrayData.h>
@@ -12,7 +13,6 @@
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
-#include <PoissonDiskGenerator/PoissonGenerator.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
@@ -70,20 +70,21 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     int numPoints = 20;
     PoissonGenerator::DefaultPRNG PRNG(seed);
     // Generated points between 0-1
-    const auto points = PoissonGenerator::generatePoissonPoints(numPoints, PRNG, false); 
+    const auto points = PoissonGenerator::generatePoissonPoints(numPoints, PRNG, false);
 
     // Scale to chunk size
     std::vector<glm::vec3> treeLocations;
-    for(int i = 0; i < points.size(); i++)
+    for (int i = 0; i < points.size(); i++)
     {
         const PoissonGenerator::Point& point = points.at(i);
-        treeLocations.push_back(glm::vec3({std::ceil(point.x * data.getSize().x), std::ceil(point.y * data.getSize().y), 0 }));
+        treeLocations.push_back(glm::vec3({ std::ceil(point.x * data.getSize().x), std::ceil(point.y * data.getSize().y), 0 }));
     }
-    
+
     // Lexicographic sort
-    std::sort(treeLocations.begin(), treeLocations.end(), [](const glm::vec3& a, const glm::vec3& b) {
-        return a.x < b.x || (a.x == b.x && a.y < b.y); 
-    });
+    std::sort(treeLocations.begin(), treeLocations.end(), [](const glm::vec3& a, const glm::vec3& b)
+        {
+            return a.x < b.x || (a.x == b.x && a.y < b.y);
+        });
 
     int treeIndex = 0;
     glm::vec3 treeLocation(treeLocations.at(treeIndex));
@@ -124,7 +125,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             lastHeightBlocks -= dirtDepth;
 
             if (treeLocation.x == x && treeLocation.y == y)
-            { 
+            {
                 glm::vec3 originVoxel({ x, y, heightVoxels });
 
                 // Naive seeding. Is there a better way?
@@ -137,21 +138,21 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
                 int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
-                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill); 
+                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill);
 
                 treeIndex++;
-                if(treeIndex < treeLocations.size())
+                if (treeIndex < treeLocations.size())
                 {
                     treeLocation = treeLocations.at(treeIndex);
-                } else
+                }
+                else
                 {
-                    treeLocation = {-1,-1,-1};
+                    treeLocation = { -1, -1, -1 };
                 }
             }
         }
     }
 }
-
 
 int PrototypeWorldGenerator::randomBetween(int min, int max)
 {
@@ -231,7 +232,7 @@ void PrototypeWorldGenerator::generateAbsPyramid(VoxelChunkData& data, std::shar
 
                 int treeFunctionSample = heightZ - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY);
                 // Simple random function. Probably better to clump and also add so it looks more organic.
-                bool randomSample = ((float) rand() / RAND_MAX) >= probabilityToFill;
+                bool randomSample = ((float)rand() / RAND_MAX) >= probabilityToFill;
 
                 if (localZ <= treeFunctionSample && randomSample)
                 {

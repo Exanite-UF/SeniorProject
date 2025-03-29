@@ -27,12 +27,12 @@ private:
 
     // Trees
     int voxelsPerMeter = 8;
-    glm::vec2 treeHeightRangeMeters = {5, 7};
-    glm::vec2 treeWidthRangeMeters = {1, 2};
-    glm::vec2 leafWidthXRangeMeters = {4, 6};
-    glm::vec2 leafWidthYRangeMeters = {4, 6};
-    glm::vec2 leafExtentAboveZRangeMeters = {4, 10};
-    glm::vec2 leafExtentBelowZRangeMeters = {0, 0};
+    glm::vec2 treeHeightRangeMeters = { 5, 7 };
+    glm::vec2 treeWidthRangeMeters = { 1, 2 };
+    glm::vec2 leafWidthXRangeMeters = { 4, 6 };
+    glm::vec2 leafWidthYRangeMeters = { 4, 6 };
+    glm::vec2 leafExtentAboveZRangeMeters = { 4, 10 };
+    glm::vec2 leafExtentBelowZRangeMeters = { 0, 0 };
     float leafProbabilityToFill = 0.6;
 
     void generateData(VoxelChunkData& data) override;
