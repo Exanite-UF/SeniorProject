@@ -84,8 +84,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     int minLeafExtentBelowZ = 0 * voxelsPerMeter;
     int maxLeafExtentBelowZ = 0 * voxelsPerMeter;
 
-    int minLeafExtentAboveZ = 1 * voxelsPerMeter;
-    int maxLeafExtentAboveZ = 1 * voxelsPerMeter;
+    int minLeafExtentAboveZ = 4 * voxelsPerMeter;
+    int maxLeafExtentAboveZ = 10 * voxelsPerMeter;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
     glm::vec2 offset = chunkSize * chunkPosition;
@@ -147,7 +147,7 @@ int PrototypeWorldGenerator::randomBetween(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
-void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafWidthExtentBelowZ, int leafWidthExtentAboveZ)
+void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafExtentBelowZ, int leafExtentAboveZ)
 {
     // Tree Trunk
     int treeWidthRadius = treeWidthVoxels / 2;
@@ -184,15 +184,15 @@ void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr
     int leafWidthRadiusY = leafWidthY / 2;
 
     // Setup tree function
-    int height = leafWidthExtentAboveZ;
-    int heightToWidthXRatio = (height) / leafWidthX;
-    int heightToWidthYRatio = (height) / leafWidthY;
+    int heightZ = leafExtentAboveZ;
+    float heightToWidthXRatio = ((float)heightZ) / leafWidthX;
+    float heightToWidthYRatio = ((float)heightZ) / leafWidthY;
 
     for (int localX = -leafWidthRadiusX; localX <= leafWidthRadiusX; ++localX)
     {
         for (int localY = -leafWidthRadiusY; localY <= leafWidthRadiusY; ++localY)
         {
-            for (int localZ = -leafWidthExtentBelowZ; localZ <= leafWidthExtentAboveZ; ++localZ)
+            for (int localZ = -leafExtentBelowZ; localZ <= leafExtentAboveZ; ++localZ)
             {
                 glm::vec3 localVoxel = { originVoxel.y + localX, originVoxel.y + localY, originVoxel.z + localZ };
 
@@ -208,11 +208,14 @@ void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr
                 }
 
                 // Sample from tree function
-                float treeFunctionSample = height - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY) - localZ;
+                // x = localX
+                // y = 
+
+                int treeFunctionSample = heightZ - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY);
                 // Simple random function. Probably better to clump and also add so it looks more organic.
                 int randomSample = (rand() % 10);
 
-                if (treeFunctionSample > 0 && randomSample > 6)
+                if (localZ <= treeFunctionSample && randomSample > 6)
                 {
                     if (data.getVoxelMaterial(localVoxel) != logMaterial)
                     {
