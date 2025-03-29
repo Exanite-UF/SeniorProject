@@ -32,11 +32,6 @@ Component::~Component()
     {
         Log::error("A Component that was part of the world was destroyed without being first removed from the world. Please remove the Component from the world first!");
     }
-
-    if (!isRemovalFromWorldComplete)
-    {
-        Log::error("A Component was destroyed while being removed from the world. This means the internal Component code was incorrectly implemented!");
-    }
 }
 
 void Component::onAddedToWorld()
@@ -141,7 +136,6 @@ void Component::removeFromWorld()
 
     // Then destroy self
     actualRemoveFromWorld();
-    isRemovalFromWorldComplete = true;
 }
 
 std::shared_ptr<TransformComponent> Component::getTransform() const

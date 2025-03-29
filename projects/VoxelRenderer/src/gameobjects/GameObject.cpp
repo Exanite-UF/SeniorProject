@@ -33,11 +33,6 @@ GameObject::~GameObject()
     {
         Log::error("A GameObject that was part of the world was destroyed without being first removed from the world. Please remove the GameObject from the world first!");
     }
-
-    if (!isRemovalFromWorldComplete)
-    {
-        Log::error("A GameObject was destroyed while being removed from the world. This means the internal GameObject code was incorrectly implemented!");
-    }
 }
 
 std::shared_ptr<TransformComponent>& GameObject::getTransform()
@@ -155,7 +150,6 @@ void GameObject::removeFromWorld()
 
     // Then remove self
     actualRemoveFromWorld();
-    isRemovalFromWorldComplete = true;
 }
 
 bool GameObject::getIsPartOfWorld() const

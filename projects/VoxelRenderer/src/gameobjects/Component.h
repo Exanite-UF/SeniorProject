@@ -19,12 +19,9 @@ private:
 
     // Components aren't supposed to be thread safe, but atomic provides a bit of extra safety
     std::atomic<bool> isPartOfWorld = true;
-
     std::atomic<bool> wasAddedToWorldNotified = false;
     std::atomic<bool> wasRemovingFromWorldNotified = false;
-
     std::atomic<bool> wasRemoveFromGameObjectCalled = false;
-    std::atomic<bool> isRemovalFromWorldComplete = false;
 
     void notifyAddedToWorld();
     void notifyRemovingFromWorld();

@@ -21,11 +21,8 @@ private:
 
     // GameObjects aren't supposed to be thread safe, but atomic provides a bit of extra safety
     std::atomic<bool> isPartOfWorld = true;
-
     std::atomic<bool> wasRemovingFromWorldNotified = false;
-
     std::atomic<bool> wasRemoveFromWorldCalled = false;
-    std::atomic<bool> isRemovalFromWorldComplete = false;
 
     std::shared_ptr<TransformComponent> transform {};
     std::vector<std::shared_ptr<Component>> components {};
