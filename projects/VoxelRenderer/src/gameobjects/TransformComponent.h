@@ -8,7 +8,12 @@ class TransformComponent : public Component
 {
 private:
     std::weak_ptr<TransformComponent> parent {};
+
     std::vector<std::shared_ptr<TransformComponent>> children {};
+
+    // A transform owns both its child GameObjects and child Transforms
+    // Removing this vector would cause the child Transforms to lose their GameObjects
+    std::vector<std::shared_ptr<GameObject>> ownedGameObjects {};
 
     glm::vec3 localPosition = glm::vec3(0, 0, 0);
     glm::quat localRotation = glm::quat(1, 0, 0, 0);

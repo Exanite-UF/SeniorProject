@@ -53,6 +53,7 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     if (previousParent)
     {
         std::erase(previousParent->children, std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
+        std::erase(previousParent->ownedGameObjects, getGameObject());
     }
 
     // Update parent of self
@@ -62,6 +63,7 @@ void TransformComponent::setParent(const std::shared_ptr<TransformComponent>& pa
     if (parent)
     {
         parent->children.push_back(std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
+        parent->ownedGameObjects.push_back(getGameObject());
     }
 }
 
@@ -89,6 +91,7 @@ void TransformComponent::onRemovingFromWorld()
     }
 
     children.clear();
+    ownedGameObjects.clear();
 
     // Destroy own GameObject to ensure the TransformComponent is never destroyed without its GameObject being destroyed
     getGameObject()->removeFromWorld();
