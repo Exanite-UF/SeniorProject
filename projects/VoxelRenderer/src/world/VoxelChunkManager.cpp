@@ -131,7 +131,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk loading threads
     {
-        auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
+        auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2);
         Log::information(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
         for (int i = 0; i < loadingThreadCount; ++i)
         {
