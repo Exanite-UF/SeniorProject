@@ -451,7 +451,6 @@ void VoxelChunkManager::update(const float deltaTime)
         }
 
         state.scene->visibleChunks = visibleChunks;
-        settings.isChunkLoadingEnabled = false;
     }
 }
 

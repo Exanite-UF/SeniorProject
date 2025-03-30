@@ -25,7 +25,7 @@ public:
         int generationDistance = 2; // TODO
 
         // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 0; // TODO: Increase renderDistance to 2 after LODs are added
+        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
 
         // ----- Chunks -----
 
