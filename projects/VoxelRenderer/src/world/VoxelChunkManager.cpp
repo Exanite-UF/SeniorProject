@@ -462,19 +462,22 @@ void VoxelChunkManager::showDebugMenu()
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
 
             // Drawing parameters
-            float squareSize = 10;
+            float cellSize = 10;
             float dotSize = 6;
-            float padding = 2;
+            float spacing = 2;
 
             auto* drawList = ImGui::GetWindowDrawList();
             auto windowPosition = ImGui::GetWindowPos();
             auto drawPosition = ImGui::GetCursorPos();
 
-            auto unloadedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
-            auto loadingColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
-            auto unloadingColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
-            auto loadedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
-            auto loddedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+            auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+            auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
+            auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
+            auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
+            auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+
+            auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+            auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
 
             auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
 
@@ -484,28 +487,40 @@ void VoxelChunkManager::showDebugMenu()
                 {
                     auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
 
-                    auto topLeft = baseDrawPosition + (squareSize + padding) * glm::vec2(x, y);
-                    auto bottomRight = topLeft + glm::vec2(squareSize);
+                    // Cell
+                    auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
+                    auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
+                    auto cellColor = unloadedCellColor;
 
-                    auto color = unloadedColor;
+                    // Dot
+                    auto dotPadding = (cellSize - dotSize) / 2;
+                    auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
+                    auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
+                    auto dotColor = defaultDotColor;
 
                     auto chunkIterator = state.activeChunks.find(chunkPosition);
                     if (chunkIterator != state.activeChunks.end())
                     {
-                        color = loadedColor;
+                        cellColor = loadedCellColor;
 
                         if (chunkIterator->second->isLoading)
                         {
-                            color = loadingColor;
+                            cellColor = loadingCellColor;
                         }
 
                         if (chunkIterator->second->isUnloading)
                         {
-                            color = unloadingColor;
+                            cellColor = unloadingCellColor;
+                        }
+
+                        if (chunkIterator->second->component->getExistsOnGpu())
+                        {
+                            dotColor = uploadedDotColor;
                         }
                     }
 
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(topLeft), ImGuiUtility::toImGui(bottomRight), color);
+                    drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
+                    drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
                 }
             }
         }
