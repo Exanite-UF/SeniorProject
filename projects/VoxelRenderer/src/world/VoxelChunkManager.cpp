@@ -118,11 +118,11 @@ void VoxelChunkManager::onSingletonDestroy()
     Log::information("Successfully cleaned up VoxelChunkManager");
 }
 
-void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene, const std::shared_ptr<GlfwContext>& modificationThreadContext)
+void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene, const std::vector<std::shared_ptr<GlfwContext>>& modificationThreadContexts)
 {
     Assert::isTrue(!state.isRunning, "VoxelChunkManager has already been initialized");
 
-    state.modificationThreadContext = modificationThreadContext;
+    state.modificationThreadContexts = modificationThreadContexts;
 
     state.isRunning = true;
     this->state.scene = scene;
@@ -141,7 +141,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk modification threads
     {
-        auto modificationThreadCount = 1; // Note: We can only have 1 thread max right now. Each thread must have its own GlfwContext.
+        auto modificationThreadCount = Constants::VoxelChunkManager::maxChunkModificationThreads; // Note: Each thread must have its own GlfwContext.
         Log::information(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
         for (int i = 0; i < modificationThreadCount; ++i)
         {
@@ -222,7 +222,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
     Log::debug("Started VoxelChunkManager chunk modification thread");
 
-    state.modificationThreadContext->makeContextCurrent();
+    state.modificationThreadContexts.at(threadId)->makeContextCurrent();
 
     while (state.isRunning)
     {
@@ -256,7 +256,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
             MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
             Log::verbose("Applying chunk command buffer");
-            task->commandBuffer.apply(task->component, task->scene);
+            task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
         }
     }
 

@@ -75,8 +75,14 @@ Program::Program()
     }
 
     std::shared_ptr<GlfwContext> previousContext {};
+
+    for (int i = 0; i < Constants::VoxelChunkManager::maxChunkModificationThreads; ++i)
+    {
+        previousContext = std::make_shared<GlfwContext>(previousContext.get());
+        chunkModificationThreadContexts.push_back(previousContext);
+    }
+
     previousContext = offscreenContext = std::make_shared<GlfwContext>(previousContext.get());
-    previousContext = chunkModificationThreadContext = std::make_shared<GlfwContext>(previousContext.get());
     previousContext = window = std::make_shared<Window>(previousContext.get());
 
     window->makeContextCurrent();
@@ -147,7 +153,7 @@ void Program::run()
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
 
     // Initialize the chunk manager
-    voxelChunkManager.initialize(scene, chunkModificationThreadContext);
+    voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);

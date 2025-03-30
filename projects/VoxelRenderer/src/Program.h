@@ -17,11 +17,11 @@ private:
     static void runLateStartupTests();
 
 public:
-    std::shared_ptr<GlfwContext> offscreenContext;
-    std::shared_ptr<GlfwContext> chunkModificationThreadContext;
-    std::shared_ptr<Window> window;
+    std::shared_ptr<GlfwContext> offscreenContext {};
+    std::vector<std::shared_ptr<GlfwContext>> chunkModificationThreadContexts {};
+    std::shared_ptr<Window> window {};
 
-    std::shared_ptr<InputManager> inputManager;
+    std::shared_ptr<InputManager> inputManager {};
 
     bool isWorkload = false; // View toggle
     bool useRandomNoise = true; // Noise type toggle

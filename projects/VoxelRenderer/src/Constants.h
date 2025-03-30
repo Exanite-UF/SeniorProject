@@ -25,6 +25,12 @@ public:
         static constexpr glm::ivec3 chunkSize = glm::ivec3(512, 512, 512);
     };
 
+    class VoxelChunkManager
+    {
+    public:
+        static constexpr int maxChunkModificationThreads = 2;
+    };
+
     class GameObject
     {
     public:

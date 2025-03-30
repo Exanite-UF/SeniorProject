@@ -84,7 +84,7 @@ private:
         // ----- Primary state -----
 
         std::atomic<bool> isRunning = false;
-        std::shared_ptr<GlfwContext> modificationThreadContext;
+        std::vector<std::shared_ptr<GlfwContext>> modificationThreadContexts {};
 
         // ----- Scene -----
 
@@ -126,6 +126,10 @@ private:
         std::condition_variable_any pendingTasksCondition {};
         std::recursive_mutex pendingTasksMutex {};
         std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
+
+        // Allow only one thread to upload at a time
+        // Used to limit the amount of uploads, mutual exclusion isn't required
+        std::mutex gpuUploadMutex {};
     };
 
 public:
@@ -140,7 +144,7 @@ private:
     void chunkModificationThreadEntrypoint(int threadId);
 
 public:
-    void initialize(const std::shared_ptr<SceneComponent>& scene, const std::shared_ptr<GlfwContext>& modificationThreadContext);
+    void initialize(const std::shared_ptr<SceneComponent>& scene, const std::vector<std::shared_ptr<GlfwContext>>& modificationThreadContexts);
 
     void update(float deltaTime);
     void showDebugMenu();

@@ -7,6 +7,8 @@
 // A command buffer for commands related to modifying a VoxelChunkComponent
 class VoxelChunkCommandBuffer
 {
+    friend class VoxelChunkManager;
+
 private:
     enum CommandType
     {
@@ -109,8 +111,9 @@ public:
 
     void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
 
-public:
-    // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
-    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene) const;
     void clear();
+
+private:
+    // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
+    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const;
 };

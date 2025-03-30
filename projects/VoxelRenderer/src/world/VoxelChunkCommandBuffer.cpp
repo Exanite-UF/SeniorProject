@@ -51,7 +51,7 @@ void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool 
     setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene) const
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
 {
     ZoneScoped;
 
@@ -165,7 +165,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                             return;
                         }
 
-                        component->getRawChunkData().writeTo(*component->getChunk());
+                        {
+                            std::lock_guard lockGpuUpload(gpuUploadMutex);
+                            chunkData.writeTo(*component->getChunk());
+                        }
 
                         isGpuUpToDate = true;
                     }
@@ -211,8 +214,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     {
         ZoneScopedN("VoxelChunkCommandBuffer::apply - Write to GPU");
 
-        auto& chunk = component->getChunk();
-        chunkData.writeTo(*chunk);
+        {
+            std::lock_guard lockGpuUpload(gpuUploadMutex);
+            chunkData.writeTo(*component->getChunk());
+        }
     }
 }
 
