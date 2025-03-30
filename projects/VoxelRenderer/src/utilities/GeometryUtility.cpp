@@ -1,13 +1,12 @@
 #include "GeometryUtility.h"
 
 #include <algorithm>
-#include <stack>
+#include <glm/gtx/compatibility.hpp>
+#include <src/utilities/Assert.h>
 
-#include "glm/gtx/compatibility.hpp"
-
-float GeometryUtility::getOrientation(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
+int GeometryUtility::getOrientation(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
 {
-    return (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
+    return glm::sign((b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y));
 }
 
 std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> vertices)
@@ -15,15 +14,12 @@ std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> ver
     std::vector<glm::vec2> results {};
 
     // Find left most vertex with the lowest y-coordinate (tie-breaker)
-    int index = 0;
     auto leftMostVertex = vertices.at(0);
-
     for (int i = 1; i < vertices.size(); ++i)
     {
         auto& candidate = vertices[i];
         if (candidate.x < leftMostVertex.x || (candidate.x == leftMostVertex.x && candidate.y < leftMostVertex.y))
         {
-            index = i;
             leftMostVertex = candidate;
         }
     }
@@ -64,4 +60,26 @@ std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> ver
     }
 
     return results;
+}
+
+bool GeometryUtility::isPointInsideConvexPolygon(const glm::vec2& point, const std::vector<glm::vec2>& vertices)
+{
+    Assert::isTrue(vertices.size() >= 3, "Not a polygon");
+
+    auto expectedOrientation = getOrientation(point, vertices[0], vertices[1]);
+
+    // Check if the point is on the same side of each of the polygon edges
+    for (int i = 1; i < vertices.size(); ++i)
+    {
+        auto& vertex1 = vertices[i];
+        auto& vertex2 = vertices[(i + 1) % vertices.size()];
+        auto orientation = getOrientation(point, vertex1, vertex2);
+
+        if (orientation != expectedOrientation)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
