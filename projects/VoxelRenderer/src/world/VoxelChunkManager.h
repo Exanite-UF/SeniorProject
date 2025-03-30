@@ -36,6 +36,11 @@ public:
         float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
 
         glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
+
+        // ---- Culling -----
+
+        // Only works in DEBUG builds
+        bool showDebugVisualizations = false;
     };
 
 private:

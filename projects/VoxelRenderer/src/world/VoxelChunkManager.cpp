@@ -459,7 +459,11 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     ZoneScoped;
 
     // This lets the compiler optimize out the parts used for debugging
+#ifdef DEBUG
+    bool isDebugging = settings.showDebugVisualizations;
+#else
     constexpr bool isDebugging = false;
+#endif
 
     auto size = glm::vec3(chunk->getChunkData().getSize());
     if (size.x == 0 || size.y == 0 || size.z == 0)
@@ -735,6 +739,8 @@ void VoxelChunkManager::showDebugMenu()
         {
             state.isChunkLoadingDirty = true;
         }
+
+        ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
         ImGui::Text("%s", std::format("Render distance: {}", settings.renderDistance).c_str());
         ImGui::Text("%s", std::format("GPU uploaded voxel chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
