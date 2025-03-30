@@ -477,7 +477,8 @@ void VoxelChunkManager::showDebugMenu()
             auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
 
             auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
-            auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
+            auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
+            auto visibleDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
 
             auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
 
@@ -501,19 +502,25 @@ void VoxelChunkManager::showDebugMenu()
                     auto chunkIterator = state.activeChunks.find(chunkPosition);
                     if (chunkIterator != state.activeChunks.end())
                     {
+                        auto& chunk = chunkIterator->second;
                         cellColor = loadedCellColor;
 
-                        if (chunkIterator->second->isLoading)
+                        if (chunk->isLoading)
                         {
                             cellColor = loadingCellColor;
                         }
-
-                        if (chunkIterator->second->isUnloading)
+                        else if (chunk->isUnloading)
                         {
                             cellColor = unloadingCellColor;
                         }
 
-                        if (chunkIterator->second->component->getExistsOnGpu())
+                        auto visibleChunks = state.scene->visibleChunks;
+                        auto uploadedChunks = state.scene->uploadedChunks;
+                        if (std::find(visibleChunks.begin(), visibleChunks.end(), chunk->component) != visibleChunks.end())
+                        {
+                            dotColor = visibleDotColor;
+                        }
+                        else if (std::find(uploadedChunks.begin(), uploadedChunks.end(), chunk->component) != uploadedChunks.end())
                         {
                             dotColor = uploadedDotColor;
                         }
