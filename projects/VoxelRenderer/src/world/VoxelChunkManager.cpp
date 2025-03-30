@@ -567,50 +567,10 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
             auto point1 = cubeVertices[i];
             auto point2 = cubeVertices[j];
 
-            if (point1.z > 0 && point2.z > 0)
+            if (point1.z > 0 || point2.z > 0)
             {
-                // Skip if both points are behind camera
+                // Skip if either point is behind the camera
                 continue;
-            }
-
-            // Make sure point1 is always in front of the camera
-            if (point1.z > 0 && point2.z < 0)
-            {
-                auto temp = point1;
-                point1 = point2;
-                point2 = temp;
-            }
-
-            // Project point2 back onto camera frustum if it is behind the camera
-            if (point2.z > 0)
-            {
-                // Divide screen into 4 regions using its diagonals
-                if (point2.y > point2.x)
-                {
-                    if (point2.y > -point2.x)
-                    {
-                        // Top region
-                        point2.y = 1;
-                    }
-                    else
-                    {
-                        // Left region
-                        point2.x = -1;
-                    }
-                }
-                else
-                {
-                    if (point2.y > -point2.x)
-                    {
-                        // Right region
-                        point2.x = 1;
-                    }
-                    else
-                    {
-                        // Bottom region
-                        point2.y = -1;
-                    }
-                }
             }
 
             bool isOnScreenSelf = false;
