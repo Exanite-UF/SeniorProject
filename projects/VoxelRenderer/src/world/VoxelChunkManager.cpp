@@ -494,7 +494,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     bool isOnScreen = false;
 
     // For debugging
-    if constexpr (isDebugging && false)
+    if (isDebugging && false)
     {
         for (int i = 0; i < vertices.size(); ++i)
         {
@@ -524,7 +524,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
 
         vertices[i] = glm::vec3(x, y, z);
 
-        if constexpr (isDebugging)
+        if (isDebugging)
         {
             auto displayedVector = vertices[i];
             if (displayedVector.z < 0)
@@ -551,7 +551,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
             auto vertex = vertices[i];
             if (vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
             {
-                if constexpr (isDebugging)
+                if (isDebugging)
                 {
                     isOnScreen = true;
                 }
@@ -593,7 +593,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                 float intersectX1 = (vertex1.y - m * vertex1.x) / (1 - m); // Intersection point with x=y
                 if (intersectX1 > -1 && intersectX1 < 1)
                 {
-                    if constexpr (isDebugging)
+                    if (isDebugging)
                     {
                         isOnScreen = true;
                         isOnScreenSelf = true;
@@ -607,7 +607,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                 float intersectX2 = (m * vertex1.x - vertex1.y) / (m + 1); // Intersection point with x=-y
                 if (intersectX2 > -1 && intersectX2 < 1)
                 {
-                    if constexpr (isDebugging)
+                    if (isDebugging)
                     {
                         isOnScreen = true;
                         isOnScreenSelf = true;
@@ -618,7 +618,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                     }
                 }
 
-                if constexpr (isDebugging)
+                if (isDebugging)
                 {
                     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
@@ -681,7 +681,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
             auto convexHull = GeometryUtility::getConvexHull(convexHullInput);
             if (convexHull.size() >= 3 && GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
             {
-                if constexpr (isDebugging)
+                if (isDebugging)
                 {
                     isOnScreen = true;
                 }
@@ -691,7 +691,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                 }
             }
 
-            if constexpr (isDebugging)
+            if (isDebugging)
             {
                 for (int i = 0; i < convexHull.size(); ++i)
                 {
@@ -714,7 +714,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         }
     }
 
-    if constexpr (isDebugging)
+    if (isDebugging)
     {
         return isOnScreen;
     }
