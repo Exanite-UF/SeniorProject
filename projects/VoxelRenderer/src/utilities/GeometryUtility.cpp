@@ -5,6 +5,11 @@
 
 #include "glm/gtx/compatibility.hpp"
 
+float GeometryUtility::getOrientation(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
+{
+    return (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
+}
+
 std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> vertices)
 {
     std::vector<glm::vec2> results {};
@@ -23,17 +28,7 @@ std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> ver
         }
     }
 
-    // Order of travel is a->b->c
-    // Returned values:
-    // >0 when the turn is counter-clockwise
-    // =0 when there is no turn
-    // <0 when the turn is clockwise
-    auto getOrientation = [](const glm::vec2 a, const glm::vec2 b, const glm::vec2 c)
-    {
-        return (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
-    };
-
-    auto compareOrientation = [&leftMostVertex, &getOrientation](const glm::vec2 a, const glm::vec2 b)
+    auto compareOrientation = [&leftMostVertex](const glm::vec2 a, const glm::vec2 b)
     {
         auto orientation = getOrientation(leftMostVertex, a, b);
         if (orientation == 0)
