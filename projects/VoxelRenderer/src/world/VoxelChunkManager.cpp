@@ -476,12 +476,14 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     auto model = chunk->getTransform()->getGlobalTransform() * scale;
     auto view = camera->getTransform()->getInverseGlobalTransform();
     auto projection = glm::perspective(camera->getVerticalFov(), camera->getAspectRatio(), camera->getNearPlane(), camera->getFarPlane());
-    auto modelViewProjection = projection * view * model;
+    auto modelView = view * model;
+    auto modelViewProjection = projection * modelView;
+    auto horizontalFovTanInverse = 1 / (glm::tan(camera->getHorizontalFov() / 2));
 
     // For debugging
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
-        auto viewPosition = glm::vec3(view * model * glm::vec4(cubeVertices[i], 1));
+        auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
 
         auto displayedVector = viewPosition;
         {
@@ -491,10 +493,17 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
 
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
-        auto clipPosition = modelViewProjection * glm::vec4(cubeVertices[i], 1);
-        cubeVertices[i] = glm::vec3(clipPosition) / clipPosition.w;
+        auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
+        viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
+
+        float x = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(1, 0, 0)) * horizontalFovTanInverse;
+        float y = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(0, 1, 0)) * horizontalFovTanInverse;
+        float z = (viewPosition.z - camera->getNearPlane()) / camera->getFarPlane();
+
+        cubeVertices[i] = glm::vec3(x, y, z);
 
         auto displayedVector = cubeVertices[i];
+        if (displayedVector.z < 0)
         {
             ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
@@ -510,7 +519,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
         auto vertex = cubeVertices[i];
-        auto isOnScreen = vertex.z > 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1;
+        auto isOnScreen = vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1;
 
         ImGui::Text("%s", std::format("Vertex in screen space: ({:.2f}, {:.2f}, {:.2f})", vertex.x, vertex.y, vertex.z).c_str());
         ImGui::Text("%s", std::format("On screen?: {}", isOnScreen ? "Yes" : "No").c_str());
