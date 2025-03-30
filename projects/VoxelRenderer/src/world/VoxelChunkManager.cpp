@@ -630,52 +630,70 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     // This is because we know the convex hull does not intersect the screen due to the previous cases
     {
         // Calculate convex hull
-        // Only consider vertices in front of the camera
-        std::vector<glm::vec2> verticesInFrontOfCamera {};
-        for (int i = 0; i < vertices.size(); ++i)
-        {
-            auto vertex = vertices[i];
-            if (vertex.z >= 0)
+        // Ideally we only consider vertices in front of the camera, but this leaves an edge case where these are less than 3 vertices in front
+        // Therefore, we first look for vertices that are on screen, then add more if necessary by prioritizing vertices that are most in front of the camera
+        std::vector<glm::vec2> convexHullInput {};
+
+        // Sort vertices by depth
+        std::sort(vertices.begin(), vertices.end(), [](const glm::vec3& a, const glm::vec3& b)
             {
-                continue;
+                return a.z < b.z;
+            });
+
+        // Add all vertices that are in front of the camera
+        int i = 0;
+        while (i < vertices.size())
+        {
+            if (vertices[i].z >= 0)
+            {
+                break;
             }
 
-            verticesInFrontOfCamera.push_back(vertex);
+            convexHullInput.push_back(vertices[i]);
+            i++;
         }
 
-        if (verticesInFrontOfCamera.empty())
+        // Only continue if there is at least 1 vertex on screen
+        if (!convexHullInput.empty())
         {
-            return false;
-        }
+            // Then add more vertices if needed
+            while (i < vertices.size() && convexHullInput.size() < 4)
+            {
+                convexHullInput.push_back(vertices[i]);
+                i++;
+            }
 
-        auto convexHull = GeometryUtility::getConvexHull(verticesInFrontOfCamera);
-        if (convexHull.size() >= 3 && GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
-        {
+            auto convexHull = GeometryUtility::getConvexHull(convexHullInput);
+            if (convexHull.size() >= 3 && GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
+            {
+                if constexpr (isDebugging)
+                {
+                    isOnScreen = true;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
             if constexpr (isDebugging)
             {
-                isOnScreen = true;
-            }
-            else
-            {
-                return true;
-            }
-        }
-
-        if constexpr (isDebugging)
-        {
-            for (int i = 0; i < convexHull.size(); ++i)
-            {
-                auto vertex1 = convexHull[i];
-                auto vertex2 = convexHull[(i + 1) % convexHull.size()];
+                for (int i = 0; i < convexHull.size(); ++i)
                 {
-                    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+                    auto vertex1 = convexHull[i];
+                    auto vertex2 = convexHull[(i + 1) % convexHull.size()];
+                    {
+                        ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
-                    auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
-                    auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
-                    auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
-                    auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+                        auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                        auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
+                        auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
+                        auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
 
-                    drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 3);
+                        drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 3);
+                    }
+
+                    ImGui::Text("%s", std::format("Convex hull vertex: ({:.2f}, {:.2f})", vertex1.x, vertex1.y).c_str());
                 }
             }
         }
