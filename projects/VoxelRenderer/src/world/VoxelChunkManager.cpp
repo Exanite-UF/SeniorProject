@@ -458,7 +458,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     ZoneScoped;
 
     // This lets the compiler optimize out the parts used for debugging
-    constexpr bool isDebugging = true;
+    constexpr bool isDebugging = false;
 
     auto size = glm::vec3(chunk->getChunkData().getSize());
     if (size.x == 0 || size.y == 0 || size.z == 0)
