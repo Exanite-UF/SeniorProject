@@ -94,8 +94,17 @@ Program::~Program()
 {
     ZoneScoped;
 
-    // Cleanup singletons
-    SingletonManager::destroyAllSingletons();
+    {
+        ZoneScopedN("Destroy scene");
+
+        sceneObject->removeFromWorld();
+    }
+
+    {
+        ZoneScopedN("Cleanup singletons");
+
+        SingletonManager::destroyAllSingletons();
+    }
 
     // Shutdown GLFW
     glfwTerminate();
@@ -123,8 +132,8 @@ void Program::run()
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Create the scene GameObject
-    auto sceneObject = GameObject::createRootObject("Scene");
-    auto scene = sceneObject->addComponent<SceneComponent>();
+    sceneObject = GameObject::createRootObject("Scene");
+    scene = sceneObject->addComponent<SceneComponent>();
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
     // Generate static, noise-based chunks for testing purposes
@@ -624,12 +633,6 @@ void Program::run()
     }
 
     renderer.stopAsynchronousReprojection();
-
-    {
-        ZoneScopedN("Destroy scene");
-
-        sceneObject->removeFromWorld();
-    }
 }
 
 void Program::checkForContentFolder()

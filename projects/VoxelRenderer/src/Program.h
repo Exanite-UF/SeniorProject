@@ -1,8 +1,10 @@
 #pragma once
 
+#include <src/gameobjects/GameObject.h>
 #include <src/input/InputManager.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/windowing/Window.h>
+#include <src/world/SceneComponent.h>
 
 class Program : public NonCopyable
 {
@@ -22,6 +24,9 @@ public:
     std::shared_ptr<Window> window {};
 
     std::shared_ptr<InputManager> inputManager {};
+
+    std::shared_ptr<GameObject> sceneObject {};
+    std::shared_ptr<SceneComponent> scene {};
 
     bool isWorkload = false; // View toggle
     bool useRandomNoise = true; // Noise type toggle
