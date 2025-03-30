@@ -444,15 +444,11 @@ void VoxelChunkManager::update(const float deltaTime)
         std::vector<std::shared_ptr<VoxelChunkComponent>> visibleChunks {};
         for (auto chunk : state.scene->allChunks)
         {
-            Log::verbose(std::format("Checking for chunk visibility"));
-
             auto isVisible = isOnScreen(chunk, viewProjection);
             if (isVisible)
             {
                 visibleChunks.push_back(chunk);
             }
-
-            Log::verbose(std::format("Chunk isVisible: {}", isVisible ? "True" : "False"));
         }
 
         state.scene->visibleChunks = visibleChunks;
@@ -461,6 +457,12 @@ void VoxelChunkManager::update(const float deltaTime)
 
 bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const glm::mat4& viewProjection)
 {
+    auto size = glm::vec3(chunk->getChunkData().getSize());
+    if (size.x == 0 || size.y == 0 || size.z == 0)
+    {
+        return false;
+    }
+
     std::vector cubeVertices {
         glm::vec3(-0.5f, -0.5f, -0.5f),
         glm::vec3(-0.5f, -0.5f, +0.5f),
@@ -472,24 +474,26 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         glm::vec3(+0.5f, +0.5f, +0.5f),
     };
 
-    // Transform into screen space
-    auto model = chunk->getTransform()->getGlobalTransform();
+    // Transform into NDC space
+    auto scale = glm::scale(glm::mat4(1), size);
+    auto model = chunk->getTransform()->getGlobalTransform() * scale;
     auto modelViewProjection = viewProjection * model;
 
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
-        auto homogenous = modelViewProjection * glm::vec4(cubeVertices[i], 1);
-        cubeVertices[i] = glm::vec3(homogenous) / homogenous.w;
+        auto clipPosition = modelViewProjection * glm::vec4(cubeVertices[i], 1);
+        cubeVertices[i] = glm::vec3(clipPosition) / clipPosition.w;
     }
 
     // Case 1: Check for vertices
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
         auto vertex = cubeVertices[i];
+        auto isOnScreen = vertex.z > -1 && vertex.z < 1 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1;
 
-        Log::verbose(std::format("Vertex in screen space: ({}, {}, {})", vertex.x, vertex.y, vertex.z));
+        ImGui::Text("%s", std::format("Vertex in screen space: ({:.2}, {:.2}, {:.2}). On screen?: {}", vertex.x, vertex.y, vertex.z, isOnScreen ? "Yes" : "No").c_str());
 
-        if (vertex.z > 0 && vertex.x > -1 && vertex.x < -1 && vertex.y > -1 && vertex.y < -1)
+        if (vertex.z > -1 && vertex.z < 1 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
         {
             return true;
         }
