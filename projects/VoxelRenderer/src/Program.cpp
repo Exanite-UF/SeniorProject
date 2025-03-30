@@ -345,6 +345,7 @@ void Program::run()
 
         // Update systems
         window->update();
+        camera->resolution = window->size;
         inputManager->update();
         voxelChunkManager.update(deltaTime);
         sceneObject->update();

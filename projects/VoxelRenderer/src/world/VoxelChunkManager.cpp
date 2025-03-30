@@ -430,6 +430,72 @@ void VoxelChunkManager::update(const float deltaTime)
             }
         }
     }
+
+    // Chunk visibility
+    {
+        // TODO: Don't require exclusive access
+        std::lock_guard lock(state.scene->getMutex());
+
+        auto camera = state.scene->camera;
+        auto view = camera->getTransform()->getInverseGlobalTransform();
+        auto projection = glm::perspective(camera->getVerticalFov(), camera->getAspectRatio(), camera->getNearPlane(), camera->getFarPlane());
+        auto viewProjection = projection * view;
+
+        std::vector<std::shared_ptr<VoxelChunkComponent>> visibleChunks {};
+        for (auto chunk : state.scene->allChunks)
+        {
+            Log::verbose(std::format("Checking for chunk visibility"));
+
+            auto isVisible = isOnScreen(chunk, viewProjection);
+            if (isVisible)
+            {
+                visibleChunks.push_back(chunk);
+            }
+
+            Log::verbose(std::format("Chunk isVisible: {}", isVisible ? "True" : "False"));
+        }
+
+        state.scene->visibleChunks = visibleChunks;
+    }
+}
+
+bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const glm::mat4& viewProjection)
+{
+    std::vector cubeVertices {
+        glm::vec3(-0.5f, -0.5f, -0.5f),
+        glm::vec3(-0.5f, -0.5f, +0.5f),
+        glm::vec3(-0.5f, +0.5f, -0.5f),
+        glm::vec3(-0.5f, +0.5f, +0.5f),
+        glm::vec3(+0.5f, -0.5f, -0.5f),
+        glm::vec3(+0.5f, -0.5f, +0.5f),
+        glm::vec3(+0.5f, +0.5f, -0.5f),
+        glm::vec3(+0.5f, +0.5f, +0.5f),
+    };
+
+    // Transform into screen space
+    auto model = chunk->getTransform()->getGlobalTransform();
+    auto modelViewProjection = viewProjection * model;
+
+    for (int i = 0; i < cubeVertices.size(); ++i)
+    {
+        auto homogenous = modelViewProjection * glm::vec4(cubeVertices[i], 1);
+        cubeVertices[i] = glm::vec3(homogenous) / homogenous.w;
+    }
+
+    // Case 1: Check for vertices
+    for (int i = 0; i < cubeVertices.size(); ++i)
+    {
+        auto vertex = cubeVertices[i];
+
+        Log::verbose(std::format("Vertex in screen space: ({}, {}, {})", vertex.x, vertex.y, vertex.z));
+
+        if (vertex.z > 0 && vertex.x > -1 && vertex.x < -1 && vertex.y > -1 && vertex.y < -1)
+        {
+            return true;
+        }
+    }
+
+    return true;
 }
 
 void VoxelChunkManager::showDebugMenu()
@@ -515,12 +581,11 @@ void VoxelChunkManager::showDebugMenu()
                         }
 
                         auto visibleChunks = state.scene->visibleChunks;
-                        auto uploadedChunks = state.scene->uploadedChunks;
                         if (std::find(visibleChunks.begin(), visibleChunks.end(), chunk->component) != visibleChunks.end())
                         {
                             dotColor = visibleDotColor;
                         }
-                        else if (std::find(uploadedChunks.begin(), uploadedChunks.end(), chunk->component) != uploadedChunks.end())
+                        else if (chunk->component->getExistsOnGpu())
                         {
                             dotColor = uploadedDotColor;
                         }

@@ -182,29 +182,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     }
                 }
 
-                // Check if we need to update list of uploaded chunks
-                if (previouslyExistedOnGpu != command.existsOnGpu)
-                {
-                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Update uploaded chunks list");
-
-                    // Lock the scene mutex
-                    std::lock_guard lockScene(scene->getMutex());
-                    if (command.existsOnGpu)
-                    {
-                        auto isPartOfScene = std::find(scene->allChunks.begin(), scene->allChunks.end(), component) != scene->allChunks.end();
-                        auto isPartOfWorld = component->getIsPartOfWorld();
-
-                        if (isPartOfScene && isPartOfWorld)
-                        {
-                            scene->uploadedChunks.push_back(component);
-                        }
-                    }
-                    else
-                    {
-                        std::erase(scene->uploadedChunks, component);
-                    }
-                }
-
                 break;
             }
         }

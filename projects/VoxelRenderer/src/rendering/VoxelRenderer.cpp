@@ -261,6 +261,11 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
             ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
 
             std::shared_lock lock(chunkComponent->getMutex());
+            if (!chunkComponent->getExistsOnGpu())
+            {
+                continue;
+            }
+
             auto& chunk = chunkComponent->getChunk();
 
             chunk->bindBuffers(4, 5);

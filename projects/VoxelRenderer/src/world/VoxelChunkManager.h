@@ -156,4 +156,7 @@ public:
 
 protected:
     void onSingletonDestroy() override;
+
+private:
+    bool isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const glm::mat4& viewProjection);
 };
