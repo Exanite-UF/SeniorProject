@@ -454,6 +454,9 @@ void VoxelChunkManager::update(const float deltaTime)
 
 bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera)
 {
+    // This lets the compiler optimize out the parts used for debugging
+    constexpr bool isDebugging = true;
+
     auto size = glm::vec3(chunk->getChunkData().getSize());
     if (size.x == 0 || size.y == 0 || size.z == 0)
     {
@@ -475,21 +478,25 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     auto scale = glm::scale(glm::mat4(1), size);
     auto model = chunk->getTransform()->getGlobalTransform() * scale;
     auto view = camera->getTransform()->getInverseGlobalTransform();
-    auto projection = glm::perspective(camera->getVerticalFov(), camera->getAspectRatio(), camera->getNearPlane(), camera->getFarPlane());
     auto modelView = view * model;
-    auto modelViewProjection = projection * modelView;
     auto horizontalFovTan = glm::tan(camera->getHorizontalFov() / 2);
     auto verticalFovTan = glm::tan(camera->getVerticalFov() / 2);
 
     // For debugging
-    for (int i = 0; i < cubeVertices.size(); ++i)
-    {
-        auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
-        viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
+    bool isOnScreen = false;
 
-        auto displayedVector = viewPosition;
+    // For debugging
+    if constexpr (isDebugging && false)
+    {
+        for (int i = 0; i < cubeVertices.size(); ++i)
         {
-            ImGui::Text("%s", std::format("Vertex in view space: ({:.2f}, {:.2f}, {:.2f})", displayedVector.x, displayedVector.y, displayedVector.z).c_str());
+            auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
+            viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
+
+            auto displayedVector = viewPosition;
+            {
+                ImGui::Text("%s", std::format("Vertex in view space: ({:.2f}, {:.2f}, {:.2f})", displayedVector.x, displayedVector.y, displayedVector.z).c_str());
+            }
         }
     }
 
@@ -498,38 +505,125 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
         viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
 
-        float x = (-viewPosition.x) / (viewPosition.z * horizontalFovTan);
-        float y = (-viewPosition.y) / (viewPosition.z * verticalFovTan);
+        float x = ((viewPosition.z > 0 ? 1 : -1) * viewPosition.x) / (viewPosition.z * horizontalFovTan);
+        float y = ((viewPosition.z > 0 ? 1 : -1) * viewPosition.y) / (viewPosition.z * verticalFovTan);
         float z = (viewPosition.z - camera->getNearPlane()) / camera->getFarPlane();
 
         cubeVertices[i] = glm::vec3(x, y, z);
 
-        auto displayedVector = cubeVertices[i];
-        if (displayedVector.z < 0)
+        if constexpr (isDebugging)
         {
-            ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+            auto displayedVector = cubeVertices[i];
+            if (displayedVector.z < 0)
+            {
+                ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
-            auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
-            auto pointPosition = glm::vec2((displayedVector.x + 1) / 2, 1 - ((displayedVector.y + 1) / 2)) * windowSize;
-            auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+                auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                auto pointPosition = glm::vec2((displayedVector.x + 1) / 2, 1 - ((displayedVector.y + 1) / 2)) * windowSize;
+                auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
 
-            drawList->AddCircleFilled(ImGuiUtility::toImGui(pointPosition), 5, color);
+                drawList->AddCircleFilled(ImGuiUtility::toImGui(pointPosition), 5, color);
+            }
+
+            ImGui::Text("%s", std::format("Vertex in screen space: ({:.2f}, {:.2f}, {:.2f})", displayedVector.x, displayedVector.y, displayedVector.z).c_str());
         }
     }
 
-    // Case 1: Check for vertices
+    // Case 1: Check if vertices are on screen
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
         auto vertex = cubeVertices[i];
-        auto isOnScreen = vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1;
-
-        if (isOnScreen)
+        if (vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
         {
-            return true;
+            if constexpr (isDebugging)
+            {
+                isOnScreen = true;
+            }
+            else
+            {
+                return true;
+            }
         }
     }
 
-    return false;
+    // Case 2: Vertices are all offscreen. Check if edges intersect screen diagonal.
+    // TODO: Can use convex hull to reduce vertex count, but that only reduces the vertices checked from 8 to 4-6.
+    // This uses an O(n^2) check where n is at most 8
+    for (int i = 0; i < cubeVertices.size(); ++i)
+    {
+        for (int j = 0; j < cubeVertices.size(); ++j)
+        {
+            if (i == j)
+            {
+                // Skip if the points are the same
+                continue;
+            }
+
+            auto point1 = cubeVertices[i];
+            auto point2 = cubeVertices[j];
+
+            if (point1.z > 0 && point2.z > 0)
+            {
+                // Skip if both points are behind camera
+                continue;
+            }
+
+            bool isOnScreenSelf = false; // TODO: Remove. This is for debugging.
+            float m = (point1.y - point2.y) / (point1.x - point2.x);
+            float intersectX1 = (point1.y - m * point1.x) / (1 - m); // Intersection point with x=y
+            if (intersectX1 > -1 && intersectX1 < 1)
+            {
+                if constexpr (isDebugging)
+                {
+                    isOnScreen = true;
+                    isOnScreenSelf = true;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
+            float intersectX2 = (m * point1.x - point1.y) / (m + 1); // Intersection point with x=-y
+            if (intersectX2 > -1 && intersectX2 < 1)
+            {
+                if constexpr (isDebugging)
+                {
+                    isOnScreen = true;
+                    isOnScreenSelf = true;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
+            if constexpr (isDebugging)
+            {
+                ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+                auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                auto point1Position = glm::vec2((point1.x + 1) / 2, 1 - ((point1.y + 1) / 2)) * windowSize;
+                auto point2Position = glm::vec2((point2.x + 1) / 2, 1 - ((point2.y + 1) / 2)) * windowSize;
+                auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb(isOnScreenSelf ? "#00ff00" : "#ff0000")));
+
+                drawList->AddLine(ImGuiUtility::toImGui(point1Position), ImGuiUtility::toImGui(point2Position), color, 5);
+                if (isOnScreenSelf)
+                {
+                    ImGui::Text("%s", std::format("Line intersects screen!").c_str());
+                }
+            }
+        }
+    }
+
+    if constexpr (isDebugging)
+    {
+        return isOnScreen;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void VoxelChunkManager::showDebugMenu()
