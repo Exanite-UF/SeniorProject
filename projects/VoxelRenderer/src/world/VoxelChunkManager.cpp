@@ -649,7 +649,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         }
 
         auto convexHull = GeometryUtility::getConvexHull(verticesInFrontOfCamera);
-        if (GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
+        if (convexHull.size() >= 3 && GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
         {
             if constexpr (isDebugging)
             {
