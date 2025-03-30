@@ -503,10 +503,15 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
         auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
+
+        // Swizzle coordinates to use the following right-handed coordinate system:
+        // Right: X+
+        // Up: Y+
+        // Forward: Z-
         viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
 
-        float x = ((viewPosition.z > 0 ? 1 : -1) * viewPosition.x) / (viewPosition.z * horizontalFovTan);
-        float y = ((viewPosition.z > 0 ? 1 : -1) * viewPosition.y) / (viewPosition.z * verticalFovTan);
+        float x = (viewPosition.x) / (glm::abs(viewPosition.z) * horizontalFovTan);
+        float y = (viewPosition.y) / (glm::abs(viewPosition.z) * verticalFovTan);
         float z = (viewPosition.z - camera->getNearPlane()) / camera->getFarPlane();
 
         cubeVertices[i] = glm::vec3(x, y, z);
@@ -568,7 +573,47 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                 continue;
             }
 
-            bool isOnScreenSelf = false; // TODO: Remove. This is for debugging.
+            // Make sure point1 is always in front of the camera
+            if (point1.z > 0 && point2.z < 0)
+            {
+                auto temp = point1;
+                point1 = point2;
+                point2 = temp;
+            }
+
+            // Project point2 back onto camera frustum if it is behind the camera
+            if (point2.z > 0)
+            {
+                // Divide screen into 4 regions using its diagonals
+                if (point2.y > point2.x)
+                {
+                    if (point2.y > -point2.x)
+                    {
+                        // Top region
+                        point2.y = 1;
+                    }
+                    else
+                    {
+                        // Left region
+                        point2.x = -1;
+                    }
+                }
+                else
+                {
+                    if (point2.y > -point2.x)
+                    {
+                        // Right region
+                        point2.x = 1;
+                    }
+                    else
+                    {
+                        // Bottom region
+                        point2.y = -1;
+                    }
+                }
+            }
+
+            bool isOnScreenSelf = false;
             float m = (point1.y - point2.y) / (point1.x - point2.x);
             float intersectX1 = (point1.y - m * point1.x) / (1 - m); // Intersection point with x=y
             if (intersectX1 > -1 && intersectX1 < 1)
