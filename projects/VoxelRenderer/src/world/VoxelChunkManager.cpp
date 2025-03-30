@@ -478,7 +478,8 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     auto projection = glm::perspective(camera->getVerticalFov(), camera->getAspectRatio(), camera->getNearPlane(), camera->getFarPlane());
     auto modelView = view * model;
     auto modelViewProjection = projection * modelView;
-    auto horizontalFovTanInverse = 1 / (glm::tan(camera->getHorizontalFov() / 2));
+    auto horizontalFovTan = glm::tan(camera->getHorizontalFov() / 2);
+    auto verticalFovTan = glm::tan(camera->getVerticalFov() / 2);
 
     // For debugging
     for (int i = 0; i < cubeVertices.size(); ++i)
@@ -496,8 +497,10 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
         viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
 
-        float x = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(1, 0, 0)) * horizontalFovTanInverse;
-        float y = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(0, 1, 0)) * horizontalFovTanInverse;
+        float x = (((viewPosition.x) / viewPosition.z)) / horizontalFovTan;
+        float y = (((viewPosition.y) / viewPosition.z)) / horizontalFovTan / camera->getAspectRatio();
+        // float x = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(1, 0, 0)) * horizontalFovTanInverse;
+        // float y = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(0, 1, 0)) * horizontalFovTanInverse;
         float z = (viewPosition.z - camera->getNearPlane()) / camera->getFarPlane();
 
         cubeVertices[i] = glm::vec3(x, y, z);
