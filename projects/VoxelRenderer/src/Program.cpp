@@ -368,7 +368,7 @@ void Program::run()
 
                 camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
                 camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
-                camera->rotation.x = glm::clamp(camera->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
+                camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
 
                 cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
