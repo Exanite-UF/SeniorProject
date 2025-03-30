@@ -551,7 +551,8 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         }
     }
 
-    // Case 2: Vertices are all offscreen. Check if edges intersect screen diagonal.
+    // Case 2: Case 1 failed. Check if edges are on screen.
+    // This is done by checking if the edge intersects a diagonal of the screen.
     // TODO: Can use convex hull to reduce vertex count, but that only reduces the vertices checked from 8 to 4-6.
     // This uses an O(n^2) check where n is at most 8
     for (int i = 0; i < cubeVertices.size(); ++i)
