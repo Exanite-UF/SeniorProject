@@ -25,7 +25,7 @@ public:
         int generationDistance = 2; // TODO
 
         // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
+        int renderDistance = 0; // TODO: Increase renderDistance to 2 after LODs are added
 
         // ----- Chunks -----
 
@@ -158,5 +158,5 @@ protected:
     void onSingletonDestroy() override;
 
 private:
-    bool isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const glm::mat4& viewProjection);
+    bool isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera);
 };

@@ -435,16 +435,12 @@ void VoxelChunkManager::update(const float deltaTime)
     {
         // TODO: Don't require exclusive access
         std::lock_guard lock(state.scene->getMutex());
-
         auto camera = state.scene->camera;
-        auto view = camera->getTransform()->getInverseGlobalTransform();
-        auto projection = glm::perspective(camera->getVerticalFov(), camera->getAspectRatio(), camera->getNearPlane(), camera->getFarPlane());
-        auto viewProjection = projection * view;
 
         std::vector<std::shared_ptr<VoxelChunkComponent>> visibleChunks {};
         for (auto chunk : state.scene->allChunks)
         {
-            auto isVisible = isOnScreen(chunk, viewProjection);
+            auto isVisible = isOnScreen(chunk, camera);
             if (isVisible)
             {
                 visibleChunks.push_back(chunk);
@@ -452,10 +448,11 @@ void VoxelChunkManager::update(const float deltaTime)
         }
 
         state.scene->visibleChunks = visibleChunks;
+        settings.isChunkLoadingEnabled = false;
     }
 }
 
-bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const glm::mat4& viewProjection)
+bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera)
 {
     auto size = glm::vec3(chunk->getChunkData().getSize());
     if (size.x == 0 || size.y == 0 || size.z == 0)
@@ -477,26 +474,51 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     // Transform into NDC space
     auto scale = glm::scale(glm::mat4(1), size);
     auto model = chunk->getTransform()->getGlobalTransform() * scale;
-    auto modelViewProjection = viewProjection * model;
+    auto view = camera->getTransform()->getInverseGlobalTransform();
+    auto projection = glm::perspective(camera->getVerticalFov(), camera->getAspectRatio(), camera->getNearPlane(), camera->getFarPlane());
+    auto modelViewProjection = projection * view * model;
+
+    // For debugging
+    for (int i = 0; i < cubeVertices.size(); ++i)
+    {
+        auto viewPosition = glm::vec3(view * model * glm::vec4(cubeVertices[i], 1));
+
+        auto displayedVector = viewPosition;
+        {
+            ImGui::Text("%s", std::format("Vertex in view space: ({:.2f}, {:.2f}, {:.2f})", displayedVector.x, displayedVector.y, displayedVector.z).c_str());
+        }
+    }
 
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
         auto clipPosition = modelViewProjection * glm::vec4(cubeVertices[i], 1);
         cubeVertices[i] = glm::vec3(clipPosition) / clipPosition.w;
+
+        auto displayedVector = cubeVertices[i];
+        {
+            ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+            auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+            auto pointPosition = glm::vec2((displayedVector.x + 1) / 2, 1 - ((displayedVector.y + 1) / 2)) * windowSize;
+            auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+
+            drawList->AddCircleFilled(ImGuiUtility::toImGui(pointPosition), 5, color);
+        }
     }
 
     // Case 1: Check for vertices
     for (int i = 0; i < cubeVertices.size(); ++i)
     {
         auto vertex = cubeVertices[i];
-        auto isOnScreen = vertex.z > -1 && vertex.z < 1 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1;
+        auto isOnScreen = vertex.z > 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1;
 
-        ImGui::Text("%s", std::format("Vertex in screen space: ({:.2}, {:.2}, {:.2}). On screen?: {}", vertex.x, vertex.y, vertex.z, isOnScreen ? "Yes" : "No").c_str());
+        ImGui::Text("%s", std::format("Vertex in screen space: ({:.2f}, {:.2f}, {:.2f})", vertex.x, vertex.y, vertex.z).c_str());
+        ImGui::Text("%s", std::format("On screen?: {}", isOnScreen ? "Yes" : "No").c_str());
 
-        if (vertex.z > -1 && vertex.z < 1 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
-        {
-            return true;
-        }
+        // if (isOnScreen)
+        // {
+        //     return true;
+        // }
     }
 
     return true;
