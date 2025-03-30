@@ -626,6 +626,8 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
 
     // Case 3: Case 2 failed. Check if face is on screen.
     // This done by checking if the screen is contained by the convex hull of the vertices that are in front of the camera
+    // We can further optimize this by only checking if the center of the screen is contained by the convex hull
+    // This is because we know the convex hull does not intersect the screen due to the previous cases
     {
         // Calculate convex hull
         // Only consider vertices in front of the camera
@@ -647,6 +649,17 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         }
 
         auto convexHull = GeometryUtility::getConvexHull(verticesInFrontOfCamera);
+        if (GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
+        {
+            if constexpr (isDebugging)
+            {
+                isOnScreen = true;
+            }
+            else
+            {
+                return true;
+            }
+        }
 
         if constexpr (isDebugging)
         {
