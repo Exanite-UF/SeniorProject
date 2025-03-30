@@ -17,6 +17,8 @@ public:
 
         // The max number of material definitions
         static constexpr uint32_t maxMaterialCount = 65536;
+
+        static constexpr uint32_t maxUploadChunkSizeBytes = 32 * 1024 * 1024;
     };
 
     class VoxelChunkComponent
