@@ -500,8 +500,6 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
 
         float x = (-viewPosition.x) / (viewPosition.z * horizontalFovTan);
         float y = (-viewPosition.y) / (viewPosition.z * verticalFovTan);
-        // float x = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(1, 0, 0)) * horizontalFovTanInverse;
-        // float y = glm::dot(glm::normalize(viewPosition) - glm::vec3(0, 0, -1), glm::vec3(0, 1, 0)) * horizontalFovTanInverse;
         float z = (viewPosition.z - camera->getNearPlane()) / camera->getFarPlane();
 
         cubeVertices[i] = glm::vec3(x, y, z);
@@ -525,16 +523,13 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         auto vertex = cubeVertices[i];
         auto isOnScreen = vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1;
 
-        ImGui::Text("%s", std::format("Vertex in screen space: ({:.2f}, {:.2f}, {:.2f})", vertex.x, vertex.y, vertex.z).c_str());
-        ImGui::Text("%s", std::format("On screen?: {}", isOnScreen ? "Yes" : "No").c_str());
-
-        // if (isOnScreen)
-        // {
-        //     return true;
-        // }
+        if (isOnScreen)
+        {
+            return true;
+        }
     }
 
-    return true;
+    return false;
 }
 
 void VoxelChunkManager::showDebugMenu()
