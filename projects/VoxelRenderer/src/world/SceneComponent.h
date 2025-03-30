@@ -59,4 +59,7 @@ public:
 
     void addWorldChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk);
     void removeWorldChunk(const glm::ivec3& chunkPosition);
+
+private:
+    void removeChunk(const std::shared_ptr<VoxelChunkComponent>& chunk);
 };

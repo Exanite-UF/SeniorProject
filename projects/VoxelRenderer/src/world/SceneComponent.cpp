@@ -93,10 +93,15 @@ void SceneComponent::removeWorldChunk(const glm::ivec3& chunkPosition)
         auto chunk = mapIterator->second;
         worldChunksByChunkPosition.erase(mapIterator);
 
-        // This is pretty horrible, but we need to keep the data in sync
-        std::erase(allChunks, chunk);
-        std::erase(worldChunks, chunk);
-        std::erase(uploadedChunks, chunk);
-        std::erase(visibleChunks, chunk);
+        removeChunk(chunk);
     }
+}
+
+void SceneComponent::removeChunk(const std::shared_ptr<VoxelChunkComponent>& chunk)
+{
+    // This is pretty horrible, but we need to keep the data in sync
+    std::erase(allChunks, chunk);
+    std::erase(worldChunks, chunk);
+    std::erase(uploadedChunks, chunk);
+    std::erase(visibleChunks, chunk);
 }

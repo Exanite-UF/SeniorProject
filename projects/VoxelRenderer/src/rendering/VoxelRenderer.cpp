@@ -16,6 +16,7 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/Log.h>
 #include <src/utilities/OpenGl.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/world/Material.h>
@@ -260,12 +261,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
             ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
 
             std::shared_lock lock(chunkComponent->getMutex());
-
-            if (!chunkComponent->getExistsOnGpu())
-            {
-                continue;
-            }
-
             auto& chunk = chunkComponent->getChunk();
 
             chunk->bindBuffers(4, 5);

@@ -1,5 +1,7 @@
 #include "VoxelChunkCommandBuffer.h"
 
+#include <algorithm>
+#include <ranges>
 #include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
 
@@ -186,7 +188,13 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     std::lock_guard lockScene(scene->getMutex());
                     if (command.existsOnGpu)
                     {
-                        scene->uploadedChunks.push_back(component);
+                        auto isPartOfScene = std::find(scene->allChunks.begin(), scene->allChunks.end(), component) != scene->allChunks.end();
+                        auto isPartOfWorld = component->getIsPartOfWorld();
+
+                        if (isPartOfScene && isPartOfWorld)
+                        {
+                            scene->uploadedChunks.push_back(component);
+                        }
                     }
                     else
                     {

@@ -616,6 +616,8 @@ void Program::run()
         FrameMark;
     }
 
+    renderer.stopAsynchronousReprojection();
+
     {
         ZoneScopedN("Destroy scene");
 
