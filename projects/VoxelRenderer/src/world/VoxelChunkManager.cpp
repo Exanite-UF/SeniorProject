@@ -18,6 +18,7 @@
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/ColorUtility.h>
+#include <src/utilities/GeometryUtility.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
@@ -454,6 +455,8 @@ void VoxelChunkManager::update(const float deltaTime)
 
 bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera)
 {
+    ZoneScoped;
+
     // This lets the compiler optimize out the parts used for debugging
     constexpr bool isDebugging = true;
 
@@ -463,7 +466,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         return false;
     }
 
-    std::vector cubeVertices {
+    std::vector vertices {
         glm::vec3(-0.5f, -0.5f, -0.5f),
         glm::vec3(-0.5f, -0.5f, +0.5f),
         glm::vec3(-0.5f, +0.5f, -0.5f),
@@ -488,9 +491,9 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     // For debugging
     if constexpr (isDebugging && false)
     {
-        for (int i = 0; i < cubeVertices.size(); ++i)
+        for (int i = 0; i < vertices.size(); ++i)
         {
-            auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
+            auto viewPosition = glm::vec3(modelView * glm::vec4(vertices[i], 1));
             viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
 
             auto displayedVector = viewPosition;
@@ -500,9 +503,9 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         }
     }
 
-    for (int i = 0; i < cubeVertices.size(); ++i)
+    for (int i = 0; i < vertices.size(); ++i)
     {
-        auto viewPosition = glm::vec3(modelView * glm::vec4(cubeVertices[i], 1));
+        auto viewPosition = glm::vec3(modelView * glm::vec4(vertices[i], 1));
 
         // Swizzle coordinates to use the following right-handed coordinate system:
         // Right: X+
@@ -514,11 +517,11 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
         float y = (viewPosition.y) / (glm::abs(viewPosition.z) * verticalFovTan);
         float z = (viewPosition.z - camera->getNearPlane()) / camera->getFarPlane();
 
-        cubeVertices[i] = glm::vec3(x, y, z);
+        vertices[i] = glm::vec3(x, y, z);
 
         if constexpr (isDebugging)
         {
-            auto displayedVector = cubeVertices[i];
+            auto displayedVector = vertices[i];
             if (displayedVector.z < 0)
             {
                 ImDrawList* drawList = ImGui::GetBackgroundDrawList();
@@ -535,9 +538,9 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     }
 
     // Case 1: Check if vertices are on screen
-    for (int i = 0; i < cubeVertices.size(); ++i)
+    for (int i = 0; i < vertices.size(); ++i)
     {
-        auto vertex = cubeVertices[i];
+        auto vertex = vertices[i];
         if (vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
         {
             if constexpr (isDebugging)
@@ -553,11 +556,10 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
 
     // Case 2: Case 1 failed. Check if edges are on screen.
     // This is done by checking if the edge intersects a diagonal of the screen.
-    // TODO: Can use convex hull to reduce vertex count, but that only reduces the vertices checked from 8 to 4-6.
     // This uses an O(n^2) check where n is at most 8
-    for (int i = 0; i < cubeVertices.size(); ++i)
+    for (int i = 0; i < vertices.size(); ++i)
     {
-        for (int j = 0; j < cubeVertices.size(); ++j)
+        for (int j = 0; j < vertices.size(); ++j)
         {
             if (i == j)
             {
@@ -565,18 +567,18 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                 continue;
             }
 
-            auto point1 = cubeVertices[i];
-            auto point2 = cubeVertices[j];
+            auto vertex1 = vertices[i];
+            auto vertex2 = vertices[j];
 
-            if (point1.z > 0 || point2.z > 0)
+            if (vertex1.z > 0 || vertex2.z > 0)
             {
                 // Skip if either point is behind the camera
                 continue;
             }
 
             bool isOnScreenSelf = false;
-            float m = (point1.y - point2.y) / (point1.x - point2.x);
-            float intersectX1 = (point1.y - m * point1.x) / (1 - m); // Intersection point with x=y
+            float m = (vertex1.y - vertex2.y) / (vertex1.x - vertex2.x);
+            float intersectX1 = (vertex1.y - m * vertex1.x) / (1 - m); // Intersection point with x=y
             if (intersectX1 > -1 && intersectX1 < 1)
             {
                 if constexpr (isDebugging)
@@ -590,7 +592,7 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                 }
             }
 
-            float intersectX2 = (m * point1.x - point1.y) / (m + 1); // Intersection point with x=-y
+            float intersectX2 = (m * vertex1.x - vertex1.y) / (m + 1); // Intersection point with x=-y
             if (intersectX2 > -1 && intersectX2 < 1)
             {
                 if constexpr (isDebugging)
@@ -609,14 +611,58 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
                 ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
                 auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
-                auto point1Position = glm::vec2((point1.x + 1) / 2, 1 - ((point1.y + 1) / 2)) * windowSize;
-                auto point2Position = glm::vec2((point2.x + 1) / 2, 1 - ((point2.y + 1) / 2)) * windowSize;
+                auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
+                auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
                 auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb(isOnScreenSelf ? "#00ff00" : "#ff0000")));
 
-                drawList->AddLine(ImGuiUtility::toImGui(point1Position), ImGuiUtility::toImGui(point2Position), color, 5);
+                drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 5);
                 if (isOnScreenSelf)
                 {
                     ImGui::Text("%s", std::format("Line intersects screen!").c_str());
+                }
+            }
+        }
+    }
+
+    // Case 3: Case 2 failed. Check if face is on screen.
+    // This done by checking if the screen is contained by the convex hull of the vertices that are in front of the camera
+    {
+        // Calculate convex hull
+        // Only consider vertices in front of the camera
+        std::vector<glm::vec2> verticesInFrontOfCamera {};
+        for (int i = 0; i < vertices.size(); ++i)
+        {
+            auto vertex = vertices[i];
+            if (vertex.z >= 0)
+            {
+                continue;
+            }
+
+            verticesInFrontOfCamera.push_back(vertex);
+        }
+
+        if (verticesInFrontOfCamera.empty())
+        {
+            return false;
+        }
+
+        auto convexHull = GeometryUtility::getConvexHull(verticesInFrontOfCamera);
+
+        if constexpr (isDebugging)
+        {
+            for (int i = 0; i < convexHull.size(); ++i)
+            {
+                auto vertex1 = convexHull[i];
+                auto vertex2 = convexHull[(i + 1) % convexHull.size()];
+                {
+                    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+                    auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                    auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
+                    auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
+                    auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+
+                    drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 3);
                 }
             }
         }
