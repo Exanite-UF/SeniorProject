@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <glm/gtx/compatibility.hpp>
 #include <src/utilities/Assert.h>
+#include <tracy/Tracy.hpp>
 
 int GeometryUtility::getOrientation(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
 {
@@ -11,6 +12,8 @@ int GeometryUtility::getOrientation(const glm::vec2& a, const glm::vec2& b, cons
 
 std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> vertices)
 {
+    ZoneScoped;
+
     std::vector<glm::vec2> results {};
 
     // Find left most vertex with the lowest y-coordinate (tie-breaker)
@@ -64,6 +67,8 @@ std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> ver
 
 bool GeometryUtility::isPointInsideConvexPolygon(const glm::vec2& point, const std::vector<glm::vec2>& vertices)
 {
+    ZoneScoped;
+
     Assert::isTrue(vertices.size() >= 3, "Not a polygon");
 
     auto expectedOrientation = getOrientation(point, vertices[0], vertices[1]);

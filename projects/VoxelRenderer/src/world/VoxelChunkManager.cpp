@@ -435,6 +435,8 @@ void VoxelChunkManager::update(const float deltaTime)
     // Chunk visibility
     {
         // TODO: Don't require exclusive access
+        ZoneScopedN("Chunk visibility");
+
         std::lock_guard lock(state.scene->getMutex());
         auto camera = state.scene->camera;
 
@@ -538,87 +540,95 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     }
 
     // Case 1: Check if vertices are on screen
-    for (int i = 0; i < vertices.size(); ++i)
     {
-        auto vertex = vertices[i];
-        if (vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
+        ZoneScopedN("Case 1 visibility - Vertices");
+
+        for (int i = 0; i < vertices.size(); ++i)
         {
-            if constexpr (isDebugging)
+            auto vertex = vertices[i];
+            if (vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
             {
-                isOnScreen = true;
-            }
-            else
-            {
-                return true;
+                if constexpr (isDebugging)
+                {
+                    isOnScreen = true;
+                }
+                else
+                {
+                    return true;
+                }
             }
         }
     }
 
     // Case 2: Case 1 failed. Check if edges are on screen.
     // This is done by checking if the edge intersects a diagonal of the screen.
-    // This uses an O(n^2) check where n is at most 8
-    for (int i = 0; i < vertices.size(); ++i)
+    // This uses an O(n^2) check where n is exactly 8
     {
-        for (int j = 0; j < vertices.size(); ++j)
+        ZoneScopedN("Case 2 visibility - Edges");
+
+        for (int i = 0; i < vertices.size(); ++i)
         {
-            if (i == j)
+            for (int j = 0; j < vertices.size(); ++j)
             {
-                // Skip if the points are the same
-                continue;
-            }
+                if (i == j)
+                {
+                    // Skip if the points are the same
+                    continue;
+                }
 
-            auto vertex1 = vertices[i];
-            auto vertex2 = vertices[j];
+                auto vertex1 = vertices[i];
+                auto vertex2 = vertices[j];
 
-            if (vertex1.z > 0 || vertex2.z > 0)
-            {
-                // Skip if either point is behind the camera
-                continue;
-            }
+                if (vertex1.z > 0 || vertex2.z > 0)
+                {
+                    // Skip if either point is behind the camera
+                    continue;
+                }
 
-            bool isOnScreenSelf = false;
-            float m = (vertex1.y - vertex2.y) / (vertex1.x - vertex2.x);
-            float intersectX1 = (vertex1.y - m * vertex1.x) / (1 - m); // Intersection point with x=y
-            if (intersectX1 > -1 && intersectX1 < 1)
-            {
+                bool isOnScreenSelf = false;
+                float m = (vertex1.y - vertex2.y) / (vertex1.x - vertex2.x);
+                float intersectX1 = (vertex1.y - m * vertex1.x) / (1 - m); // Intersection point with x=y
+                if (intersectX1 > -1 && intersectX1 < 1)
+                {
+                    if constexpr (isDebugging)
+                    {
+                        isOnScreen = true;
+                        isOnScreenSelf = true;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+
+                float intersectX2 = (m * vertex1.x - vertex1.y) / (m + 1); // Intersection point with x=-y
+                if (intersectX2 > -1 && intersectX2 < 1)
+                {
+                    if constexpr (isDebugging)
+                    {
+                        isOnScreen = true;
+                        isOnScreenSelf = true;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+
                 if constexpr (isDebugging)
                 {
-                    isOnScreen = true;
-                    isOnScreenSelf = true;
-                }
-                else
-                {
-                    return true;
-                }
-            }
+                    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
-            float intersectX2 = (m * vertex1.x - vertex1.y) / (m + 1); // Intersection point with x=-y
-            if (intersectX2 > -1 && intersectX2 < 1)
-            {
-                if constexpr (isDebugging)
-                {
-                    isOnScreen = true;
-                    isOnScreenSelf = true;
-                }
-                else
-                {
-                    return true;
-                }
-            }
+                    auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                    auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
+                    auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
+                    auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb(isOnScreenSelf ? "#00ff00" : "#ff0000")));
 
-            if constexpr (isDebugging)
-            {
-                ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-
-                auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
-                auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
-                auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
-                auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb(isOnScreenSelf ? "#00ff00" : "#ff0000")));
-
-                drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 5);
-                if (isOnScreenSelf)
-                {
-                    ImGui::Text("%s", std::format("Line intersects screen!").c_str());
+                    drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 5);
+                    if (isOnScreenSelf)
+                    {
+                        ImGui::Text("%s", std::format("Line intersects screen!").c_str());
+                    }
                 }
             }
         }
@@ -629,6 +639,8 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
     // We can further optimize this by only checking if the center of the screen is contained by the convex hull
     // This is because we know the convex hull does not intersect the screen due to the previous cases
     {
+        ZoneScopedN("Case 3 visibility - Faces");
+
         // Calculate convex hull
         // Ideally we only consider vertices in front of the camera, but this leaves an edge case where these are less than 3 vertices in front
         // Therefore, we first look for vertices that are on screen, then add more if necessary by prioritizing vertices that are most in front of the camera
