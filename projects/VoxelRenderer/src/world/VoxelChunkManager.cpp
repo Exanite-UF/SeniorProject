@@ -13,12 +13,12 @@
 #include <unordered_set>
 #include <vector>
 
-#include <src/Constants.h>
 #include <src/gameobjects/GameObject.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/ColorUtility.h>
+#include <src/utilities/GeometryUtility.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
@@ -27,11 +27,13 @@
 
 VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
+    const std::shared_ptr<SceneComponent>& scene,
     const VoxelChunkCommandBuffer& commandBuffer)
 {
     ZoneScoped;
 
     this->component = component;
+    this->scene = scene;
     this->commandBuffer = commandBuffer;
 }
 
@@ -43,7 +45,7 @@ VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition,
     this->chunkSize = chunkSize;
 }
 
-VoxelChunkManager::ActiveChunk::ActiveChunk(
+VoxelChunkManager::ActiveWorldChunk::ActiveWorldChunk(
     const glm::ivec2& chunkPosition,
     const glm::ivec3& chunkSize,
     const std::shared_ptr<SceneComponent>& scene)
@@ -58,17 +60,20 @@ VoxelChunkManager::ActiveChunk::ActiveChunk(
 
     component->getTransform()->setGlobalPosition(glm::vec3(chunkSize.x * chunkPosition.x, chunkSize.y * chunkPosition.y, 0) + (glm::vec3(chunkSize) / 2.0f));
 
-    scene->addChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), component);
+    scene->addWorldChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0), component);
 }
 
-VoxelChunkManager::ActiveChunk::~ActiveChunk()
+VoxelChunkManager::ActiveWorldChunk::~ActiveWorldChunk()
 {
     ZoneScoped;
 
     std::lock_guard lock(scene->getMutex());
 
-    scene->removeChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
-    component->getGameObject()->destroy();
+    scene->removeWorldChunk(glm::ivec3(chunkPosition.x, chunkPosition.y, 0));
+    if (component->getIsPartOfWorld())
+    {
+        component->getGameObject()->removeFromWorld();
+    }
 }
 
 VoxelChunkManager::~VoxelChunkManager() = default;
@@ -114,11 +119,11 @@ void VoxelChunkManager::onSingletonDestroy()
     Log::information("Successfully cleaned up VoxelChunkManager");
 }
 
-void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene, const std::shared_ptr<GlfwContext>& modificationThreadContext)
+void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene, const std::vector<std::shared_ptr<GlfwContext>>& modificationThreadContexts)
 {
     Assert::isTrue(!state.isRunning, "VoxelChunkManager has already been initialized");
 
-    state.modificationThreadContext = modificationThreadContext;
+    state.modificationThreadContexts = modificationThreadContexts;
 
     state.isRunning = true;
     this->state.scene = scene;
@@ -127,7 +132,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk loading threads
     {
-        auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2 / 2);
+        auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2);
         Log::information(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
         for (int i = 0; i < loadingThreadCount; ++i)
         {
@@ -137,7 +142,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk modification threads
     {
-        auto modificationThreadCount = 1; // Note: We can only have 1 thread max right now. Each thread must have its own GlfwContext.
+        auto modificationThreadCount = Constants::VoxelChunkManager::maxChunkModificationThreads; // Note: Each thread must have its own GlfwContext.
         Log::information(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
         for (int i = 0; i < modificationThreadCount; ++i)
         {
@@ -218,7 +223,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
     Log::debug("Started VoxelChunkManager chunk modification thread");
 
-    state.modificationThreadContext->makeContextCurrent();
+    state.modificationThreadContexts.at(threadId)->makeContextCurrent();
 
     while (state.isRunning)
     {
@@ -252,8 +257,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
             MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
             Log::verbose("Applying chunk command buffer");
-            std::lock_guard lock(task->component->getMutex());
-            task->commandBuffer.apply(task->component);
+            task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
         }
     }
 
@@ -337,7 +341,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 }
 
                 // Load the chunk
-                state.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveChunk>(chunkToLoad, settings.chunkSize, state.scene));
+                state.activeChunks.emplace(chunkToLoad, std::make_unique<ActiveWorldChunk>(chunkToLoad, settings.chunkSize, state.scene));
                 {
                     // Send a request to a worker thread to either load the chunk
                     loadingThreadState.pendingTasks.emplace(std::make_shared<ChunkLoadTask>(chunkToLoad, settings.chunkSize));
@@ -427,6 +431,297 @@ void VoxelChunkManager::update(const float deltaTime)
             }
         }
     }
+
+    // Chunk visibility
+    {
+        // TODO: Don't require exclusive access
+        ZoneScopedN("Chunk visibility");
+
+        std::lock_guard lock(state.scene->getMutex());
+        auto camera = state.scene->camera;
+
+        std::vector<std::shared_ptr<VoxelChunkComponent>> visibleChunks {};
+        for (auto chunk : state.scene->allChunks)
+        {
+            auto isVisible = isOnScreen(chunk, camera);
+            if (isVisible)
+            {
+                visibleChunks.push_back(chunk);
+            }
+        }
+
+        state.scene->visibleChunks = visibleChunks;
+    }
+}
+
+bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera)
+{
+    ZoneScoped;
+
+    // This lets the compiler optimize out the parts used for debugging
+#ifdef DEBUG
+    bool isDebugging = settings.showDebugVisualizations;
+#else
+    constexpr bool isDebugging = false;
+#endif
+
+    auto size = glm::vec3(chunk->getChunkData().getSize());
+    if (size.x == 0 || size.y == 0 || size.z == 0)
+    {
+        return false;
+    }
+
+    std::vector vertices {
+        glm::vec3(-0.5f, -0.5f, -0.5f),
+        glm::vec3(-0.5f, -0.5f, +0.5f),
+        glm::vec3(-0.5f, +0.5f, -0.5f),
+        glm::vec3(-0.5f, +0.5f, +0.5f),
+        glm::vec3(+0.5f, -0.5f, -0.5f),
+        glm::vec3(+0.5f, -0.5f, +0.5f),
+        glm::vec3(+0.5f, +0.5f, -0.5f),
+        glm::vec3(+0.5f, +0.5f, +0.5f),
+    };
+
+    // Transform into NDC space
+    auto scale = glm::scale(glm::mat4(1), size);
+    auto model = chunk->getTransform()->getGlobalTransform() * scale;
+    auto view = camera->getTransform()->getInverseGlobalTransform();
+    auto modelView = view * model;
+    auto horizontalFovTan = glm::tan(camera->getHorizontalFov() / 2);
+    auto verticalFovTan = glm::tan(camera->getVerticalFov() / 2);
+
+    // For debugging
+    bool isOnScreen = false;
+
+    // For debugging
+    if (isDebugging && false)
+    {
+        for (int i = 0; i < vertices.size(); ++i)
+        {
+            auto viewPosition = glm::vec3(modelView * glm::vec4(vertices[i], 1));
+            viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
+
+            auto displayedVector = viewPosition;
+            {
+                ImGui::Text("%s", std::format("Vertex in view space: ({:.2f}, {:.2f}, {:.2f})", displayedVector.x, displayedVector.y, displayedVector.z).c_str());
+            }
+        }
+    }
+
+    for (int i = 0; i < vertices.size(); ++i)
+    {
+        auto viewPosition = glm::vec3(modelView * glm::vec4(vertices[i], 1));
+
+        // Swizzle coordinates to use the following right-handed coordinate system:
+        // Right: X+
+        // Up: Y+
+        // Forward: Z-
+        viewPosition = glm::vec3(-viewPosition.y, viewPosition.z, -viewPosition.x);
+
+        float x = (viewPosition.x) / (glm::abs(viewPosition.z) * horizontalFovTan);
+        float y = (viewPosition.y) / (glm::abs(viewPosition.z) * verticalFovTan);
+        float z = (viewPosition.z - camera->getNearPlane()) / camera->getFarPlane();
+
+        vertices[i] = glm::vec3(x, y, z);
+
+        if (isDebugging)
+        {
+            auto displayedVector = vertices[i];
+            if (displayedVector.z < 0)
+            {
+                ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+                auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                auto pointPosition = glm::vec2((displayedVector.x + 1) / 2, 1 - ((displayedVector.y + 1) / 2)) * windowSize;
+                auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+
+                drawList->AddCircleFilled(ImGuiUtility::toImGui(pointPosition), 5, color);
+            }
+
+            ImGui::Text("%s", std::format("Vertex in screen space: ({:.2f}, {:.2f}, {:.2f})", displayedVector.x, displayedVector.y, displayedVector.z).c_str());
+        }
+    }
+
+    // Case 1: Check if vertices are on screen
+    {
+        ZoneScopedN("Case 1 visibility - Vertices");
+
+        for (int i = 0; i < vertices.size(); ++i)
+        {
+            auto vertex = vertices[i];
+            if (vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
+            {
+                if (isDebugging)
+                {
+                    isOnScreen = true;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    // Case 2: Case 1 failed. Check if edges are on screen.
+    // This is done by checking if the edge intersects a diagonal of the screen.
+    // This uses an O(n^2) check where n is exactly 8
+    {
+        ZoneScopedN("Case 2 visibility - Edges");
+
+        for (int i = 0; i < vertices.size(); ++i)
+        {
+            for (int j = 0; j < vertices.size(); ++j)
+            {
+                if (i == j)
+                {
+                    // Skip if the points are the same
+                    continue;
+                }
+
+                auto vertex1 = vertices[i];
+                auto vertex2 = vertices[j];
+
+                if (vertex1.z > 0 || vertex2.z > 0)
+                {
+                    // Skip if either point is behind the camera
+                    continue;
+                }
+
+                bool isOnScreenSelf = false;
+                float m = (vertex1.y - vertex2.y) / (vertex1.x - vertex2.x);
+                float intersectX1 = (vertex1.y - m * vertex1.x) / (1 - m); // Intersection point with x=y
+                if (intersectX1 > -1 && intersectX1 < 1)
+                {
+                    if (isDebugging)
+                    {
+                        isOnScreen = true;
+                        isOnScreenSelf = true;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+
+                float intersectX2 = (m * vertex1.x - vertex1.y) / (m + 1); // Intersection point with x=-y
+                if (intersectX2 > -1 && intersectX2 < 1)
+                {
+                    if (isDebugging)
+                    {
+                        isOnScreen = true;
+                        isOnScreenSelf = true;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+
+                if (isDebugging)
+                {
+                    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+                    auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                    auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
+                    auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
+                    auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb(isOnScreenSelf ? "#00ff00" : "#ff0000")));
+
+                    drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 5);
+                    if (isOnScreenSelf)
+                    {
+                        ImGui::Text("%s", std::format("Line intersects screen!").c_str());
+                    }
+                }
+            }
+        }
+    }
+
+    // Case 3: Case 2 failed. Check if face is on screen.
+    // This done by checking if the screen is contained by the convex hull of the vertices that are in front of the camera
+    // We can further optimize this by only checking if the center of the screen is contained by the convex hull
+    // This is because we know the convex hull does not intersect the screen due to the previous cases
+    {
+        ZoneScopedN("Case 3 visibility - Faces");
+
+        // Calculate convex hull
+        // Ideally we only consider vertices in front of the camera, but this leaves an edge case where these are less than 3 vertices in front
+        // Therefore, we first look for vertices that are on screen, then add more if necessary by prioritizing vertices that are most in front of the camera
+        std::vector<glm::vec2> convexHullInput {};
+
+        // Sort vertices by depth
+        std::sort(vertices.begin(), vertices.end(), [](const glm::vec3& a, const glm::vec3& b)
+            {
+                return a.z < b.z;
+            });
+
+        // Add all vertices that are in front of the camera
+        int i = 0;
+        while (i < vertices.size())
+        {
+            if (vertices[i].z >= 0)
+            {
+                break;
+            }
+
+            convexHullInput.push_back(vertices[i]);
+            i++;
+        }
+
+        // Only continue if there is at least 1 vertex on screen
+        if (!convexHullInput.empty())
+        {
+            // Then add more vertices if needed
+            while (i < vertices.size() && convexHullInput.size() < 4)
+            {
+                convexHullInput.push_back(vertices[i]);
+                i++;
+            }
+
+            auto convexHull = GeometryUtility::getConvexHull(convexHullInput);
+            if (convexHull.size() >= 3 && GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
+            {
+                if (isDebugging)
+                {
+                    isOnScreen = true;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
+            if (isDebugging)
+            {
+                for (int i = 0; i < convexHull.size(); ++i)
+                {
+                    auto vertex1 = convexHull[i];
+                    auto vertex2 = convexHull[(i + 1) % convexHull.size()];
+                    {
+                        ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+                        auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
+                        auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
+                        auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
+                        auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+
+                        drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 3);
+                    }
+
+                    ImGui::Text("%s", std::format("Convex hull vertex: ({:.2f}, {:.2f})", vertex1.x, vertex1.y).c_str());
+                }
+            }
+        }
+    }
+
+    if (isDebugging)
+    {
+        return isOnScreen;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void VoxelChunkManager::showDebugMenu()
@@ -445,9 +740,12 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
+        ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
+
         ImGui::Text("%s", std::format("Render distance: {}", settings.renderDistance).c_str());
-        ImGui::Text("%s", std::format("Loaded chunk count: {}", state.activeChunks.size()).c_str());
-        ImGui::Text("%s", std::format("Camera chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
+        ImGui::Text("%s", std::format("GPU uploaded voxel chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
+        ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
+        ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
         ImGui::Text("%s", std::format("Chunk generation threads: {}", loadingThreadState.threads.size()).c_str());
 
         {
@@ -458,19 +756,23 @@ void VoxelChunkManager::showDebugMenu()
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
 
             // Drawing parameters
-            float squareSize = 10;
+            float cellSize = 10;
             float dotSize = 6;
-            float padding = 2;
+            float spacing = 2;
 
             auto* drawList = ImGui::GetWindowDrawList();
             auto windowPosition = ImGui::GetWindowPos();
             auto drawPosition = ImGui::GetCursorPos();
 
-            auto unloadedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
-            auto loadingColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
-            auto unloadingColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
-            auto loadedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
-            auto loddedColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+            auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+            auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
+            auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
+            auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
+            auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+
+            auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+            auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
+            auto visibleDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
 
             auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
 
@@ -480,28 +782,45 @@ void VoxelChunkManager::showDebugMenu()
                 {
                     auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
 
-                    auto topLeft = baseDrawPosition + (squareSize + padding) * glm::vec2(x, y);
-                    auto bottomRight = topLeft + glm::vec2(squareSize);
+                    // Cell
+                    auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
+                    auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
+                    auto cellColor = unloadedCellColor;
 
-                    auto color = unloadedColor;
+                    // Dot
+                    auto dotPadding = (cellSize - dotSize) / 2;
+                    auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
+                    auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
+                    auto dotColor = defaultDotColor;
 
                     auto chunkIterator = state.activeChunks.find(chunkPosition);
                     if (chunkIterator != state.activeChunks.end())
                     {
-                        color = loadedColor;
+                        auto& chunk = chunkIterator->second;
+                        cellColor = loadedCellColor;
 
-                        if (chunkIterator->second->isLoading)
+                        if (chunk->isLoading)
                         {
-                            color = loadingColor;
+                            cellColor = loadingCellColor;
+                        }
+                        else if (chunk->isUnloading)
+                        {
+                            cellColor = unloadingCellColor;
                         }
 
-                        if (chunkIterator->second->isUnloading)
+                        auto visibleChunks = state.scene->visibleChunks;
+                        if (std::find(visibleChunks.begin(), visibleChunks.end(), chunk->component) != visibleChunks.end())
                         {
-                            color = unloadingColor;
+                            dotColor = visibleDotColor;
+                        }
+                        else if (chunk->component->getExistsOnGpu())
+                        {
+                            dotColor = uploadedDotColor;
                         }
                     }
 
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(topLeft), ImGuiUtility::toImGui(bottomRight), color);
+                    drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
+                    drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
                 }
             }
         }
@@ -512,6 +831,6 @@ void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComp
 {
     std::lock_guard lock(modificationThreadState.pendingTasksMutex);
 
-    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, commandBuffer));
+    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer));
     modificationThreadState.pendingTasksCondition.notify_one();
 }

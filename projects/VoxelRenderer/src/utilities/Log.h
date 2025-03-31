@@ -18,10 +18,11 @@ public:
 
 private:
     static std::string getCurrentTimeText();
+    static std::string getLogLevelAnsiColorCode(LogLevel logLevel);
     static std::string getLogLevelText(LogLevel logLevel);
 
 public:
-    inline static std::atomic<LogLevel> minimumLevel = Information;
+    inline static std::atomic<LogLevel> minimumLevel = Verbose;
 
     static void verbose(const std::string& message);
     static void debug(const std::string& message);

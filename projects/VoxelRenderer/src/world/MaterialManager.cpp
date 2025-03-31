@@ -127,7 +127,7 @@ const std::shared_ptr<Material>& MaterialManager::getMaterialByKey(const std::st
     return materialsByKey.at(key);
 }
 
-bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material)
+bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& outMaterial)
 {
     auto entry = materialsByKey.find(key);
     if (entry == materialsByKey.end())
@@ -135,7 +135,7 @@ bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_pt
         return false;
     }
 
-    material = entry->second;
+    outMaterial = entry->second;
     return true;
 }
 

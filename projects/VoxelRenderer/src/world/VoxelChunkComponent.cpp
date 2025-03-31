@@ -26,12 +26,17 @@ const std::unique_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
     return chunk.value();
 }
 
+const VoxelChunkData& VoxelChunkComponent::getChunkData()
+{
+    return chunkData;
+}
+
 std::shared_mutex& VoxelChunkComponent::getMutex()
 {
     return mutex;
 }
 
-VoxelChunkData& VoxelChunkComponent::getChunkData()
+VoxelChunkData& VoxelChunkComponent::getRawChunkData()
 {
     return chunkData;
 }
@@ -44,6 +49,8 @@ bool VoxelChunkComponent::getExistsOnGpu() const
 void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
 {
     ZoneScoped;
+
+    assertIsPartOfWorld();
 
     if (this->existsOnGpu == existsOnGpu)
     {
@@ -70,13 +77,13 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writ
     }
 }
 
-void VoxelChunkComponent::onDestroy()
+void VoxelChunkComponent::onRemovingFromWorld()
 {
     ZoneScoped;
-
-    Component::onDestroy();
 
     std::lock_guard lock(getMutex());
 
     setExistsOnGpu(false);
+
+    Component::onRemovingFromWorld();
 }
