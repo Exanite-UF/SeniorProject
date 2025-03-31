@@ -20,9 +20,31 @@ layout(std430, binding = 3) buffer FirstHitMisc
     float firstHitMisc[];
 };
 
-uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+layout(std430, binding = 4) buffer FirstHitEmission
+{
+    float firstHitEmission[];
+};
+
+layout(std430, binding = 5) buffer FirstHitAttenuation
+{
+    float firstHitAttenuation[];
+};
+
+uniform ivec3 resolution; //(xSize, ySize, 1)
 uniform vec4 cameraRotation;
 uniform vec3 cameraPosition;
+
+vec3 getFirstHitAttenuation(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
+    return vec3(firstHitAttenuation[0 + index], firstHitAttenuation[1 + index], firstHitAttenuation[2 + index]);
+}
+
+vec3 getFirstHitEmission(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
+    return vec3(firstHitEmission[0 + index], firstHitEmission[1 + index], firstHitEmission[2 + index]);
+}
 
 vec3 getLight(ivec3 coord)
 {
@@ -66,6 +88,15 @@ vec3 hueToRGB(float hue)
     return clamp(vec3(r, g, b), 0.0, 1.0);
 }
 
+vec4 safeVec4(vec4 v, vec4 fallback)
+{
+    return vec4(
+        isnan(v.r) ? fallback.r : v.r,
+        isnan(v.g) ? fallback.g : v.g,
+        isnan(v.b) ? fallback.b : v.b,
+        isnan(v.a) ? fallback.a : v.a);
+}
+
 in vec2 uv;
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec3 posBuffer;
@@ -98,22 +129,12 @@ void main()
 
     // position = position - cameraPosition;
 
-    for (int i = 0; i < size.z; i++)
-    {
-        ivec3 texelCoord = ivec3(gl_FragCoord.xy, i);
+    ivec3 texelCoord = ivec3(gl_FragCoord.xy, 0);
 
-        vec3 light = getLight(texelCoord);
+    vec3 light = getLight(texelCoord);//This is the radiance coming from the secondary rays
 
-        vec3 colorBase = light;
-        // vec3 colorBase = vec3(material.x);
-        //  vec3 colorBase = -vec3(normal.x, normal.y, normal.z) * frameCount;
-        //  vec3 colorBase = 0.001 * vec3(position.x, position.y, position.z) * frameCount;
 
-        color += colorBase;
-    }
-    color /= size.z;
-
-    fragColor = vec4(color, 1);
+    fragColor = vec4(light * getFirstHitAttenuation(texelCoord) + getFirstHitEmission(texelCoord), 1);
     posBuffer = position;
     miscBuffer = material;
     normalBuffer = normal;

@@ -54,19 +54,28 @@ private:
 
 
     // These are used as input and output
-    GraphicsBuffer<glm::vec3> rayStartBuffer;//This is where rays will start from
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer;//This is the direction rays will go in
+    bool whichStartBuffer = false;
+    GraphicsBuffer<glm::vec3> rayStartBuffer1;//This is where rays will start from
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer1;//This is the direction rays will go in
+    GraphicsBuffer<glm::vec3> rayStartBuffer2;//This is where rays will start from
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer2;//This is the direction rays will go in
     GraphicsBuffer<glm::ivec2> rayPixel;//This is the pixel that the ray corresponds to (if negative, do not cast)
 
 
-    // These buffers are used to store the result of a ray trace step
-    GraphicsBuffer<float> rayHitMiscBuffer; //(wasHit, depth)
-    GraphicsBuffer<glm::vec3> attentuationBuffer; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer; //(r, g, b)
+    // These buffers are used to store the result of a path trace
+    bool whichAccumulationBuffer = false;
+    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
+    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
+    //This is reset before every cast
+    GraphicsBuffer<float> rayMisc;//(depth)
 
 
     //These are primary ray info
+    GraphicsBuffer<glm::vec3> emissionBuffer;//The emission from the first thing that was hit
+    GraphicsBuffer<glm::vec3> firstHitAttenuationBuffer;
     GraphicsBuffer<glm::vec3> normalBuffer;//world space
     GraphicsBuffer<glm::vec3> positionBuffer;//world space
     GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue)
@@ -74,8 +83,6 @@ private:
 
 
 
-
-    int currentBuffer = 0;
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
@@ -88,6 +95,8 @@ private:
     static GLuint pathTraceToFramebufferProgram;
 
     static GLuint resetPrimaryRayInfoProgram;
+    static GLuint beforeCastProgram;
+    static GLuint primaryRayProgram;
 
     glm::ivec2 size {};
 
@@ -103,7 +112,7 @@ private:
 
     friend class Renderer;
 
-    void afterCast();
+    float maxDepth = 10000.0;
 
 public:
     void setResolution(glm::ivec2 size);
@@ -116,7 +125,11 @@ public:
     //Resets information that is determined by primary rays
     void resetPrimaryRayInfo();
 
-    void resetVisualInfo();
+    void resetVisualInfo(float maxDepth);
+    void beforeCast(float maxDepth);
+    void afterCast(float maxDepth);
+
+    void executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV);
 
     void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, bool isFirstRay);
 

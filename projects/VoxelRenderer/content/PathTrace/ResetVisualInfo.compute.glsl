@@ -3,41 +3,38 @@
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+uniform float maxDepth;
 
-
-layout(std430, binding = 0) buffer RayPosition
-{
-    coherent restrict float rayPosition[];
-};
-
-vec3 getRayPosition(ivec3 coord)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    return vec3(rayPosition[0 + index], rayPosition[1 + index], rayPosition[2 + index]);
-}
-
-layout(std430, binding = 1) buffer RayDirection
-{
-    coherent restrict float rayDirection[];
-};
-
-vec3 getRayDirection(ivec3 coord)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
-
-    return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
-}
-
-layout(std430, binding = 2) buffer PriorAttenuation1
+layout(std430, binding = 0) buffer PriorAttenuation1
 {
     float priorAttenuation1[];
 };
 
-layout(std430, binding = 3) buffer AccumulatedLight1
+layout(std430, binding = 1) buffer AccumulatedLight1
 {
     float accumulatedLight1[];
 };
 
+layout(std430, binding = 2) buffer PriorAttenuation2
+{
+    float priorAttenuation2[];
+};
+
+layout(std430, binding = 3) buffer AccumulatedLight2
+{
+    float accumulatedLight2[];
+};
+
+layout(std430, binding = 4) buffer RayMisc
+{
+    float rayMisc[];
+};
+
+void setRayDepth(ivec3 coord, float value)
+{
+    int index = 1 * (coord.x + resolution.x * coord.y); // axis order is x y
+    rayMisc[index + 0] = value;
+}
 
 void setAttenuation(ivec3 coord, vec3 value)
 {
@@ -46,6 +43,10 @@ void setAttenuation(ivec3 coord, vec3 value)
     priorAttenuation1[0 + index] = value.x;
     priorAttenuation1[1 + index] = value.y;
     priorAttenuation1[2 + index] = value.z;
+
+    priorAttenuation2[0 + index] = value.x;
+    priorAttenuation2[1 + index] = value.y;
+    priorAttenuation2[2 + index] = value.z;
 }
 
 vec3 getAttenuation(ivec3 coord)
@@ -61,6 +62,10 @@ void setLightAccumulation(ivec3 coord, vec3 value)
     accumulatedLight1[0 + index] = value.x;
     accumulatedLight1[1 + index] = value.y;
     accumulatedLight1[2 + index] = value.z;
+
+    accumulatedLight2[0 + index] = value.x;
+    accumulatedLight2[1 + index] = value.y;
+    accumulatedLight2[2 + index] = value.z;
 }
 
 void setSkyBox(ivec3 coord, vec3 value)
@@ -84,4 +89,5 @@ void main()
 
     setAttenuation(texelCoord, vec3(1));
     setLightAccumulation(texelCoord, vec3(0));
+    setRayDepth(texelCoord, maxDepth);
 }

@@ -18,6 +18,13 @@ struct MaterialDefinition
     float padding4;
 };
 
+uniform vec3 pastCameraPosition;
+uniform vec4 pastCameraRotation; // quaternion
+uniform float pastCameraFovTan;
+
+uniform vec3 pastVoxelWorldPosition;
+uniform vec4 pastVoxelWorldRotation; // quaternion
+uniform vec3 pastVoxelWorldScale;
 
 uniform ivec3 cellCount;
 uniform uint occupancyMapLayerCount;
@@ -31,6 +38,8 @@ uniform vec3 voxelWorldScale; // Size of a voxel
 
 uniform uint materialMapSize;
 uniform float random; // This is used to make non-deterministic randomness
+
+uniform bool isFirstRay;
 
 layout(std430, binding = 0) buffer RayPosition
 {
@@ -74,6 +83,7 @@ vec3 getRayDirection(ivec3 coord)
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
+
 void setRayDirection(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
@@ -93,7 +103,6 @@ ivec3 getRayPixel(ivec3 coord)
     int index = 2 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
     return ivec3(rayPixel[0 + index], rayPixel[1 + index], 0);
 }
-
 
 layout(std430, binding = 5) buffer OccupancyMap
 {
@@ -151,52 +160,81 @@ layout(std430, binding = 8) buffer MaterialDefinitions
 
 
 
-
-layout(std430, binding = 9) buffer AttenuationIn
+layout(std430, binding = 10) buffer FirstHitAttenuation
 {
-    restrict float attenuationIn[];
+    float firstHitAttenuation[];
 };
 
-vec3 getPriorAttenuation(ivec3 coord)
+void setFirstHitAttenuation(ivec3 coord, vec3 value)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
-
-    return vec3(attenuationIn[index + 0], attenuationIn[index + 1], attenuationIn[index + 2]);
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
+    firstHitAttenuation[0 + index] = value.x;
+    firstHitAttenuation[1 + index] = value.y;
+    firstHitAttenuation[2 + index] = value.z;
 }
 
-layout(std430, binding = 10) buffer AccumulatedLightIn
+layout(std430, binding = 11) buffer FirstHitEmission
 {
-    restrict float accumulatedLightIn[];
+    restrict float firstHitEmission[];
 };
 
 
-layout(std430, binding = 11) buffer AttenuationOut
+void setFirstHitEmission(ivec3 coord, vec3 value)
 {
-    restrict float attenuationOut[];
-};
-
-layout(std430, binding = 12) buffer AccumulatedLightOut
-{
-    restrict float accumulatedLightOut[];
-};
-
-
-
-void setAttenuation(ivec3 coord, vec3 value)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
-
-    attenuationOut[0 + index] = value.x;
-    attenuationOut[1 + index] = value.y;
-    attenuationOut[2 + index] = value.z;
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
+    firstHitEmission[0 + index] = value.x;
+    firstHitEmission[1 + index] = value.y;
+    firstHitEmission[2 + index] = value.z;
 }
 
-void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
+layout(std430, binding = 12) buffer FirstHitNormal
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    accumulatedLightOut[0 + index] = accumulatedLightIn[0 + index] + deltaValue.x;
-    accumulatedLightOut[1 + index] = accumulatedLightIn[1 + index] + deltaValue.y;
-    accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
+    writeonly float firstHitNormal[];
+};
+
+void setFirstHitNormal(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitNormal[0 + index] = value.x;
+    firstHitNormal[1 + index] = value.y;
+    firstHitNormal[2 + index] = value.z;
+}
+
+layout(std430, binding = 13) buffer FirstHitPosition
+{
+    writeonly float firstHitPosition[];
+};
+
+void setFirstHitPosition(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    firstHitPosition[0 + index] = value.x;
+    firstHitPosition[1 + index] = value.y;
+    firstHitPosition[2 + index] = value.z;
+}
+
+layout(std430, binding = 14) buffer FirstHitMisc
+{
+    writeonly float firstHitMisc[];
+};
+
+void setFirstHitRoughness(ivec3 coord, float value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
+    firstHitMisc[0 + index] = value.x;
+}
+
+void setFirstHitMotionVector(ivec3 coord, vec2 value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
+    firstHitMisc[1 + index] = value.x;
+    firstHitMisc[2 + index] = value.y;
+}
+
+void setFirstHitHue(ivec3 coord, float value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
+    firstHitMisc[3 + index] = value.x;
 }
 
 struct RayHit
@@ -277,6 +315,8 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
+    
+
     float depth = length(rayDir * voxelWorldScale * distToCube); // Find how far the ray has traveled from the start
 
     // If the start of the voxel volume is behind the currently closest thing, then there is not reason to continue
@@ -349,6 +389,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     hit.hitLocation = rayPos;
     hit.dist = length(rayStart - hit.hitLocation);
 
+
     return hit;
 }
 
@@ -407,7 +448,7 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
 
     // At this point was hit is true
 
-    setRayDepth(texelCoord, hit.dist);
+    //setRayDepth(texelCoord, hit.dist);
     //setHitWasHit(texelCoord, hit.wasHit);
 
     return hit;
@@ -623,6 +664,11 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     voxelMaterial.metallic *= rmTexture.g;
     */
 
+    if (texelCoord.z == 0 && isFirstRay)
+    {
+        setFirstHitRoughness(texelCoord, voxelMaterial.roughness);
+        setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));
+    }
 
     normal = normalize(normal);
     direction = normalize(direction);
@@ -639,13 +685,18 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     setRayPosition(texelCoord, position); // Set where the ray should start from next
     setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
 
-    setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
-    changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
+    //setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
+    //changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
 }
 
-void attempt(ivec3 texelCoord)
+
+void main()
 {
+    ivec3 texelCoord = getRayPixel(ivec3(gl_GlobalInvocationID.xyz));
+
     float currentDepth = getRayDepth(texelCoord);
+
+    //Early quit criteria
     if (currentDepth < 0)
     {
         return;
@@ -662,14 +713,79 @@ void attempt(ivec3 texelCoord)
     {
         return;
     }
+    //As of this point it is the nearest hit voxel
 
-    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
-    BRDF(texelCoord, hit, rayDir, attentuation);
-}
+    //Set the data that comes from the ray intersection test
+    setRayDepth(texelCoord, hit.dist);//Update the nearest distance
+    setFirstHitPosition(texelCoord, hit.hitLocation);
+    setFirstHitNormal(texelCoord, hit.normal);
 
-void main()
-{
-    ivec3 texelCoord = getRayPixel(ivec3(gl_GlobalInvocationID.xyz));
+    //Calculate motion vectors
+    {
+        // If it gets here, then the motion vectors should be calcuated
+        vec3 hitLocation = hit.voxelHitLocation;
+
+        // Transform the hit location to world space, using historical information
+        hitLocation -= vec3(cellCount); // This moves the origin of the voxel world to its center
+        hitLocation *= pastVoxelWorldScale; // Apply the scale of the voxel world
+        hitLocation = qtransform(pastVoxelWorldRotation, hitLocation); // Rotate back into world space
+        hitLocation += pastVoxelWorldPosition; // Apply the voxel world position
+
+        // Hit location is now in world space using historical information
+        // Project into camera space using historical camera data
+
+        hitLocation -= pastCameraPosition; // Place relative to camera
+        hitLocation = qtransform(vec4(pastCameraRotation.xyz, -pastCameraRotation.w), hitLocation); // Rotate into camera space
+        hitLocation.yz /= vec2(1, float(resolution.y) / resolution.x) * pastCameraFovTan; // Warp for fov
+
+        hitLocation.yz /= hitLocation.x; // Put into camera space
+
+        hitLocation = vec3(-hitLocation.y, hitLocation.z, hitLocation.x); // Blit the data
+        // x = x screen space (possibly flipped, probably not)
+        // y = y screen space
+        // z = depth
+
+        hitLocation.xy *= 0.5;
+        hitLocation.xy += 0.5;
+        vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
+        // vec2 motionVector = hitLocation.xy;
+        setFirstHitMotionVector(texelCoord, motionVector);
+    }
     
-    attempt(texelCoord);
+
+    //Set the information that comes from material
+    MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
+    setFirstHitEmission(texelCoord, voxelMaterial.emission);
+    setFirstHitRoughness(texelCoord, voxelMaterial.roughness);   
+    setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));   
+
+    //Choose next ray direction
+    {
+        float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y)) / resolution.x / resolution.y; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
+
+        vec3 direction = rayDir; // The direction the ray cast was in
+
+        vec3 position = hit.hitLocation;
+
+        // Load the hit normal
+        vec3 normal = hit.normal; // The normal direction of the hit
+
+        normal = normalize(normal);
+        direction = normalize(direction);
+
+        vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
+        vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+
+        setRayPosition(texelCoord, position); // Set where the ray should start from next
+        setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
+
+        setFirstHitAttenuation(texelCoord, brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
+    }
+
+    //setFirstHitEmission(texelCoord, vec3(hit.iterations / 100.0));
+    //setFirstHitEmission(texelCoord, vec3(hit.dist / 1000.0));
+    //setFirstHitEmission(texelCoord, abs(vec3(hit.normal)));
+    //setFirstHitEmission(texelCoord, vec3(hit.hitLocation / 512.0));
+
+    //attempt(texelCoord);
 }

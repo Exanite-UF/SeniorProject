@@ -129,6 +129,7 @@ void Program::run()
 
                 auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                 voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
+                //voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0, 0, 0) + glm::vec3(0, 0, 0));
 
                 scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
             }
@@ -140,19 +141,19 @@ void Program::run()
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto& cameraTransform = camera->getTransform();
     scene->setCamera(camera);
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
 
     // Initialize the chunk manager
     voxelChunkManager.initialize(scene, chunkModificationThreadContext);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
-    float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
+    float renderRatio = 0.6666666666666f; // Used to control the render resolution relative to the window resolution
 
     renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
-    renderer.setBounces(0);
+    renderer.setBounces(2);
 
     // Configure post processing
     {

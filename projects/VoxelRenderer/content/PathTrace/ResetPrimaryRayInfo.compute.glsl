@@ -22,6 +22,40 @@ layout(std430, binding = 2) buffer RayMisc
     coherent restrict float rayMisc[];
 };
 
+layout(std430, binding = 3) buffer RayEmission
+{
+    float rayEmission[];
+};
+
+layout(std430, binding = 4) buffer Attenuation
+{
+    float attenuation[];
+};
+
+
+layout(std430, binding = 5) buffer RayStartPosition
+{
+    float rayStartPosition[];
+};
+
+vec3 getRayPosition(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
+    return vec3(rayStartPosition[0 + index], rayStartPosition[1 + index], rayStartPosition[2 + index]);
+}
+
+layout(std430, binding = 6) buffer RayDirection
+{
+    float rayDirection[];
+};
+
+vec3 getRayDirection(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
+
+    return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
+}
+
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
@@ -32,9 +66,19 @@ void main()
     rayNormal[index + 1] = 0;
     rayNormal[index + 2] = 0;
 
-    rayPosition[index + 0] = 0;
-    rayPosition[index + 1] = 0;
-    rayPosition[index + 2] = 0;
+    vec3 rayPos = getRayDirection(texelCoord) * 10000000.0 + getRayPosition(texelCoord);
+    rayPosition[index + 0] = rayPos.x;
+    rayPosition[index + 1] = rayPos.y;
+    rayPosition[index + 2] = rayPos.z;
+
+    rayEmission[index + 0] = 0;
+    rayEmission[index + 1] = 0;
+    rayEmission[index + 2] = 0;
+
+    attenuation[index + 0] = 1;
+    attenuation[index + 1] = 1;
+    attenuation[index + 2] = 1;
+
 
 
     index = 4 * (texelCoord.x + texelCoord.y * resolution.x);
