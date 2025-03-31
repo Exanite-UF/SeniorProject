@@ -51,8 +51,8 @@ public:
     const std::vector<std::shared_ptr<VoxelChunkComponent>>& getWorldChunks();
     const std::vector<std::shared_ptr<VoxelChunkComponent>>& getVisibleChunks();
 
-    bool tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& result);
-    bool tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent>& result);
+    bool tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& outResult);
+    bool tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent>& outResult);
 
     void addWorldChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk);
     void removeWorldChunk(const glm::ivec3& chunkPosition);

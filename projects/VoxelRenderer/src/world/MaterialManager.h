@@ -35,7 +35,7 @@ private:
 public:
     const std::shared_ptr<Material>& getMaterialByIndex(uint16_t index);
     const std::shared_ptr<Material>& getMaterialByKey(const std::string& key);
-    bool tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material);
+    bool tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& outMaterial);
 
     GraphicsBuffer<MaterialDefinition>& getMaterialDefinitionsBuffer();
 

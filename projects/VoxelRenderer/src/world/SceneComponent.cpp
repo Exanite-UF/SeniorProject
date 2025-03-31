@@ -36,7 +36,7 @@ const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getVisi
     return visibleChunks;
 }
 
-bool SceneComponent::tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& result)
+bool SceneComponent::tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& outResult)
 {
     auto iterator = worldChunksByChunkPosition.find(chunkPosition);
     if (iterator == worldChunksByChunkPosition.end())
@@ -44,16 +44,16 @@ bool SceneComponent::tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition,
         return false;
     }
 
-    result = iterator->second;
+    outResult = iterator->second;
 
     return true;
 }
 
-bool SceneComponent::tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent>& result)
+bool SceneComponent::tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent>& outResult)
 {
     auto cameraPosition = camera->getTransform()->getGlobalPosition();
 
-    result = {};
+    outResult = {};
     float closestSquareDistance = std::numeric_limits<float>::infinity();
     for (auto& chunk : worldChunks)
     {
@@ -62,12 +62,12 @@ bool SceneComponent::tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent
 
         if (distance < closestSquareDistance)
         {
-            result = chunk;
+            outResult = chunk;
             closestSquareDistance = distance;
         }
     }
 
-    return !!result;
+    return !!outResult;
 }
 
 void SceneComponent::addWorldChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk)
