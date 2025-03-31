@@ -20,6 +20,7 @@ class AsyncReprojectionRenderer
 private:
     static GLuint renderProgram;
     static GLuint combineProgram;
+    static GLuint bypassProgram;
 
     int currentBuffer = 0;
 
@@ -50,4 +51,6 @@ public:
 
     void combineBuffers(const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& newMiscTexture,
         const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const glm::vec3& cameraPosition);
+
+    void bypass(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const GLuint& inputTexture);
 };

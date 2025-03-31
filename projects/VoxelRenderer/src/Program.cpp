@@ -118,7 +118,7 @@ void Program::run()
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
     // Generate static, noise-based chunks for testing purposes
-    if (false)
+    if (true)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         for (int x = 0; x < 3; x++)
@@ -152,8 +152,7 @@ void Program::run()
     renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
-    renderer.setRaysPerPixel(1);
-    renderer.setBounces(2);
+    renderer.setBounces(0);
 
     // Configure post processing
     {
@@ -251,7 +250,7 @@ void Program::run()
         }
 
         // Tonemap
-        if (true)
+        if (false)
         {
 
             auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));

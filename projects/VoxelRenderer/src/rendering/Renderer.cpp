@@ -229,11 +229,6 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
     isSizeDirtyThread = true;
 }
 
-void Renderer::setRaysPerPixel(int number)
-{
-    voxelRenderer->setRaysPerPixel(number);
-}
-
 void Renderer::pollCamera(const std::shared_ptr<CameraComponent>& camera)
 {
     std::scoped_lock lock(cameraMtx);
@@ -264,7 +259,6 @@ void Renderer::render(float fov)
 
     glDepthFunc(GL_GREATER);
     reproject(fov);
-
     postProcess();
 
     finalDisplay();
@@ -299,14 +293,15 @@ void Renderer::_render()
         }
 
         // This need SVGF's framebuffer
-        // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
-        voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        //voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV);
 
         // SVGF
-        svgf->lock();
-        svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
-        svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
-        svgf->unlock();
+        //TODO: enable SVGF
+        //svgf->lock();
+        //svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
+        //svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
+        //svgf->unlock();
 
         olderRenderedPosition = lastRenderedPosition;
         lastRenderedPosition = currentCameraPosition;
@@ -367,8 +362,9 @@ void Renderer::reproject(float fov)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Do the render
-    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
-    // reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, varianceTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
+    reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
+    //reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
+    
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);

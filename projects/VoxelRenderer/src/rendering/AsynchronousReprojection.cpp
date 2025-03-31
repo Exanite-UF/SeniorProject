@@ -8,6 +8,7 @@
 
 GLuint AsyncReprojectionRenderer::renderProgram {};
 GLuint AsyncReprojectionRenderer::combineProgram {};
+GLuint AsyncReprojectionRenderer::bypassProgram {};
 
 void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 {
@@ -65,6 +66,7 @@ AsyncReprojectionRenderer::AsyncReprojectionRenderer()
 {
     renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader);
     combineProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::combineReprojectionFragmentShader);
+    bypassProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::bypassReprojectionFragmentShader);
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -205,4 +207,33 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, co
 
     glFinish();
     currentBuffer++;
+}
+
+void AsyncReprojectionRenderer::bypass(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const GLuint& inputTexture)
+{
+    glUseProgram(bypassProgram);
+
+    glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, inputTexture);
+
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+        glDrawBuffers(4, drawBuffers);
+
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    glBindVertexArray(0);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glUseProgram(0);
 }

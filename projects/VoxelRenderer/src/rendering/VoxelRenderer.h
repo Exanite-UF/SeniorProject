@@ -49,24 +49,31 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
+
+    //A ray trace step needs to exist that goes through a single chunk and gets the hit info
+
+
     // These are used as input and output
-    GraphicsBuffer<glm::vec3> rayStartBuffer1;
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer1;
-    GraphicsBuffer<glm::vec3> rayStartBuffer2;
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer2;
+    GraphicsBuffer<glm::vec3> rayStartBuffer;//This is where rays will start from
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer;//This is the direction rays will go in
+    GraphicsBuffer<glm::ivec2> rayPixel;//This is the pixel that the ray corresponds to (if negative, do not cast)
+
 
     // These buffers are used to store the result of a ray trace step
     GraphicsBuffer<float> rayHitMiscBuffer; //(wasHit, depth)
+    GraphicsBuffer<glm::vec3> attentuationBuffer; //(r, g, b)
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer; //(r, g, b)
 
-    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
-    // Used as the final output buffers
-    GraphicsBuffer<glm::vec3> normalBuffer;
-    GraphicsBuffer<glm::vec3> positionBuffer;
+
+    //These are primary ray info
+    GraphicsBuffer<glm::vec3> normalBuffer;//world space
+    GraphicsBuffer<glm::vec3> positionBuffer;//world space
     GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue)
+
+
+
+
 
     int currentBuffer = 0;
 
@@ -80,8 +87,9 @@ private:
     static GLuint fullCastProgram;
     static GLuint pathTraceToFramebufferProgram;
 
+    static GLuint resetPrimaryRayInfoProgram;
+
     glm::ivec2 size {};
-    int raysPerPixel = 0;
 
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
 
@@ -99,13 +107,16 @@ private:
 
 public:
     void setResolution(glm::ivec2 size);
-    void setRaysPerPixel(int number);
 
+    //This sets the ray directions
+    //It also resets all data that determined by a path trace
     void prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight = true);
 
-    void resetHitInfo();
 
-    void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
+    //Resets information that is determined by primary rays
+    void resetPrimaryRayInfo();
+
+    void resetVisualInfo();
 
     void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, bool isFirstRay);
 

@@ -21,6 +21,8 @@ public:
     constexpr static std::string_view pathTraceToFramebufferShader = "content/PathTrace/ToFramebuffer.fragment.glsl";
     constexpr static std::string_view afterCastComputerShader = "content/PathTrace/AfterCast.compute.glsl";
 
+    constexpr static std::string_view resetPrimaryRayInfoComputeShader = "content/PathTrace/ResetPrimaryRayInfo.compute.glsl";
+
     // SVGF
     constexpr static std::string_view integrateFrameFragmentShader = "content/SVGF/IntegrateFrame.fragment.glsl";
     constexpr static std::string_view firstWaveletIterationFragmentShader = "content/SVGF/WaveletIterationFirst.fragment.glsl";
@@ -31,6 +33,7 @@ public:
     constexpr static std::string_view renderReprojectionVertexShader = "content/Reprojection/ReprojectionRender.vertex.glsl";
     constexpr static std::string_view renderReprojectionFragmentShader = "content/Reprojection/ReprojectionRender.fragment.glsl";
     constexpr static std::string_view combineReprojectionFragmentShader = "content/Reprojection/CombineFrames.fragment.glsl";
+    constexpr static std::string_view bypassReprojectionFragmentShader = "content/Reprojection/Bypass.fragment.glsl";
 
     // Voxel Manipulation
     constexpr static std::string_view makeMipMapComputeShader = "content/VoxelManipulation/MakeMipMap.compute.glsl";

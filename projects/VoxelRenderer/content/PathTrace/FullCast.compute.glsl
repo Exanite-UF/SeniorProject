@@ -64,30 +64,20 @@ vec3 getRayDirection(ivec3 coord)
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
-layout(std430, binding = 2) buffer RayPositionOut
-{
-    float rayPositionOut[];
-};
-
 void setRayPosition(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    rayPositionOut[0 + index] = value.x;
-    rayPositionOut[1 + index] = value.y;
-    rayPositionOut[2 + index] = value.z;
+    rayPosition[0 + index] = value.x;
+    rayPosition[1 + index] = value.y;
+    rayPosition[2 + index] = value.z;
 }
-
-layout(std430, binding = 3) buffer RayDirectionOut
-{
-    float rayDirectionOut[];
-};
 
 void setRayDirection(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    rayDirectionOut[0 + index] = value.x;
-    rayDirectionOut[1 + index] = value.y;
-    rayDirectionOut[2 + index] = value.z;
+    rayDirection[0 + index] = value.x;
+    rayDirection[1 + index] = value.y;
+    rayDirection[2 + index] = value.z;
 }
 
 layout(std430, binding = 4) buffer OccupancyMap
@@ -173,31 +163,21 @@ layout(std430, binding = 9) buffer AccumulatedLightIn
     restrict float accumulatedLightIn[];
 };
 
-layout(std430, binding = 10) buffer AttenuationOut
-{
-    restrict float attenuationOut[];
-};
-
 void setAttenuation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
 
-    attenuationOut[0 + index] = value.x;
-    attenuationOut[1 + index] = value.y;
-    attenuationOut[2 + index] = value.z;
+    attenuationIn[0 + index] = value.x;
+    attenuationIn[1 + index] = value.y;
+    attenuationIn[2 + index] = value.z;
 }
-
-layout(std430, binding = 11) buffer AccumulatedLightOut
-{
-    restrict float accumulatedLightOut[];
-};
 
 void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    accumulatedLightOut[0 + index] = accumulatedLightIn[0 + index] + deltaValue.x;
-    accumulatedLightOut[1 + index] = accumulatedLightIn[1 + index] + deltaValue.y;
-    accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
+    accumulatedLightIn[0 + index] = accumulatedLightIn[0 + index] + deltaValue.x;
+    accumulatedLightIn[1 + index] = accumulatedLightIn[1 + index] + deltaValue.y;
+    accumulatedLightIn[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
 layout(std430, binding = 12) buffer FirstHitNormal
@@ -758,13 +738,31 @@ void attempt(ivec3 texelCoord)
     }
 
     vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
-    BRDF(texelCoord, hit, rayDir, attentuation);
+    changeLightAccumulation(texelCoord, vec3(hit.iterations) / 100);
+    //BRDF(texelCoord, hit, rayDir, attentuation);
 }
 
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-    attempt(texelCoord);
+
+    float currentDepth = getHitDist(texelCoord);
+    if (currentDepth < 0)
+    {
+        return;
+    }
+
+    vec3 startPos = getRayPosition(texelCoord);
+    vec3 rayDir = normalize(getRayDirection(texelCoord));
+
+    RayHit hit = rayCast(texelCoord, startPos, rayDir, currentDepth);
+
+    vec3 attentuation = getPriorAttenuation(texelCoord); // This is the accumulated attenuation
+    changeLightAccumulation(texelCoord, vec3(rayDir * int(hit.wasHit)) * attentuation);
+    setAttenuation(texelCoord, vec3(0));
+    //changeLightAccumulation(texelCoord, vec3(1));
+    
+    //attempt(texelCoord);
     // setHitWasHit(texelCoord, false);
     // setHitDist(texelCoord, 1.0 / 0.0);
 }

@@ -149,7 +149,6 @@ public:
 
     const glm::ivec2& getRenderResolution();
     void setRenderResolution(glm::ivec2 renderResolution);
-    void setRaysPerPixel(int number);
 
     void pollCamera(const std::shared_ptr<CameraComponent>& camera);
     void setScene(const std::shared_ptr<SceneComponent>& scene);
