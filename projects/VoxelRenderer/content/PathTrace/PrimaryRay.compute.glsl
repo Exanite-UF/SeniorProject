@@ -775,7 +775,7 @@ void main()
 
         vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
 
-        float p = 0 * 0.1;
+        float p = 0.1;
         
         if(randomVec2(seed).x < p){
             float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
