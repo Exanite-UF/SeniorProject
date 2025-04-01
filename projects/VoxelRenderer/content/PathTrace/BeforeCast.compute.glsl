@@ -69,9 +69,16 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
+float sunAngularSize = 20; // The angle of the sun in diameter
+float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
+vec3 sunDir = normalize(vec3(1, -1, 1));
+float sunBrightness = 5;
+
 
 vec3 skyBox(vec3 rayDirection){
-    if(dot(rayDirection, vec3(0, 0, 1)) > 0){
+    if(dot(sunDir, rayDirection) > sunSize){
+        return sunBrightness / sunSize;
+    }else if(dot(rayDirection, vec3(0, 0, 1)) > 0){
         return vec3(40,77,222) / 255;
     }else{
         return 0.1 * vec3(61,150,11) / 255;
