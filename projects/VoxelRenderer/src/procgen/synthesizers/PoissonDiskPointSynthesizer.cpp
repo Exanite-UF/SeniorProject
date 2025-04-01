@@ -6,31 +6,34 @@
 #include <typeinfo>
 #include <imgui/imgui.h>
 
-PoissonDiskPointSynthesizer::PoissonDiskPointSynthesizer(int seed)
-{
-	this->seed = seed;
-}
-
-void PoissonDiskPointSynthesizer::generatePoints(std::vector<glm::vec3>& inPoints, uint32_t numPoints)
+void PoissonDiskPointSynthesizer::generatePoints(std::vector<glm::vec3>& outPoints, uint32_t numPoints)
 {
     PoissonGenerator::DefaultPRNG PRNG(seed);
 	
-    // Generated points between 0-1
     const auto points = PoissonGenerator::generatePoissonPoints(numPoints, PRNG, false); 
 	
 	for(int i = 0; i < points.size(); i++)
 	{
-		inPoints.push_back(glm::vec3(points[i].x, points[i].y, 0));
+		outPoints.push_back(glm::vec3(points[i].x, points[i].y, 0));
 	}
+}
+
+void PoissonDiskPointSynthesizer::rescalePointsToChunkSize(std::vector<glm::vec3>& outPoints, VoxelChunkData& chunkData) 
+{
+    for(int i = 0; i < outPoints.size(); i++)
+    {
+		glm::vec3& point = outPoints[i];
+		outPoints[i] = glm::vec3({std::ceil((point.x / rangeX.y) * chunkData.getSize().x), std::ceil((point.y / rangeY.y) * chunkData.getSize().y), 0 });
+    }
 }
 
 void PoissonDiskPointSynthesizer::showDebugMenu() 
 {
 	ImGui::PushID(typeid(PoissonDiskPointSynthesizer).name());
     {
-        if (ImGui::CollapsingHeader("Texture-Heightmap World Generator"))
+        if (ImGui::CollapsingHeader(typeid(PoissonDiskPointSynthesizer).name()))
         {
-            ImGui::SliderInt("Base Height", &seed, 0, 100);
+            ImGui::SliderInt("Seed", &seed, 0, 100);
         }
     }
     ImGui::PopID();

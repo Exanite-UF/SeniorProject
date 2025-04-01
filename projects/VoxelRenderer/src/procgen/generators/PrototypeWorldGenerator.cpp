@@ -12,6 +12,8 @@
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
+#include <src/procgen/WorldUtility.h>
+#include <src/utilities/VectorUtility.h>
 #include <src/world/VoxelChunkData.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
@@ -19,44 +21,19 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     auto& materialManager = MaterialManager::getInstance();
 
     std::shared_ptr<Material> stoneMaterial;
-    std::string stoneMaterialKey = "stone";
-    if (!materialManager.tryGetMaterialByKey(stoneMaterialKey, stoneMaterial))
-    {
-        stoneMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find stoneMaterial with id '" + stoneMaterialKey + "'. Using default stoneMaterial '" + stoneMaterial->getKey() + "' instead.");
-    }
+    WorldUtility::tryGetMaterial("stone", materialManager, stoneMaterial);
 
     std::shared_ptr<Material> dirtMaterial;
-    std::string dirtMaterialKey = "dirt";
-    if (!materialManager.tryGetMaterialByKey(dirtMaterialKey, dirtMaterial))
-    {
-        dirtMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find Material with id '" + dirtMaterialKey + "'. Using default dirtMaterial '" + dirtMaterial->getKey() + "' instead.");
-    }
+    WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
 
     std::shared_ptr<Material> grassMaterial;
-    std::string grassMaterialKey = "grass";
-    if (!materialManager.tryGetMaterialByKey(grassMaterialKey, grassMaterial))
-    {
-        grassMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find Material with id '" + grassMaterialKey + "'. Using default grassMaterial '" + grassMaterial->getKey() + "' instead.");
-    }
+    WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
 
     std::shared_ptr<Material> oakLogMaterial;
-    std::string oakLogMaterialKey = "oak_log";
-    if (!materialManager.tryGetMaterialByKey(oakLogMaterialKey, oakLogMaterial))
-    {
-        oakLogMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find Material with id '" + oakLogMaterialKey + "'. Using default oakLogMaterial '" + oakLogMaterial->getKey() + "' instead.");
-    }
+    WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
 
     std::shared_ptr<Material> oakLeafMaterial;
-    std::string oakLeafMaterialKey = "oak_leaf";
-    if (!materialManager.tryGetMaterialByKey(oakLeafMaterialKey, oakLeafMaterial))
-    {
-        oakLeafMaterial = materialManager.getMaterialByIndex(0);
-        Log::information("Failed to find Material with id '" + oakLeafMaterialKey + "'. Using default oakLeafMaterial '" + oakLeafMaterial->getKey() + "' instead.");
-    }
+    WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
 
     // Fill texture data with random noise, each block evaluated once
     FastNoiseLite simplexNoise;
@@ -68,23 +45,14 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
     PoissonDiskPointSynthesizer pointSynthesizer(seed);
-    std::vector<glm::vec3> points;
+    std::vector<glm::vec3> treeLocations;
 
     int numPoints = 20;
-    pointSynthesizer.generatePoints(points, numPoints);
-
-    // Scale to chunk size
-    std::vector<glm::vec3> treeLocations;
-    for(int i = 0; i < points.size(); i++)
-    {
-        glm::vec3& point = points[i];
-        treeLocations.push_back(glm::vec3({std::ceil(point.x * data.getSize().x), std::ceil(point.y * data.getSize().y), 0 }));
-    }
+    pointSynthesizer.generatePoints(treeLocations, numPoints);
+    pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
     
     // Lexicographic sort
-    std::sort(treeLocations.begin(), treeLocations.end(), [](const glm::vec3& a, const glm::vec3& b) {
-        return a.x < b.x || (a.x == b.x && a.y < b.y); 
-    });
+    VectorUtility::lexicographicSort(treeLocations);
 
     int treeIndex = 0;
     glm::vec3 treeLocation(treeLocations.at(treeIndex));
@@ -141,7 +109,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill); 
 
                 treeIndex++;
-                if(treeIndex < points.size())
+                if(treeIndex < treeLocations.size())
                 {
                     treeLocation = treeLocations.at(treeIndex);
                 } else
