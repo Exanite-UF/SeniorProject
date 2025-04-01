@@ -257,7 +257,7 @@ void ModelPreviewer::RenderWindowVoxel()
         glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
         glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.shininess"), materialShininess);
 
-        //loadedModel->Draw(*shader);
+
         modelVox->DrawVoxels(*voxelShader);
 
         glfwSwapBuffers(voxelWindow);

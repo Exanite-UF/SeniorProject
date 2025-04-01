@@ -303,12 +303,17 @@ void ModelVoxelizer::generateVoxelMesh()
 
     // Generate and bind instance VBO for voxel positions
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
 
     // Instance Position attribute (location = 1)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glVertexAttribDivisor(1, 1);  // Tell OpenGL this is per-instance data
+
+    GLint isEnabled;
+    glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &isEnabled);
+    std::cout << "Instance attribute enabled: " << isEnabled << std::endl;
 
     // Unbind VAO
 
@@ -342,13 +347,14 @@ void ModelVoxelizer::DrawVoxels(Shader& shader)
 
     // Update instance buffer with active voxel positions
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
-
+    //glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
     //glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
 
 
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
     //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
+    //glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 8, activeVoxels.size());
 }
