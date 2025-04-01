@@ -38,7 +38,9 @@
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
+#include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
 #include <src/procgen/generators/WorldGenerator.h>
+#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOpenSimplexNoiseSynthesizer.h>
 #include <src/rendering/AsynchronousReprojection.h>
@@ -120,7 +122,7 @@ void Program::run()
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto& cameraTransform = camera->getTransform();
     scene->setCamera(camera);
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z/2));
 
     // Initialize the chunk manager
     voxelChunkManager.initialize(scene, chunkModificationThreadContext);
@@ -240,12 +242,16 @@ void Program::run()
     float persistence = 0.5;
     auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
+    auto poissonDiskPointSynthesizer = std::make_shared<PoissonDiskPointSynthesizer>(seed);
 
     TextureHeightmapWorldGenerator octaveWorldGenerator(openSimplexSynthesizer);
     octaveWorldGenerator.setChunkSize(chunkSize);
 
     PrototypeWorldGenerator prototypeWorldGenerator(octaveSynthesizer);
     prototypeWorldGenerator.setChunkSize(chunkSize);
+
+    PointSynthesizerWorldGenerator pointSynthesizerWorldGenerator(poissonDiskPointSynthesizer);
+    pointSynthesizerWorldGenerator.setChunkSize(chunkSize);
 
     // IMGUI Menu
     bool showMenuGUI = false;
@@ -287,6 +293,8 @@ void Program::run()
         inputManager->update();
         voxelChunkManager.update(deltaTime);
         sceneObject->update();
+
+        voxelChunkManager.settings.isChunkLoadingEnabled = false;
 
         // Update
         // TODO: This code should be moved into individual systems
@@ -377,6 +385,11 @@ void Program::run()
                 if (input->isKeyPressed(GLFW_KEY_F8))
                 {
                     prototypeWorldGenerator.generate(*closestChunk);
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_F9))
+                {
+                    pointSynthesizerWorldGenerator.generate(*closestChunk);
                 }
             }
 
@@ -504,6 +517,7 @@ void Program::run()
                         exampleWorldGenerator.showDebugMenu();
                         octaveWorldGenerator.showDebugMenu();
                         prototypeWorldGenerator.showDebugMenu();
+                        pointSynthesizerWorldGenerator.showDebugMenu();
 
                         voxelChunkManager.showDebugMenu();
 
