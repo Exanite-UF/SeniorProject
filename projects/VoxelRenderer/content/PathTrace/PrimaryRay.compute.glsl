@@ -92,17 +92,6 @@ void setRayDirection(ivec3 coord, vec3 value)
     rayDirectionOut[2 + index] = value.z;
 }
 
-//Maps a thread to a pixel
-layout(std430, binding = 4) buffer RayPixel
-{
-    int rayPixel[];
-};
-
-ivec3 getRayPixel(ivec3 coord)
-{
-    int index = 2 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    return ivec3(rayPixel[0 + index], rayPixel[1 + index], 0);
-}
 
 layout(std430, binding = 5) buffer OccupancyMap
 {
@@ -692,7 +681,11 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 
 void main()
 {
-    ivec3 texelCoord = getRayPixel(ivec3(gl_GlobalInvocationID.xyz));
+    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
+
+    if(texelCoord.x < 0){
+        return;
+    }
 
     float currentDepth = getRayDepth(texelCoord);
 

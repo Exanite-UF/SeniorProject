@@ -32,6 +32,8 @@ GLuint VoxelRenderer::afterCastProgram;
 GLuint VoxelRenderer::resetPrimaryRayInfoProgram;
 GLuint VoxelRenderer::beforeCastProgram;
 GLuint VoxelRenderer::primaryRayProgram;
+GLuint VoxelRenderer::groupPixelsProgram;
+
 
 void VoxelRenderer::remakeTextures()
 {
@@ -58,7 +60,6 @@ void VoxelRenderer::remakeTextures()
     rayDirectionBuffer1.setSize(size1D);
     rayStartBuffer2.setSize(size1D);
     rayDirectionBuffer2.setSize(size1D);
-    rayPixel.setSize(size1D);
 
     attentuationBuffer1.setSize(size1D);
     accumulatedLightBuffer1.setSize(size1D);
@@ -89,6 +90,7 @@ VoxelRenderer::VoxelRenderer()
     resetPrimaryRayInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetPrimaryRayInfoComputeShader);
     beforeCastProgram = ShaderManager::getInstance().getComputeProgram(Content::beforeCastComputeShader);
     primaryRayProgram = ShaderManager::getInstance().getComputeProgram(Content::castPrimaryRayComputeShader);
+    groupPixelsProgram = ShaderManager::getInstance().getComputeProgram(Content::groupPixelsComputeShader);
 
     pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader);
 
@@ -126,7 +128,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
         rayDirectionBuffer2.bind(1);
     }
     
-    rayPixel.bind(2);
+    //rayPixel.bind(2);
 
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, 1);
@@ -150,7 +152,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
         rayDirectionBuffer2.unbind();
     }
 
-    rayPixel.unbind();
+    
 
     resetPrimaryRayInfo();
     resetVisualInfo(maxDepth);
@@ -177,7 +179,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         rayStartBuffer1.bind(1);
         rayDirectionBuffer1.bind(3);
     }
-    rayPixel.bind(4);
+    
 
     // Occupancy Map = 5
     // Material Map = 6
@@ -231,13 +233,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
                 glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
                 glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
 
-                // Load voxel chunk history
-                if (voxelChunkHistories.count(chunkComponent) == 0)
-                {
-                    // Then no history exists
-                    // voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
-                    voxelChunkHistories.emplace(chunkComponent, VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale()));
-                }
 
                 glDispatchCompute(workGroupsX, workGroupsY, 1);
 
@@ -252,7 +247,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     rayDirectionBuffer1.unbind();
     rayStartBuffer2.unbind();
     rayDirectionBuffer2.unbind();
-    rayPixel.unbind();
 
     rayMisc.unbind();
 
@@ -387,7 +381,7 @@ void VoxelRenderer::beforeCast(float maxDepth)
     glUseProgram(beforeCastProgram);
 
     rayMisc.bind(0);
-    rayPixel.bind(1);
+
 
 
     glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
@@ -401,7 +395,7 @@ void VoxelRenderer::beforeCast(float maxDepth)
     }
 
     rayMisc.unbind();
-    rayPixel.unbind();
+
 
     glUseProgram(0);
 }
@@ -417,7 +411,8 @@ void VoxelRenderer::afterCast(float maxDepth)
     glUseProgram(afterCastProgram);
 
     rayMisc.bind(0);
-    rayPixel.bind(1);
+
+    
 
     glUniform3i(glGetUniformLocation(afterCastProgram, "resolution"), size.x, size.y, 1);
     glUniform1f(glGetUniformLocation(afterCastProgram, "maxDepth"), maxDepth);
@@ -430,7 +425,6 @@ void VoxelRenderer::afterCast(float maxDepth)
     }
 
     rayMisc.unbind();
-    rayPixel.unbind();
 
     glUseProgram(0);
 }
@@ -457,7 +451,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         rayDirectionBuffer1.bind(3);
     }
     
-    rayPixel.bind(4);
+    
 
     // Occupancy Map = 5
     // Material Map = 6
@@ -541,7 +535,6 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     rayDirectionBuffer1.unbind();
     rayStartBuffer2.unbind();
     rayDirectionBuffer2.unbind();
-    rayPixel.unbind();
 
     rayMisc.unbind();
 

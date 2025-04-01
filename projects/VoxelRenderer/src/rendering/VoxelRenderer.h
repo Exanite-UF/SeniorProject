@@ -59,7 +59,6 @@ private:
     GraphicsBuffer<glm::vec3> rayDirectionBuffer1;//This is the direction rays will go in
     GraphicsBuffer<glm::vec3> rayStartBuffer2;//This is where rays will start from
     GraphicsBuffer<glm::vec3> rayDirectionBuffer2;//This is the direction rays will go in
-    GraphicsBuffer<glm::ivec2> rayPixel;//This is the pixel that the ray corresponds to (if negative, do not cast)
 
 
     // These buffers are used to store the result of a path trace
@@ -97,6 +96,7 @@ private:
     static GLuint resetPrimaryRayInfoProgram;
     static GLuint beforeCastProgram;
     static GLuint primaryRayProgram;
+    static GLuint groupPixelsProgram;
 
     glm::ivec2 size {};
 

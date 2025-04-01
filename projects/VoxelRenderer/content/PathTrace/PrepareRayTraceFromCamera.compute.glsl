@@ -12,11 +12,6 @@ layout(std430, binding = 1) buffer RayDirection
     float rayDirection[];
 };
 
-layout(std430, binding = 2) buffer RayPixel
-{
-    int rayPixel[];
-};
-
 uniform ivec3 resolution; //(xSize, ySize, 1)
 uniform vec3 camPosition;
 uniform vec4 camRotation;
@@ -94,13 +89,6 @@ vec3 getDir(ivec3 coord)
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
-void setRayPixel(ivec3 coord)
-{
-    int index = 2 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    rayPixel[0 + index] = coord.x;
-    rayPixel[1 + index] = coord.y;
-}
-
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
@@ -126,5 +114,4 @@ void main()
 
     setPos(texelCoord, camPosition);
     setDir(texelCoord, rayDir);
-    setRayPixel(texelCoord);
 }
