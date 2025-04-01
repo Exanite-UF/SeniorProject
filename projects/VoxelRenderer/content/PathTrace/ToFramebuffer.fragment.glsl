@@ -228,11 +228,13 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
 }
 
 
+
+
 vec3 skyBox(vec3 rayDirection){
     if(dot(rayDirection, vec3(0, 0, 1)) > 0){
-        return vec3(0, 0.38431, 0.78431);
+        return vec3(40,77,222) / 255;
     }else{
-        return vec3(8.0/255, 69.0/255, 35.0/255);
+        return 0.1 * vec3(61,150,11) / 255;
     }
 }
 
@@ -249,19 +251,51 @@ void main()
 
     
     
-    
 
-    vec3 light = getLight(texelCoord);//This is the radiance coming from the secondary rays
+    vec3 light = vec3(0);
+    int samples = 0;
     MaterialDefinition voxelMaterial = materialDefinitions[getFirstHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
-
+    
     vec3 direction = getPrimaryDirection(texelCoord);
-    vec4 nextDirection = getSecondaryDirection(texelCoord);
 
-    //This is the attenuation from the 
-    vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-    // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+    int radius = 2;
+    if(misc.x < 0.1){
+        radius = 0;
+    }
+    for(int i = -radius; i <= radius; i++){
+        for(int j = -radius; j <= radius; j++){
+            ivec3 coord = texelCoord + ivec3(i, j, 0);
 
+            //If this is offscreen
+            if(coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y){
+                continue;
+            }
 
+            //If this pixel didn't have a secondary ray
+            if(getMisc(coord).x < 0){
+                continue;
+            }
+
+            vec3 sampleNormal = getNormal(coord);//worldspace
+            if(dot(sampleNormal, normal) < 0.9){
+                continue;
+            }
+
+            vec4 sampleMisc = getMisc(coord);
+            if(abs(sampleMisc.x - misc.x) > 0.1){
+                continue;
+            }
+
+            vec3 sampledLight = getLight(coord);//This is the radiance coming from the secondary rays
+            vec4 nextDirection = getSecondaryDirection(coord);
+
+            vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+            // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+
+            light += sampledLight * brdfValue;
+            samples++;
+        }
+    }
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
     // normal is now in camera space
@@ -273,11 +307,12 @@ void main()
     if(misc.x >= 0){
         firstHitEmission = voxelMaterial.emission;
     }else{
-        brdfValue *= 0;
+        light *= 0;
+        samples = 1;
         firstHitEmission = skyBox(direction);
     }
 
-    fragColor = vec4(light * brdfValue + firstHitEmission, 1);
+    fragColor = vec4(light / samples + firstHitEmission, 1);
     posBuffer = position;
     miscBuffer = misc;
     normalBuffer = normal;

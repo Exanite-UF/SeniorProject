@@ -72,9 +72,9 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 
 vec3 skyBox(vec3 rayDirection){
     if(dot(rayDirection, vec3(0, 0, 1)) > 0){
-        return vec3(0, 0.38431, 0.78431);
+        return vec3(40,77,222) / 255;
     }else{
-        return vec3(8.0/255, 69.0/255, 35.0/255);
+        return 0.1 * vec3(61,150,11) / 255;
     }
 }
 
