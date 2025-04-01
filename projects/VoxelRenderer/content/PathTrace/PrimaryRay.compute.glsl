@@ -801,9 +801,9 @@ void main()
         //vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
         setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
-        //if(dot(nextDirection.xyz, normal) <= 0){
-        //    setRayDepth(texelCoord, -1);//Flag the ray as invalid
-        //}
+        if(dot(nextDirection.xyz, normal) <= 0){
+            setRayDepth(texelCoord, -1);//Flag the ray as invalid
+        }
         setRayPosition(texelCoord, position); // Set where the ray should start from next
         setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
     }
