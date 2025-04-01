@@ -777,7 +777,7 @@ void main()
 
         
 
-        
+        //If a sun ray could hit the sun, then try
         if(dot(normal, sunDirection) > 0.0){
             float p = 0.1;
 
@@ -803,10 +803,7 @@ void main()
             }
         }
         
-        
-
-        //vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-
+    
         setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
         setRayPosition(texelCoord, position); // Set where the ray should start from next
         setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next        
