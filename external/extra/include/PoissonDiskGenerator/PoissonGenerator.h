@@ -46,6 +46,8 @@
  *		1.0     May  6, 2014
  */
 
+#pragma once
+
 #include <stdint.h>
 #include <vector>
 
