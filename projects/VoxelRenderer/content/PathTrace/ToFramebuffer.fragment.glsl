@@ -236,7 +236,7 @@ float sunBrightness = 5;
 
 vec3 skyBox(vec3 rayDirection){
     if(dot(sunDir, rayDirection) > sunSize){
-        return sunBrightness / sunSize;
+        return vec3(1, 1, 1) * sunBrightness / sunSize;
     }else if(dot(rayDirection, vec3(0, 0, 1)) > 0){
         return vec3(40,77,222) / 255;
     }else{
