@@ -267,9 +267,6 @@ void main()
     vec3 direction = getPrimaryDirection(texelCoord);
 
     int radius = 1;
-    if(misc.x < 0.1){
-        radius = 1;
-    }
     if(misc.x < 0.01){
         radius = 0;
     }
