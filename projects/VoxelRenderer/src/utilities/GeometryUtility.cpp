@@ -27,7 +27,7 @@ std::vector<glm::vec2> GeometryUtility::getConvexHull(std::vector<glm::vec2> ver
         }
     }
 
-    auto compareOrientation = [&leftMostVertex](const glm::vec2 a, const glm::vec2 b)
+    auto compareOrientation = [&leftMostVertex](const glm::vec2& a, const glm::vec2& b)
     {
         auto orientation = getOrientation(leftMostVertex, a, b);
         if (orientation == 0)
