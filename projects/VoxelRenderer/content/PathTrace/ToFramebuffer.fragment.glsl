@@ -228,19 +228,21 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
 }
 
 
-float sunAngularSize = 20; // The angle of the sun in diameter
-float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
-vec3 sunDir = normalize(vec3(1, -1, 1));
-float sunBrightness = 5;
 
+uniform float sunAngularSize; // The angle of the sun in diameter
+float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
+uniform vec3 sunDir;
+uniform float sunBrightness;
+uniform vec3 skyColor;
+uniform vec3 groundColor;
 
 vec3 skyBox(vec3 rayDirection){
-    if(dot(sunDir, rayDirection) > sunSize){
-        return vec3(1, 1, 1) * sunBrightness / sunSize;
+    if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+        return sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1);
     }else if(dot(rayDirection, vec3(0, 0, 1)) > 0){
-        return vec3(40,77,222) / 255;
+        return skyColor;
     }else{
-        return 0.1 * vec3(61,150,11) / 255;
+        return groundColor;
     }
 }
 
@@ -259,18 +261,24 @@ void main()
     
 
     vec3 light = vec3(0);
-    int samples = 0;
+    float samples = 0;
     MaterialDefinition voxelMaterial = materialDefinitions[getFirstHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
     
     vec3 direction = getPrimaryDirection(texelCoord);
 
-    int radius = 2;
+    int radius = 1;
     if(misc.x < 0.1){
+        radius = 1;
+    }
+    if(misc.x < 0.01){
         radius = 0;
     }
+    //radius = 0;
+
+    const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
     for(int i = -radius; i <= radius; i++){
         for(int j = -radius; j <= radius; j++){
-            ivec3 coord = texelCoord + ivec3(i, j, 0);
+            ivec3 coord = texelCoord + 1 * ivec3(i, j, 0);// * abs(ivec3(i, j, 0));
 
             //If this is offscreen
             if(coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y){
@@ -296,10 +304,10 @@ void main()
             vec4 nextDirection = getSecondaryDirection(coord);
 
             vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-            // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-
-            light += sampledLight * brdfValue;
-            samples++;
+            //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+            float multiplier = kernel[i + 1] * kernel[j + 1];
+            light += sampledLight * brdfValue * multiplier;
+            samples += multiplier;
         }
     }
 

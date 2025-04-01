@@ -658,12 +658,7 @@ void attempt(ivec3 texelCoord)
 
 void main()
 {
-    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
-
-    if(texelCoord.x < 0){
-        return;
-    }
-    
+    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);  
     
     attempt(texelCoord);
 }

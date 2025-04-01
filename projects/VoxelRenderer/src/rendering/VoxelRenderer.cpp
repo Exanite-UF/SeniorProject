@@ -382,7 +382,36 @@ void VoxelRenderer::beforeCast(float maxDepth)
 
     rayMisc.bind(0);
 
-    if(whichStartBuffer){
+
+
+
+    glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);
+    {
+        glDispatchCompute(workGroupsX, workGroupsY, 1);
+
+        // Ensure compute shader completes
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    rayMisc.unbind();
+
+    glUseProgram(0);
+}
+
+void VoxelRenderer::afterCast(float maxDepth, bool shouldDrawSkybox)
+{
+    ZoneScoped;
+
+    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
+    GLuint workGroupsY = (size.y + 8 - 1) / 8;
+
+    // Reset the hit info
+    glUseProgram(afterCastProgram);
+
+    rayMisc.bind(0);
+
+    if(!whichStartBuffer){
         rayDirectionBuffer1.bind(1);
     }else{
         rayDirectionBuffer2.bind(1);
@@ -397,11 +426,16 @@ void VoxelRenderer::beforeCast(float maxDepth)
         accumulatedLightBuffer2.bind(2);
         attentuationBuffer2.bind(4);
     }
+    
 
-
-
-    glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
-    glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);
+    glUniform3i(glGetUniformLocation(afterCastProgram, "resolution"), size.x, size.y, 1);
+    glUniform1f(glGetUniformLocation(afterCastProgram, "maxDepth"), maxDepth);
+    glUniform1f(glGetUniformLocation(afterCastProgram, "sunAngularSize"), sunAngularSize);
+    glUniform3f(glGetUniformLocation(afterCastProgram, "sunDir"), sunDirection.x, sunDirection.y, sunDirection.z);
+    glUniform1f(glGetUniformLocation(afterCastProgram, "sunBrightness"), sunBrightness);
+    glUniform3f(glGetUniformLocation(afterCastProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
+    glUniform3f(glGetUniformLocation(afterCastProgram, "groundColor"), groundColor.x, groundColor.y, groundColor.z);
+    glUniform1i(glGetUniformLocation(afterCastProgram, "shouldDrawSkybox"), shouldDrawSkybox);
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, 1);
@@ -412,7 +446,7 @@ void VoxelRenderer::beforeCast(float maxDepth)
 
     rayMisc.unbind();
 
-    if(whichStartBuffer){
+    if(!whichStartBuffer){
         rayDirectionBuffer1.unbind();
     }else{
         rayDirectionBuffer2.unbind();
@@ -426,35 +460,6 @@ void VoxelRenderer::beforeCast(float maxDepth)
     }else{
         attentuationBuffer2.unbind();
     }
-
-    glUseProgram(0);
-}
-
-void VoxelRenderer::afterCast(float maxDepth)
-{
-    ZoneScoped;
-
-    GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
-    GLuint workGroupsY = (size.y + 8 - 1) / 8;
-
-    // Reset the hit info
-    glUseProgram(afterCastProgram);
-
-    rayMisc.bind(0);
-
-    
-
-    glUniform3i(glGetUniformLocation(afterCastProgram, "resolution"), size.x, size.y, 1);
-    glUniform1f(glGetUniformLocation(afterCastProgram, "maxDepth"), maxDepth);
-
-    {
-        glDispatchCompute(workGroupsX, workGroupsY, 1);
-
-        // Ensure compute shader completes
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    }
-
-    rayMisc.unbind();
 
     glUseProgram(0);
 }
@@ -508,6 +513,9 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         glUniform3fv(glGetUniformLocation(primaryRayProgram, "pastCameraPosition"), 1, glm::value_ptr(pastCameraPosition));
         glUniform4fv(glGetUniformLocation(primaryRayProgram, "pastCameraRotation"), 1, glm::value_ptr(pastCameraRotation));
         glUniform1f(glGetUniformLocation(primaryRayProgram, "pastCameraFovTan"), std::tan(pastCameraFOV * 0.5)); // A little bit of randomness for temporal accumulation
+
+        glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), sunAngularSize);
+        glUniform3f(glGetUniformLocation(primaryRayProgram, "sunDirection"), sunDirection.x, sunDirection.y, sunDirection.z);
 
         for (auto& chunkComponent : chunks)
         {
@@ -615,6 +623,11 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     glUniform4fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
     glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
+    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunAngularSize"), sunAngularSize);
+    glUniform3f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunDir"), sunDirection.x, sunDirection.y, sunDirection.z);
+    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunBrightness"), sunBrightness);
+    glUniform3f(glGetUniformLocation(pathTraceToFramebufferProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
+    glUniform3f(glGetUniformLocation(pathTraceToFramebufferProgram, "groundColor"), groundColor.x, groundColor.y, groundColor.z);
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
