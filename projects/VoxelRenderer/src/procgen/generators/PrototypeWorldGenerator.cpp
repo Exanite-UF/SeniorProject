@@ -5,15 +5,15 @@
 #include <FastNoiseLite/FastNoiseLite.h>
 #include <cstdlib>
 #include <src/procgen/PrintUtility.h>
+#include <src/procgen/WorldUtility.h>
 #include <src/procgen/data/FlatArrayData.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
-#include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
+#include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
-#include <src/world/MaterialManager.h>
-#include <src/procgen/WorldUtility.h>
 #include <src/utilities/VectorUtility.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
@@ -50,7 +50,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     int numPoints = 20;
     pointSynthesizer.generatePoints(treeLocations, numPoints);
     pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
-    
+
     // Lexicographic sort
     VectorUtility::lexicographicSort(treeLocations);
 
@@ -93,7 +93,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             lastHeightBlocks -= dirtDepth;
 
             if (treeLocation.x == x && treeLocation.y == y)
-            { 
+            {
                 glm::vec3 originVoxel({ x, y, heightVoxels });
 
                 // Naive seeding. Is there a better way?
@@ -106,21 +106,21 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
                 int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
-                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill); 
+                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill);
 
                 treeIndex++;
-                if(treeIndex < treeLocations.size())
+                if (treeIndex < treeLocations.size())
                 {
                     treeLocation = treeLocations.at(treeIndex);
-                } else
+                }
+                else
                 {
-                    treeLocation = {-1,-1,-1};
+                    treeLocation = { -1, -1, -1 };
                 }
             }
         }
     }
 }
-
 
 int PrototypeWorldGenerator::randomBetween(int min, int max)
 {
@@ -200,7 +200,7 @@ void PrototypeWorldGenerator::generateAbsPyramid(VoxelChunkData& data, std::shar
 
                 int treeFunctionSample = heightZ - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY);
                 // Simple random function. Probably better to clump and also add so it looks more organic.
-                bool randomSample = ((float) rand() / RAND_MAX) >= probabilityToFill;
+                bool randomSample = ((float)rand() / RAND_MAX) >= probabilityToFill;
 
                 if (localZ <= treeFunctionSample && randomSample)
                 {

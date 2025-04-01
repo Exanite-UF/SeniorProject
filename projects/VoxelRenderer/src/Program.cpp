@@ -36,9 +36,9 @@
 #include <src/graphics/TextureManager.h>
 #include <src/procgen/generators/ExampleWorldGenerator.h>
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
+#include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
-#include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
@@ -122,7 +122,7 @@ void Program::run()
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto& cameraTransform = camera->getTransform();
     scene->setCamera(camera);
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z/2));
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z / 2));
 
     // Initialize the chunk manager
     voxelChunkManager.initialize(scene, chunkModificationThreadContext);

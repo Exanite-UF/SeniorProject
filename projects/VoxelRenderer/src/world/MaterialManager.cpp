@@ -91,14 +91,14 @@ MaterialManager::MaterialManager()
     // Generate colors for greyscale
     std::string greyscalePrefix = "greyscale_";
     std::string greyscaleName = "Greyscale ";
-    for(int i = 0; i <= 255; i++)
+    for (int i = 0; i <= 255; i++)
     {
         auto& material = createMaterial(greyscalePrefix + std::to_string(i), greyscaleName + std::to_string(i));
-        material->albedo = glm::vec3((float)i/255);
+        material->albedo = glm::vec3((float)i / 255);
         material->emission = glm::vec3(0);
-        material->metallic = 0; 
+        material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;   
+        material->roughness = 1;
     }
 
     // Generate placeholder materials

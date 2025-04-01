@@ -97,7 +97,6 @@ void VoxelChunkData::setVoxelMaterialIndex(const glm::ivec3& position, const uin
     data.materialMap[voxelIndex] = materialIndex;
 }
 
-
 bool VoxelChunkData::isValidPosition(const glm::ivec3 position) const
 {
     if (position.x <= 0 || position.y <= 0 || position.z <= 0)

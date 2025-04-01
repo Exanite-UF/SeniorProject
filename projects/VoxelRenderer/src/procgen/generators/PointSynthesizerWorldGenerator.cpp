@@ -1,19 +1,19 @@
 #include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
 
-#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <algorithm>
+#include <src/procgen/WorldUtility.h>
+#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
-#include <src/procgen/WorldUtility.h>
 
 PointSynthesizerWorldGenerator::PointSynthesizerWorldGenerator(const std::shared_ptr<PointSynthesizer>& pointSynthesizer)
 {
     this->pointSynthesizer = pointSynthesizer;
 }
 
-void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data) 
-{ 
+void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
+{
     auto& materialManager = MaterialManager::getInstance();
 
     std::shared_ptr<Material> whiteMaterial;
@@ -22,16 +22,16 @@ void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
     std::shared_ptr<Material> blackMaterial;
     WorldUtility::tryGetMaterial("greyscale_255", materialManager, whiteMaterial);
 
-	std::vector<glm::vec3> points;
+    std::vector<glm::vec3> points;
     pointSynthesizer->generatePoints(points, 20);
     pointSynthesizer->rescalePointsToChunkSize(points, data);
 
-	int pointIndex = 0;
-	glm::vec3 nextVoxel = points[0];
+    int pointIndex = 0;
+    glm::vec3 nextVoxel = points[0];
 
-    for(int x = 0; x < data.getSize().x; ++x)
+    for (int x = 0; x < data.getSize().x; ++x)
     {
-        for(int y = 0; y < data.getSize().y; ++y)
+        for (int y = 0; y < data.getSize().y; ++y)
         {
             glm::vec3 voxel = { x, y, 1 };
 
@@ -40,15 +40,15 @@ void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
         }
     }
 
-    for(int i = 0; i < points.size(); i++)
+    for (int i = 0; i < points.size(); i++)
     {
         glm::ivec3 point = glm::ivec3(points[i]);
 
-        for(int z = 0; z <= height; ++z)
+        for (int z = 0; z <= height; ++z)
         {
-            glm::ivec3 voxel = {point.x, point.y, z};
+            glm::ivec3 voxel = { point.x, point.y, z };
 
-            if(data.isValidPosition(voxel))
+            if (data.isValidPosition(voxel))
             {
                 data.setVoxelOccupancy(voxel, true);
                 data.setVoxelMaterial(voxel, blackMaterial);
@@ -57,18 +57,18 @@ void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
     }
 }
 
-void PointSynthesizerWorldGenerator::showDebugMenu() 
+void PointSynthesizerWorldGenerator::showDebugMenu()
 {
-	ImGui::PushID("PrototypeWorldGenerator");
+    ImGui::PushID("PrototypeWorldGenerator");
     {
-		if (ImGui::CollapsingHeader("Poisson Disk Visual Generator (F9)"))
-		{
+        if (ImGui::CollapsingHeader("Poisson Disk Visual Generator (F9)"))
+        {
             if (ImGui::BeginMenu("Value"))
             {
-				ImGui::SliderInt("Height", &height, 1, 100);
+                ImGui::SliderInt("Height", &height, 1, 100);
                 ImGui::EndMenu();
             }
-		}
-	}
+        }
+    }
     ImGui::PopID();
 }
