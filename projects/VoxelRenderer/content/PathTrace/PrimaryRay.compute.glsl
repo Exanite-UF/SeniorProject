@@ -775,37 +775,41 @@ void main()
 
         vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
 
-        float p = 0.1;
         
-        if(randomVec2(seed).x < p){
-            float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
-            float cosTheta = 1 - randomVec2(seed).x * (1 - cos(maxTheta));
-            float theta = acos(cosTheta);
-            float phi = randomVec2(seed).y * 2 * 3.1415926589;
 
-            vec3 local = vec3(sin(theta), sin(theta), cos(theta)) * vec3(cos(phi), sin(phi), 1);
+        
+        if(dot(normal, sunDirection) > 0.0){
+            float p = 0.1;
 
-            vec3 targetDir = normalize(sunDirection);
+            if(false && randomVec2(seed).x < p){
+                float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
+                float cosTheta = 1 - randomVec2(seed).x * (1 - cos(maxTheta));
+                float theta = acos(cosTheta);
+                float phi = randomVec2(seed).y * 2 * 3.1415926589;
 
-            vec3 up = abs(targetDir.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-            vec3 tangent = normalize(cross(up, targetDir));
-            vec3 bitangent = cross(targetDir, tangent);
+                vec3 local = vec3(sin(theta), sin(theta), cos(theta)) * vec3(cos(phi), sin(phi), 1);
 
-            vec3 dir = normalize(local.x * tangent + local.y * bitangent + local.z * targetDir);
+                vec3 targetDir = normalize(sunDirection);
 
-            nextDirection = vec4(dir, 1 / (p / (2 * 3.1415926589 * (1 - cos(maxTheta)))) * dot(dir.xyz, normal));
-        }else{
-            nextDirection.w = 1 / ((1 - p) / nextDirection.w);
+                vec3 up = abs(targetDir.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+                vec3 tangent = normalize(cross(up, targetDir));
+                vec3 bitangent = cross(targetDir, tangent);
+
+                vec3 dir = normalize(local.x * tangent + local.y * bitangent + local.z * targetDir);
+
+                nextDirection = vec4(dir, 1 / (p / (2 * 3.1415926589 * (1 - cos(maxTheta)))) * dot(dir.xyz, normal));
+            }else{
+                nextDirection.w = 1 / ((1 - p) / nextDirection.w);
+            }
         }
+        
+        
 
         //vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
         setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
-        if(dot(nextDirection.xyz, normal) <= 0){
-            setRayDepth(texelCoord, -1);//Flag the ray as invalid
-        }
         setRayPosition(texelCoord, position); // Set where the ray should start from next
-        setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
+        setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next        
     }
 
 }

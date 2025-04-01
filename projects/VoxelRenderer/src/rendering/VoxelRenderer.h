@@ -113,7 +113,7 @@ private:
     friend class Renderer;
 
     float maxDepth = 10000.0;
-    float sunAngularSize = 5;
+    float sunAngularSize = 20;
     glm::vec3 sunDirection = glm::vec3(1, -1, 1);
     float sunBrightness = 3;
     glm::vec3 skyColor = glm::vec3(40/255.0, 77/255.0, 222/255.0);
