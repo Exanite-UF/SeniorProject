@@ -40,6 +40,8 @@ public:
     [[nodiscard]] uint16_t getVoxelMaterialIndex(const glm::ivec3& position) const;
     void setVoxelMaterialIndex(const glm::ivec3& position, uint16_t materialIndex);
 
+    [[nodiscard]] bool isValidPosition(const glm::ivec3 position) const;
+
     void clearOccupancyMap();
     void clearMaterialMap();
 
