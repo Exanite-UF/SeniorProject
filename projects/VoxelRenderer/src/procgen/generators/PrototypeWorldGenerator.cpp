@@ -8,11 +8,11 @@
 #include <src/procgen/data/FlatArrayData.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
+#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
-#include <PoissonDiskGenerator/PoissonGenerator.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
@@ -67,16 +67,17 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
+    PoissonDiskPointSynthesizer pointSynthesizer(seed);
+    std::vector<glm::vec3> points;
+
     int numPoints = 20;
-    PoissonGenerator::DefaultPRNG PRNG(seed);
-    // Generated points between 0-1
-    const auto points = PoissonGenerator::generatePoissonPoints(numPoints, PRNG, false); 
+    pointSynthesizer.generatePoints(points, numPoints);
 
     // Scale to chunk size
     std::vector<glm::vec3> treeLocations;
     for(int i = 0; i < points.size(); i++)
     {
-        const PoissonGenerator::Point& point = points.at(i);
+        glm::vec3& point = points[i];
         treeLocations.push_back(glm::vec3({std::ceil(point.x * data.getSize().x), std::ceil(point.y * data.getSize().y), 0 }));
     }
     
@@ -140,7 +141,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill); 
 
                 treeIndex++;
-                if(treeIndex < treeLocations.size())
+                if(treeIndex < points.size())
                 {
                     treeLocation = treeLocations.at(treeIndex);
                 } else

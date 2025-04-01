@@ -5,4 +5,6 @@
 // Useful for creating polygons or hulls, possible cyclic paths.
 class PointSynthesizer
 {
+public:
+	virtual void showDebugMenu() = 0;
 };
