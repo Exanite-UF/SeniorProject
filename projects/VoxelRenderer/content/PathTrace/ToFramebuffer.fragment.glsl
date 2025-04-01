@@ -1,5 +1,26 @@
 #version 460 core
 
+
+struct MaterialDefinition
+{
+    vec3 emission;
+    float padding0;
+    vec3 albedo;
+    float padding1;
+    vec3 metallicAlbedo;
+    float padding2;
+    float roughness;
+    float metallic;
+
+    float padding3;
+    float padding4;
+};
+
+uniform ivec3 resolution; //(xSize, ySize, 1)
+uniform vec4 cameraRotation;
+uniform vec3 cameraPosition;
+
+
 layout(std430, binding = 0) buffer AccumulatedLight
 {
     float accumulatedLight[];
@@ -20,35 +41,51 @@ layout(std430, binding = 3) buffer FirstHitMisc
     float firstHitMisc[];
 };
 
-layout(std430, binding = 4) buffer FirstHitEmission
+
+
+layout(std430, binding = 4) buffer FirstHitMaterial
 {
-    float firstHitEmission[];
+    readonly int firstHitMaterial[];
 };
 
-layout(std430, binding = 5) buffer FirstHitAttenuation
+int getFirstHitMaterial(ivec3 coord){
+    int index = 1 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return firstHitMaterial[index];
+}
+
+layout(std430, binding = 5) buffer PrimaryDirection
 {
-    float firstHitAttenuation[];
+    readonly float primaryDirection[];
 };
 
-uniform ivec3 resolution; //(xSize, ySize, 1)
-uniform vec4 cameraRotation;
-uniform vec3 cameraPosition;
-
-vec3 getFirstHitAttenuation(ivec3 coord)
-{
-    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    return vec3(firstHitAttenuation[0 + index], firstHitAttenuation[1 + index], firstHitAttenuation[2 + index]);
+vec3 getPrimaryDirection(ivec3 coord){
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec3(primaryDirection[index + 0], primaryDirection[index + 1], primaryDirection[index + 2]);
 }
 
-vec3 getFirstHitEmission(ivec3 coord)
+layout(std430, binding = 6) buffer SecondaryDirection
 {
-    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    return vec3(firstHitEmission[0 + index], firstHitEmission[1 + index], firstHitEmission[2 + index]);
+    readonly float secondaryDirection[];
+};
+
+vec4 getSecondaryDirection(ivec3 coord){
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec4(secondaryDirection[index + 0], secondaryDirection[index + 1], secondaryDirection[index + 2], secondaryDirection[index + 3]);
 }
+
+// Each entry is 32 bytes long (There are 12 bytes of padding)
+layout(std430, binding = 7) buffer MaterialDefinitions
+{
+    readonly restrict MaterialDefinition materialDefinitions[];
+};
+
+
+
+
 
 vec3 getLight(ivec3 coord)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
 
     return vec3(accumulatedLight[0 + index], accumulatedLight[1 + index], accumulatedLight[2 + index]);
 }
@@ -103,14 +140,128 @@ layout(location = 1) out vec3 posBuffer;
 layout(location = 2) out vec3 normalBuffer;
 layout(location = 3) out vec4 miscBuffer;
 
+
+// For metals baseReflectivity is the metallicAlbedo
+// For non-metals, it is a completely different property (I'm going to go with 1)
+// So this parameter will be a linear interpolation based on the metallic parameter between 1 and the metallicAlbedo
+vec3 fresnel(float dotOfLightAndHalfway, vec3 baseReflectivity)
+{
+    return baseReflectivity + (1 - baseReflectivity) * pow(abs(1 - dotOfLightAndHalfway), 5); // Schlick’s approximation
+}
+
+// This works in tangent space
+// So the normal is (0, 0, 1)
+float geometricBlockingGGX(float roughness, float dotOfLightAndNormal, float dotOfViewAndNormal)
+{
+    dotOfLightAndNormal = abs(dotOfLightAndNormal);
+    dotOfViewAndNormal = abs(dotOfViewAndNormal);
+    float numerator = 2 * dotOfLightAndNormal * dotOfViewAndNormal;
+    float temp = roughness * roughness;
+    float denominator1 = dotOfViewAndNormal * sqrt(temp + (1 - temp) * dotOfLightAndNormal * dotOfLightAndNormal);
+    float denominator2 = dotOfLightAndNormal * sqrt(temp + (1 - temp) * dotOfViewAndNormal * dotOfViewAndNormal);
+    return numerator / (denominator1 + denominator2);
+}
+
+// This works in tangent space
+// So the normal is (0, 0, 1)
+float microfacetDistributionGGX(float roughness, float dotOfNormalAndHalfway)
+{
+    float temp = roughness * roughness;
+    float temp2 = dotOfNormalAndHalfway * dotOfNormalAndHalfway * (temp - 1) + 1;
+    return temp / (3.1415926589 * temp * temp);
+}
+
+vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
+{
+    vec3 halfway = normalize(-view + light); // This is used by several things
+
+    float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway)); // This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+
+    vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
+
+    vec3 fresnelComponent = fresnel(abs(dot(light, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+
+    // This approximates how much light is blocked by microfacets, when looking from different directions
+    float dotOfViewAndNormal = dot(view, normal);
+    float dotOfLightAndNormal = dot(light, normal);
+    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal)); // geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
+
+    // The effect of the metallicAlbedo is performed in the fresenl component
+    // A non metallic material is assumed to not be affected by the fresnel effect
+    // The fresnel component will color the reflected light, and will behave according to an approximation of the fresnel effect
+    // Since albedo is about perfectly diffuse refection color, that would imply no fresnel effect
+    // This does mean that there are two ways to get a colored mirror reflection. (one with and one without the fresnel effect)
+    // It also means that the color of the metallic albedo will show off stronger at sharper angles
+    // We add the metallic value to the albedo to prevent darkening. (this is a multiplier, so not doing this would just make metals black)
+    vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
+
+    return microfacetComponent * fresnelComponent * geometricComponent * albedo / abs(4 * dotOfViewAndNormal * dotOfLightAndNormal);
+}
+
+vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
+{
+
+    vec3 halfway = normalize(-view + light); // This is used by several things
+
+    // This component is part of the sampling distribution pdf, so it cancels out
+    // float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway));//This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
+
+    vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
+
+    vec3 fresnelComponent = fresnel(abs(dot(light, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
+
+    // This approximates how much light is blocked by microfacets, when looking from different directions
+    float dotOfViewAndNormal = dot(view, normal);
+    float dotOfLightAndNormal = dot(light, normal);
+    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal)); // geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
+
+    // The effect of the metallicAlbedo is performed in the fresenl component
+    // A non metallic material is assumed to not be affected by the fresnel effect
+    // The fresnel component will color the reflected light, and will behave according to an approximation of the fresnel effect
+    // Since albedo is about perfectly diffuse refection color, that would imply no fresnel effect
+    // This does mean that there are two ways to get a colored mirror reflection. (one with and one without the fresnel effect)
+    // It also means that the color of the metallic albedo will show off stronger at sharper angles
+    // We add the metallic value to the albedo to prevent darkening. (this is a multiplier, so not doing this would just make metals black)
+    vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
+
+    return fresnelComponent * geometricComponent * albedo / abs(dotOfViewAndNormal);
+}
+
+
+vec3 skyBox(vec3 rayDirection){
+    if(dot(rayDirection, vec3(0, 0, 1)) > 0){
+        return vec3(0, 0.38431, 0.78431);
+    }else{
+        return vec3(8.0/255, 69.0/255, 35.0/255);
+    }
+}
+
 void main()
 {
+    ivec3 texelCoord = ivec3(gl_FragCoord.xy, 0);
+
     ivec3 size = resolution; // imageSize(hitPosition);
     vec3 color = vec3(0);
 
-    vec3 normal = getNormal(ivec3(gl_FragCoord.xy, 0));
-    vec3 position = getPosition(ivec3(gl_FragCoord.xy, 0));
-    vec4 material = getMisc(ivec3(gl_FragCoord.xy, 0));
+    vec3 normal = getNormal(texelCoord);//worldspace
+    vec3 position = getPosition(texelCoord);//worldspace
+    vec4 misc = getMisc(texelCoord);
+
+    
+    
+    
+
+    vec3 light = getLight(texelCoord);//This is the radiance coming from the secondary rays
+    MaterialDefinition voxelMaterial = materialDefinitions[getFirstHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
+
+    vec3 direction = getPrimaryDirection(texelCoord);
+    vec4 nextDirection = getSecondaryDirection(texelCoord);
+
+    //This is the attenuation from the 
+    vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+    // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+
+
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
     // normal is now in camera space
@@ -118,24 +269,16 @@ void main()
     //(0, 1, 0) to the left
     //(0, 0, 1) up
 
-    // Put this into a frame buffer (an actual framebuffer)
-    // And apply an anisotropic blur using the normal
+    vec3 firstHitEmission = vec3(0);
+    if(misc.x >= 0){
+        firstHitEmission = voxelMaterial.emission;
+    }else{
+        brdfValue *= 0;
+        firstHitEmission = skyBox(direction);
+    }
 
-    // position = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), position - cameraPosition);
-    //  At this point position is in camera space
-    //+x is in front of the camera
-    //+y is to the left of the camera
-    //+z is above the camera
-
-    // position = position - cameraPosition;
-
-    ivec3 texelCoord = ivec3(gl_FragCoord.xy, 0);
-
-    vec3 light = getLight(texelCoord);//This is the radiance coming from the secondary rays
-
-
-    fragColor = vec4(light * getFirstHitAttenuation(texelCoord) + getFirstHitEmission(texelCoord), 1);
+    fragColor = vec4(light * brdfValue + firstHitEmission, 1);
     posBuffer = position;
-    miscBuffer = material;
+    miscBuffer = misc;
     normalBuffer = normal;
 }

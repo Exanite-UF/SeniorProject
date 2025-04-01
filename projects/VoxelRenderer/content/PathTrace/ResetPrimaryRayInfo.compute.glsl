@@ -22,16 +22,6 @@ layout(std430, binding = 2) buffer RayMisc
     coherent restrict float rayMisc[];
 };
 
-layout(std430, binding = 3) buffer RayEmission
-{
-    float rayEmission[];
-};
-
-layout(std430, binding = 4) buffer Attenuation
-{
-    float attenuation[];
-};
-
 
 layout(std430, binding = 5) buffer RayStartPosition
 {
@@ -70,14 +60,6 @@ void main()
     rayPosition[index + 0] = rayPos.x;
     rayPosition[index + 1] = rayPos.y;
     rayPosition[index + 2] = rayPos.z;
-
-    rayEmission[index + 0] = 0;
-    rayEmission[index + 1] = 0;
-    rayEmission[index + 2] = 0;
-
-    attenuation[index + 0] = 1;
-    attenuation[index + 1] = 1;
-    attenuation[index + 2] = 1;
 
 
 

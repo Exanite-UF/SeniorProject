@@ -11,7 +11,6 @@ layout(std430, binding = 0) buffer RayMisc
     float rayMisc[];
 };
 
-
 void setRayDepth(ivec3 coord, float value)
 {
     int index = 1 * (coord.x + resolution.x * coord.y); // axis order is x y
@@ -25,11 +24,67 @@ float getRayDepth(ivec3 coord)
 }
 
 
+
+layout(std430, binding = 1) buffer RayDirection
+{
+    float rayDirection[];
+};
+
+vec3 getRayDirection(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
+
+    return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
+}
+
+
+layout(std430, binding = 2) buffer AccumulatedLightIn
+{
+    restrict float accumulatedLightIn[];
+};
+
+
+layout(std430, binding = 3) buffer AccumulatedLightOut
+{
+    restrict float accumulatedLightOut[];
+};
+
+layout(std430, binding = 4) buffer AttenuationIn
+{
+    restrict float attenuationIn[];
+};
+
+vec3 getPriorAttenuation(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
+
+    return vec3(attenuationIn[index + 0], attenuationIn[index + 1], attenuationIn[index + 2]);
+}
+
+void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    accumulatedLightOut[0 + index] = accumulatedLightIn[0 + index] + deltaValue.x;
+    accumulatedLightOut[1 + index] = accumulatedLightIn[1 + index] + deltaValue.y;
+    accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
+}
+
+
+vec3 skyBox(vec3 rayDirection){
+    if(dot(rayDirection, vec3(0, 0, 1)) > 0){
+        return vec3(0, 0.38431, 0.78431);
+    }else{
+        return vec3(8.0/255, 69.0/255, 35.0/255);
+    }
+}
+
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    
+
+    changeLightAccumulation(texelCoord, skyBox(getRayDirection(texelCoord)) * getPriorAttenuation(texelCoord));
+
     if(getRayDepth(texelCoord) > 0){
         setRayDepth(texelCoord, maxDepth);
     }

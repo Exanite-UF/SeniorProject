@@ -93,7 +93,7 @@ void setRayDirection(ivec3 coord, vec3 value)
 }
 
 
-layout(std430, binding = 5) buffer OccupancyMap
+layout(std430, binding = 4) buffer OccupancyMap
 {
     readonly uint occupancyMap[];
 };
@@ -109,7 +109,7 @@ uint getOccupancyByte(ivec3 coord, int mipMapTexture)
     return (occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset);
 }
 
-layout(std430, binding = 6) buffer MaterialMap
+layout(std430, binding = 5) buffer MaterialMap
 {
     readonly uint materialMap[];
 };
@@ -124,6 +124,16 @@ uint getMaterialIndex(ivec3 voxelPosition)
     return (materialMap[i32Index] & (0xffff << bitsShifted)) >> bitsShifted;
 }
 
+// Each entry is 32 bytes long (There are 12 bytes of padding)
+layout(std430, binding = 6) buffer MaterialDefinitions
+{
+    restrict MaterialDefinition materialDefinitions[];
+};
+
+
+
+
+//Used for depth tests
 layout(std430, binding = 7) buffer RayMisc
 {
     float rayMisc[];
@@ -141,42 +151,10 @@ void setRayDepth(ivec3 coord, float value)
     rayMisc[index + 0] = value;
 }
 
-// Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 8) buffer MaterialDefinitions
-{
-    restrict MaterialDefinition materialDefinitions[];
-};
 
 
 
-layout(std430, binding = 10) buffer FirstHitAttenuation
-{
-    float firstHitAttenuation[];
-};
-
-void setFirstHitAttenuation(ivec3 coord, vec3 value)
-{
-    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    firstHitAttenuation[0 + index] = value.x;
-    firstHitAttenuation[1 + index] = value.y;
-    firstHitAttenuation[2 + index] = value.z;
-}
-
-layout(std430, binding = 11) buffer FirstHitEmission
-{
-    restrict float firstHitEmission[];
-};
-
-
-void setFirstHitEmission(ivec3 coord, vec3 value)
-{
-    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    firstHitEmission[0 + index] = value.x;
-    firstHitEmission[1 + index] = value.y;
-    firstHitEmission[2 + index] = value.z;
-}
-
-layout(std430, binding = 12) buffer FirstHitNormal
+layout(std430, binding = 8) buffer FirstHitNormal
 {
     writeonly float firstHitNormal[];
 };
@@ -189,7 +167,7 @@ void setFirstHitNormal(ivec3 coord, vec3 value)
     firstHitNormal[2 + index] = value.z;
 }
 
-layout(std430, binding = 13) buffer FirstHitPosition
+layout(std430, binding = 9) buffer FirstHitPosition
 {
     writeonly float firstHitPosition[];
 };
@@ -202,7 +180,7 @@ void setFirstHitPosition(ivec3 coord, vec3 value)
     firstHitPosition[2 + index] = value.z;
 }
 
-layout(std430, binding = 14) buffer FirstHitMisc
+layout(std430, binding = 10) buffer FirstHitMisc
 {
     writeonly float firstHitMisc[];
 };
@@ -222,9 +200,34 @@ void setFirstHitMotionVector(ivec3 coord, vec2 value)
 
 void setFirstHitHue(ivec3 coord, float value)
 {
-    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y
     firstHitMisc[3 + index] = value.x;
 }
+
+
+layout(std430, binding = 11) buffer FirstHitMaterial
+{
+    writeonly int firstHitMaterial[];
+};
+
+void setFirstHitMaterial(ivec3 coord, int value){
+    int index = 1 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    firstHitMaterial[index] = value;
+}
+
+layout(std430, binding = 12) buffer SecondaryDirection
+{
+    writeonly float secondaryDirection[];
+};
+
+void setSecondaryDirection(ivec3 coord, vec4 value){
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    secondaryDirection[index + 0] = value.x;
+    secondaryDirection[index + 1] = value.y;
+    secondaryDirection[index + 2] = value.z;
+    secondaryDirection[index + 3] = value.w;
+}
+
 
 struct RayHit
 {
@@ -642,6 +645,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
     MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
+    setFirstHitMaterial(texelCoord, int(hit.material));
 
     // Multiply in the texture values
     /*
@@ -667,6 +671,8 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 
     // vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
     // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+
+    setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
 
     vec3 receivedLight = voxelMaterial.emission * attentuation;
 
@@ -748,7 +754,7 @@ void main()
 
     //Set the information that comes from material
     MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
-    setFirstHitEmission(texelCoord, voxelMaterial.emission);
+    setFirstHitMaterial(texelCoord, int(hit.material));
     setFirstHitRoughness(texelCoord, voxelMaterial.roughness);   
     setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));   
 
@@ -769,16 +775,10 @@ void main()
         vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
         vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
+        setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
+
         setRayPosition(texelCoord, position); // Set where the ray should start from next
         setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
-
-        setFirstHitAttenuation(texelCoord, brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
     }
 
-    //setFirstHitEmission(texelCoord, vec3(hit.iterations / 100.0));
-    //setFirstHitEmission(texelCoord, vec3(hit.dist / 1000.0));
-    //setFirstHitEmission(texelCoord, abs(vec3(hit.normal)));
-    //setFirstHitEmission(texelCoord, vec3(hit.hitLocation / 512.0));
-
-    //attempt(texelCoord);
 }

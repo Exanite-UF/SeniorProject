@@ -70,28 +70,17 @@ private:
     GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
 
-    //TODO: implement temporal and spatial resevoir sampling
-    //TODO: Consider adding the position of the resevoir sample to reject bad resamples
-    //bool whichTemporalResevoir = false;
-    //GraphicsBuffer<glm::vec3> resevoirRadiance1;// (r, g, b) Radiance incident on the primary hit location
-    //GraphicsBuffer<glm::vec3> resevoirPosition1;// (x, y, z) Location of the secondary hit
-    //GraphicsBuffer<glm::vec3> resevoirWeights1;// (w, M, W) Weights used for resampling
-    //GraphicsBuffer<glm::vec3> resevoirRadiance2;// (r, g, b)
-    //GraphicsBuffer<glm::vec3> resevoirPosition2;// (x, y, z)
-    //GraphicsBuffer<glm::vec3> resevoirWeights2;// (w, M, W)
-
     //This is reset before every cast
     GraphicsBuffer<float> rayMisc;//(depth)
 
 
     //These are primary ray info
-    GraphicsBuffer<glm::vec3> emissionBuffer;//The emission from the first thing that was hit
-    GraphicsBuffer<glm::vec3> firstHitAttenuationBuffer;
     GraphicsBuffer<glm::vec3> normalBuffer;//world space
     GraphicsBuffer<glm::vec3> positionBuffer;//world space
     GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue)
     GraphicsBuffer<std::int32_t> materialBuffer; //(materialID)
-    GraphicsBuffer<glm::vec3> originalDirection; //(x, y, z)
+    GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z)
+    GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
 
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures

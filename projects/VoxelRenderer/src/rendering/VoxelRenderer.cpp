@@ -52,8 +52,9 @@ void VoxelRenderer::remakeTextures()
     normalBuffer.setSize(size1D);
     positionBuffer.setSize(size1D);
     miscBuffer.setSize(size1D);
-    emissionBuffer.setSize(size1D);
-    firstHitAttenuationBuffer.setSize(size1D);
+    materialBuffer.setSize(size1D);
+    primaryDirection.setSize(size1D);
+    secondaryDirection.setSize(size1D);
 
     // Create a new texture
     rayStartBuffer1.setSize(size1D);
@@ -129,6 +130,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     }
     
     //rayPixel.bind(2);
+    primaryDirection.bind(2);
 
     {
         glUniform3i(glGetUniformLocation(prepareRayTraceFromCameraProgram, "resolution"), size.x, size.y, 1);
@@ -151,6 +153,8 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
         rayStartBuffer2.unbind();
         rayDirectionBuffer2.unbind();
     }
+
+    primaryDirection.unbind();
 
     
 
@@ -296,8 +300,6 @@ void VoxelRenderer::resetPrimaryRayInfo()
     normalBuffer.bind(0);
     positionBuffer.bind(1);
     miscBuffer.bind(2);
-    emissionBuffer.bind(3);
-    firstHitAttenuationBuffer.bind(4);
     if(whichStartBuffer){
         rayStartBuffer1.bind(5);
         rayDirectionBuffer1.bind(6);
@@ -318,8 +320,6 @@ void VoxelRenderer::resetPrimaryRayInfo()
     normalBuffer.unbind();
     positionBuffer.unbind();
     miscBuffer.unbind();
-    emissionBuffer.unbind();
-    firstHitAttenuationBuffer.unbind();
     if(whichStartBuffer){
         rayStartBuffer1.unbind();
         rayDirectionBuffer1.unbind();
@@ -382,6 +382,22 @@ void VoxelRenderer::beforeCast(float maxDepth)
 
     rayMisc.bind(0);
 
+    if(whichStartBuffer){
+        rayDirectionBuffer1.bind(1);
+    }else{
+        rayDirectionBuffer2.bind(1);
+    }
+
+    if(whichAccumulationBuffer){
+        accumulatedLightBuffer1.bind(2);
+        accumulatedLightBuffer2.bind(3);
+        attentuationBuffer1.bind(4);
+    }else{
+        accumulatedLightBuffer1.bind(3);
+        accumulatedLightBuffer2.bind(2);
+        attentuationBuffer2.bind(4);
+    }
+
 
 
     glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
@@ -396,6 +412,20 @@ void VoxelRenderer::beforeCast(float maxDepth)
 
     rayMisc.unbind();
 
+    if(whichStartBuffer){
+        rayDirectionBuffer1.unbind();
+    }else{
+        rayDirectionBuffer2.unbind();
+    }
+
+    accumulatedLightBuffer1.unbind();
+    accumulatedLightBuffer2.unbind();
+
+    if(whichAccumulationBuffer){
+        attentuationBuffer1.unbind();
+    }else{
+        attentuationBuffer2.unbind();
+    }
 
     glUseProgram(0);
 }
@@ -451,21 +481,21 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         rayDirectionBuffer1.bind(3);
     }
     
-    
+    // Occupancy Map = 4
+    // Material Map = 5
 
-    // Occupancy Map = 5
-    // Material Map = 6
+    MaterialManager& materialManager = MaterialManager::getInstance();
+    materialManager.getMaterialDefinitionsBuffer().bind(6); // This binds the material definitions for each material
 
     rayMisc.bind(7);
 
-    MaterialManager& materialManager = MaterialManager::getInstance();
-    materialManager.getMaterialDefinitionsBuffer().bind(8); // This binds the material definitions for each material
 
-    firstHitAttenuationBuffer.bind(10);
-    emissionBuffer.bind(11);
-    normalBuffer.bind(12);
-    positionBuffer.bind(13);
-    miscBuffer.bind(14);
+    normalBuffer.bind(8);
+    positionBuffer.bind(9);
+    miscBuffer.bind(10);
+
+    materialBuffer.bind(11);
+    secondaryDirection.bind(12);
 
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
@@ -492,7 +522,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
             auto& chunk = chunkComponent->getChunk();
 
-            chunk->bindBuffers(5, 6);
+            chunk->bindBuffers(4, 5);
             {
                 const auto chunkSize = chunk->getSize();
 
@@ -541,10 +571,12 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     materialManager.getMaterialDefinitionsBuffer().unbind();
 
 
-    firstHitAttenuationBuffer.unbind();
     normalBuffer.unbind();
     positionBuffer.unbind();
     miscBuffer.unbind();
+
+    materialBuffer.unbind();
+    secondaryDirection.unbind();
 
     whichStartBuffer = !whichStartBuffer;
 
@@ -570,8 +602,14 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     normalBuffer.bind(1);
     positionBuffer.bind(2);
     miscBuffer.bind(3);
-    emissionBuffer.bind(4);
-    firstHitAttenuationBuffer.bind(5);
+
+    materialBuffer.bind(4);
+    primaryDirection.bind(5);
+    secondaryDirection.bind(6);
+
+    MaterialManager& materialManager = MaterialManager::getInstance();
+    materialManager.getMaterialDefinitionsBuffer().bind(7); // This binds the material definitions for each material
+
 
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
@@ -599,8 +637,11 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     normalBuffer.unbind();
     positionBuffer.unbind();
     miscBuffer.unbind();
-    emissionBuffer.unbind();
-    firstHitAttenuationBuffer.unbind();
+
+    materialBuffer.unbind();
+    primaryDirection.unbind();
+    secondaryDirection.unbind();
+    materialManager.getMaterialDefinitionsBuffer().unbind();
 
     glUseProgram(0);
 }
