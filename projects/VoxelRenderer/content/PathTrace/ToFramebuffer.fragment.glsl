@@ -275,7 +275,7 @@ void main()
     const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
     for(int i = -radius; i <= radius; i++){
         for(int j = -radius; j <= radius; j++){
-            ivec3 coord = texelCoord + 2 * ivec3(i, j, 0);// * abs(ivec3(i, j, 0));
+            ivec3 coord = texelCoord + ivec3(i, j, 0);// * abs(ivec3(i, j, 0));
 
             //If this is offscreen
             if(coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y){
