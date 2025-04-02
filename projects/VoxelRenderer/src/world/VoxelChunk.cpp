@@ -12,14 +12,6 @@ VoxelChunk::VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData)
 {
     this->currentNoiseTime = 0;
 
-    // Initialize chunk size and contents
-    // Chunk size must be a power of 2
-    size = {
-        1 << glm::log2(size.x - 1) + 1,
-        1 << glm::log2(size.y - 1) + 1,
-        1 << glm::log2(size.z - 1) + 1
-    };
-
     setSize(size);
 
     if (shouldGeneratePlaceholderData)
@@ -54,8 +46,14 @@ const GraphicsBuffer<uint16_t>& VoxelChunk::getMaterialMap()
 
 void VoxelChunk::setSize(glm::ivec3 size)
 {
-    // The size is validated by VoxelChunkUtility below
-    this->size = size;
+    ZoneScoped;
+
+    // Chunk size must be a power of 2
+    this->size = {
+        1 << glm::log2(size.x - 1) + 1,
+        1 << glm::log2(size.y - 1) + 1,
+        1 << glm::log2(size.z - 1) + 1
+    };
 
     occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
