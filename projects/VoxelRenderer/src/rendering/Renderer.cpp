@@ -351,8 +351,12 @@ void Renderer::reproject(float fov)
 
     // Do the render
 
-    //reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
-    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
+    if(isRenderingOffscreen){
+        reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
+    }else{
+        reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
+    }
+    
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);
@@ -454,7 +458,7 @@ void Renderer::makeOutputTextures()
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Remake the material texture
+    // Remake the misc texture
     glDeleteTextures(1, &outputMiscTexture);
     glGenTextures(1, &outputMiscTexture);
     glBindTexture(GL_TEXTURE_2D, outputMiscTexture);
@@ -464,7 +468,7 @@ void Renderer::makeOutputTextures()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 }
