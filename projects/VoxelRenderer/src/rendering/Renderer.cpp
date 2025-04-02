@@ -297,7 +297,6 @@ void Renderer::_render()
         voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV);
 
         // SVGF
-        // TODO: enable SVGF
         svgf->lock();
         svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
         svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
