@@ -85,8 +85,8 @@ void Renderer::makeFramebuffers()
     owningThread = std::this_thread::get_id();
     isSizeDirtyThread = false;
 
-    //This shouldn't be here (The offscreen context already sets the view port)
-    //glViewport(0, 0, renderResolution.x, renderResolution.y); // Adjust the viewport of the offscreen context
+    // This shouldn't be here (The offscreen context already sets the view port)
+    // glViewport(0, 0, renderResolution.x, renderResolution.y); // Adjust the viewport of the offscreen context
 }
 
 void Renderer::swapDisplayBuffer()
@@ -268,7 +268,8 @@ void Renderer::render(float fov)
 
 void Renderer::_render()
 {
-    if(_isRenderingPaused){
+    if (_isRenderingPaused)
+    {
         return;
     }
 
@@ -355,12 +356,14 @@ void Renderer::reproject(float fov)
 
     // Do the render
 
-    if(_isRenderingOffscreen || _isRenderingPaused){
+    if (_isRenderingOffscreen || _isRenderingPaused)
+    {
         reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
-    }else{
+    }
+    else
+    {
         reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
     }
-    
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);

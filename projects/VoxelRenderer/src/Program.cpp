@@ -315,7 +315,6 @@ void Program::run()
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
 
-
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
         const char* frameId = "Main Loop";
@@ -638,7 +637,7 @@ void Program::run()
 
         // Render
         {
-            renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));            
+            renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));
 
             renderer.pollCamera(camera);
             renderer.render();

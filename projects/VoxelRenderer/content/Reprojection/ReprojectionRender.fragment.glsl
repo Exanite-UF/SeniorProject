@@ -3,7 +3,6 @@
 layout(binding = 0) uniform sampler2D positionTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
 
-
 in vec2 uv;
 in float isSkyBox;
 in vec3 color;
@@ -24,12 +23,12 @@ void main()
     vec3 pos = texture(positionTexture, uv).xyz;
 
     float temp = length(pos - posOut) / distance1;
-    if(temp > 0.1 && isSkyBox == 0){
+    if (temp > 0.1 && isSkyBox == 0)
+    {
         alpha = 0;
     }
 
-
-    //fragColor = vec4(vec3(alpha), 1);
+    // fragColor = vec4(vec3(alpha), 1);
     fragColor = vec4(color * alpha, 1);
     posBuffer = pos;
     normalBuffer = normal;

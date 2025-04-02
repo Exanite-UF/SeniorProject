@@ -66,12 +66,15 @@ void main()
 
     normal = texture(normalTexture, aPos.xy).xyz;
 
-    if(length(normal) < 0.5){
+    if (length(normal) < 0.5)
+    {
         isSkyBox = 1;
-    }else{
+    }
+    else
+    {
         isSkyBox = 0;
     }
-    
+
     color = texture(sourceTexture, aPos.xy).xyz;
     misc = texture(miscTexture, aPos.xy);
 

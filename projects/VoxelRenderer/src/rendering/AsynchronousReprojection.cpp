@@ -117,8 +117,8 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_GREATER);
-        glDepthMask(GL_TRUE);//Make the depth buffer writable
-        
+        glDepthMask(GL_TRUE); // Make the depth buffer writable
+
         GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers(4, drawBuffers);
 
@@ -129,7 +129,6 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
 
         glDisable(GL_DEPTH_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        
     }
     glBindVertexArray(0);
 
@@ -147,7 +146,6 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
 
     glUseProgram(0);
 }
-
 
 void AsyncReprojectionRenderer::bypass(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const GLuint& inputTexture)
 {
