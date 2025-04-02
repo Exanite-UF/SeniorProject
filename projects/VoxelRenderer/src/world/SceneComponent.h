@@ -8,6 +8,7 @@
 #include <src/gameobjects/Component.h>
 #include <src/world/CameraComponent.h>
 #include <src/world/VoxelChunkComponent.h>
+#include <src/world/SkyboxComponent.h>
 
 class SceneComponent : public Component
 {
@@ -30,6 +31,8 @@ private:
 
     // Speeds up searching for world chunks by chunk position
     std::unordered_map<glm::ivec3, std::shared_ptr<VoxelChunkComponent>> worldChunksByChunkPosition {};
+
+    std::shared_ptr<SkyboxComponent> skybox;
 
     // General use mutex
     // Readers should acquire shared access
