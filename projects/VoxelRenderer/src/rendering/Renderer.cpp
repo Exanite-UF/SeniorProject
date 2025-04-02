@@ -257,7 +257,6 @@ void Renderer::render(float fov)
         _render();
     }
 
-    glDepthFunc(GL_GREATER);
     reproject(fov);
     postProcess();
 
@@ -343,24 +342,14 @@ void Renderer::reproject(float fov)
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, outputColorTexture, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, outputPositionTexture, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, outputNormalTexture, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, outputMiscTexture, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, outputDepthTexture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Do the render
-    // reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
+    //reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
     reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
 
     // Delete the framebuffer
@@ -383,6 +372,7 @@ void Renderer::postProcess()
 void Renderer::finalDisplay()
 {
     std::scoped_lock lock(outputLock);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(drawTextureProgram);
 

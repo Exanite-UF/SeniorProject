@@ -116,14 +116,20 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
 
     glBindVertexArray(VAO);
     {
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_GREATER);
+
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClearDepth(0); // Reverse-Z
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers(4, drawBuffers);
 
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glDisable(GL_DEPTH_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
     }
     glBindVertexArray(0);
 
@@ -133,90 +139,15 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     glUseProgram(0);
 }
 
-void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& newMiscTexture,
-    const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const glm::vec3& cameraPosition)
-{
-    ZoneScoped;
-
-    // This runs in the offscreen context
-
-    // This is where combination occurs
-
-    // Combine 1
-    {
-        glUseProgram(combineProgram);
-
-        // Need to render to a custom framebuffer, that switches its render target every time
-        GLuint framebuffer;
-        glGenFramebuffers(1, &framebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        // Bind new data
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, newColorTexture, 0);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, oldColorTexture);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-        float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, newMiscTexture);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, oldPositionTexture);
-
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, newPositionTexture);
-
-        glUniform3fv(glGetUniformLocation(combineProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
-        glUniform2i(glGetUniformLocation(combineProgram, "resolution"), size.x, size.y);
-
-        {
-            GLuint emptyVertexArray;
-            glGenVertexArrays(1, &emptyVertexArray);
-
-            glBindVertexArray(emptyVertexArray);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            // Tell opengl to draw to the texture in the framebuffer
-            const GLenum buffers[] = { GL_COLOR_ATTACHMENT0 };
-            glDrawBuffers(1, buffers);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-
-            glDisable(GL_BLEND);
-            glBindVertexArray(0);
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glDeleteFramebuffers(1, &framebuffer);
-
-            glDeleteVertexArrays(1, &emptyVertexArray);
-        }
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glUseProgram(0);
-    }
-
-    glFinish();
-    currentBuffer++;
-}
 
 void AsyncReprojectionRenderer::bypass(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const GLuint& inputTexture)
 {

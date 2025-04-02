@@ -3,6 +3,7 @@
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 uniform ivec3 resolution; //(xSize, ySize, 1)
+uniform float maxDepth;
 
 //[x, y, z]
 layout(std430, binding = 0) buffer RayNormal
@@ -55,7 +56,7 @@ void main()
     rayNormal[index + 1] = 0;
     rayNormal[index + 2] = 0;
 
-    vec3 rayPos = getRayDirection(texelCoord) * 10000000.0 + getRayPosition(texelCoord);
+    vec3 rayPos = getRayDirection(texelCoord) * maxDepth + getRayPosition(texelCoord);
     rayPosition[index + 0] = rayPos.x;
     rayPosition[index + 1] = rayPos.y;
     rayPosition[index + 2] = rayPos.z;

@@ -341,6 +341,7 @@ void VoxelRenderer::resetPrimaryRayInfo()
     }
 
     glUniform3i(glGetUniformLocation(resetPrimaryRayInfoProgram, "resolution"), size.x, size.y, 1);
+    glUniform1f(glGetUniformLocation(resetPrimaryRayInfoProgram, "maxDepth"), maxDepth);
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, 1);

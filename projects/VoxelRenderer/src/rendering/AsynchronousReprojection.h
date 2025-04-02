@@ -49,8 +49,5 @@ public:
     void render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
         const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& miscTexture);
 
-    void combineBuffers(const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& newMiscTexture,
-        const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const glm::vec3& cameraPosition);
-
     void bypass(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const GLuint& inputTexture);
 };

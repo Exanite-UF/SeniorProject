@@ -631,10 +631,7 @@ void Program::run()
 
         // Render
         {
-            renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));
-
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glDepthFunc(GL_GREATER);
+            renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));            
 
             renderer.pollCamera(camera);
             renderer.render();
