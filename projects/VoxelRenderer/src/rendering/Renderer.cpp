@@ -19,7 +19,7 @@ void Renderer::offscreenRenderingFunc()
 
     offscreenContext->makeContextCurrent();
 
-    while (isRenderingOffscreen)
+    while (_isRenderingOffscreen)
     {
         const char* frameId = "Render offscreen";
         FrameMarkStart(frameId);
@@ -253,7 +253,7 @@ void Renderer::render(float fov)
     const char* frameId = "Render to screen";
     FrameMarkStart(frameId);
 
-    if (!isRenderingOffscreen)
+    if (!_isRenderingOffscreen)
     {
         _render();
     }
@@ -268,6 +268,10 @@ void Renderer::render(float fov)
 
 void Renderer::_render()
 {
+    if(_isRenderingPaused){
+        return;
+    }
+
     if (isSizeDirtyThread)
     {
         makeFramebuffers();
@@ -278,7 +282,7 @@ void Renderer::_render()
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         std::scoped_lock lock(cameraMtx);
 
-        if (isRenderingOffscreen)
+        if (_isRenderingOffscreen)
         {
             lastRenderedFOV += overdrawFOV;
             lastRenderedFOV = std::min(lastRenderedFOV, maxFov);
@@ -351,7 +355,7 @@ void Renderer::reproject(float fov)
 
     // Do the render
 
-    if(isRenderingOffscreen){
+    if(_isRenderingOffscreen || _isRenderingPaused){
         reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
     }else{
         reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
@@ -475,19 +479,19 @@ void Renderer::makeOutputTextures()
 
 bool Renderer::getIsAsynchronousReprojectionEnabled()
 {
-    return isRenderingOffscreen;
+    return _isRenderingOffscreen;
 }
 
 void Renderer::startAsynchronousReprojection()
 {
-    isRenderingOffscreen = true;
+    _isRenderingOffscreen = true;
     isSizeDirtyThread = true;
     offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
 }
 
 void Renderer::stopAsynchronousReprojection()
 {
-    isRenderingOffscreen = false;
+    _isRenderingOffscreen = false;
     if (offscreenThread.joinable())
     {
         offscreenThread.join();
@@ -497,7 +501,7 @@ void Renderer::stopAsynchronousReprojection()
 
 void Renderer::toggleAsynchronousReprojection()
 {
-    if (isRenderingOffscreen)
+    if (_isRenderingOffscreen)
     {
         stopAsynchronousReprojection();
     }
@@ -561,4 +565,19 @@ float Renderer::getCurrentCameraFOV()
 glm::ivec2 Renderer::getUpscaleResolution()
 {
     return outputResolution;
+}
+
+void Renderer::toggleRendering()
+{
+    _isRenderingPaused = !_isRenderingPaused;
+}
+
+bool Renderer::isRenderingPaused()
+{
+    return _isRenderingPaused;
+}
+
+bool Renderer::isRenderingAsynchronously()
+{
+    return _isRenderingOffscreen;
 }

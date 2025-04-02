@@ -315,6 +315,7 @@ void Program::run()
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
 
+
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
         const char* frameId = "Main Loop";
@@ -416,6 +417,11 @@ void Program::run()
             if (input->isKeyPressed(GLFW_KEY_G))
             {
                 renderer.toggleAsynchronousReprojection();
+            }
+
+            if (input->isKeyPressed(GLFW_KEY_B))
+            {
+                renderer.toggleRendering();
             }
 
             if (input->isKeyPressed(GLFW_KEY_V))
@@ -610,6 +616,7 @@ void Program::run()
                         ImGui::Text("T - Change Noise Type");
                         ImGui::Text("G - Toggle Reprojection");
                         ImGui::Text("V - Toggle Bounce Count");
+                        ImGui::Text("B - Pause/Unpause Rendering");
                         ImGui::Text("Mouse Scroll - Change Move Speed");
                         ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
                         ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");

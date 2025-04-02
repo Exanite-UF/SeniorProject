@@ -43,8 +43,9 @@ private:
     std::shared_ptr<GlfwContext> offscreenContext = nullptr;
 
     std::thread offscreenThread;
-    bool isRenderingOffscreen = false;
+    bool _isRenderingOffscreen = false;
     bool isSizeDirtyThread = false;
+    bool _isRenderingPaused = false;
 
     void offscreenRenderingFunc();
 
@@ -181,4 +182,9 @@ public:
     float getCurrentCameraFOV();
 
     glm::ivec2 getUpscaleResolution();
+
+    void toggleRendering();
+    bool isRenderingPaused();
+
+    bool isRenderingAsynchronously();
 };
