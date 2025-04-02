@@ -121,9 +121,9 @@ void Program::run()
     if (true)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
-        for (int x = 0; x < 1; x++)
+        for (int x = 0; x < 3; x++)
         {
-            for (int y = 0; y < 1; ++y)
+            for (int y = 0; y < 3; ++y)
             {
                 auto voxelChunkObject = sceneObject->createChildObject(std::format("Chunk ({}, {})", x, y));
 
@@ -399,10 +399,10 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_V))
             {
-                if(numberOfBounces == 2){
-                    numberOfBounces = 1;
-                }else{
+                if(numberOfBounces == 3){
                     numberOfBounces = 2;
+                }else{
+                    numberOfBounces = 3;
                 }
                 
                 renderer.setBounces(numberOfBounces);
