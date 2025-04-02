@@ -232,8 +232,15 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
                 continue;
             }
 
+            // Check getExistsOnGpu before locking as an optimization
+            if (!chunkComponent->getExistsOnGpu())
+            {
+                continue;
+            }
+
             std::shared_lock lock(chunkComponent->getMutex());
 
+            // Check again to confirm the chunk data actually exists before using it
             if (!chunkComponent->getExistsOnGpu())
             {
                 continue;
