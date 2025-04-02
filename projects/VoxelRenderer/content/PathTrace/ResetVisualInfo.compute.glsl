@@ -68,20 +68,6 @@ void setLightAccumulation(ivec3 coord, vec3 value)
     accumulatedLight2[2 + index] = value.z;
 }
 
-void setSkyBox(ivec3 coord, vec3 value)
-{
-    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-
-    accumulatedLight1[0 + index] += value.x;
-    accumulatedLight1[1 + index] += value.y;
-    accumulatedLight1[2 + index] += value.z;
-}
-
-
-float sunAngularSize = 20; // The angle of the sun in diameter
-float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
-vec3 sunDir = normalize(vec3(1, -1, 1));
-float sunBrightness = 5;
 
 void main()
 {

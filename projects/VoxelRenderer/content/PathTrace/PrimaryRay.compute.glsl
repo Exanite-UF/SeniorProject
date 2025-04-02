@@ -781,7 +781,7 @@ void main()
         if(dot(normal, sunDirection) > 0.0){
             float p = 0.1;
 
-            if(false && randomVec2(seed).x < p){
+            if(randomVec2(seed).x < p){
                 float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
                 float cosTheta = 1 - randomVec2(seed).x * (1 - cos(maxTheta));
                 float theta = acos(cosTheta);

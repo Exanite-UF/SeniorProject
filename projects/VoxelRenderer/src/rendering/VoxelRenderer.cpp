@@ -267,10 +267,10 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
     glUseProgram(0);
 
+    afterCast(maxDepth);
+
     whichStartBuffer = !whichStartBuffer;
     whichAccumulationBuffer = !whichAccumulationBuffer;
-
-    afterCast(maxDepth);
 }
 
 void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV)
@@ -370,7 +370,7 @@ void VoxelRenderer::resetVisualInfo(float maxDepth)
     glUseProgram(0);
 }
 
-void VoxelRenderer::beforeCast(float maxDepth)
+void VoxelRenderer::beforeCast(float maxDepth, bool shouldDrawSkybox)
 {
     ZoneScoped;
 
@@ -382,11 +382,32 @@ void VoxelRenderer::beforeCast(float maxDepth)
 
     rayMisc.bind(0);
 
+    if(whichStartBuffer){
+        rayDirectionBuffer1.bind(1);
+    }else{
+        rayDirectionBuffer2.bind(1);
+    }
 
+    if(whichAccumulationBuffer){
+        accumulatedLightBuffer1.bind(2);
+        accumulatedLightBuffer2.bind(3);
+        attentuationBuffer1.bind(4);
+    }else{
+        accumulatedLightBuffer1.bind(3);
+        accumulatedLightBuffer2.bind(2);
+        attentuationBuffer2.bind(4);
+    }
 
 
     glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
     glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "sunAngularSize"), sunAngularSize);
+    glUniform3f(glGetUniformLocation(beforeCastProgram, "sunDir"), sunDirection.x, sunDirection.y, sunDirection.z);
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "sunBrightness"), sunBrightness);
+    glUniform3f(glGetUniformLocation(beforeCastProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
+    glUniform3f(glGetUniformLocation(beforeCastProgram, "groundColor"), groundColor.x, groundColor.y, groundColor.z);
+    glUniform1i(glGetUniformLocation(beforeCastProgram, "shouldDrawSkybox"), shouldDrawSkybox);
+
     {
         glDispatchCompute(workGroupsX, workGroupsY, 1);
 
@@ -395,6 +416,21 @@ void VoxelRenderer::beforeCast(float maxDepth)
     }
 
     rayMisc.unbind();
+
+    if(whichStartBuffer){
+        rayDirectionBuffer1.unbind();
+    }else{
+        rayDirectionBuffer2.unbind();
+    }
+
+    accumulatedLightBuffer1.unbind();
+    accumulatedLightBuffer2.unbind();
+
+    if(whichAccumulationBuffer){
+        attentuationBuffer1.unbind();
+    }else{
+        attentuationBuffer2.unbind();
+    }
 
     glUseProgram(0);
 }
@@ -411,31 +447,12 @@ void VoxelRenderer::afterCast(float maxDepth, bool shouldDrawSkybox)
 
     rayMisc.bind(0);
 
-    if(!whichStartBuffer){
-        rayDirectionBuffer1.bind(1);
-    }else{
-        rayDirectionBuffer2.bind(1);
-    }
-
-    if(whichAccumulationBuffer){
-        accumulatedLightBuffer1.bind(2);
-        accumulatedLightBuffer2.bind(3);
-        attentuationBuffer1.bind(4);
-    }else{
-        accumulatedLightBuffer1.bind(3);
-        accumulatedLightBuffer2.bind(2);
-        attentuationBuffer2.bind(4);
-    }
+    
     
 
     glUniform3i(glGetUniformLocation(afterCastProgram, "resolution"), size.x, size.y, 1);
     glUniform1f(glGetUniformLocation(afterCastProgram, "maxDepth"), maxDepth);
-    glUniform1f(glGetUniformLocation(afterCastProgram, "sunAngularSize"), sunAngularSize);
-    glUniform3f(glGetUniformLocation(afterCastProgram, "sunDir"), sunDirection.x, sunDirection.y, sunDirection.z);
-    glUniform1f(glGetUniformLocation(afterCastProgram, "sunBrightness"), sunBrightness);
-    glUniform3f(glGetUniformLocation(afterCastProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
-    glUniform3f(glGetUniformLocation(afterCastProgram, "groundColor"), groundColor.x, groundColor.y, groundColor.z);
-    glUniform1i(glGetUniformLocation(afterCastProgram, "shouldDrawSkybox"), shouldDrawSkybox);
+    
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, 1);
@@ -446,20 +463,6 @@ void VoxelRenderer::afterCast(float maxDepth, bool shouldDrawSkybox)
 
     rayMisc.unbind();
 
-    if(!whichStartBuffer){
-        rayDirectionBuffer1.unbind();
-    }else{
-        rayDirectionBuffer2.unbind();
-    }
-
-    accumulatedLightBuffer1.unbind();
-    accumulatedLightBuffer2.unbind();
-
-    if(whichAccumulationBuffer){
-        attentuationBuffer1.unbind();
-    }else{
-        attentuationBuffer2.unbind();
-    }
 
     glUseProgram(0);
 }
@@ -586,11 +589,13 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     materialBuffer.unbind();
     secondaryDirection.unbind();
 
+    afterCast(maxDepth, false);
+
     whichStartBuffer = !whichStartBuffer;
 
     glUseProgram(0);
 
-    afterCast(maxDepth);
+    
 }
 
 void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)

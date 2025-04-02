@@ -26,11 +26,83 @@ float getRayDepth(ivec3 coord)
 
 
 
+
+layout(std430, binding = 1) buffer RayDirection
+{
+    float rayDirection[];
+};
+
+vec3 getRayDirection(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
+
+    return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
+}
+
+
+layout(std430, binding = 2) buffer AccumulatedLightIn
+{
+    readonly restrict float accumulatedLightIn[];
+};
+
+
+layout(std430, binding = 3) buffer AccumulatedLightOut
+{
+    writeonly float accumulatedLightOut[];
+};
+
+layout(std430, binding = 4) buffer AttenuationIn
+{
+    restrict float attenuationIn[];
+};
+
+vec3 getPriorAttenuation(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
+
+    return vec3(attenuationIn[index + 0], attenuationIn[index + 1], attenuationIn[index + 2]);
+}
+
+void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
+    accumulatedLightOut[0 + index] = accumulatedLightIn[0 + index] + deltaValue.x;
+    accumulatedLightOut[1 + index] = accumulatedLightIn[1 + index] + deltaValue.y;
+    accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
+}
+
+uniform bool shouldDrawSkybox;
+uniform float sunAngularSize; // The angle of the sun in diameter
+float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
+uniform vec3 sunDir;
+uniform float sunBrightness;
+uniform vec3 skyColor;
+uniform vec3 groundColor;
+
+vec3 skyBox(vec3 rayDirection){
+    if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+        return sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1);
+    }else if(dot(rayDirection, vec3(0, 0, 1)) > 0){
+        return skyColor;
+    }else{
+        return groundColor;
+    }
+}
+
+
+
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    if(getRayDepth(texelCoord) > 0){
-        setRayDepth(texelCoord, maxDepth);        
+    if(getRayDepth(texelCoord) >= 0){
+        setRayDepth(texelCoord, maxDepth);
+
+        vec3 attenuation = getPriorAttenuation(texelCoord);
+        if(shouldDrawSkybox){
+            changeLightAccumulation(texelCoord, skyBox(getRayDirection(texelCoord)) * attenuation);
+        }     
+    }else{
+        changeLightAccumulation(texelCoord, vec3(0));
     }
 }

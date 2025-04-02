@@ -113,8 +113,8 @@ private:
     friend class Renderer;
 
     float maxDepth = 10000.0;
-    float sunAngularSize = 20;
-    glm::vec3 sunDirection = glm::vec3(1, -1, 1);
+    float sunAngularSize = 5;
+    glm::vec3 sunDirection = glm::vec3(1, -0.5, 1);
     float sunBrightness = 3;
     glm::vec3 skyColor = glm::vec3(40/255.0, 77/255.0, 222/255.0);
     glm::vec3 groundColor = glm::vec3(61/255.0, 150/255.0, 11/255.0) * 0.1f;
@@ -131,7 +131,7 @@ public:
     void resetPrimaryRayInfo();
 
     void resetVisualInfo(float maxDepth);
-    void beforeCast(float maxDepth);
+    void beforeCast(float maxDepth, bool shouldDrawSkybox = true);
     void afterCast(float maxDepth, bool shouldDrawSkybox = true);
 
     void executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV);
