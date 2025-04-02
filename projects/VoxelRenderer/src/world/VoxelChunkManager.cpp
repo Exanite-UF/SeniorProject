@@ -536,12 +536,15 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
     }
 
     // Case 1: Check if vertices are on screen
+    bool isAnyInFrontOfCameraPlane = false;
     {
         ZoneScopedN("Case 1 visibility - Vertices");
 
         for (int i = 0; i < vertices.size(); ++i)
         {
             auto vertex = vertices[i];
+
+            isAnyInFrontOfCameraPlane |= vertex.z < 0;
             if (vertex.z < 0 && vertex.x > -1 && vertex.x < 1 && vertex.y > -1 && vertex.y < 1)
             {
                 if (isDebugging)
@@ -556,9 +559,17 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
         }
     }
 
+    // All vertices are behind camera
+    // This guarantees that the chunk is not visible so we stop here
+    if (!isAnyInFrontOfCameraPlane)
+    {
+        return false;
+    }
+
     // Case 2: Case 1 failed. Check if edges are on screen.
     // This is done by checking if the edge intersects a diagonal of the screen.
     // This uses an O(n^2) check where n is exactly 8
+    int lineIntersectionCount = 0;
     {
         ZoneScopedN("Case 2 visibility - Edges");
 
@@ -574,12 +585,6 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
 
                 auto vertex1 = vertices[i];
                 auto vertex2 = vertices[j];
-
-                if (vertex1.z > 0 || vertex2.z > 0)
-                {
-                    // Skip if either point is behind the camera
-                    continue;
-                }
 
                 bool isOnScreenSelf = false;
                 float m = (vertex1.y - vertex2.y) / (vertex1.x - vertex2.x);
@@ -613,21 +618,28 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
 
                 if (isDebugging)
                 {
+                    bool isBehindCamera = vertex1.z > 0 || vertex2.z > 0;
+
                     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
                     auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
                     auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
                     auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
-                    auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb(isOnScreenSelf ? "#00ff00" : "#ff0000")));
+                    auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb(isBehindCamera ? "#ffff00" : "#00ff00")));
 
                     drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 5);
                     if (isOnScreenSelf)
                     {
-                        ImGui::Text("%s", std::format("Line intersects screen!").c_str());
+                        lineIntersectionCount++;
                     }
                 }
             }
         }
+    }
+
+    if (isDebugging && lineIntersectionCount > 0)
+    {
+        ImGui::Text("%s", std::format("Line intersection count: {}", lineIntersectionCount).c_str());
     }
 
     // Case 3: Case 2 failed. Check if face is on screen.
