@@ -136,39 +136,51 @@ void VoxelChunkData::writeTo(VoxelChunk& chunk)
 {
     ZoneScoped;
 
+    constexpr int sleepTime = Constants::VoxelChunk::chunkUploadSleepTimeMs;
+    constexpr uint64_t uploadChunkSize = Constants::VoxelChunk::maxChunkUploadSizeBytes;
+
     if (chunk.getSize() != data.size)
     {
         throw std::runtime_error("Target chunk does not have the same size");
     }
 
+    // Upload in chunks to prevent blocking the OpenGL driver
     {
-        ZoneScopedN("Occupancy data upload");
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-        chunk.updateMipMaps();
-
+        uint64_t byteCount = data.occupancyMap.size();
+        int uploadChunkCount = (byteCount + uploadChunkSize - 1) / uploadChunkSize;
+        for (int i = 0; i < uploadChunkCount; ++i)
         {
-            ZoneScopedN("Sleep");
+            ZoneScopedN("Chunked occupancy data upload");
 
-            glFlush();
-            std::this_thread::sleep_for(std::chrono::milliseconds(Constants::VoxelChunk::chunkUploadSleepTimeMs));
+            uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
+            int offset = i * uploadChunkSize;
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.occupancyMap.data()) + offset);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+            {
+                ZoneScopedN("Sleep");
+
+                glFlush();
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+            }
         }
     }
 
-    // Upload in 32 MB sized chunks
-    {
-        constexpr int uploadChunkSize = Constants::VoxelChunk::maxChunkUploadSizeBytes;
+    // Update mipmaps
+    // This doesn't block the OpenGL
+    chunk.updateMipMaps();
 
-        int byteCount = data.materialMap.size() * 2;
-        int uploadChunkCount = byteCount / uploadChunkSize;
+    // Upload in chunks to prevent blocking the OpenGL driver
+    {
+        uint64_t byteCount = data.materialMap.size() * 2;
+        int uploadChunkCount = (byteCount + uploadChunkSize - 1) / uploadChunkSize;
         for (int i = 0; i < uploadChunkCount; ++i)
         {
             ZoneScopedN("Chunked material data upload");
 
-            int remainingByteCount = byteCount - i * uploadChunkSize;
+            uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
             int offset = i * uploadChunkSize;
 
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);

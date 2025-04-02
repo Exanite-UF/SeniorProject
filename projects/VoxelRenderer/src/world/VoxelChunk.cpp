@@ -5,6 +5,7 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkUtility.h>
+#include <tracy/Tracy.hpp>
 
 #include "VoxelChunkResources.h"
 
@@ -63,6 +64,8 @@ void VoxelChunk::setSize(glm::ivec3 size)
 
 void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise, float fillAmount)
 {
+    ZoneScoped;
+
     auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto makeNoiseComputeProgram = voxelWorldManager.makeNoiseComputeProgram;
 
@@ -93,6 +96,8 @@ void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise
 
 void VoxelChunk::updateMipMaps()
 {
+    ZoneScoped;
+
     auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto makeMipMapComputeProgram = voxelWorldManager.makeMipMapComputeProgram;
 
@@ -126,6 +131,8 @@ void VoxelChunk::updateMipMaps()
 
 void VoxelChunk::generatePlaceholderMaterialMap()
 {
+    ZoneScoped;
+
     auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto assignMaterialComputeProgram = voxelWorldManager.assignMaterialComputeProgram;
 
@@ -148,6 +155,8 @@ void VoxelChunk::generatePlaceholderMaterialMap()
 
 void VoxelChunk::generatePlaceholderData(double deltaTime, bool useRandomNoise, float fillAmount)
 {
+    ZoneScoped;
+
     generateNoiseOccupancyMap(currentNoiseTime, useRandomNoise, fillAmount);
     updateMipMaps();
 

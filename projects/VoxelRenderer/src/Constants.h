@@ -22,7 +22,7 @@ public:
         // even when the upload is done from a separate OpenGL context on a separate thread
         // This is used to break up the upload into chunks
         static constexpr int chunkUploadSleepTimeMs = 10;
-        static constexpr uint32_t maxChunkUploadSizeBytes = 32 * 1024 * 1024;
+        static constexpr uint64_t maxChunkUploadSizeBytes = 32 * 1024 * 1024;
     };
 
     class VoxelChunkComponent
