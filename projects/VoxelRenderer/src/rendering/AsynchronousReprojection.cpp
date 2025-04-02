@@ -8,7 +8,6 @@
 #include <tracy/Tracy.hpp>
 
 GLuint AsyncReprojectionRenderer::renderProgram {};
-GLuint AsyncReprojectionRenderer::combineProgram {};
 GLuint AsyncReprojectionRenderer::bypassProgram {};
 
 void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
@@ -68,7 +67,6 @@ void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 AsyncReprojectionRenderer::AsyncReprojectionRenderer()
 {
     renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader);
-    combineProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::combineReprojectionFragmentShader);
     bypassProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::bypassReprojectionFragmentShader);
 
     glGenVertexArrays(1, &VAO);
@@ -116,17 +114,19 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
 
     glBindVertexArray(VAO);
     {
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_GREATER);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        glClearDepth(0); // Reverse-Z
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        glDepthMask(GL_TRUE);//Make the depth buffer writable
+        
         GLenum drawBuffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers(4, drawBuffers);
 
+        glClearDepth(0); // Reverse-Z
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
         glDisable(GL_DEPTH_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         

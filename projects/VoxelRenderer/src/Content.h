@@ -35,7 +35,6 @@ public:
     // Reprojection
     constexpr static std::string_view renderReprojectionVertexShader = "content/Reprojection/ReprojectionRender.vertex.glsl";
     constexpr static std::string_view renderReprojectionFragmentShader = "content/Reprojection/ReprojectionRender.fragment.glsl";
-    constexpr static std::string_view combineReprojectionFragmentShader = "content/Reprojection/CombineFrames.fragment.glsl";
     constexpr static std::string_view bypassReprojectionFragmentShader = "content/Reprojection/Bypass.fragment.glsl";
 
     // Voxel Manipulation

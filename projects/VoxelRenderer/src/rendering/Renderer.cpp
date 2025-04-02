@@ -85,7 +85,8 @@ void Renderer::makeFramebuffers()
     owningThread = std::this_thread::get_id();
     isSizeDirtyThread = false;
 
-    glViewport(0, 0, renderResolution.x, renderResolution.y); // Adjust the viewport of the offscreen context
+    //This shouldn't be here (The offscreen context already sets the view port)
+    //glViewport(0, 0, renderResolution.x, renderResolution.y); // Adjust the viewport of the offscreen context
 }
 
 void Renderer::swapDisplayBuffer()
@@ -349,6 +350,7 @@ void Renderer::reproject(float fov)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Do the render
+
     //reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
     reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
 
@@ -386,6 +388,7 @@ void Renderer::finalDisplay()
         glBindTexture(GL_TEXTURE_2D, outputColorTexture);
     }
 
+    glDisable(GL_DEPTH_TEST);
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);

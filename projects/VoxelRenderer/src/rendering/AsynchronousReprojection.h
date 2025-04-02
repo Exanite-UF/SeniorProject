@@ -19,7 +19,6 @@ class AsyncReprojectionRenderer
 {
 private:
     static GLuint renderProgram;
-    static GLuint combineProgram;
     static GLuint bypassProgram;
 
     int currentBuffer = 0;
