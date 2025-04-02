@@ -162,7 +162,7 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     resetVisualInfo(maxDepth);
 }
 
-void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, bool isFirstRay)
+void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, int shadingRate)
 {
     ZoneScoped;
 
@@ -206,12 +206,14 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     }
 
     {
-        GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
-        GLuint workGroupsY = (size.y + 8 - 1) / 8;
+        int divisor = 8 * shadingRate;
+        GLuint workGroupsX = (size.x + divisor - 1) / divisor; // Ceiling division
+        GLuint workGroupsY = (size.y + divisor - 1) / divisor;
 
         glUniform3i(glGetUniformLocation(fullCastProgram, "resolution"), size.x, size.y, 1);
         glUniform1f(glGetUniformLocation(fullCastProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
-
+        glUniform1i(glGetUniformLocation(fullCastProgram, "shadingRate"), shadingRate);
+        
         for (auto& chunkComponent : chunks)
         {
             ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
@@ -281,7 +283,11 @@ void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChun
 
     for (int i = 0; i < bounces; i++)
     {
-        executeRayTrace(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, false);
+        int shadingRate = 2;
+        if(i > 1){
+            shadingRate = 4;
+        }
+        executeRayTrace(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, shadingRate);
         //afterCast();
         //resetVisualInfo();
     }

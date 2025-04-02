@@ -33,6 +33,8 @@ uniform vec3 voxelWorldScale; // Size of a voxel
 uniform uint materialMapSize;
 uniform float random; // This is used to make non-deterministic randomness
 
+uniform int shadingRate;
+
 layout(std430, binding = 0) buffer RayPosition
 {
     float rayPosition[];
@@ -399,6 +401,14 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     setRayDepth(texelCoord, hit.dist);
     //setHitWasHit(texelCoord, hit.wasHit);
 
+    for(int i = 0; i < shadingRate; i++){
+        for(int j = 0; j < shadingRate; j++){
+            if(i == 0 && j == 0) continue;
+            ivec3 coord = texelCoord + ivec3(i, j, 0);
+            setRayDepth(coord, -1);
+        }
+    }
+
     return hit;
 }
 
@@ -628,8 +638,19 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     setRayPosition(texelCoord, position); // Set where the ray should start from next
     setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
 
+
     setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
     changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
+
+    for(int i = 0; i < shadingRate; i++){
+        for(int j = 0; j < shadingRate; j++){
+            if(i == 0 && j == 0) continue;
+            ivec3 coord = texelCoord + ivec3(i, j, 0);
+            vec3 attentuation = getPriorAttenuation(coord); // This is the accumulated attenuation
+            setAttenuation(coord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
+            changeLightAccumulation(coord, receivedLight); // Accumulate the light the has reached the camera
+        }
+    }
 }
 
 void attempt(ivec3 texelCoord)
@@ -659,6 +680,7 @@ void attempt(ivec3 texelCoord)
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);  
-    
+
+    texelCoord *= shadingRate;
     attempt(texelCoord);
 }
