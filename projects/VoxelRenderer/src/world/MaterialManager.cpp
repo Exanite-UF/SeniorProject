@@ -27,7 +27,7 @@ MaterialManager::MaterialManager()
 
     {
         auto& material = createMaterial("grass", "grass");
-        material->albedo = ColorUtility::htmlToLinear("#41b000");
+        material->albedo = ColorUtility::htmlToLinear("#636434");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -45,7 +45,7 @@ MaterialManager::MaterialManager()
 
     {
         auto& material = createMaterial("oak_leaf", "oak_leaf");
-        material->albedo = ColorUtility::htmlToLinear("#40732B");
+        material->albedo = ColorUtility::htmlToLinear("#434F1E");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);

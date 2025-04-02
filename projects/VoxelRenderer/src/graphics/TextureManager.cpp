@@ -131,7 +131,7 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
         Assert::isTrue(foundFileName, "Failed to file path of " + std::to_string(i) + "th cube map texture: " + std::string(path));
 
         faceFileName = prePath + faceFileName;
-        auto rawTextureData = stbi_load(faceFileName.c_str(), &width, &height, &rawChannelCount, 3);
+        auto rawTextureData = stbi_loadf(faceFileName.c_str(), &width, &height, &rawChannelCount, 3);
         //If the image fails to load, throw
         //But first free the memory
         try
@@ -148,7 +148,7 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
             throw;
         }
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, storageFormat, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, rawTextureData);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, storageFormat, width, height, 0, GL_RGB, GL_FLOAT, rawTextureData);
 
         stbi_image_free(rawTextureData);
     }

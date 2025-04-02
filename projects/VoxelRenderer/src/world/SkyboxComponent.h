@@ -18,6 +18,7 @@ private:
     float sunAngularSize = 0;
     float sunBrightnessMultiplier = 1;
     float skyBrightnessMultiplier = 1;
+    float visualMultiplier = 1;
 
     std::shared_ptr<Texture> cubemap = nullptr;
 
@@ -40,4 +41,5 @@ public:
 
     float getSunBrightnessMultiplier() const;
     float getSkyBrightnessMultiplier() const;
+    float getVisualMultiplier() const;
 };

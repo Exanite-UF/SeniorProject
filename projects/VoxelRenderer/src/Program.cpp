@@ -138,13 +138,13 @@ void Program::run()
     scene = sceneObject->addComponent<SceneComponent>();
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
-    auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
+    auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
     scene->setSkybox(skybox);
 
     
 
     // Generate static, noise-based chunks for testing purposes
-    if (true)
+    if (false)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         voxelChunkManager.settings.enableCulling = false;
@@ -279,13 +279,13 @@ void Program::run()
         }
 
         // Tonemap
-        if (false)
+        if (true)
         {
 
             auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             toneMap->setUniforms = [&renderer](GLuint program)
             {
-                glUniform1f(glGetUniformLocation(program, "exposure"), 1.5);
+
             };
         }
 
@@ -295,7 +295,7 @@ void Program::run()
             auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             showAngularSize->setUniforms = [&renderer](GLuint program)
             {
-                glUniform1f(glGetUniformLocation(program, "angularSize"), 10 * 3.1415926589 / 180);
+                glUniform1f(glGetUniformLocation(program, "angularSize"), 6 * 3.1415926589 / 180);
                 glUniform1f(glGetUniformLocation(program, "horizontalFov"), renderer.getCurrentCameraFOV());
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };

@@ -28,5 +28,7 @@ vec3 TonemapAces(vec3 color)
 
 void main()
 {
-    out_color = vec4(TonemapAces(exposure * texture(inputTexture, uv).xyz), 1);
+    vec3 light = texture(inputTexture, uv).xyz;
+    light = normalize(light) * (1 - exp(-length(light)));
+    out_color = vec4(light, 1);//vec4(TonemapAces(exposure * texture(inputTexture, uv).xyz), 1);
 }

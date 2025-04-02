@@ -36,17 +36,20 @@ SkyboxComponent::SkyboxComponent(const std::string& cubemapFilePath, const std::
             case 5:
                 skyBrightnessMultiplier = std::stof(line);
                 break;
+            case 6:
+                visualMultiplier = std::stof(line);
+                break;
             default:
                 break;
         }
 
         lineCounter++;
 
-        if(lineCounter == 6){
+        if(lineCounter == 7){
             break;//This is the last line with relevant info
         }
     }
-    Assert::isTrue(lineCounter == 6, "Failed to load all skybox settings: " + skyboxSettingFilePath);
+    Assert::isTrue(lineCounter == 7, "Failed to load all skybox settings: " + skyboxSettingFilePath);
 
 
     settingFile.close();  // Close the file when done
@@ -70,6 +73,11 @@ float SkyboxComponent::getSunBrightnessMultiplier() const
 float SkyboxComponent::getSkyBrightnessMultiplier() const
 {
     return skyBrightnessMultiplier;
+}
+
+float SkyboxComponent::getVisualMultiplier() const
+{
+    return visualMultiplier;
 }
 
 glm::vec3 SkyboxComponent::getSunDirection() const

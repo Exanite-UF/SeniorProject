@@ -566,6 +566,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
         glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), skybox->getSunAngularSize());
         glUniform3fv(glGetUniformLocation(primaryRayProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
+        
 
         for (auto& chunkComponent : chunks)
         {
@@ -690,6 +691,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
         glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->getCubemap()->getTextureId());
     }
     glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "sunDir"), 1, glm::value_ptr(skybox->getSunDirection()));
+    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "visualMultiplier"), skybox->getVisualMultiplier());
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
