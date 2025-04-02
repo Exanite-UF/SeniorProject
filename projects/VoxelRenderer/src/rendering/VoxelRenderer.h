@@ -132,7 +132,7 @@ public:
 
     void resetVisualInfo(float maxDepth);
     void beforeCast(float maxDepth, bool shouldDrawSkybox = true);
-    void afterCast(float maxDepth, bool shouldDrawSkybox = true);
+    void afterCast(float maxDepth);
 
     void executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV);
 

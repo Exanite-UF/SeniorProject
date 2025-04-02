@@ -435,7 +435,7 @@ void VoxelRenderer::beforeCast(float maxDepth, bool shouldDrawSkybox)
     glUseProgram(0);
 }
 
-void VoxelRenderer::afterCast(float maxDepth, bool shouldDrawSkybox)
+void VoxelRenderer::afterCast(float maxDepth)
 {
     ZoneScoped;
 
@@ -471,7 +471,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 {
     ZoneScoped;
 
-    beforeCast(maxDepth);
+    beforeCast(maxDepth, false);
 
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(primaryRayProgram);
@@ -589,7 +589,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     materialBuffer.unbind();
     secondaryDirection.unbind();
 
-    afterCast(maxDepth, false);
+    afterCast(maxDepth);
 
     whichStartBuffer = !whichStartBuffer;
 
