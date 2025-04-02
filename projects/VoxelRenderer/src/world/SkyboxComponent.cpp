@@ -15,9 +15,11 @@ SkyboxComponent::SkyboxComponent(const std::string& cubemapFilePath, const std::
 
     int lineCounter = 0;
     std::string line;
-    while (std::getline(settingFile, line)) { // Read each line into the 'line' variable
+    while (std::getline(settingFile, line))
+    { // Read each line into the 'line' variable
 
-        switch(lineCounter){
+        switch (lineCounter)
+        {
             case 0:
                 sunDirection.x = std::stof(line);
                 break;
@@ -45,14 +47,14 @@ SkyboxComponent::SkyboxComponent(const std::string& cubemapFilePath, const std::
 
         lineCounter++;
 
-        if(lineCounter == 7){
-            break;//This is the last line with relevant info
+        if (lineCounter == 7)
+        {
+            break; // This is the last line with relevant info
         }
     }
     Assert::isTrue(lineCounter == 7, "Failed to load all skybox settings: " + skyboxSettingFilePath);
 
-
-    settingFile.close();  // Close the file when done
+    settingFile.close(); // Close the file when done
 }
 
 std::shared_ptr<Texture> SkyboxComponent::getCubemap()

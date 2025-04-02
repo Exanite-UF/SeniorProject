@@ -141,8 +141,6 @@ void Program::run()
     auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
     scene->setSkybox(skybox);
 
-    
-
     // Generate static, noise-based chunks for testing purposes
     if (true)
     {
@@ -283,15 +281,14 @@ void Program::run()
         {
 
             auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
-            toneMap->setUniforms = [&renderer](GLuint program)
-            {
+            toneMap->setUniforms = [&renderer](GLuint program) {
 
             };
         }
 
-         // Show angular size
-         if (false)
-         {
+        // Show angular size
+        if (false)
+        {
             auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             showAngularSize->setUniforms = [&renderer](GLuint program)
             {
@@ -299,7 +296,7 @@ void Program::run()
                 glUniform1f(glGetUniformLocation(program, "horizontalFov"), renderer.getCurrentCameraFOV());
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
-         }
+        }
     }
 
     // Engine time

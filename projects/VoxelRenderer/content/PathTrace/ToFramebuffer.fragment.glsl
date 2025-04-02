@@ -229,13 +229,13 @@ layout(binding = 0) uniform samplerCube skybox;
 
 vec3 skyBox(vec3 rayDirection)
 {
-    //Do not use the multipliers because this only affect the skybox that is displayed
-    //It doesn't affect the lighting
+    // Do not use the multipliers because this only affect the skybox that is displayed
+    // It doesn't affect the lighting
 
-    //Invert the sun
-    //if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
-    //    return 1 - min(vec3(1), texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz);
-    //}
+    // Invert the sun
+    // if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+    //     return 1 - min(vec3(1), texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz);
+    // }
     return texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz * visualMultiplier;
 }
 

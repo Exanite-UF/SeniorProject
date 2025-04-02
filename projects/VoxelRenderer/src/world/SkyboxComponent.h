@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -9,7 +9,6 @@
 
 #include <src/gameobjects/Component.h>
 #include <src/graphics/Texture.h>
-
 
 class SkyboxComponent : public Component
 {
@@ -24,7 +23,7 @@ private:
 
 public:
     SkyboxComponent() = default;
-    //Setting format 
+    // Setting format
     /*
     sunDir.x
     sunDir.y

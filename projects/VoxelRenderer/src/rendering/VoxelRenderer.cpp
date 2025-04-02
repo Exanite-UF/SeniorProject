@@ -439,17 +439,18 @@ void VoxelRenderer::beforeCast(float maxDepth, std::shared_ptr<SceneComponent> s
     }
 
     glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
-    glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);    
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);
     glUniform1i(glGetUniformLocation(beforeCastProgram, "shouldDrawSkybox"), shouldDrawSkybox);
 
     std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
 
     glUniform1f(glGetUniformLocation(beforeCastProgram, "sunAngularSize"), skybox->getSunAngularSize());
-    if(skybox->getCubemap() != nullptr){
+    if (skybox->getCubemap() != nullptr)
+    {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->getCubemap()->getTextureId());
     }
-    
+
     glUniform3fv(glGetUniformLocation(beforeCastProgram, "sunDir"), 1, glm::value_ptr(skybox->getSunDirection()));
     glUniform1f(glGetUniformLocation(beforeCastProgram, "sunBrightnessMultiplier"), skybox->getSunBrightnessMultiplier());
     glUniform1f(glGetUniformLocation(beforeCastProgram, "skyBrightnessMultiplier"), skybox->getSkyBrightnessMultiplier());
@@ -569,7 +570,6 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
         glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), skybox->getSunAngularSize());
         glUniform3fv(glGetUniformLocation(primaryRayProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
-        
 
         for (auto& chunkComponent : chunks)
         {
@@ -690,7 +690,8 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
     glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunAngularSize"), skybox->getSunAngularSize());
-    if(skybox->getCubemap() != nullptr){
+    if (skybox->getCubemap() != nullptr)
+    {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->getCubemap()->getTextureId());
     }
@@ -729,5 +730,3 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     glUseProgram(0);
 }
-
-

@@ -1,10 +1,10 @@
 #include "TextureManager.h"
 
+#include <fstream>
 #include <src/Program.h>
 #include <src/utilities/Assert.h>
 #include <stb_image.h>
 #include <stdexcept>
-#include <fstream>
 
 #include <iostream>
 
@@ -104,7 +104,8 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
 
     // Load texture data
     std::ifstream indirectFile(path.data());
-    if(!indirectFile.is_open()){
+    if (!indirectFile.is_open())
+    {
         std::cout << "Failed to load cube map indirect file: " + std::string(path) << std::endl;
     }
     Assert::isTrue(indirectFile.is_open(), "Failed to load cube map indirect file: " + std::string(path));
@@ -118,13 +119,15 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
 
-    //Load the data
+    // Load the data
     int width, height, rawChannelCount;
-    for(int i = 0; i < 6; i++){
-        //load the file name for the specific face
+    for (int i = 0; i < 6; i++)
+    {
+        // load the file name for the specific face
         std::string faceFileName;
         bool foundFileName = false;
-        if(std::getline(indirectFile, faceFileName)){
+        if (std::getline(indirectFile, faceFileName))
+        {
             foundFileName = true;
         }
 
@@ -132,11 +135,12 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
 
         faceFileName = prePath + faceFileName;
         auto rawTextureData = stbi_loadf(faceFileName.c_str(), &width, &height, &rawChannelCount, 3);
-        //If the image fails to load, throw
-        //But first free the memory
+        // If the image fails to load, throw
+        // But first free the memory
         try
         {
-            if(rawTextureData == nullptr){
+            if (rawTextureData == nullptr)
+            {
                 std::cout << "Failed to load texture: " + std::string(path) << std::endl;
             }
             Assert::isTrue(rawTextureData != nullptr, "Failed to load texture: " + std::string(path));
@@ -158,7 +162,7 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    
+
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Wrap OpenGL handle with the Texture class
@@ -168,7 +172,6 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
     textures[cacheKey] = texture;
 
     return texture;
-    
 }
 
 std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type)
