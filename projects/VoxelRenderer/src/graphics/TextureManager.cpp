@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <fstream>
 
-GLenum TextureManager::getOpenGlFormat(TextureType type)
+GLenum TextureManager::getOpenGlStorageFormat(TextureType type)
 {
     switch (type)
     {
@@ -15,7 +15,7 @@ GLenum TextureManager::getOpenGlFormat(TextureType type)
         case ColorAlpha:
             return GL_SRGB8_ALPHA8;
         case Normal:
-            return GL_RGB8;
+            return GL_RG8;
         default:
             break;
     }
@@ -31,8 +31,8 @@ int TextureManager::getFormatChannelCount(GLenum format)
             return 3;
         case GL_SRGB8_ALPHA8:
             return 4;
-        case GL_RGB8:
-            return 3;
+        case GL_RG8:
+            return 2;
         default:
             break;
     }
@@ -40,10 +40,10 @@ int TextureManager::getFormatChannelCount(GLenum format)
     throw std::runtime_error("Unsupported texture format: " + std::to_string(format));
 }
 
-std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type, GLenum format)
+std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type, GLenum storageFormat)
 {
     // Use cached texture if available
-    auto cacheKey = std::make_tuple(std::string(path), format);
+    auto cacheKey = std::make_tuple(std::string(path), storageFormat);
     if (textures.contains(cacheKey))
     {
         return textures[cacheKey];
@@ -67,7 +67,9 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawTextureData);
+            // internalFormat (called storageFormat here) is the format of the texture stored on the GPU
+            // format is the input format, as loaded from the texture file
+            glTexImage2D(GL_TEXTURE_2D, 0, storageFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawTextureData);
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -160,12 +162,12 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
 
 std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, TextureType type)
 {
-    return loadTexture(path, type, getOpenGlFormat(type));
+    return loadTexture(path, type, getOpenGlStorageFormat(type));
 }
 
-std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLenum format)
+std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLenum storageFormat)
 {
-    return loadTexture(path, Unknown, format);
+    return loadTexture(path, Unknown, storageFormat);
 }
 
 std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view path, TextureType type)
