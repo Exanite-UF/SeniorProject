@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
 project(SeniorProject LANGUAGES C CXX)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(DEBUG)
+endif()
+
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -40,6 +44,12 @@ endif()
 # The NEW policy enables the use of the option() function
 cmake_policy(SET CMP0077 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+# Hardcoded AddressSanitizer toggle
+if (OFF)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif()
 
 # --- Third party ---
 

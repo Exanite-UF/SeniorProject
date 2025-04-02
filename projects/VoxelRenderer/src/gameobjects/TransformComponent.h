@@ -2,14 +2,18 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <glm/vec3.hpp>
 #include <src/gameobjects/Component.h>
 
-class TransformComponent : public Component, public std::enable_shared_from_this<TransformComponent>
+class TransformComponent : public Component
 {
 private:
-    std::shared_ptr<TransformComponent> parent {};
+    std::weak_ptr<TransformComponent> parent {};
+
     std::vector<std::shared_ptr<TransformComponent>> children {};
+
+    // A transform owns both its child GameObjects and child Transforms
+    // Removing this vector would cause the child Transforms to lose their GameObjects
+    std::vector<std::shared_ptr<GameObject>> ownedGameObjects {};
 
     glm::vec3 localPosition = glm::vec3(0, 0, 0);
     glm::quat localRotation = glm::quat(1, 0, 0, 0);
@@ -23,11 +27,12 @@ private:
 
 public:
     void setParent(const std::shared_ptr<TransformComponent>& parent);
-    [[nodiscard]] const std::shared_ptr<TransformComponent>& getParent() const;
+    [[nodiscard]] bool hasParent() const;
+    [[nodiscard]] bool tryGetParent(std::shared_ptr<TransformComponent>& outParent) const;
 
     [[nodiscard]] const std::vector<std::shared_ptr<TransformComponent>>& getChildren() const;
 
-    void onDestroy() override;
+    void onRemovingFromWorld() override;
 
     [[nodiscard]] const glm::vec3& getLocalPosition() const;
     [[nodiscard]] const glm::quat& getLocalRotation() const;

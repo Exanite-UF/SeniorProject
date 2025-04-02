@@ -6,9 +6,12 @@
 #include <src/gameobjects/TransformComponent.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
+#include <tracy/Tracy.hpp>
 
 GameObject::GameObject(const std::string& name)
 {
+    ZoneScoped;
+
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::information(std::format("GameObject constructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
@@ -19,22 +22,36 @@ GameObject::GameObject(const std::string& name)
 
 GameObject::~GameObject()
 {
+    ZoneScoped;
+
     if constexpr (Constants::GameObject::isEventLoggingEnabled)
     {
         Log::information(std::format("GameObject destructor called for {:s} at @{:x}", typeid(*this).name(), reinterpret_cast<uintptr_t>(this)));
+    }
+
+    if (isPartOfWorld)
+    {
+        Log::error("A GameObject that was part of the world was destroyed without being first removed from the world. Please remove the GameObject from the world first!");
     }
 }
 
 std::shared_ptr<TransformComponent>& GameObject::getTransform()
 {
-    assertIsAlive();
+    assertIsPartOfWorld();
 
     return transform;
 }
 
+bool GameObject::getIsWorldRoot() const
+{
+    return !transform->hasParent();
+}
+
 void GameObject::update()
 {
-    assertIsAlive();
+    ZoneScoped;
+
+    assertIsPartOfWorld();
 
     // Update own components
     for (auto component : components)
@@ -51,7 +68,9 @@ void GameObject::update()
 
 std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name)
 {
-    auto gameObject = std::make_shared<GameObject>(name);
+    ZoneScoped;
+
+    auto gameObject = std::shared_ptr<GameObject>(new GameObject(name));
 
     // Add default Transform component
     auto transform = gameObject->addComponent<TransformComponent>();
@@ -70,68 +89,77 @@ std::shared_ptr<GameObject> GameObject::createRootObject(const std::string& name
 
 std::shared_ptr<GameObject> GameObject::createChildObject(const std::string& name)
 {
+    ZoneScoped;
+
     auto child = createRootObject(name);
     child->getTransform()->setParent(getTransform());
 
     return child;
 }
 
-void GameObject::notifyDestroy()
+void GameObject::notifyRemovingFromWorld()
 {
-    if (isDestroyPending)
+    ZoneScoped;
+
+    if (wasRemovingFromWorldNotified)
     {
         return;
     }
 
-    isDestroyPending = true;
+    wasRemovingFromWorldNotified = true;
 
     // Notify components in reverse order
     for (int i = components.size() - 1; i >= 0; --i)
     {
-        components.at(i)->notifyDestroy();
+        components.at(i)->notifyRemovingFromWorld();
     }
 }
 
-void GameObject::actualDestroy()
+void GameObject::actualRemoveFromWorld()
 {
-    assertIsAlive();
+    ZoneScoped;
 
-    // Destroy components in reverse order
+    assertIsPartOfWorld();
+
+    // Remove components in reverse order
     auto componentsCopy = components;
     for (int i = componentsCopy.size() - 1; i >= 0; --i)
     {
-        componentsCopy.at(i)->destroy();
+        componentsCopy.at(i)->removeFromWorld();
     }
 
-    components.clear();
+    Assert::isTrue(components.size() == 0, "All components should have been removed at this point");
 
-    // Then destroy self
-    isAlive = false;
-    isDestroyPending = false;
+    // Then remove self
+    isPartOfWorld = false;
 }
 
-void GameObject::destroy()
+void GameObject::removeFromWorld()
 {
-    if (!isAlive || isDestroyPending)
+    ZoneScoped;
+
+    if (!isPartOfWorld || wasRemoveFromWorldCalled)
     {
         return;
     }
 
+    wasRemoveFromWorldCalled = true;
+
     // Notify first
-    notifyDestroy();
+    notifyRemovingFromWorld();
 
-    // Then destroy self
-    actualDestroy();
+    // Then remove self
+    actualRemoveFromWorld();
 }
 
-bool GameObject::getIsAlive() const
+bool GameObject::getIsPartOfWorld() const
 {
-    return isAlive;
+    return isPartOfWorld;
 }
 
-void GameObject::assertIsAlive() const
+void GameObject::assertIsPartOfWorld() const
 {
-    Assert::isTrue(isAlive, "GameObject has been destroyed");
+    Assert::isTrue(isPartOfWorld, "GameObject is no longer part of the world");
 }
 
 void GameObject::setName(const std::string& name)

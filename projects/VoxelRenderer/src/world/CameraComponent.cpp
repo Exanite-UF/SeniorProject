@@ -5,6 +5,32 @@ float CameraComponent::getHorizontalFov() const
     return glm::pi<float>() / 2;
 }
 
+float CameraComponent::getVerticalFov() const
+{
+    float horizontalFov = getHorizontalFov();
+    float aspectRatio = getAspectRatio();
+    float verticalFov = 2 * std::atan(std::tan(horizontalFov / 2) / aspectRatio);
+
+    return verticalFov;
+}
+
+float CameraComponent::getAspectRatio() const
+{
+    return resolution.x / resolution.y;
+}
+
+float CameraComponent::getNearPlane() const
+{
+    // TODO: No idea what the renderer actually uses
+    return 0.01;
+}
+
+float CameraComponent::getFarPlane() const
+{
+    // TODO: No idea what the renderer actually uses
+    return 10000;
+}
+
 glm::vec3 CameraComponent::getRightMoveDirection() const
 {
     return glm::vec3(std::sin(rotation.y), -std::cos(rotation.y), 0);

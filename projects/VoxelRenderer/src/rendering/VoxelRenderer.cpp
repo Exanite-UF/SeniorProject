@@ -16,6 +16,7 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/rendering/VoxelRenderer.h>
+#include <src/utilities/Log.h>
 #include <src/utilities/OpenGl.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/world/Material.h>
@@ -549,7 +550,6 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
             ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
 
             std::shared_lock lock(chunkComponent->getMutex());
-
             if (!chunkComponent->getExistsOnGpu())
             {
                 continue;
