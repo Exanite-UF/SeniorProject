@@ -8,7 +8,7 @@
 
 SkyboxComponent::SkyboxComponent(const std::string& cubemapFilePath, const std::string& skyboxSettingFilePath)
 {
-    cubemap = TextureManager::getInstance().loadCubemapTexture(cubemapFilePath, ColorOnly);
+    cubemap = TextureManager::getInstance().loadCubemapTexture(cubemapFilePath, GL_RGB16F);
 
     std::ifstream settingFile(skyboxSettingFilePath);
     Assert::isTrue(settingFile.is_open(), "Failed to load skybox setting file: " + skyboxSettingFilePath);

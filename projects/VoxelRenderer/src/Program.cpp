@@ -295,7 +295,7 @@ void Program::run()
             auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             showAngularSize->setUniforms = [&renderer](GLuint program)
             {
-                glUniform1f(glGetUniformLocation(program, "angularSize"), 6 * 3.1415926589 / 180);
+                glUniform1f(glGetUniformLocation(program, "angularSize"), 0.5 * 3.1415926589 / 180);
                 glUniform1f(glGetUniformLocation(program, "horizontalFov"), renderer.getCurrentCameraFOV());
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
@@ -591,7 +591,7 @@ void Program::run()
                         ImGui::Text("\n");
 
                         ImGui::Text("Camera Look Direction");
-                        ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
+                        ImGui::Text("\tX: %.4f Y: %.4f Z: %.4f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
 
                         ImGui::Text("\n");
 

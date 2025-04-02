@@ -11,6 +11,10 @@
 #include <src/utilities/Singleton.h>
 #include <src/utilities/TupleHasher.h>
 
+
+//Images that use floats should be supported for HDR textures.
+//At the moment the cubemaps load with floats
+
 class TextureManager : public Singleton<TextureManager>
 {
 private:
