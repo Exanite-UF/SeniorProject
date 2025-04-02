@@ -651,6 +651,9 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
             vec3 attentuation = getPriorAttenuation(coord); // This is the accumulated attenuation
             setAttenuation(coord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
             changeLightAccumulation(coord, receivedLight); // Accumulate the light the has reached the camera
+
+            setRayPosition(coord, position); // Set where the ray should start from next
+            setRayDirection(coord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
         }
     }
 }
