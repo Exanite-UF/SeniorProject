@@ -6,7 +6,6 @@ uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
 
 uniform float maxDepth;
 
-
 layout(std430, binding = 0) buffer RayMisc
 {
     float rayMisc[];
@@ -24,9 +23,6 @@ float getRayDepth(ivec3 coord)
     return rayMisc[index + 0];
 }
 
-
-
-
 layout(std430, binding = 1) buffer RayDirection
 {
     float rayDirection[];
@@ -39,12 +35,10 @@ vec3 getRayDirection(ivec3 coord)
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
-
 layout(std430, binding = 2) buffer AccumulatedLightIn
 {
     readonly restrict float accumulatedLightIn[];
 };
-
 
 layout(std430, binding = 3) buffer AccumulatedLightOut
 {
@@ -79,30 +73,38 @@ uniform float sunBrightness;
 uniform vec3 skyColor;
 uniform vec3 groundColor;
 
-vec3 skyBox(vec3 rayDirection){
-    if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+vec3 skyBox(vec3 rayDirection)
+{
+    if (dot(normalize(sunDir), normalize(rayDirection)) > sunSize)
+    {
         return sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1);
-    }else if(dot(rayDirection, vec3(0, 0, 1)) > 0){
+    }
+    else if (dot(rayDirection, vec3(0, 0, 1)) > 0)
+    {
         return skyColor;
-    }else{
+    }
+    else
+    {
         return groundColor;
     }
 }
-
-
 
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    if(getRayDepth(texelCoord) >= 0){
+    if (getRayDepth(texelCoord) >= 0)
+    {
         setRayDepth(texelCoord, maxDepth);
 
         vec3 attenuation = getPriorAttenuation(texelCoord);
-        if(shouldDrawSkybox){
+        if (shouldDrawSkybox)
+        {
             changeLightAccumulation(texelCoord, skyBox(getRayDirection(texelCoord)) * attenuation);
-        }     
-    }else{
+        }
+    }
+    else
+    {
         changeLightAccumulation(texelCoord, vec3(0));
     }
 }

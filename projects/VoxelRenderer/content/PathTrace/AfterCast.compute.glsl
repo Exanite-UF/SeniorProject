@@ -1,7 +1,7 @@
 #version 460 core
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-//layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+// layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 uniform ivec3 resolution; //(xSize, ySize, 1)
 
@@ -24,18 +24,14 @@ float getRayDepth(ivec3 coord)
     return rayMisc[index + 0];
 }
 
-
-
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
     float depth = getRayDepth(texelCoord);
 
-    
-    if(depth == maxDepth){
+    if (depth == maxDepth)
+    {
         setRayDepth(texelCoord, -1);
     }
-
-    
 }

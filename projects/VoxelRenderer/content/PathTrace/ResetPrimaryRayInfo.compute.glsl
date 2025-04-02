@@ -22,7 +22,6 @@ layout(std430, binding = 2) buffer RayMisc
     coherent restrict float rayMisc[];
 };
 
-
 layout(std430, binding = 5) buffer RayStartPosition
 {
     float rayStartPosition[];
@@ -61,11 +60,9 @@ void main()
     rayPosition[index + 1] = rayPos.y;
     rayPosition[index + 2] = rayPos.z;
 
-
-
     index = 4 * (texelCoord.x + texelCoord.y * resolution.x);
 
-    rayMisc[index + 0] = -1;//By default the primary ray hits a material with negative roughness
+    rayMisc[index + 0] = -1; // By default the primary ray hits a material with negative roughness
     rayMisc[index + 1] = 0;
     rayMisc[index + 2] = 0;
     rayMisc[index + 3] = 0;
