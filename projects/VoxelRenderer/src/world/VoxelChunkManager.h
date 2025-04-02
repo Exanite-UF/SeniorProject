@@ -41,6 +41,8 @@ public:
 
         // Only works in DEBUG builds
         bool showDebugVisualizations = false;
+
+        bool enableCulling = true;
     };
 
 private:

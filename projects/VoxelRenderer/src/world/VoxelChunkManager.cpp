@@ -458,6 +458,11 @@ bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& c
 {
     ZoneScoped;
 
+    if (!settings.enableCulling)
+    {
+        return true;
+    }
+
     // This lets the compiler optimize out the parts used for debugging
 #ifdef DEBUG
     bool isDebugging = settings.showDebugVisualizations;
@@ -740,6 +745,7 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
+        ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
         ImGui::Text("%s", std::format("Render distance: {}", settings.renderDistance).c_str());
