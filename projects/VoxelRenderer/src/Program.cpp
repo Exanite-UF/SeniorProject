@@ -137,7 +137,7 @@ void Program::run()
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
     // Generate static, noise-based chunks for testing purposes
-    if (true)
+    if (false)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         voxelChunkManager.settings.enableCulling = false;
