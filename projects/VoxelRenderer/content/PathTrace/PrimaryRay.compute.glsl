@@ -66,7 +66,6 @@ void setRayPosition(ivec3 coord, vec3 value)
     rayPositionOut[2 + index] = value.z;
 }
 
-
 layout(std430, binding = 2) buffer RayDirection
 {
     float rayDirection[];
@@ -84,7 +83,6 @@ vec3 getRayDirection(ivec3 coord)
     return vec3(rayDirection[0 + index], rayDirection[1 + index], rayDirection[2 + index]);
 }
 
-
 void setRayDirection(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
@@ -92,7 +90,6 @@ void setRayDirection(ivec3 coord, vec3 value)
     rayDirectionOut[1 + index] = value.y;
     rayDirectionOut[2 + index] = value.z;
 }
-
 
 layout(std430, binding = 4) buffer OccupancyMap
 {
@@ -131,10 +128,7 @@ layout(std430, binding = 6) buffer MaterialDefinitions
     restrict MaterialDefinition materialDefinitions[];
 };
 
-
-
-
-//Used for depth tests
+// Used for depth tests
 layout(std430, binding = 7) buffer RayMisc
 {
     float rayMisc[];
@@ -151,9 +145,6 @@ void setRayDepth(ivec3 coord, float value)
     int index = 1 * (coord.x + resolution.x * coord.y); // axis order is x y
     rayMisc[index + 0] = value;
 }
-
-
-
 
 layout(std430, binding = 8) buffer FirstHitNormal
 {
@@ -205,13 +196,13 @@ void setFirstHitHue(ivec3 coord, float value)
     firstHitMisc[3 + index] = value.x;
 }
 
-
 layout(std430, binding = 11) buffer FirstHitMaterial
 {
     writeonly int firstHitMaterial[];
 };
 
-void setFirstHitMaterial(ivec3 coord, int value){
+void setFirstHitMaterial(ivec3 coord, int value)
+{
     int index = 1 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     firstHitMaterial[index] = value;
 }
@@ -221,14 +212,14 @@ layout(std430, binding = 12) buffer SecondaryDirection
     writeonly float secondaryDirection[];
 };
 
-void setSecondaryDirection(ivec3 coord, vec4 value){
+void setSecondaryDirection(ivec3 coord, vec4 value)
+{
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     secondaryDirection[index + 0] = value.x;
     secondaryDirection[index + 1] = value.y;
     secondaryDirection[index + 2] = value.z;
     secondaryDirection[index + 3] = value.w;
 }
-
 
 struct RayHit
 {
@@ -308,8 +299,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         return hit;
     }
 
-    
-
     float depth = length(rayDir * voxelWorldScale * distToCube); // Find how far the ray has traveled from the start
 
     // If the start of the voxel volume is behind the currently closest thing, then there is not reason to continue
@@ -382,7 +371,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     hit.hitLocation = rayPos;
     hit.dist = length(rayStart - hit.hitLocation);
 
-
     return hit;
 }
 
@@ -441,8 +429,8 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
 
     // At this point was hit is true
 
-    //setRayDepth(texelCoord, hit.dist);
-    //setHitWasHit(texelCoord, hit.wasHit);
+    // setRayDepth(texelCoord, hit.dist);
+    // setHitWasHit(texelCoord, hit.wasHit);
 
     return hit;
 }
@@ -681,22 +669,22 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     setRayPosition(texelCoord, position); // Set where the ray should start from next
     setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
 
-    //setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
-    //changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
+    // setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
+    // changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
 }
-
 
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    if(texelCoord.x < 0){
+    if (texelCoord.x < 0)
+    {
         return;
     }
 
     float currentDepth = getRayDepth(texelCoord);
 
-    //Early quit criteria
+    // Early quit criteria
     if (currentDepth < 0)
     {
         return;
@@ -713,14 +701,14 @@ void main()
     {
         return;
     }
-    //As of this point it is the nearest hit voxel
+    // As of this point it is the nearest hit voxel
 
-    //Set the data that comes from the ray intersection test
-    setRayDepth(texelCoord, hit.dist);//Update the nearest distance
+    // Set the data that comes from the ray intersection test
+    setRayDepth(texelCoord, hit.dist); // Update the nearest distance
     setFirstHitPosition(texelCoord, hit.hitLocation);
     setFirstHitNormal(texelCoord, hit.normal);
 
-    //Calculate motion vectors
+    // Calculate motion vectors
     {
         // If it gets here, then the motion vectors should be calcuated
         vec3 hitLocation = hit.voxelHitLocation;
@@ -751,15 +739,14 @@ void main()
         // vec2 motionVector = hitLocation.xy;
         setFirstHitMotionVector(texelCoord, motionVector);
     }
-    
 
-    //Set the information that comes from material
+    // Set the information that comes from material
     MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
     setFirstHitMaterial(texelCoord, int(hit.material));
-    setFirstHitRoughness(texelCoord, voxelMaterial.roughness);   
-    setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));   
+    setFirstHitRoughness(texelCoord, voxelMaterial.roughness);
+    setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));
 
-    //Choose next ray direction
+    // Choose next ray direction
     {
         float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y)) / resolution.x / resolution.y; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 
@@ -775,13 +762,13 @@ void main()
 
         vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
 
-        
-
-        //If a sun ray could hit the sun, then try
-        if(dot(normal, sunDirection) > 0.0){
+        // If a sun ray could hit the sun, then try
+        if (dot(normal, sunDirection) > 0.0)
+        {
             float p = 0.1;
 
-            if(randomVec2(seed).x < p){
+            if (randomVec2(seed).x < p)
+            {
                 float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
                 float cosTheta = 1 - randomVec2(seed).x * (1 - cos(maxTheta));
                 float theta = acos(cosTheta);
@@ -798,15 +785,15 @@ void main()
                 vec3 dir = normalize(local.x * tangent + local.y * bitangent + local.z * targetDir);
 
                 nextDirection = vec4(dir, 1 / (p / (2 * 3.1415926589 * (1 - cos(maxTheta)))) * dot(dir.xyz, normal));
-            }else{
+            }
+            else
+            {
                 nextDirection.w = 1 / ((1 - p) / nextDirection.w);
             }
         }
-        
-    
+
         setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
         setRayPosition(texelCoord, position); // Set where the ray should start from next
-        setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next        
+        setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
     }
-
 }

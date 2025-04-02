@@ -115,7 +115,6 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
             float weightL = exp(-abs(dot(otherColor, luminanceVector) - dot(color, luminanceVector)) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
             float weightM = exp(-paramRoughnessRejection * length(material - otherMaterial));
             float weight = weightZ * weightN * weightL * weightM;
-            
 
             float multiplier = kernel[i] * kernel[j];
 

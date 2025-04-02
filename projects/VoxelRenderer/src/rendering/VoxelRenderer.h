@@ -49,17 +49,14 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
-
-    //A ray trace step needs to exist that goes through a single chunk and gets the hit info
-
+    // A ray trace step needs to exist that goes through a single chunk and gets the hit info
 
     // These are used as input and output
     bool whichStartBuffer = false;
-    GraphicsBuffer<glm::vec3> rayStartBuffer1;//This is where rays will start from
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer1;//This is the direction rays will go in
-    GraphicsBuffer<glm::vec3> rayStartBuffer2;//This is where rays will start from
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer2;//This is the direction rays will go in
-
+    GraphicsBuffer<glm::vec3> rayStartBuffer1; // This is where rays will start from
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer1; // This is the direction rays will go in
+    GraphicsBuffer<glm::vec3> rayStartBuffer2; // This is where rays will start from
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer2; // This is the direction rays will go in
 
     // These buffers are used to store the result of a path trace
     bool whichAccumulationBuffer = false;
@@ -69,19 +66,16 @@ private:
     GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
     GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
 
+    // This is reset before every cast
+    GraphicsBuffer<float> rayMisc; //(depth)
 
-    //This is reset before every cast
-    GraphicsBuffer<float> rayMisc;//(depth)
-
-
-    //These are primary ray info
-    GraphicsBuffer<glm::vec3> normalBuffer;//world space
-    GraphicsBuffer<glm::vec3> positionBuffer;//world space
+    // These are primary ray info
+    GraphicsBuffer<glm::vec3> normalBuffer; // world space
+    GraphicsBuffer<glm::vec3> positionBuffer; // world space
     GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue)
     GraphicsBuffer<std::int32_t> materialBuffer; //(materialID)
     GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z)
     GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
-
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
@@ -116,18 +110,17 @@ private:
     float sunAngularSize = 5;
     glm::vec3 sunDirection = glm::vec3(1, -0.5, 1);
     float sunBrightness = 3;
-    glm::vec3 skyColor = glm::vec3(40/255.0, 77/255.0, 222/255.0);
-    glm::vec3 groundColor = glm::vec3(61/255.0, 150/255.0, 11/255.0) * 0.1f;
+    glm::vec3 skyColor = glm::vec3(40 / 255.0, 77 / 255.0, 222 / 255.0);
+    glm::vec3 groundColor = glm::vec3(61 / 255.0, 150 / 255.0, 11 / 255.0) * 0.1f;
 
 public:
     void setResolution(glm::ivec2 size);
 
-    //This sets the ray directions
-    //It also resets all data that determined by a path trace
+    // This sets the ray directions
+    // It also resets all data that determined by a path trace
     void prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight = true);
 
-
-    //Resets information that is determined by primary rays
+    // Resets information that is determined by primary rays
     void resetPrimaryRayInfo();
 
     void resetVisualInfo(float maxDepth);

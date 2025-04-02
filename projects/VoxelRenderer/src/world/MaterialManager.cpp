@@ -9,7 +9,7 @@ MaterialManager::MaterialManager()
     // Define custom materials
     {
         auto& material = createMaterial("dirt", "Dirt");
-        material->albedo = glm::vec3(1, 1, 1); // ColorUtility::htmlToLinear("#70381c");
+        material->albedo = ColorUtility::htmlToLinear("#70381c"); // glm::vec3(1, 1, 1); //
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -127,7 +127,7 @@ const std::shared_ptr<Material>& MaterialManager::getMaterialByKey(const std::st
     return materialsByKey.at(key);
 }
 
-bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material)
+bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& outMaterial)
 {
     auto entry = materialsByKey.find(key);
     if (entry == materialsByKey.end())
@@ -135,7 +135,7 @@ bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_pt
         return false;
     }
 
-    material = entry->second;
+    outMaterial = entry->second;
     return true;
 }
 

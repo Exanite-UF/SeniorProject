@@ -1,6 +1,5 @@
 #version 460 core
 
-
 struct MaterialDefinition
 {
     vec3 emission;
@@ -19,7 +18,6 @@ struct MaterialDefinition
 uniform ivec3 resolution; //(xSize, ySize, 1)
 uniform vec4 cameraRotation;
 uniform vec3 cameraPosition;
-
 
 layout(std430, binding = 0) buffer AccumulatedLight
 {
@@ -41,14 +39,13 @@ layout(std430, binding = 3) buffer FirstHitMisc
     float firstHitMisc[];
 };
 
-
-
 layout(std430, binding = 4) buffer FirstHitMaterial
 {
     readonly int firstHitMaterial[];
 };
 
-int getFirstHitMaterial(ivec3 coord){
+int getFirstHitMaterial(ivec3 coord)
+{
     int index = 1 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     return firstHitMaterial[index];
 }
@@ -58,7 +55,8 @@ layout(std430, binding = 5) buffer PrimaryDirection
     readonly float primaryDirection[];
 };
 
-vec3 getPrimaryDirection(ivec3 coord){
+vec3 getPrimaryDirection(ivec3 coord)
+{
     int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     return vec3(primaryDirection[index + 0], primaryDirection[index + 1], primaryDirection[index + 2]);
 }
@@ -68,7 +66,8 @@ layout(std430, binding = 6) buffer SecondaryDirection
     readonly float secondaryDirection[];
 };
 
-vec4 getSecondaryDirection(ivec3 coord){
+vec4 getSecondaryDirection(ivec3 coord)
+{
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     return vec4(secondaryDirection[index + 0], secondaryDirection[index + 1], secondaryDirection[index + 2], secondaryDirection[index + 3]);
 }
@@ -78,10 +77,6 @@ layout(std430, binding = 7) buffer MaterialDefinitions
 {
     readonly restrict MaterialDefinition materialDefinitions[];
 };
-
-
-
-
 
 vec3 getLight(ivec3 coord)
 {
@@ -139,7 +134,6 @@ layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec3 posBuffer;
 layout(location = 2) out vec3 normalBuffer;
 layout(location = 3) out vec4 miscBuffer;
-
 
 // For metals baseReflectivity is the metallicAlbedo
 // For non-metals, it is a completely different property (I'm going to go with 1)
@@ -227,8 +221,6 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
     return fresnelComponent * geometricComponent * albedo / abs(dotOfViewAndNormal);
 }
 
-
-
 uniform float sunAngularSize; // The angle of the sun in diameter
 float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
 uniform vec3 sunDir;
@@ -236,12 +228,18 @@ uniform float sunBrightness;
 uniform vec3 skyColor;
 uniform vec3 groundColor;
 
-vec3 skyBox(vec3 rayDirection){
-    if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+vec3 skyBox(vec3 rayDirection)
+{
+    if (dot(normalize(sunDir), normalize(rayDirection)) > sunSize)
+    {
         return sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1);
-    }else if(dot(rayDirection, vec3(0, 0, 1)) > 0){
+    }
+    else if (dot(rayDirection, vec3(0, 0, 1)) > 0)
+    {
         return skyColor;
-    }else{
+    }
+    else
+    {
         return groundColor;
     }
 }
@@ -253,56 +251,60 @@ void main()
     ivec3 size = resolution; // imageSize(hitPosition);
     vec3 color = vec3(0);
 
-    vec3 normal = getNormal(texelCoord);//worldspace
-    vec3 position = getPosition(texelCoord);//worldspace
+    vec3 normal = getNormal(texelCoord); // worldspace
+    vec3 position = getPosition(texelCoord); // worldspace
     vec4 misc = getMisc(texelCoord);
-
-    
-    
 
     vec3 light = vec3(0);
     float samples = 0;
     MaterialDefinition voxelMaterial = materialDefinitions[getFirstHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
-    
+
     vec3 direction = getPrimaryDirection(texelCoord);
 
     int radius = 1;
-    if(misc.x < 0.01){
+    if (misc.x < 0.01)
+    {
         radius = 0;
     }
-    //radius = 0;
+    // radius = 0;
 
     const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
-    for(int i = -radius; i <= radius; i++){
-        for(int j = -radius; j <= radius; j++){
-            ivec3 coord = texelCoord + ivec3(i, j, 0);// * abs(ivec3(i, j, 0));
+    for (int i = -radius; i <= radius; i++)
+    {
+        for (int j = -radius; j <= radius; j++)
+        {
+            ivec3 coord = texelCoord + ivec3(i, j, 0); // * abs(ivec3(i, j, 0));
 
-            //If this is offscreen
-            if(coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y){
+            // If this is offscreen
+            if (coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y)
+            {
                 continue;
             }
 
-            //If this pixel didn't have a secondary ray
-            if(getMisc(coord).x < 0){
+            // If this pixel didn't have a secondary ray
+            if (getMisc(coord).x < 0)
+            {
                 continue;
             }
 
-            vec3 sampleNormal = getNormal(coord);//worldspace
-            if(dot(sampleNormal, normal) < 0.9){
+            vec3 sampleNormal = getNormal(coord); // worldspace
+            if (dot(sampleNormal, normal) < 0.9)
+            {
                 continue;
             }
 
-            //Materials of different roughnesses have different bounce distributions, so they cannot be combined
+            // Materials of different roughnesses have different bounce distributions, so they cannot be combined
             vec4 sampleMisc = getMisc(coord);
-            if(abs(sampleMisc.x - misc.x) > 0.1){
+            if (abs(sampleMisc.x - misc.x) > 0.1)
+            {
                 continue;
             }
 
-            vec3 sampledLight = getLight(coord);//This is the radiance coming from the secondary rays
+            vec3 sampledLight = getLight(coord); // This is the radiance coming from the secondary rays
             vec4 nextDirection = getSecondaryDirection(coord);
 
             vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-            //vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+            // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
             float multiplier = kernel[i + 1] * kernel[j + 1];
             light += sampledLight * brdfValue * multiplier;
             samples += multiplier;
@@ -316,9 +318,12 @@ void main()
     //(0, 0, 1) up
 
     vec3 firstHitEmission = vec3(0);
-    if(misc.x >= 0){
+    if (misc.x >= 0)
+    {
         firstHitEmission = voxelMaterial.emission;
-    }else{
+    }
+    else
+    {
         light *= 0;
         samples = 1;
         firstHitEmission = skyBox(direction);

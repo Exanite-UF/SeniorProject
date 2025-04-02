@@ -1,13 +1,16 @@
 #pragma once
 
+#include <atomic>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/utilities/CountInstances.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
 
-class VoxelChunk : public NonCopyable
+class VoxelChunk : public NonCopyable, public CountInstances<VoxelChunk>
 {
 private:
     glm::ivec3 size; // Size of the voxel chunk in voxels

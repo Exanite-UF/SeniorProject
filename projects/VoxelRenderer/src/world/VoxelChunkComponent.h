@@ -10,9 +10,12 @@
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
 
+class VoxelChunkCommandBuffer;
+
 class VoxelChunkComponent : public Component
 {
     friend class GameObject;
+    friend class VoxelChunkCommandBuffer;
 
 private:
     std::optional<std::unique_ptr<VoxelChunk>> chunk; // Primarily accessed by render and chunk modification thread
@@ -29,11 +32,21 @@ public:
     std::shared_mutex& getMutex();
 
     // Will throw if chunk data does not exist on the GPU
+    // Requires mutex shared access
     const std::unique_ptr<VoxelChunk>& getChunk();
-    VoxelChunkData& getChunkData();
+
+    // Requires mutex shared access
+    const VoxelChunkData& getChunkData();
+
+    // Requires mutex exclusive access
+    // Prefer using a command buffer instead
+    VoxelChunkData& getRawChunkData();
 
     bool getExistsOnGpu() const;
-    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
 
-    void onDestroy() override;
+protected:
+    void onRemovingFromWorld() override;
+
+private:
+    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
 };

@@ -162,7 +162,7 @@ void VoxelChunkData::writeTo(VoxelChunk& chunk)
 
     // Upload in 32 MB sized chunks
     {
-        constexpr int uploadChunkSize = 32 * 1024 * 1024;
+        constexpr int uploadChunkSize = Constants::VoxelChunk::maxUploadChunkSizeBytes;
 
         int byteCount = data.materialMap.size() * 2;
         int uploadChunkCount = byteCount / uploadChunkSize;

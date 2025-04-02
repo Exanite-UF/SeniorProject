@@ -1,5 +1,7 @@
 #include "ColorUtility.h"
 
+#include <format>
+
 #include "Assert.h"
 
 float ColorUtility::srgbToLinear(float value)
@@ -93,4 +95,24 @@ glm::vec4 ColorUtility::htmlToSrgb(std::string value)
     result /= 255;
 
     return result;
+}
+
+std::string ColorUtility::hexColorToAnsi(int color)
+{
+    return std::format("{};{};{}", (color >> 16) & 0b11111111, (color >> 8) & 0b11111111, (color >> 0) & 0b11111111);
+}
+
+std::string ColorUtility::ansiForeground(int color)
+{
+    return std::format("\u001B[38;2;{}m", hexColorToAnsi(color));
+}
+
+std::string ColorUtility::ansiBackground(int color)
+{
+    return std::format("\u001B[48;2;{}m", hexColorToAnsi(color));
+}
+
+std::string ColorUtility::ansiReset()
+{
+    return "\033[0m";
 }

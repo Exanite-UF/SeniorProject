@@ -62,6 +62,8 @@
 
 Program::Program()
 {
+    ZoneScoped;
+
     // Ensure preconditions are met
     runEarlyStartupTests();
     Log::information("Starting Voxel Renderer");
@@ -73,8 +75,14 @@ Program::Program()
     }
 
     std::shared_ptr<GlfwContext> previousContext {};
+
+    for (int i = 0; i < Constants::VoxelChunkManager::maxChunkModificationThreads; ++i)
+    {
+        previousContext = std::make_shared<GlfwContext>(previousContext.get());
+        chunkModificationThreadContexts.push_back(previousContext);
+    }
+
     previousContext = offscreenContext = std::make_shared<GlfwContext>(previousContext.get());
-    previousContext = chunkModificationThreadContext = std::make_shared<GlfwContext>(previousContext.get());
     previousContext = window = std::make_shared<Window>(previousContext.get());
 
     window->makeContextCurrent();
@@ -84,8 +92,19 @@ Program::Program()
 
 Program::~Program()
 {
-    // Cleanup singletons
-    SingletonManager::destroyAllSingletons();
+    ZoneScoped;
+
+    {
+        ZoneScopedN("Destroy scene");
+
+        sceneObject->removeFromWorld();
+    }
+
+    {
+        ZoneScopedN("Cleanup singletons");
+
+        SingletonManager::destroyAllSingletons();
+    }
 
     // Shutdown GLFW
     glfwTerminate();
@@ -113,14 +132,15 @@ void Program::run()
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Create the scene GameObject
-    auto sceneObject = GameObject::createRootObject("Scene");
-    auto scene = sceneObject->addComponent<SceneComponent>();
+    sceneObject = GameObject::createRootObject("Scene");
+    scene = sceneObject->addComponent<SceneComponent>();
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
     // Generate static, noise-based chunks for testing purposes
-    if (true)
+    if (false)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
+        voxelChunkManager.settings.enableCulling = false;
         for (int x = 0; x < 3; x++)
         {
             for (int y = 0; y < 3; ++y)
@@ -129,9 +149,9 @@ void Program::run()
 
                 auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                 voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                //voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0, 0, 0) + glm::vec3(0, 0, 0));
+                // voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0, 0, 0) + glm::vec3(0, 0, 0));
 
-                scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
+                scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
             }
         }
     }
@@ -139,16 +159,16 @@ void Program::run()
     // Create the camera GameObject
     auto cameraObject = sceneObject->createChildObject("Camera");
     auto camera = cameraObject->addComponent<CameraComponent>();
-    auto& cameraTransform = camera->getTransform();
+    auto cameraTransform = camera->getTransform();
     scene->setCamera(camera);
     cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
 
     // Initialize the chunk manager
-    voxelChunkManager.initialize(scene, chunkModificationThreadContext);
+    voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
-    float renderRatio = 0.66666666f; // Used to control the render resolution relative to the window resolution
+    float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
 
     renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
@@ -336,6 +356,7 @@ void Program::run()
 
         // Update systems
         window->update();
+        camera->resolution = window->size;
         inputManager->update();
         voxelChunkManager.update(deltaTime);
         sceneObject->update();
@@ -349,7 +370,7 @@ void Program::run()
 
                 camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
                 camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
-                camera->rotation.x = glm::clamp(camera->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
+                camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
 
                 cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
@@ -399,17 +420,20 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_V))
             {
-                if(numberOfBounces == 3){
+                if (numberOfBounces == 3)
+                {
                     numberOfBounces = 2;
-                }else{
+                }
+                else
+                {
                     numberOfBounces = 3;
                 }
-                
+
                 renderer.setBounces(numberOfBounces);
             }
 
             std::shared_ptr<VoxelChunkComponent> closestChunk {};
-            if (scene->tryGetClosestChunk(closestChunk))
+            if (scene->tryGetClosestWorldChunk(closestChunk))
             {
                 if (input->isKeyHeld(GLFW_KEY_E) && closestChunk->getExistsOnGpu())
                 {
@@ -553,7 +577,6 @@ void Program::run()
                         ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
                         ImGui::Text("Render Ratio: %.2f", renderRatio);
                         ImGui::Text("Number of bounces: %d", numberOfBounces);
-                        
 
                         break;
                     }
@@ -627,11 +650,13 @@ void Program::run()
         FrameMark;
     }
 
-    sceneObject->destroy();
+    renderer.stopAsynchronousReprojection();
 }
 
 void Program::checkForContentFolder()
 {
+    ZoneScoped;
+
     if (!std::filesystem::is_directory("content"))
     {
         throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
@@ -642,6 +667,8 @@ void Program::checkForContentFolder()
 
 void Program::runEarlyStartupTests()
 {
+    ZoneScoped;
+
     Log::information("Running early startup tests (in constructor)");
 
     {
@@ -725,25 +752,55 @@ void Program::runEarlyStartupTests()
 
 void Program::runLateStartupTests()
 {
+    ZoneScoped;
+
     Log::information("Running late startup tests (in run())");
 
     {
-        // Verify GameObject destroy API
+        // Verify GameObject removeFromWorld API
+        auto root = GameObject::createRootObject("Root");
+        auto rootTransform = root->getTransform();
+
+        auto child1 = root->createChildObject("Child1");
+        auto child1Transform = child1->getTransform();
+
+        auto child2 = root->createChildObject("Child2");
+        auto child2Transform = child2->getTransform();
+
+        Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
+
+        child1->removeFromWorld();
+        Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been removed from the world");
+
+        root->removeFromWorld();
+        Assert::isTrue(!root->getIsPartOfWorld(), "Root GameObject should have been removed from the world");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been removed from the world");
+        Assert::isTrue(!child2->getIsPartOfWorld(), "Child2 GameObject should have been removed from the world");
+    }
+
+    Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
+    Assert::isTrue(Component::getInstanceCount() == 0, "No Components should be currently alive");
+
+    {
+        // Verify Transform setParent API
         auto root = GameObject::createRootObject("Root");
 
         auto child1 = root->createChildObject("Child1");
         auto child2 = root->createChildObject("Child2");
         Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
 
-        child1->destroy();
+        child2->getTransform()->setParent(nullptr);
+        Assert::isTrue(!child2->getTransform()->hasParent(), "Child2 GameObject should not have a parent");
         Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
-        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
+        Assert::isTrue(root->getTransform()->getChildren().at(0)->getGameObject() == child1, "Root GameObject have Child1 as its only child");
 
-        root->destroy();
-        Assert::isTrue(!root->getIsAlive(), "Root GameObject should have been destroyed");
-        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
-        Assert::isTrue(!child2->getIsAlive(), "Child2 GameObject should have been destroyed");
+        child2->removeFromWorld();
+        root->removeFromWorld();
     }
+
+    Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
+    Assert::isTrue(Component::getInstanceCount() == 0, "No Components should be currently alive");
 
     {
         // Verify shader storage block size is large enough
