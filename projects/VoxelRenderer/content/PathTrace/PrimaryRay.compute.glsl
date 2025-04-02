@@ -763,7 +763,7 @@ void main()
         vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
 
         // If a sun ray could hit the sun, then try
-        if (dot(normal, sunDirection) > 0.0)
+        if (sunAngularSize > 0 && dot(normal, sunDirection) > 0.0)
         {
             float p = 0.1;
 
