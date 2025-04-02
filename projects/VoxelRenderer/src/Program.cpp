@@ -129,7 +129,7 @@ void Program::run()
 
                 auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                 voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                //voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0, 0, 0) + glm::vec3(0, 0, 0));
+                // voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0, 0, 0) + glm::vec3(0, 0, 0));
 
                 scene->addChunk(glm::ivec3(x, y, 0), voxelChunk);
             }
@@ -399,12 +399,15 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_V))
             {
-                if(numberOfBounces == 3){
+                if (numberOfBounces == 3)
+                {
                     numberOfBounces = 2;
-                }else{
+                }
+                else
+                {
                     numberOfBounces = 3;
                 }
-                
+
                 renderer.setBounces(numberOfBounces);
             }
 
@@ -553,7 +556,6 @@ void Program::run()
                         ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
                         ImGui::Text("Render Ratio: %.2f", renderRatio);
                         ImGui::Text("Number of bounces: %d", numberOfBounces);
-                        
 
                         break;
                     }

@@ -68,7 +68,6 @@ void setLightAccumulation(ivec3 coord, vec3 value)
     accumulatedLight2[2 + index] = value.z;
 }
 
-
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);

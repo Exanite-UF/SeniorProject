@@ -1,7 +1,7 @@
 #version 460 core
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-//layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+// layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 // Padded to 32 bytes long (alignment of 16)
 struct MaterialDefinition
@@ -18,7 +18,6 @@ struct MaterialDefinition
     float padding3;
     float padding4;
 };
-
 
 uniform ivec3 cellCount;
 uniform uint occupancyMapLayerCount;
@@ -61,7 +60,6 @@ void setRayPosition(ivec3 coord, vec3 value)
     rayPositionOut[2 + index] = value.z;
 }
 
-
 layout(std430, binding = 2) buffer RayDirection
 {
     float rayDirection[];
@@ -86,7 +84,6 @@ void setRayDirection(ivec3 coord, vec3 value)
     rayDirectionOut[1 + index] = value.y;
     rayDirectionOut[2 + index] = value.z;
 }
-
 
 layout(std430, binding = 5) buffer OccupancyMap
 {
@@ -142,9 +139,6 @@ layout(std430, binding = 8) buffer MaterialDefinitions
     restrict MaterialDefinition materialDefinitions[];
 };
 
-
-
-
 layout(std430, binding = 9) buffer AttenuationIn
 {
     restrict float attenuationIn[];
@@ -162,7 +156,6 @@ layout(std430, binding = 10) buffer AccumulatedLightIn
     restrict float accumulatedLightIn[];
 };
 
-
 layout(std430, binding = 11) buffer AttenuationOut
 {
     restrict float attenuationOut[];
@@ -172,8 +165,6 @@ layout(std430, binding = 12) buffer AccumulatedLightOut
 {
     restrict float accumulatedLightOut[];
 };
-
-
 
 void setAttenuation(ivec3 coord, vec3 value)
 {
@@ -401,11 +392,14 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     // At this point was hit is true
 
     setRayDepth(texelCoord, hit.dist);
-    //setHitWasHit(texelCoord, hit.wasHit);
+    // setHitWasHit(texelCoord, hit.wasHit);
 
-    for(int i = 0; i < shadingRate; i++){
-        for(int j = 0; j < shadingRate; j++){
-            if(i == offset.x && j == offset.y) continue;
+    for (int i = 0; i < shadingRate; i++)
+    {
+        for (int j = 0; j < shadingRate; j++)
+        {
+            if (i == offset.x && j == offset.y)
+                continue;
             ivec3 coord = texelCoord + ivec3(i, j, 0) - ivec3(offset, 0);
             setRayDepth(coord, hit.dist);
         }
@@ -624,7 +618,6 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     voxelMaterial.metallic *= rmTexture.g;
     */
 
-
     normal = normalize(normal);
     direction = normalize(direction);
 
@@ -640,13 +633,15 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     setRayPosition(texelCoord, position); // Set where the ray should start from next
     setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
 
-
     setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
     changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
 
-    for(int i = 0; i < shadingRate; i++){
-        for(int j = 0; j < shadingRate; j++){
-            if(i == offset.x && j == offset.y) continue;
+    for (int i = 0; i < shadingRate; i++)
+    {
+        for (int j = 0; j < shadingRate; j++)
+        {
+            if (i == offset.x && j == offset.y)
+                continue;
             ivec3 coord = texelCoord + ivec3(i, j, 0) - ivec3(offset, 0);
             vec3 attentuation = getPriorAttenuation(coord); // This is the accumulated attenuation
             setAttenuation(coord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
@@ -684,10 +679,10 @@ void attempt(ivec3 texelCoord)
 
 void main()
 {
-    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);  
+    ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
     offset = ivec2(mod(inputOffset, shadingRate));
-    
+
     texelCoord *= shadingRate;
     texelCoord += ivec3(offset, 0);
     attempt(texelCoord);

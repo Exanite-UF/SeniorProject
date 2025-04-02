@@ -293,11 +293,11 @@ void Renderer::_render()
         }
 
         // This need SVGF's framebuffer
-        //voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
         voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV);
 
         // SVGF
-        //TODO: enable SVGF
+        // TODO: enable SVGF
         svgf->lock();
         svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
         svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
@@ -362,9 +362,8 @@ void Renderer::reproject(float fov)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Do the render
-    //reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
+    // reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
     reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
-    
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);

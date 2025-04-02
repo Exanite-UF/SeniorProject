@@ -25,7 +25,7 @@ public:
     constexpr static std::string_view beforeCastComputeShader = "content/PathTrace/BeforeCast.compute.glsl";
     constexpr static std::string_view castPrimaryRayComputeShader = "content/PathTrace/PrimaryRay.compute.glsl";
     constexpr static std::string_view groupPixelsComputeShader = "content/PathTrace/GroupPixels.compute.glsl";
-    
+
     // SVGF
     constexpr static std::string_view integrateFrameFragmentShader = "content/SVGF/IntegrateFrame.fragment.glsl";
     constexpr static std::string_view firstWaveletIterationFragmentShader = "content/SVGF/WaveletIterationFirst.fragment.glsl";

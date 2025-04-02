@@ -226,12 +226,12 @@ void AsyncReprojectionRenderer::bypass(GLuint framebuffer, const glm::ivec2& rep
         glDrawBuffers(4, drawBuffers);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     glBindVertexArray(0);
-    
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 

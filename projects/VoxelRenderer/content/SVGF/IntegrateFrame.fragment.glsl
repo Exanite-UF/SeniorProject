@@ -46,8 +46,6 @@ void main()
     vec4 oldMoment1 = safeVec4(texture(historicalMoment1, oldUV), vec4(0));
     vec4 oldMoment2 = safeVec4(texture(historicalMoment2, oldUV), vec4(0));
 
-    
-
     vec3 oldPos = texture(historicalPosition, oldUV).xyz;
     vec3 newPos = texture(inputPosition, uv).xyz;
 
@@ -58,8 +56,9 @@ void main()
         alpha = 0;
     }
 
-    //Prevents streaking
-    if(any(lessThan(oldUV, vec2(0))) || any(greaterThan(oldUV, vec2(1)))){
+    // Prevents streaking
+    if (any(lessThan(oldUV, vec2(0))) || any(greaterThan(oldUV, vec2(1))))
+    {
         alpha = 0;
     }
 
