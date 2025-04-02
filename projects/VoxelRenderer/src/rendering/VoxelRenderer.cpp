@@ -165,11 +165,11 @@ void VoxelRenderer::prepareRayTraceFromCamera(const glm::vec3& cameraPosition, c
     resetVisualInfo(maxDepth);
 }
 
-void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, int shadingRate, const glm::ivec2& offset)
+void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, int shadingRate, const glm::ivec2& offset, std::shared_ptr<SceneComponent> scene)
 {
     ZoneScoped;
 
-    beforeCast(maxDepth);
+    beforeCast(maxDepth, scene);
 
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
@@ -299,18 +299,18 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     whichAccumulationBuffer = !whichAccumulationBuffer;
 }
 
-void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV)
+void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, std::shared_ptr<SceneComponent> scene)
 {
     ZoneScoped;
 
-    executePrimaryRay(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV);
+    executePrimaryRay(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, scene);
 
     glm::ivec2 offset = glm::ivec2(rand(), rand());
 
     for (int i = 0; i < bounces; i++)
     {
         int shadingRate = i + 1;
-        executeRayTrace(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, shadingRate, offset);
+        executeRayTrace(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, shadingRate, offset, scene);
         // afterCast();
         // resetVisualInfo();
     }
@@ -404,7 +404,7 @@ void VoxelRenderer::resetVisualInfo(float maxDepth)
     glUseProgram(0);
 }
 
-void VoxelRenderer::beforeCast(float maxDepth, bool shouldDrawSkybox)
+void VoxelRenderer::beforeCast(float maxDepth, std::shared_ptr<SceneComponent> scene, bool shouldDrawSkybox)
 {
     ZoneScoped;
 
@@ -441,6 +441,8 @@ void VoxelRenderer::beforeCast(float maxDepth, bool shouldDrawSkybox)
     glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
     glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);    
     glUniform1i(glGetUniformLocation(beforeCastProgram, "shouldDrawSkybox"), shouldDrawSkybox);
+
+    std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
 
     glUniform1f(glGetUniformLocation(beforeCastProgram, "sunAngularSize"), skybox->getSunAngularSize());
     if(skybox->getCubemap() != nullptr){
@@ -512,11 +514,11 @@ void VoxelRenderer::afterCast(float maxDepth)
     glUseProgram(0);
 }
 
-void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV)
+void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, std::shared_ptr<SceneComponent> scene)
 {
     ZoneScoped;
 
-    beforeCast(maxDepth, false);
+    beforeCast(maxDepth, scene, false);
 
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(primaryRayProgram);
@@ -564,6 +566,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         glUniform4fv(glGetUniformLocation(primaryRayProgram, "pastCameraRotation"), 1, glm::value_ptr(pastCameraRotation));
         glUniform1f(glGetUniformLocation(primaryRayProgram, "pastCameraFovTan"), std::tan(pastCameraFOV * 0.5)); // A little bit of randomness for temporal accumulation
 
+        std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
         glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), skybox->getSunAngularSize());
         glUniform3fv(glGetUniformLocation(primaryRayProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
         
@@ -653,7 +656,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     glUseProgram(0);
 }
 
-void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV)
+void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, std::shared_ptr<SceneComponent> scene)
 {
     ZoneScoped;
 
@@ -685,6 +688,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     glUniform4fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
     glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
 
+    std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
     glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunAngularSize"), skybox->getSunAngularSize());
     if(skybox->getCubemap() != nullptr){
         glActiveTexture(GL_TEXTURE0);
@@ -726,12 +730,4 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     glUseProgram(0);
 }
 
-void VoxelRenderer::setSkybox(std::shared_ptr<SkyboxComponent> skybox)
-{
-    if(skybox == nullptr){
-        this->skybox = std::make_shared<SkyboxComponent>();
-    }else{
-        this->skybox = skybox;
-    }
-    
-}
+

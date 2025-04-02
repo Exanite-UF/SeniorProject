@@ -241,7 +241,6 @@ void Renderer::pollCamera(const std::shared_ptr<CameraComponent>& camera)
 void Renderer::setScene(const std::shared_ptr<SceneComponent>& scene)
 {
     this->scene = scene;
-    this->voxelRenderer->setSkybox(scene->getSkybox());
 }
 
 void Renderer::setBounces(const int& bounces)
@@ -294,12 +293,12 @@ void Renderer::_render()
         {
             std::shared_lock lockScene(scene->getMutex());
 
-            voxelRenderer->executePathTrace(scene->getAllChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+            voxelRenderer->executePathTrace(scene->getAllChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, scene);
         }
 
         // This need SVGF's framebuffer
         //voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
-        voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
 
         // SVGF
         svgf->lock();

@@ -15,6 +15,7 @@
 #include <src/world/VoxelChunkComponent.h>
 #include <src/world/SkyboxComponent.h>
 #include <src/graphics/Texture.h>
+#include <src/world/SceneComponent.h>
 
 class Renderer;
 
@@ -93,7 +94,6 @@ private:
     friend class Renderer;
 
     float maxDepth = 10000.0;
-    std::shared_ptr<SkyboxComponent> skybox = std::make_shared<SkyboxComponent>();//A default void
 
 
 public:
@@ -107,16 +107,14 @@ public:
     void resetPrimaryRayInfo();
 
     void resetVisualInfo(float maxDepth);
-    void beforeCast(float maxDepth, bool shouldDrawSkybox = true);
+    void beforeCast(float maxDepth, std::shared_ptr<SceneComponent> scene, bool shouldDrawSkybox = true);
     void afterCast(float maxDepth);
 
-    void executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV);
+    void executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, std::shared_ptr<SceneComponent> scene);
 
-    void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, int shadingRate, const glm::ivec2& offset);
+    void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, int shadingRate, const glm::ivec2& offset, std::shared_ptr<SceneComponent> scene);
 
-    void executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV);
+    void executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, std::shared_ptr<SceneComponent> scene);
 
-    void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
-
-    void setSkybox(std::shared_ptr<SkyboxComponent> skybox);
+    void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, std::shared_ptr<SceneComponent> scene);
 };
