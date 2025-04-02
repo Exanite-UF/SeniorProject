@@ -407,7 +407,7 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
         for(int j = 0; j < shadingRate; j++){
             if(i == offset.x && j == offset.y) continue;
             ivec3 coord = texelCoord + ivec3(i, j, 0) - ivec3(offset, 0);
-            setRayDepth(coord, -1);
+            setRayDepth(coord, hit.dist);
         }
     }
 
