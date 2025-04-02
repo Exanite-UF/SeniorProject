@@ -434,27 +434,15 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Chunk visibility
     {
-        // TODO: Don't require exclusive access
-        ZoneScopedN("Chunk visibility");
-
-        std::lock_guard lock(state.scene->getMutex());
         auto camera = state.scene->camera;
-
-        std::vector<std::shared_ptr<VoxelChunkComponent>> visibleChunks {};
         for (auto chunk : state.scene->allChunks)
         {
-            auto isVisible = isOnScreen(chunk, camera);
-            if (isVisible)
-            {
-                visibleChunks.push_back(chunk);
-            }
+            chunk->getRendererData().isVisible = isChunkVisible(chunk, camera);
         }
-
-        state.scene->visibleChunks = visibleChunks;
     }
 }
 
-bool VoxelChunkManager::isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera)
+bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera) const
 {
     ZoneScoped;
 
@@ -814,8 +802,7 @@ void VoxelChunkManager::showDebugMenu()
                             cellColor = unloadingCellColor;
                         }
 
-                        auto visibleChunks = state.scene->visibleChunks;
-                        if (std::find(visibleChunks.begin(), visibleChunks.end(), chunk->component) != visibleChunks.end())
+                        if (chunk->component->getRendererData().isVisible)
                         {
                             dotColor = visibleDotColor;
                         }

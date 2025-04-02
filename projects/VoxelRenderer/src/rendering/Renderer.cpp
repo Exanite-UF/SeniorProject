@@ -288,8 +288,7 @@ void Renderer::_render()
         {
             std::shared_lock lockScene(scene->getMutex());
 
-            voxelRenderer->executePathTrace(scene->getVisibleChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
-            // voxelRenderer->executePathTrace(scene->getChunks(), bounces, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+            voxelRenderer->executePathTrace(scene->getAllChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
         }
 
         // This need SVGF's framebuffer

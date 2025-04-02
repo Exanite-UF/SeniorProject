@@ -225,7 +225,12 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
         for (auto& chunkComponent : chunks)
         {
-            ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
+            ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk preconditions");
+
+            if (!chunkComponent->getRendererData().isVisible)
+            {
+                continue;
+            }
 
             std::shared_lock lock(chunkComponent->getMutex());
 
@@ -234,25 +239,29 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
                 continue;
             }
 
-            auto& chunk = chunkComponent->getChunk();
-
-            chunk->bindBuffers(5, 6);
             {
-                const auto chunkSize = chunk->getSize();
+                ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk");
 
-                glUniform3i(glGetUniformLocation(fullCastProgram, "cellCount"), chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2);
-                glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), chunk->getOccupancyMapIndices().size() - 2);
-                glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), chunk->getOccupancyMapIndices().size() - 1, chunk->getOccupancyMapIndices().data());
+                auto& chunk = chunkComponent->getChunk();
 
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalPosition()));
-                glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
-                glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
+                chunk->bindBuffers(5, 6);
+                {
+                    const auto chunkSize = chunk->getSize();
 
-                glDispatchCompute(workGroupsX, workGroupsY, 1);
+                    glUniform3i(glGetUniformLocation(fullCastProgram, "cellCount"), chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2);
+                    glUniform1ui(glGetUniformLocation(fullCastProgram, "occupancyMapLayerCount"), chunk->getOccupancyMapIndices().size() - 2);
+                    glUniform1uiv(glGetUniformLocation(fullCastProgram, "occupancyMapIndices"), chunk->getOccupancyMapIndices().size() - 1, chunk->getOccupancyMapIndices().data());
 
-                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                    glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldPosition"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalPosition()));
+                    glUniform4fv(glGetUniformLocation(fullCastProgram, "voxelWorldRotation"), 1, glm::value_ptr(chunkComponent->getTransform()->getGlobalRotation()));
+                    glUniform3fv(glGetUniformLocation(fullCastProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
+
+                    glDispatchCompute(workGroupsX, workGroupsY, 1);
+
+                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                }
+                chunk->unbindBuffers();
             }
-            chunk->unbindBuffers();
         }
     }
 

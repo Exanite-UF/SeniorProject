@@ -31,11 +31,6 @@ const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getWorl
     return worldChunks;
 }
 
-const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getVisibleChunks()
-{
-    return visibleChunks;
-}
-
 bool SceneComponent::tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& outResult)
 {
     auto iterator = worldChunksByChunkPosition.find(chunkPosition);
@@ -88,14 +83,7 @@ void SceneComponent::removeWorldChunk(const glm::ivec3& chunkPosition)
         auto chunk = mapIterator->second;
         worldChunksByChunkPosition.erase(mapIterator);
 
-        removeChunk(chunk);
+        std::erase(allChunks, chunk);
+        std::erase(worldChunks, chunk);
     }
-}
-
-void SceneComponent::removeChunk(const std::shared_ptr<VoxelChunkComponent>& chunk)
-{
-    // This is pretty horrible, but we need to keep the data in sync
-    std::erase(allChunks, chunk);
-    std::erase(worldChunks, chunk);
-    std::erase(visibleChunks, chunk);
 }

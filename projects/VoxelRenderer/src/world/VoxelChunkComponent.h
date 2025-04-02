@@ -17,11 +17,18 @@ class VoxelChunkComponent : public Component
     friend class GameObject;
     friend class VoxelChunkCommandBuffer;
 
+public:
+    struct RendererData
+    {
+        std::atomic<bool> isVisible = false;
+    };
+
 private:
     std::optional<std::unique_ptr<VoxelChunk>> chunk; // Primarily accessed by render and chunk modification thread
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
     std::atomic<bool> existsOnGpu = false;
+    RendererData rendererData {};
 
     std::shared_mutex mutex {};
 
@@ -41,6 +48,9 @@ public:
     // Requires mutex exclusive access
     // Prefer using a command buffer instead
     VoxelChunkData& getRawChunkData();
+
+    // Unsynchronized
+    RendererData& getRendererData();
 
     bool getExistsOnGpu() const;
 
