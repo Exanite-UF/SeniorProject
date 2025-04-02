@@ -5,6 +5,7 @@
 #include <src/graphics/ShaderManager.h>
 
 #include <iostream>
+#include <tracy/Tracy.hpp>
 
 GLuint AsyncReprojectionRenderer::renderProgram {};
 GLuint AsyncReprojectionRenderer::combineProgram {};
@@ -12,6 +13,8 @@ GLuint AsyncReprojectionRenderer::bypassProgram {};
 
 void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 {
+    ZoneScoped;
+
     vertices.resize(size.x * size.y * 3);
     indices.resize((size.x - 1) * (size.y - 1) * 2 * 3); // number of squares -> number of triangle -> number of edges
 
@@ -75,6 +78,8 @@ AsyncReprojectionRenderer::AsyncReprojectionRenderer()
 
 void AsyncReprojectionRenderer::setRenderResolution(glm::ivec2 size)
 {
+    ZoneScoped;
+
     if (this->size == size)
     {
         return;
@@ -88,6 +93,8 @@ void AsyncReprojectionRenderer::setRenderResolution(glm::ivec2 size)
 void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
     const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& miscTexture)
 {
+    ZoneScoped;
+
     glUseProgram(renderProgram);
 
     glActiveTexture(GL_TEXTURE0);
@@ -132,6 +139,8 @@ void AsyncReprojectionRenderer::render(GLuint framebuffer, const glm::ivec2& rep
 void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& newMiscTexture,
     const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const glm::vec3& cameraPosition)
 {
+    ZoneScoped;
+
     // This runs in the offscreen context
 
     // This is where combination occurs
@@ -211,6 +220,8 @@ void AsyncReprojectionRenderer::combineBuffers(const GLuint& oldColorTexture, co
 
 void AsyncReprojectionRenderer::bypass(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const GLuint& inputTexture)
 {
+    ZoneScoped;
+
     glUseProgram(bypassProgram);
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
