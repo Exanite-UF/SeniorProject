@@ -153,7 +153,8 @@ void Program::run()
     renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
-    renderer.setBounces(2);
+    int numberOfBounces = 2;
+    renderer.setBounces(numberOfBounces);
 
     // Configure post processing
     {
@@ -396,6 +397,17 @@ void Program::run()
                 renderer.toggleAsynchronousReprojection();
             }
 
+            if (input->isKeyPressed(GLFW_KEY_V))
+            {
+                if(numberOfBounces == 2){
+                    numberOfBounces = 1;
+                }else{
+                    numberOfBounces = 2;
+                }
+                
+                renderer.setBounces(numberOfBounces);
+            }
+
             std::shared_ptr<VoxelChunkComponent> closestChunk {};
             if (scene->tryGetClosestChunk(closestChunk))
             {
@@ -540,6 +552,8 @@ void Program::run()
                         ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
                         ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
                         ImGui::Text("Render Ratio: %.2f", renderRatio);
+                        ImGui::Text("Number of bounces: %d", numberOfBounces);
+                        
 
                         break;
                     }
@@ -572,6 +586,7 @@ void Program::run()
                         ImGui::Text("Q - Toggle Mouse Input");
                         ImGui::Text("T - Change Noise Type");
                         ImGui::Text("G - Toggle Reprojection");
+                        ImGui::Text("V - Toggle Bounce Count");
                         ImGui::Text("Mouse Scroll - Change Move Speed");
                         ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
                         ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");
