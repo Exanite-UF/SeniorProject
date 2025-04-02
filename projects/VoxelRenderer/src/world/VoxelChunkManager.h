@@ -165,5 +165,5 @@ protected:
     void onSingletonDestroy() override;
 
 private:
-    bool isOnScreen(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera);
+    bool isChunkVisible(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera) const;
 };
