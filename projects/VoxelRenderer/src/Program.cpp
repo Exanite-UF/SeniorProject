@@ -137,7 +137,7 @@ void Program::run()
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
     // Generate static, noise-based chunks for testing purposes
-    if (true)
+    if (false)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         for (int x = 0; x < 3; x++)
@@ -167,7 +167,7 @@ void Program::run()
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
-    float renderRatio = 0.66666666f; // Used to control the render resolution relative to the window resolution
+    float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
 
     renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
