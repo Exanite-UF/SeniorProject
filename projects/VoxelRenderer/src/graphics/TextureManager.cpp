@@ -14,7 +14,7 @@ GLenum TextureManager::getOpenGlStorageFormat(TextureType type)
         case ColorAlpha:
             return GL_SRGB8_ALPHA8;
         case Normal:
-            return GL_RGB8;
+            return GL_RG8;
         default:
             break;
     }
@@ -30,8 +30,8 @@ int TextureManager::getFormatChannelCount(GLenum format)
             return 3;
         case GL_SRGB8_ALPHA8:
             return 4;
-        case GL_RGB8:
-            return 3;
+        case GL_RG8:
+            return 2;
         default:
             break;
     }
