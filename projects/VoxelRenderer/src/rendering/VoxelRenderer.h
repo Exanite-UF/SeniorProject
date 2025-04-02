@@ -7,15 +7,15 @@
 #include <vector>
 
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/graphics/Texture.h>
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/Renderer.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/world/CameraComponent.h>
 #include <src/world/MaterialManager.h>
-#include <src/world/VoxelChunkComponent.h>
-#include <src/world/SkyboxComponent.h>
-#include <src/graphics/Texture.h>
 #include <src/world/SceneComponent.h>
+#include <src/world/SkyboxComponent.h>
+#include <src/world/VoxelChunkComponent.h>
 
 class Renderer;
 
@@ -94,7 +94,6 @@ private:
     friend class Renderer;
 
     float maxDepth = 10000.0;
-
 
 public:
     void setResolution(glm::ivec2 size);

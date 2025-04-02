@@ -77,7 +77,8 @@ layout(binding = 0) uniform samplerCube skybox;
 vec3 skyBox(vec3 rayDirection)
 {
     float multiplier = skyBrightnessMultiplier;
-    if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+    if (dot(normalize(sunDir), normalize(rayDirection)) > sunSize)
+    {
         multiplier = sunBrightnessMultiplier;
     }
     return texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz * multiplier;

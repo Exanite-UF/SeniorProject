@@ -1,6 +1,6 @@
+#include "SceneComponent.h"
 #include <glm/gtx/quaternion.hpp>
 #include <src/world/SceneComponent.h>
-#include "SceneComponent.h"
 
 std::shared_mutex& SceneComponent::getMutex()
 {
