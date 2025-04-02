@@ -590,7 +590,7 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
                 bool isOnScreenSelf = false;
                 float m = (vertex1.y - vertex2.y) / (vertex1.x - vertex2.x);
                 float intersectX1 = (vertex1.y - m * vertex1.x) / (1 - m); // Intersection point with x=y
-                if (intersectX1 > -1 && intersectX1 < 1)
+                if (intersectX1 > -1 && intersectX1 < 1 && intersectX1 > glm::min(vertex1.x, vertex2.x) && intersectX1 < glm::max(vertex1.x, vertex2.x))
                 {
                     if (isDebugging)
                     {
@@ -604,7 +604,7 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
                 }
 
                 float intersectX2 = (m * vertex1.x - vertex1.y) / (m + 1); // Intersection point with x=-y
-                if (intersectX2 > -1 && intersectX2 < 1)
+                if (intersectX2 > -1 && intersectX2 < 1 && intersectX2 > glm::min(vertex1.x, vertex2.x) && intersectX2 < glm::max(vertex1.x, vertex2.x))
                 {
                     if (isDebugging)
                     {
