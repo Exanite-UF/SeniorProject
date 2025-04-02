@@ -136,8 +136,6 @@ void VoxelChunkData::writeTo(VoxelChunk& chunk)
 {
     ZoneScoped;
 
-    constexpr int sleepTime = 10;
-
     if (chunk.getSize() != data.size)
     {
         throw std::runtime_error("Target chunk does not have the same size");
@@ -156,13 +154,13 @@ void VoxelChunkData::writeTo(VoxelChunk& chunk)
             ZoneScopedN("Sleep");
 
             glFlush();
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+            std::this_thread::sleep_for(std::chrono::milliseconds(Constants::VoxelChunk::chunkUploadSleepTimeMs));
         }
     }
 
     // Upload in 32 MB sized chunks
     {
-        constexpr int uploadChunkSize = Constants::VoxelChunk::maxUploadChunkSizeBytes;
+        constexpr int uploadChunkSize = Constants::VoxelChunk::maxChunkUploadSizeBytes;
 
         int byteCount = data.materialMap.size() * 2;
         int uploadChunkCount = byteCount / uploadChunkSize;
@@ -181,7 +179,7 @@ void VoxelChunkData::writeTo(VoxelChunk& chunk)
                 ZoneScopedN("Sleep");
 
                 glFlush();
-                std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+                std::this_thread::sleep_for(std::chrono::milliseconds(Constants::VoxelChunk::chunkUploadSleepTimeMs));
             }
         }
     }
