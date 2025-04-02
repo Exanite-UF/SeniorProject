@@ -34,6 +34,8 @@ uniform uint materialMapSize;
 uniform float random; // This is used to make non-deterministic randomness
 
 uniform int shadingRate;
+uniform ivec2 inputOffset;
+ivec2 offset;
 
 layout(std430, binding = 0) buffer RayPosition
 {
@@ -403,8 +405,8 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
 
     for(int i = 0; i < shadingRate; i++){
         for(int j = 0; j < shadingRate; j++){
-            if(i == 0 && j == 0) continue;
-            ivec3 coord = texelCoord + ivec3(i, j, 0);
+            if(i == offset.x && j == offset.y) continue;
+            ivec3 coord = texelCoord + ivec3(i, j, 0) - ivec3(offset, 0);
             setRayDepth(coord, -1);
         }
     }
@@ -644,8 +646,8 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 
     for(int i = 0; i < shadingRate; i++){
         for(int j = 0; j < shadingRate; j++){
-            if(i == 0 && j == 0) continue;
-            ivec3 coord = texelCoord + ivec3(i, j, 0);
+            if(i == offset.x && j == offset.y) continue;
+            ivec3 coord = texelCoord + ivec3(i, j, 0) - ivec3(offset, 0);
             vec3 attentuation = getPriorAttenuation(coord); // This is the accumulated attenuation
             setAttenuation(coord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
             changeLightAccumulation(coord, receivedLight); // Accumulate the light the has reached the camera
@@ -681,6 +683,9 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);  
 
+    offset = ivec2(mod(inputOffset, shadingRate));
+    
     texelCoord *= shadingRate;
+    texelCoord += ivec3(offset, 0);
     attempt(texelCoord);
 }
