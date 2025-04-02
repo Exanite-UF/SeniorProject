@@ -32,7 +32,7 @@ private:
     // Speeds up searching for world chunks by chunk position
     std::unordered_map<glm::ivec3, std::shared_ptr<VoxelChunkComponent>> worldChunksByChunkPosition {};
 
-    std::shared_ptr<SkyboxComponent> skybox;
+    std::shared_ptr<SkyboxComponent> skybox;// = std::make_shared<SkyboxComponent>();//A default void
 
     // General use mutex
     // Readers should acquire shared access
@@ -54,4 +54,7 @@ public:
 
     void addWorldChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk);
     void removeWorldChunk(const glm::ivec3& chunkPosition);
+
+    void setSkybox(std::shared_ptr<SkyboxComponent>& skybox);
+    std::shared_ptr<SkyboxComponent> getSkybox();
 };

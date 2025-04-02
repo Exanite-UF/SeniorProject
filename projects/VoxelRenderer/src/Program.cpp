@@ -60,6 +60,8 @@
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
 
+#include <src/world/SkyboxComponent.h>
+
 Program::Program()
 {
     ZoneScoped;
@@ -136,8 +138,13 @@ void Program::run()
     scene = sceneObject->addComponent<SceneComponent>();
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
+    auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
+    scene->setSkybox(skybox);
+
+    
+
     // Generate static, noise-based chunks for testing purposes
-    if (false)
+    if (true)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         voxelChunkManager.settings.enableCulling = false;
@@ -281,6 +288,18 @@ void Program::run()
                 glUniform1f(glGetUniformLocation(program, "exposure"), 1.5);
             };
         }
+
+         // Show angular size
+         if (false)
+         {
+            auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            showAngularSize->setUniforms = [&renderer](GLuint program)
+            {
+                glUniform1f(glGetUniformLocation(program, "angularSize"), 10 * 3.1415926589 / 180);
+                glUniform1f(glGetUniformLocation(program, "horizontalFov"), renderer.getCurrentCameraFOV());
+                glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+            };
+         }
     }
 
     // Engine time

@@ -18,25 +18,33 @@ private:
     std::unordered_map<std::tuple<std::string_view, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string_view, GLenum>>> textures;
 
 
-    static GLenum getOpenGlFormat(TextureType type);
-    static int getFormatChannelCount(GLenum format);
+    static GLenum getOpenGlStorageFormat(TextureType type);
+    static int getFormatChannelCount(GLenum storageFormat);
 
-    std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type, GLenum format);
+    std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type, GLenum storageFormat);
     
     //Path points to a file with a list of file names for the 6 faces
-    std::shared_ptr<Texture> loadCubemapTexture(std::string_view path, TextureType type, GLenum format);
+    /*This is the order the files need to be listed
+    right.jpg
+    left.jpg
+    top.jpg
+    bottom.jpg
+    front.jpg
+    back.jpg
+    */
+    std::shared_ptr<Texture> loadCubemapTexture(std::string_view path, TextureType type, GLenum storageFormat);
 
 public:
     // Loads a texture using a texture type preset
     std::shared_ptr<Texture> loadTexture(std::string_view path, TextureType type);
 
     // Loads a texture with the specified format and colorspace
-    std::shared_ptr<Texture> loadTexture(std::string_view path, GLenum format);
+    std::shared_ptr<Texture> loadTexture(std::string_view path, GLenum storageFormat);
 
 
     // Loads a texture using a texture type preset
     std::shared_ptr<Texture> loadCubemapTexture(std::string_view path, TextureType type);
 
     // Loads a texture with the specified format and colorspace
-    std::shared_ptr<Texture> loadCubemapTexture(std::string_view path, GLenum format);
+    std::shared_ptr<Texture> loadCubemapTexture(std::string_view path, GLenum storageFormat);
 };

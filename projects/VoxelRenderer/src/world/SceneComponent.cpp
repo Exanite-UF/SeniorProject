@@ -1,5 +1,6 @@
 #include <glm/gtx/quaternion.hpp>
 #include <src/world/SceneComponent.h>
+#include "SceneComponent.h"
 
 std::shared_mutex& SceneComponent::getMutex()
 {
@@ -86,4 +87,14 @@ void SceneComponent::removeWorldChunk(const glm::ivec3& chunkPosition)
         std::erase(allChunks, chunk);
         std::erase(worldChunks, chunk);
     }
+}
+
+void SceneComponent::setSkybox(std::shared_ptr<SkyboxComponent>& skybox)
+{
+    this->skybox = skybox;
+}
+
+std::shared_ptr<SkyboxComponent> SceneComponent::getSkybox()
+{
+    return skybox;
 }

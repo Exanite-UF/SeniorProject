@@ -13,6 +13,8 @@
 #include <src/world/CameraComponent.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkComponent.h>
+#include <src/world/SkyboxComponent.h>
+#include <src/graphics/Texture.h>
 
 class Renderer;
 
@@ -91,11 +93,8 @@ private:
     friend class Renderer;
 
     float maxDepth = 10000.0;
-    float sunAngularSize = 5;
-    glm::vec3 sunDirection = glm::vec3(1, -0.5, 1);
-    float sunBrightness = 3;
-    glm::vec3 skyColor = glm::vec3(40 / 255.0, 77 / 255.0, 222 / 255.0);
-    glm::vec3 groundColor = glm::vec3(61 / 255.0, 150 / 255.0, 11 / 255.0) * 0.1f;
+    std::shared_ptr<SkyboxComponent> skybox = std::make_shared<SkyboxComponent>();//A default void
+
 
 public:
     void setResolution(glm::ivec2 size);
@@ -119,5 +118,5 @@ public:
 
     void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
 
-    void setSunInfo();
+    void setSkybox(std::shared_ptr<SkyboxComponent> skybox);
 };

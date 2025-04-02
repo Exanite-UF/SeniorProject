@@ -67,26 +67,20 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 
 uniform bool shouldDrawSkybox;
 uniform float sunAngularSize; // The angle of the sun in diameter
-float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
+float sunSize = cos(sunAngularSize * 3.14159265 / 180.0 * 0.5);
 uniform vec3 sunDir;
-uniform float sunBrightness;
-uniform vec3 skyColor;
-uniform vec3 groundColor;
+uniform float sunBrightnessMultiplier;
+uniform float skyBrightnessMultiplier;
+
+layout(binding = 0) uniform samplerCube skybox;
 
 vec3 skyBox(vec3 rayDirection)
 {
-    if (dot(normalize(sunDir), normalize(rayDirection)) > sunSize)
-    {
-        return sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1);
+    float multiplier = skyBrightnessMultiplier;
+    if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+        multiplier = sunBrightnessMultiplier;
     }
-    else if (dot(rayDirection, vec3(0, 0, 1)) > 0)
-    {
-        return skyColor;
-    }
-    else
-    {
-        return groundColor;
-    }
+    return texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz * multiplier;
 }
 
 void main()

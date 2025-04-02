@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <fstream>
 
+#include <iostream>
+
 GLenum TextureManager::getOpenGlStorageFormat(TextureType type)
 {
     switch (type)
@@ -69,13 +71,13 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
 
             // internalFormat (called storageFormat here) is the format of the texture stored on the GPU
             // format is the input format, as loaded from the texture file
-            glTexImage2D(GL_TEXTURE_2D, 0, storageFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawTextureData);
+            glTexImage2D(GL_TEXTURE_2D, 0, storageFormat, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, rawTextureData);
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Wrap OpenGL handle with the Texture class
-        auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height));
+        auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height), false);
 
         // Insert texture into cache
         textures[cacheKey] = texture;
@@ -91,21 +93,24 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
     }
 }
 
-std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view path, TextureType type, GLenum format)
+std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view path, TextureType type, GLenum storageFormat)
 {
     // Use cached texture if available
-    auto cacheKey = std::make_tuple(std::string(path), format);
+    auto cacheKey = std::make_tuple(std::string(path), storageFormat);
     if (textures.contains(cacheKey))
     {
         return textures[cacheKey];
     }
 
     // Load texture data
-    
-    
     std::ifstream indirectFile(path.data());
+    if(!indirectFile.is_open()){
+        std::cout << "Failed to load cube map indirect file: " + std::string(path) << std::endl;
+    }
     Assert::isTrue(indirectFile.is_open(), "Failed to load cube map indirect file: " + std::string(path));
 
+    std::string prePath = path.data();
+    prePath = prePath.substr(0, prePath.find_last_of('/') + 1);
 
     // Create OpenGL texture
     GLuint textureId;
@@ -122,13 +127,18 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
         if(std::getline(indirectFile, faceFileName)){
             foundFileName = true;
         }
+
         Assert::isTrue(foundFileName, "Failed to file path of " + std::to_string(i) + "th cube map texture: " + std::string(path));
 
+        faceFileName = prePath + faceFileName;
         auto rawTextureData = stbi_load(faceFileName.c_str(), &width, &height, &rawChannelCount, 3);
         //If the image fails to load, throw
         //But first free the memory
         try
         {
+            if(rawTextureData == nullptr){
+                std::cout << "Failed to load texture: " + std::string(path) << std::endl;
+            }
             Assert::isTrue(rawTextureData != nullptr, "Failed to load texture: " + std::string(path));
         }
         catch (...)
@@ -137,8 +147,9 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
 
             throw;
         }
-        
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawTextureData);
+
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, storageFormat, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, rawTextureData);
+
         stbi_image_free(rawTextureData);
     }
 
@@ -151,7 +162,7 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Wrap OpenGL handle with the Texture class
-    auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height));
+    auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height), true);
 
     // Insert texture into cache
     textures[cacheKey] = texture;
@@ -172,10 +183,10 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, GLen
 
 std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view path, TextureType type)
 {
-    return loadCubemapTexture(path, type, getOpenGlFormat(type));
+    return loadCubemapTexture(path, type, getOpenGlStorageFormat(type));
 }
 
-std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view path, GLenum format)
+std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view path, GLenum storageFormat)
 {
-    return loadCubemapTexture(path, Unknown, format);
+    return loadCubemapTexture(path, Unknown, storageFormat);
 }

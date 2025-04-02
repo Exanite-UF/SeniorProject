@@ -222,26 +222,20 @@ vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
 }
 
 uniform float sunAngularSize; // The angle of the sun in diameter
-float sunSize = cos(sunAngularSize * 3.14159265 / 180.0);
+float sunSize = cos(sunAngularSize * 3.14159265 / 180.0 * 0.5);
 uniform vec3 sunDir;
-uniform float sunBrightness;
-uniform vec3 skyColor;
-uniform vec3 groundColor;
+layout(binding = 0) uniform samplerCube skybox;
 
 vec3 skyBox(vec3 rayDirection)
 {
-    if (dot(normalize(sunDir), normalize(rayDirection)) > sunSize)
-    {
-        return sunBrightness / (6.28318530718 * (1 - sunSize)) * vec3(1, 1, 1);
-    }
-    else if (dot(rayDirection, vec3(0, 0, 1)) > 0)
-    {
-        return skyColor;
-    }
-    else
-    {
-        return groundColor;
-    }
+    //Do not use the multipliers because this only affect the skybox that is displayed
+    //It doesn't affect the lighting
+    
+    //Invert the sun
+    //if(dot(normalize(sunDir), normalize(rayDirection)) > sunSize){
+    //    return 1 - texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz;
+    //}
+    return texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz;
 }
 
 void main()

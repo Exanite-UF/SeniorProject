@@ -439,13 +439,18 @@ void VoxelRenderer::beforeCast(float maxDepth, bool shouldDrawSkybox)
     }
 
     glUniform3i(glGetUniformLocation(beforeCastProgram, "resolution"), size.x, size.y, 1);
-    glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);
-    glUniform1f(glGetUniformLocation(beforeCastProgram, "sunAngularSize"), sunAngularSize);
-    glUniform3f(glGetUniformLocation(beforeCastProgram, "sunDir"), sunDirection.x, sunDirection.y, sunDirection.z);
-    glUniform1f(glGetUniformLocation(beforeCastProgram, "sunBrightness"), sunBrightness);
-    glUniform3f(glGetUniformLocation(beforeCastProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
-    glUniform3f(glGetUniformLocation(beforeCastProgram, "groundColor"), groundColor.x, groundColor.y, groundColor.z);
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "maxDepth"), maxDepth);    
     glUniform1i(glGetUniformLocation(beforeCastProgram, "shouldDrawSkybox"), shouldDrawSkybox);
+
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "sunAngularSize"), skybox->getSunAngularSize());
+    if(skybox->getCubemap() != nullptr){
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->getCubemap()->getTextureId());
+    }
+    
+    glUniform3fv(glGetUniformLocation(beforeCastProgram, "sunDir"), 1, glm::value_ptr(skybox->getSunDirection()));
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "sunBrightnessMultiplier"), skybox->getSunBrightnessMultiplier());
+    glUniform1f(glGetUniformLocation(beforeCastProgram, "skyBrightnessMultiplier"), skybox->getSkyBrightnessMultiplier());
 
     {
         glDispatchCompute(workGroupsX, workGroupsY, 1);
@@ -559,8 +564,8 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         glUniform4fv(glGetUniformLocation(primaryRayProgram, "pastCameraRotation"), 1, glm::value_ptr(pastCameraRotation));
         glUniform1f(glGetUniformLocation(primaryRayProgram, "pastCameraFovTan"), std::tan(pastCameraFOV * 0.5)); // A little bit of randomness for temporal accumulation
 
-        glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), sunAngularSize);
-        glUniform3f(glGetUniformLocation(primaryRayProgram, "sunDirection"), sunDirection.x, sunDirection.y, sunDirection.z);
+        glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), skybox->getSunAngularSize());
+        glUniform3fv(glGetUniformLocation(primaryRayProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
 
         for (auto& chunkComponent : chunks)
         {
@@ -678,11 +683,13 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     glUniform4fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
     glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
-    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunAngularSize"), sunAngularSize);
-    glUniform3f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunDir"), sunDirection.x, sunDirection.y, sunDirection.z);
-    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunBrightness"), sunBrightness);
-    glUniform3f(glGetUniformLocation(pathTraceToFramebufferProgram, "skyColor"), skyColor.x, skyColor.y, skyColor.z);
-    glUniform3f(glGetUniformLocation(pathTraceToFramebufferProgram, "groundColor"), groundColor.x, groundColor.y, groundColor.z);
+
+    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "sunAngularSize"), skybox->getSunAngularSize());
+    if(skybox->getCubemap() != nullptr){
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->getCubemap()->getTextureId());
+    }
+    glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "sunDir"), 1, glm::value_ptr(skybox->getSunDirection()));
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
@@ -715,4 +722,14 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     materialManager.getMaterialDefinitionsBuffer().unbind();
 
     glUseProgram(0);
+}
+
+void VoxelRenderer::setSkybox(std::shared_ptr<SkyboxComponent> skybox)
+{
+    if(skybox == nullptr){
+        this->skybox = std::make_shared<SkyboxComponent>();
+    }else{
+        this->skybox = skybox;
+    }
+    
 }
