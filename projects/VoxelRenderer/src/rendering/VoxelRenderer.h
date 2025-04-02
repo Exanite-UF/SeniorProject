@@ -20,22 +20,6 @@ class Renderer;
 class VoxelRenderer : public NonCopyable
 {
 private:
-    // Voxel chunk history is needed to calculate motion vectors
-    struct VoxelChunkHistory
-    {
-        glm::vec3 position;
-        glm::quat rotation;
-        glm::vec3 scale;
-
-        VoxelChunkHistory(const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale)
-            : position(position)
-            , rotation(rotation)
-            , scale(scale) {};
-    };
-
-    std::unordered_map<std::shared_ptr<VoxelChunkComponent>, VoxelChunkHistory> voxelChunkHistories;
-
-private:
     // Odd Quirks of Images
     // RGB is not a valid format for an image. They must be either R, RG, or RGBA
     // Yes, openGL supports RGB textures, but in glsl there is no format specifier for rgb formated images (with a few odd exceptions)

@@ -21,6 +21,11 @@ public:
     struct RendererData
     {
         std::atomic<bool> isVisible = false;
+
+        // Used to calculate motion vectors
+        glm::vec3 previousPosition;
+        glm::quat previousRotation;
+        glm::vec3 previousScale;
     };
 
 private:

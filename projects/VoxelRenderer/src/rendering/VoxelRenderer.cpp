@@ -586,25 +586,20 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
                 glUniform3fv(glGetUniformLocation(primaryRayProgram, "voxelWorldScale"), 1, glm::value_ptr(chunkComponent->getTransform()->getLossyGlobalScale()));
 
                 // Load voxel chunk history
-                if (voxelChunkHistories.count(chunkComponent) == 0)
-                {
-                    // Then no history exists
-                    // voxelChunkHistories.insert(std::make_pair(chunkComponent, ));
-                    voxelChunkHistories.emplace(chunkComponent, VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale()));
-                }
+                auto& rendererData = chunkComponent->getRendererData();
 
-                VoxelChunkHistory history = voxelChunkHistories.at(chunkComponent);
-
-                glUniform3fv(glGetUniformLocation(primaryRayProgram, "pastVoxelWorldPosition"), 1, glm::value_ptr(history.position));
-                glUniform4fv(glGetUniformLocation(primaryRayProgram, "pastVoxelWorldRotation"), 1, glm::value_ptr(history.rotation));
-                glUniform3fv(glGetUniformLocation(primaryRayProgram, "pastVoxelWorldScale"), 1, glm::value_ptr(history.scale));
+                glUniform3fv(glGetUniformLocation(primaryRayProgram, "pastVoxelWorldPosition"), 1, glm::value_ptr(rendererData.previousPosition));
+                glUniform4fv(glGetUniformLocation(primaryRayProgram, "pastVoxelWorldRotation"), 1, glm::value_ptr(rendererData.previousRotation));
+                glUniform3fv(glGetUniformLocation(primaryRayProgram, "pastVoxelWorldScale"), 1, glm::value_ptr(rendererData.previousScale));
 
                 glDispatchCompute(workGroupsX, workGroupsY, 1);
 
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
                 // Update the history
-                voxelChunkHistories.at(chunkComponent) = VoxelChunkHistory(chunkComponent->getTransform()->getGlobalPosition(), chunkComponent->getTransform()->getGlobalRotation(), chunkComponent->getTransform()->getLossyGlobalScale());
+                rendererData.previousPosition = chunkComponent->getTransform()->getGlobalPosition();
+                rendererData.previousRotation = chunkComponent->getTransform()->getGlobalRotation();
+                rendererData.previousScale = chunkComponent->getTransform()->getLossyGlobalScale();
                 renderedChunks.insert(chunkComponent);
             }
             chunk->unbindBuffers();
