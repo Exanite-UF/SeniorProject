@@ -288,7 +288,7 @@ void VoxelRenderer::executePathTrace(const std::vector<std::shared_ptr<VoxelChun
     {
         int shadingRate = 2;
         if(i > 1){
-            shadingRate = 4;
+            shadingRate = 3;
         }
         executeRayTrace(chunks, pastCameraPosition, pastCameraRotation, pastCameraFOV, shadingRate, offset);
         //afterCast();
