@@ -464,7 +464,7 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
         return false;
     }
 
-    std::vector vertices {
+    std::array vertices {
         glm::vec3(-0.5f, -0.5f, -0.5f),
         glm::vec3(-0.5f, -0.5f, +0.5f),
         glm::vec3(-0.5f, +0.5f, -0.5f),
@@ -561,6 +561,7 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
 
     // All vertices are behind camera
     // This guarantees that the chunk is not visible so we stop here
+    // From now on, we treat all vertices as being in front of the camera
     if (!isAnyInFrontOfCameraPlane)
     {
         return false;
@@ -637,85 +638,60 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
         }
     }
 
-    if (isDebugging && lineIntersectionCount > 0)
+    if (isDebugging)
     {
         ImGui::Text("%s", std::format("Line intersection count: {}", lineIntersectionCount).c_str());
     }
 
     // Case 3: Case 2 failed. Check if face is on screen.
-    // This done by checking if the screen is contained by the convex hull of the vertices that are in front of the camera
-    // We can further optimize this by only checking if the center of the screen is contained by the convex hull
-    // This is because we know the convex hull does not intersect the screen due to the previous cases
+    // This done by checking if the screen is contained by the AABB of the vertices that are in front of the camera
     {
         ZoneScopedN("Case 3 visibility - Faces");
 
-        // Calculate convex hull
-        // Ideally we only consider vertices in front of the camera, but this leaves an edge case where these are less than 3 vertices in front
-        // Therefore, we first look for vertices that are on screen, then add more if necessary by prioritizing vertices that are most in front of the camera
-        std::vector<glm::vec2> convexHullInput {};
+        glm::vec2 min = vertices[0];
+        glm::vec2 max = vertices[0];
 
-        // Sort vertices by depth
-        std::sort(vertices.begin(), vertices.end(), [](const glm::vec3& a, const glm::vec3& b)
-            {
-                return a.z < b.z;
-            });
-
-        // Add all vertices that are in front of the camera
-        int i = 0;
-        while (i < vertices.size())
+        for (int i = 1; i < vertices.size(); ++i)
         {
-            if (vertices[i].z >= 0)
-            {
-                break;
-            }
+            min.x = glm::min(min.x, vertices[i].x);
+            min.y = glm::min(min.y, vertices[i].y);
 
-            convexHullInput.push_back(vertices[i]);
-            i++;
+            max.x = glm::max(max.x, vertices[i].x);
+            max.y = glm::max(max.y, vertices[i].y);
         }
 
-        // Only continue if there is at least 1 vertex on screen
-        if (!convexHullInput.empty())
+        bool isOnScreenSelf = false;
+        if (min.x <= -1 && max.x >= 1)
         {
-            // Then add more vertices if needed
-            while (i < vertices.size() && convexHullInput.size() < 4)
-            {
-                convexHullInput.push_back(vertices[i]);
-                i++;
-            }
-
-            auto convexHull = GeometryUtility::getConvexHull(convexHullInput);
-            if (convexHull.size() >= 3 && GeometryUtility::isPointInsideConvexPolygon(glm::vec2(0, 0), convexHull))
-            {
-                if (isDebugging)
-                {
-                    isOnScreen = true;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-
             if (isDebugging)
             {
-                for (int i = 0; i < convexHull.size(); ++i)
-                {
-                    auto vertex1 = convexHull[i];
-                    auto vertex2 = convexHull[(i + 1) % convexHull.size()];
-                    {
-                        ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-
-                        auto windowSize = ImGuiUtility::toGlm(ImGui::GetIO().DisplaySize);
-                        auto vertex1Position = glm::vec2((vertex1.x + 1) / 2, 1 - ((vertex1.y + 1) / 2)) * windowSize;
-                        auto vertex2Position = glm::vec2((vertex2.x + 1) / 2, 1 - ((vertex2.y + 1) / 2)) * windowSize;
-                        auto color = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
-
-                        drawList->AddLine(ImGuiUtility::toImGui(vertex1Position), ImGuiUtility::toImGui(vertex2Position), color, 3);
-                    }
-
-                    ImGui::Text("%s", std::format("Convex hull vertex: ({:.2f}, {:.2f})", vertex1.x, vertex1.y).c_str());
-                }
+                isOnScreen = true;
+                isOnScreenSelf = true;
             }
+            else
+            {
+                return true;
+            }
+        }
+
+        if (min.y <= -1 && max.y >= 1)
+        {
+            if (isDebugging)
+            {
+                isOnScreen = true;
+                isOnScreenSelf = true;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        if (isDebugging)
+        {
+            ImGui::Text("%s", std::format("AABB x: ({:.2f}, {:.2f})", min.x, max.x).c_str());
+            ImGui::Text("%s", std::format("AABB y: ({:.2f}, {:.2f})", min.y, max.y).c_str());
+            ImGui::Text("%s", std::format("AABB is on screen: {}", isOnScreenSelf ? "Yes" : "No").c_str());
         }
     }
 
