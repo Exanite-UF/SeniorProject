@@ -616,7 +616,6 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
                     rendererData.previousPosition = chunkComponent->getTransform()->getGlobalPosition();
                     rendererData.previousRotation = chunkComponent->getTransform()->getGlobalRotation();
                     rendererData.previousScale = chunkComponent->getTransform()->getLossyGlobalScale();
-                    renderedChunks.insert(chunkComponent);
                 }
                 chunk->unbindBuffers();
             }
