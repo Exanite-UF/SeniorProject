@@ -49,11 +49,12 @@ private:
     struct ChunkModificationTask
     {
     public:
-        std::shared_ptr<VoxelChunkComponent> component;
-        std::shared_ptr<SceneComponent> scene;
-        VoxelChunkCommandBuffer commandBuffer;
+        std::shared_ptr<VoxelChunkComponent> component {};
+        std::shared_ptr<SceneComponent> scene {};
+        VoxelChunkCommandBuffer commandBuffer {};
+        int expectedVersion {};
 
-        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer);
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer, int expectedVersion);
     };
 
     struct ChunkLoadTask
@@ -71,15 +72,14 @@ private:
     {
     public:
         std::shared_ptr<VoxelChunkComponent> component {};
-        glm::ivec2 chunkPosition;
+        glm::ivec2 chunkPosition {};
 
         bool isLoading = true;
 
         bool isUnloading = false;
         float timeSpentWaitingForUnload = 0;
 
-        bool isDisplayed = false;
-        std::shared_ptr<SceneComponent> scene;
+        std::shared_ptr<SceneComponent> scene {};
 
         explicit ActiveWorldChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
         ~ActiveWorldChunk() override;

@@ -28,13 +28,15 @@
 VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
     const std::shared_ptr<SceneComponent>& scene,
-    const VoxelChunkCommandBuffer& commandBuffer)
+    const VoxelChunkCommandBuffer& commandBuffer,
+    const int expectedVersion)
 {
     ZoneScoped;
 
     this->component = component;
     this->scene = scene;
     this->commandBuffer = commandBuffer;
+    this->expectedVersion = expectedVersion;
 }
 
 VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
@@ -257,7 +259,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
             MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
             Log::verbose("Applying chunk command buffer");
-            task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
+            task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex, task->expectedVersion);
         }
     }
 
@@ -810,8 +812,11 @@ void VoxelChunkManager::showDebugMenu()
 
 void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
 {
-    std::lock_guard lock(modificationThreadState.pendingTasksMutex);
+    std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
+    std::lock_guard lockChunkVersion(component->getModificationData().versionMutex);
 
-    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer));
+    auto expectedVersion = component->getModificationData().pendingVersion;
+
+    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer, expectedVersion));
     modificationThreadState.pendingTasksCondition.notify_one();
 }
