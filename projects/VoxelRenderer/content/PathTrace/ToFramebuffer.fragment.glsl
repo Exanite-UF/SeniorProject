@@ -18,6 +18,7 @@ struct MaterialDefinition
 uniform ivec3 resolution; //(xSize, ySize, 1)
 uniform vec4 cameraRotation;
 uniform vec3 cameraPosition;
+uniform float random; // This is used to make non-deterministic randomness
 
 layout(std430, binding = 0) buffer AccumulatedLight
 {
@@ -78,6 +79,67 @@ layout(std430, binding = 7) buffer MaterialDefinitions
     readonly restrict MaterialDefinition materialDefinitions[];
 };
 
+
+layout(std430, binding = 8) buffer SampleDirection
+{
+    float sampleDirection[];
+};
+
+vec4 getSampleDirection(ivec3 coord)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec4(sampleDirection[index + 0], sampleDirection[index + 1], sampleDirection[index + 2], sampleDirection[index + 3]);
+}
+
+void setSampleDirection(ivec3 coord, vec4 value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    sampleDirection[index + 0] = value.x;
+    sampleDirection[index + 1] = value.y;
+    sampleDirection[index + 2] = value.z;
+    sampleDirection[index + 3] = value.w;
+}
+
+
+layout(std430, binding = 9) buffer SampleRadiance
+{
+    float sampleRadiance[];
+};
+
+vec3 getSampleRadiance(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec3(sampleRadiance[index + 0], sampleRadiance[index + 1], sampleRadiance[index + 2]);
+}
+
+void setSampleRadiance(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    sampleRadiance[index + 0] = value.x;
+    sampleRadiance[index + 1] = value.y;
+    sampleRadiance[index + 2] = value.z;
+}
+
+layout(std430, binding = 10) buffer SampleWeights
+{
+    float sampleWeights[];
+};
+
+vec3 getSampleWeights(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec3(sampleWeights[index + 0], sampleWeights[index + 1], sampleWeights[index + 2]);
+}
+
+void setSampleWeights(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    sampleWeights[index + 0] = value.x;
+    sampleWeights[index + 1] = value.y;
+    sampleWeights[index + 2] = value.z;
+}
+
+
 vec3 getLight(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
@@ -127,6 +189,17 @@ vec4 safeVec4(vec4 v, vec4 fallback)
         isnan(v.g) ? fallback.g : v.g,
         isnan(v.b) ? fallback.b : v.b,
         isnan(v.a) ? fallback.a : v.a);
+}
+
+
+float hash(float seed)
+{
+    return fract(sin((seed) * 12345.6789) * 43758.5453123);
+}
+
+vec2 randomVec2(float seed)
+{
+    return vec2(hash(seed), hash(seed + 1.0));
 }
 
 in vec2 uv;
@@ -244,7 +317,6 @@ void main()
     ivec3 texelCoord = ivec3(gl_FragCoord.xy, 0);
 
     ivec3 size = resolution; // imageSize(hitPosition);
-    vec3 color = vec3(0);
 
     vec3 normal = getNormal(texelCoord); // worldspace
     vec3 position = getPosition(texelCoord); // worldspace
@@ -261,8 +333,12 @@ void main()
     {
         radius = 0;
     }
-    // radius = 0;
+    radius = 0;
 
+    vec3 thisBRDFValue;
+    vec3 thisOutgoingRadiance;
+    vec3 thisLight;
+    vec4 thisSecondaryDirection;
     const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
     for (int i = -radius; i <= radius; i++)
     {
@@ -299,6 +375,13 @@ void main()
             vec4 nextDirection = getSecondaryDirection(coord);
 
             vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+
+            if(i == j && i == 0){
+                thisBRDFValue = brdfValue;
+                thisOutgoingRadiance = sampledLight * brdfValue;
+                thisLight = sampledLight;
+                thisSecondaryDirection = nextDirection;
+            }
             // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
             float multiplier = kernel[i + 1] * kernel[j + 1];
             light += sampledLight * brdfValue * multiplier;
@@ -306,7 +389,59 @@ void main()
         }
     }
 
+    //{
+    //    vec2 offset = misc.yz * vec2(resolution.xy);
+    //    ivec3 coord = ivec3(vec2(texelCoord.xy) - offset + 0.5, 0);
+//
+//
+    //    vec3 sampledLight = getSampleRadiance(coord); // This is the radiance coming from the secondary rays
+    //    vec4 nextDirection = getSampleDirection(coord);
+    //    //x = pdf value
+    //    //y = Weight
+    //    //z = counter
+    //    vec3 sampleWeights = getSampleWeights(coord);
+    //    vec4 sampleMisc = getMisc(coord);
+    //    if(any(lessThan(coord, ivec3(0))) || any(greaterThan(coord, resolution.xyz)) || abs(sampleMisc.x - misc.x) > 0.1){
+    //        sampledLight *= 0;
+    //        nextDirection *= 0;
+    //        sampleWeights *= 0;
+    //    }
+//
+    //    vec3 sampleOutgoingLight = vec3(0);
+    //    if(nextDirection.w > 0){
+    //        vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// * nextDirection.w / sampleWeights.z * sampleWeights.y;
+    //        // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+    //        sampleOutgoingLight = brdfValue * sampleWeights.x;//sampledLight.xyz * brdfValue;
+    //        samples += 1;
+    //    }
+    //    light += sampleOutgoingLight;
+//
+    //    vec3 thisRadiance = thisLight;
+    //    vec4 thisNextDirection = thisSecondaryDirection;
+    //    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y)) / resolution.x / resolution.y; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
+//
+    //    float newWeight = length(thisOutgoingRadiance) * thisNextDirection.w;
+    //    float sumWeight = sampleWeights.y + newWeight;
+    //    //bool condition = length(thisRadiance) > length(sampledLight.xyz);
+    //    bool condition = randomVec2(seed).x < (newWeight / sumWeight);
+    //    float decay = 1 / (length(position - cameraPosition) * 0.002 * length(offset) + 1);
+    //    if(condition){
+    //        setSampleDirection(coord, thisNextDirection);
+    //        setSampleRadiance(coord, thisRadiance);
+    //        setSampleWeights(coord, decay * 0.8 * vec3(sumWeight / ((sampleWeights.z + 1) * length(thisOutgoingRadiance)), sumWeight, sampleWeights.z + 1));
+    //    }else{
+    //        setSampleDirection(coord, nextDirection);
+    //        setSampleRadiance(coord, sampledLight);
+    //        setSampleWeights(coord, decay * 0.8 * vec3(sumWeight / ((sampleWeights.z + 1) * length(sampleOutgoingLight)), sumWeight, sampleWeights.z + 1));
+    //    }
+    //    
+    //    
+    //}
+
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
+
+    
+
     // normal is now in camera space
     //(1, 0, 0) away from the camera
     //(0, 1, 0) to the left

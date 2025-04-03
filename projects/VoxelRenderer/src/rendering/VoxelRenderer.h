@@ -64,6 +64,10 @@ private:
     GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z)
     GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
 
+    GraphicsBuffer<glm::vec4> sampleDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::vec3> sampleRadiance; //(r, g, b)
+    GraphicsBuffer<glm::vec3> sampleWeights;
+
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
     // These are compute shaders that are used to render

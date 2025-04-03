@@ -166,7 +166,8 @@ void Program::run()
     auto camera = cameraObject->addComponent<CameraComponent>();
     auto cameraTransform = camera->getTransform();
     scene->setCamera(camera);
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
+    //cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
+    cameraTransform->setGlobalPosition(glm::vec3(146.13,85.50,159.41));
 
     // Initialize the chunk manager
     voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
@@ -272,7 +273,7 @@ void Program::run()
             auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             showOther->setUniforms = [&renderer](GLuint program)
             {
-                glUniform1i(glGetUniformLocation(program, "whichTexture"), 2);
+                glUniform1i(glGetUniformLocation(program, "whichTexture"), 3);
             };
         }
 

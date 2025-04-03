@@ -221,6 +221,7 @@ void setSecondaryDirection(ivec3 coord, vec4 value)
     secondaryDirection[index + 3] = value.w;
 }
 
+
 struct RayHit
 {
     bool wasHit;
@@ -765,18 +766,17 @@ void main()
         // If a sun ray could hit the sun, then try
         if (sunAngularSize > 0 && dot(normal, sunDirection) > 0.0)
         {
-            float p = 0.1;
+            float p = 0.0;
+            float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
+            vec3 targetDir = normalize(sunDirection);
 
             if (randomVec2(seed).x < p)
             {
-                float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
                 float cosTheta = 1 - randomVec2(seed).x * (1 - cos(maxTheta));
                 float theta = acos(cosTheta);
                 float phi = randomVec2(seed).y * 2 * 3.1415926589;
 
                 vec3 local = vec3(sin(theta), sin(theta), cos(theta)) * vec3(cos(phi), sin(phi), 1);
-
-                vec3 targetDir = normalize(sunDirection);
 
                 vec3 up = abs(targetDir.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
                 vec3 tangent = normalize(cross(up, targetDir));

@@ -66,6 +66,10 @@ void VoxelRenderer::remakeTextures()
     accumulatedLightBuffer1.setSize(size1D);
     attentuationBuffer2.setSize(size1D);
     accumulatedLightBuffer2.setSize(size1D);
+
+    sampleDirection.setSize(size1D);
+    sampleRadiance.setSize(size1D);
+    sampleWeights.setSize(size1D);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -554,6 +558,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     materialBuffer.bind(11);
     secondaryDirection.bind(12);
+    //sampleDirection.bind(13);
 
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
@@ -648,6 +653,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     materialBuffer.unbind();
     secondaryDirection.unbind();
+    //sampleDirection.unbind();
 
     afterCast(maxDepth);
 
@@ -683,6 +689,10 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     MaterialManager& materialManager = MaterialManager::getInstance();
     materialManager.getMaterialDefinitionsBuffer().bind(7); // This binds the material definitions for each material
 
+    sampleDirection.bind(8);
+    sampleRadiance.bind(9);
+    sampleWeights.bind(10);
+
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
     glUniform4fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
@@ -698,6 +708,8 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "sunDir"), 1, glm::value_ptr(skybox->getSunDirection()));
     glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "visualMultiplier"), skybox->getVisualMultiplier());
 
+    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
+
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -709,6 +721,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     }
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     if (whichAccumulationBuffer)
     {
@@ -727,6 +740,10 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     primaryDirection.unbind();
     secondaryDirection.unbind();
     materialManager.getMaterialDefinitionsBuffer().unbind();
+
+    sampleDirection.unbind();
+    sampleRadiance.unbind();
+    sampleWeights.unbind();
 
     glUseProgram(0);
 }
