@@ -67,7 +67,7 @@ private:
     GraphicsBuffer<glm::vec4> sampleDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
     GraphicsBuffer<glm::vec3> sampleRadiance; //(r, g, b)
     GraphicsBuffer<glm::vec3> sampleWeights;
-    GraphicsBuffer<std::int32_t> sampleMaterial;
+    GraphicsBuffer<glm::vec3> samplePosition;
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 

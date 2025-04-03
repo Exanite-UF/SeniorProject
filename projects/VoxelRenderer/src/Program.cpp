@@ -154,7 +154,7 @@ void Program::run()
 
                 auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                 voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                // voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0, 0, 0) + glm::vec3(0, 0, 0));
+                voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0.5, 0.5, 0));
 
                 scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
             }
@@ -167,7 +167,7 @@ void Program::run()
     auto cameraTransform = camera->getTransform();
     scene->setCamera(camera);
     //cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
-    cameraTransform->setGlobalPosition(glm::vec3(146.13,85.50,159.41));
+    cameraTransform->setGlobalPosition(glm::vec3(146.91,105.16,187.20));
 
     // Initialize the chunk manager
     voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
@@ -278,7 +278,7 @@ void Program::run()
         }
 
         // Tonemap
-        if (false)
+        if (true)
         {
 
             auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));

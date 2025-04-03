@@ -70,7 +70,7 @@ void VoxelRenderer::remakeTextures()
     sampleDirection.setSize(size1D);
     sampleRadiance.setSize(size1D);
     sampleWeights.setSize(size1D);
-    sampleMaterial.setSize(size1D);
+    samplePosition.setSize(size1D);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -693,7 +693,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     sampleDirection.bind(8);
     sampleRadiance.bind(9);
     sampleWeights.bind(10);
-    sampleMaterial.bind(11);
+    samplePosition.bind(11);
 
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
@@ -746,7 +746,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     sampleDirection.unbind();
     sampleRadiance.unbind();
     sampleWeights.unbind();
-    sampleMaterial.unbind();
+    samplePosition.unbind();
 
     glUseProgram(0);
 }
