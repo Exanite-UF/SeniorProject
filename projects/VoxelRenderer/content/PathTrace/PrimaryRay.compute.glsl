@@ -739,6 +739,7 @@ void main()
         vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
         // vec2 motionVector = hitLocation.xy;
         setFirstHitMotionVector(texelCoord, motionVector);
+        //setFirstHitMotionVector(texelCoord, vec2(texelCoord.xy) - hitLocation.xy * resolution.xy);
     }
 
     // Set the information that comes from material
@@ -766,7 +767,7 @@ void main()
         // If a sun ray could hit the sun, then try
         if (sunAngularSize > 0 && dot(normal, sunDirection) > 0.0)
         {
-            float p = 0.0;
+            float p = 0.1;
             float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
             vec3 targetDir = normalize(sunDirection);
 

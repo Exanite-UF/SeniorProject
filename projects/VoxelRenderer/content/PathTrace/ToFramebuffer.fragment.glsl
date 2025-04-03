@@ -139,6 +139,22 @@ void setSampleWeights(ivec3 coord, vec3 value)
     sampleWeights[index + 2] = value.z;
 }
 
+layout(std430, binding = 11) buffer SampleMaterial
+{
+    int sampleMaterial[];
+};
+
+int getSampleMaterial(ivec3 coord)
+{
+    int index = 1 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return sampleMaterial[index];
+}
+
+void setSampleMaterial(ivec3 coord, int value)
+{
+    int index = 1 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    sampleMaterial[index + 0] = value;
+}
 
 vec3 getLight(ivec3 coord)
 {
@@ -312,6 +328,13 @@ vec3 skyBox(vec3 rayDirection)
     return texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz * visualMultiplier;
 }
 
+
+float ggxPDF(vec3 incomingDirection, vec3 outgoingDirection, vec3 normal){
+    vec3 microfacetDirection = normalize(incomingDirection - outgoingDirection); // This is used by several things
+    return 1 / (dot(microfacetDirection, normal) / abs(dot(outgoingDirection, microfacetDirection)));
+}
+
+
 void main()
 {
     ivec3 texelCoord = ivec3(gl_FragCoord.xy, 0);
@@ -324,7 +347,8 @@ void main()
 
     vec3 light = vec3(0);
     float samples = 0;
-    MaterialDefinition voxelMaterial = materialDefinitions[getFirstHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
+    int materialID = getFirstHitMaterial(texelCoord);
+    MaterialDefinition voxelMaterial = materialDefinitions[materialID]; // Get the material index of the hit, and map it to an actual material
 
     vec3 direction = getPrimaryDirection(texelCoord);
 
@@ -335,8 +359,7 @@ void main()
     }
     radius = 0;
 
-    vec3 thisBRDFValue;
-    vec3 thisOutgoingRadiance;
+    
     vec3 thisLight;
     vec4 thisSecondaryDirection;
     const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
@@ -377,8 +400,6 @@ void main()
             vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
             if(i == j && i == 0){
-                thisBRDFValue = brdfValue;
-                thisOutgoingRadiance = sampledLight * brdfValue;
                 thisLight = sampledLight;
                 thisSecondaryDirection = nextDirection;
             }
@@ -388,55 +409,69 @@ void main()
             samples += multiplier;
         }
     }
+    vec3 thisBRDFValue = brdf2(normal, direction, thisSecondaryDirection.xyz, voxelMaterial) * ggxPDF(thisSecondaryDirection.xyz, direction, normal);//* thisSecondaryDirection.w;
+    vec3 thisOutgoingRadiance = thisBRDFValue * thisLight;
 
-    //{
-    //    vec2 offset = misc.yz * vec2(resolution.xy);
-    //    ivec3 coord = ivec3(vec2(texelCoord.xy) - offset + 0.5, 0);
+    {
+        ivec3 coord = ivec3(texelCoord.xy, 0);
 //
 //
-    //    vec3 sampledLight = getSampleRadiance(coord); // This is the radiance coming from the secondary rays
-    //    vec4 nextDirection = getSampleDirection(coord);
-    //    //x = pdf value
-    //    //y = Weight
-    //    //z = counter
-    //    vec3 sampleWeights = getSampleWeights(coord);
-    //    vec4 sampleMisc = getMisc(coord);
-    //    if(any(lessThan(coord, ivec3(0))) || any(greaterThan(coord, resolution.xyz)) || abs(sampleMisc.x - misc.x) > 0.1){
-    //        sampledLight *= 0;
-    //        nextDirection *= 0;
-    //        sampleWeights *= 0;
-    //    }
+        vec3 sampledLight = getSampleRadiance(coord); // This is the radiance coming from the secondary rays
+        vec4 nextDirection = getSampleDirection(coord);
+        //x = pdf value
+        //y = Weight
+        //z = counter
+        vec3 sampleWeights = getSampleWeights(coord);
+        int sampleMaterial = getSampleMaterial(coord);
+        if(any(lessThan(coord, ivec3(0))) || any(greaterThanEqual(coord, resolution.xyz)) || (dot(nextDirection.xyz, normal) < 0) || sampleMaterial != materialID){
+            sampledLight *= 0;
+            nextDirection *= 0;
+            sampleWeights *= 0;
+        }
 //
-    //    vec3 sampleOutgoingLight = vec3(0);
-    //    if(nextDirection.w > 0){
-    //        vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// * nextDirection.w / sampleWeights.z * sampleWeights.y;
-    //        // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-    //        sampleOutgoingLight = brdfValue * sampleWeights.x;//sampledLight.xyz * brdfValue;
-    //        samples += 1;
-    //    }
-    //    light += sampleOutgoingLight;
+        vec3 sampleOutgoingLight = vec3(0);
+        if(nextDirection.w > 0 && length(nextDirection.xyz) > 0){
+            //vec3 brdfValue = brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w / dot(normalize(normal), normalize(nextDirection.xyz));// * nextDirection.w / sampleWeights.z * sampleWeights.y;
+            //vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// / sampleWeights.z;
+            vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * ggxPDF(nextDirection.xyz, direction, normal);// / sampleWeights.z;
+            //vec3 brdfValue = dot(normalize(normal), normalize(nextDirection.xyz)) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;// / sampleWeights.z;
+            // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+            sampleOutgoingLight = sampledLight.xyz * brdfValue;//sampleWeights.y / sampleWeights.z;//sampledLight.xyz * brdfValue;
+            if(!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight))){
+                samples += 1;
+                light += sampleOutgoingLight * sampleWeights.x;
+            }
+            
+        }
+        
 //
-    //    vec3 thisRadiance = thisLight;
-    //    vec4 thisNextDirection = thisSecondaryDirection;
-    //    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y)) / resolution.x / resolution.y; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
+        vec3 thisRadiance = thisLight;
+        vec4 thisNextDirection = thisSecondaryDirection;
+        float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y)) / resolution.x / resolution.y; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
 //
-    //    float newWeight = length(thisOutgoingRadiance) * thisNextDirection.w;
-    //    float sumWeight = sampleWeights.y + newWeight;
-    //    //bool condition = length(thisRadiance) > length(sampledLight.xyz);
-    //    bool condition = randomVec2(seed).x < (newWeight / sumWeight);
-    //    float decay = 1 / (length(position - cameraPosition) * 0.002 * length(offset) + 1);
-    //    if(condition){
-    //        setSampleDirection(coord, thisNextDirection);
-    //        setSampleRadiance(coord, thisRadiance);
-    //        setSampleWeights(coord, decay * 0.8 * vec3(sumWeight / ((sampleWeights.z + 1) * length(thisOutgoingRadiance)), sumWeight, sampleWeights.z + 1));
-    //    }else{
-    //        setSampleDirection(coord, nextDirection);
-    //        setSampleRadiance(coord, sampledLight);
-    //        setSampleWeights(coord, decay * 0.8 * vec3(sumWeight / ((sampleWeights.z + 1) * length(sampleOutgoingLight)), sumWeight, sampleWeights.z + 1));
-    //    }
-    //    
-    //    
-    //}
+        float newWeight = length(thisOutgoingRadiance) * thisNextDirection.w;
+        float sumWeight = sampleWeights.y + newWeight;
+        //bool condition = length(thisRadiance) > length(sampledLight.xyz);
+        bool condition = (randomVec2(seed).x < (newWeight / sumWeight));
+        if(condition){
+            setSampleDirection(coord, thisNextDirection);
+            setSampleRadiance(coord, thisRadiance);
+            //setSampleWeights(coord, vec3(1, newWeight, 1));
+            setSampleWeights(coord, vec3((sumWeight / ((sampleWeights.z + 1) * length(thisOutgoingRadiance))), sumWeight, sampleWeights.z + 1));
+            //setSampleWeights(coord, vec3((sumWeight / ((sampleWeights.z + 1))), sumWeight, sampleWeights.z + 1));
+            //setSampleWeights(coord, vec3(sumWeight / ((sampleWeights.z + 1) / thisNextDirection.w), sumWeight, sampleWeights.z + 1));
+            setSampleMaterial(coord, materialID);
+        }else{
+            //setSampleDirection(coord, nextDirection);
+            //setSampleRadiance(coord, sampledLight);
+            setSampleWeights(coord, vec3((sumWeight / ((sampleWeights.z + 1) * length(sampleOutgoingLight))), sumWeight, sampleWeights.z + 1));
+            //setSampleWeights(coord, vec3((sumWeight / ((sampleWeights.z + 1))), sumWeight, sampleWeights.z + 1));
+            //setSampleWeights(coord, vec3(sumWeight / ((sampleWeights.z + 1) / nextDirection.w), sumWeight, sampleWeights.z + 1));
+            //setSampleMaterial(coord, sampleMaterial);
+        }
+        
+        
+    }
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
 
