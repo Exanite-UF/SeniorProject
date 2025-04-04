@@ -312,6 +312,7 @@ void ModelVoxelizer::generateVoxelMesh()
             glEnableVertexAttribArray(3);
             glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, normal)));
         }
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         // Read from instance buffer
         glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -321,6 +322,7 @@ void ModelVoxelizer::generateVoxelMesh()
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), reinterpret_cast<void*>(0));
             glVertexAttribDivisor(1, 1); // Tell OpenGL this is per-instance data
         }
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     glBindVertexArray(0);
 
@@ -379,8 +381,8 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
     {
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        // glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
+        // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
     }
     glBindVertexArray(0);
 }

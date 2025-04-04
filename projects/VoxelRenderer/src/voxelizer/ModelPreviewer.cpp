@@ -44,32 +44,28 @@ void ModelPreviewer::createWindowTriangle(const std::shared_ptr<Window>& mainWin
             // Render Loop
             while (triangleThreadRunning && !glfwWindowShouldClose(triangleWindow->getGlfwWindowHandle()))
             {
-                if (glfwWindowShouldClose(triangleWindow->getGlfwWindowHandle()))
-                {
-                    triangleThreadRunning = false;
-                    break;
-                }
-
-                triangleWindow->makeContextCurrent();
-
-                triangleWindow->update();
-
-                // Initial render
-                renderTriangleWindow();
-
+                // Limit FPS
                 static auto last_frame = std::chrono::steady_clock::now();
                 auto now = std::chrono::steady_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
                 if (elapsed.count() < 33)
-                { // ~30 FPS
+                {
+                    // ~30 FPS
                     std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
                 }
                 last_frame = now;
 
-                triangleWindow->present(); // Swap buffers to display the rendered content
+                // Update
+                triangleWindow->update();
+
+                // Render
+                renderTriangleWindow();
+
+                // Present
+                triangleWindow->present();
             }
 
-            // Cleanup in the rendering thread
+            // Cleanup
             triangleThreadRunning = false;
         });
 }
@@ -102,30 +98,28 @@ void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow
             // Render Loop
             while (voxelThreadRunning && !glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
             {
-                if (glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
-                {
-                    voxelThreadRunning = false;
-                    break;
-                }
-
-                voxelWindow->update();
-
-                // Initial render
-                renderVoxelWindow();
-
+                // Limit FPS
                 static auto last_frame = std::chrono::steady_clock::now();
                 auto now = std::chrono::steady_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
                 if (elapsed.count() < 33)
-                { // ~30 FPS
+                {
+                    // ~30 FPS
                     std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
                 }
                 last_frame = now;
 
+                // Update
+                voxelWindow->update();
+
+                // Render
+                renderVoxelWindow();
+
+                // Present
                 voxelWindow->present(); // Swap buffers to display the rendered content
             }
 
-            // Cleanup in the rendering thread
+            // Cleanup
             voxelThreadRunning = false;
         });
 }
