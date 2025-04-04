@@ -19,8 +19,9 @@ class ModelPreviewer
 {
 private:
     glm::ivec2 windowSize = { 320, 240 };
-    GLFWwindow* triangleWindow = nullptr;
-    GLFWwindow* voxelWindow = nullptr;
+
+    std::shared_ptr<Window> triangleWindow {};
+    std::shared_ptr<Window> voxelWindow {};
 
     std::atomic<bool> triangleThreadRunning { false };
     std::atomic<bool> voxelThreadRunning { false };
