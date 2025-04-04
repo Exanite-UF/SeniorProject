@@ -68,5 +68,5 @@ public:
     std::vector<TriangleTexture> textures;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TriangleTexture> textures);
-    void Draw(Shader& shader);
+    void Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
 };

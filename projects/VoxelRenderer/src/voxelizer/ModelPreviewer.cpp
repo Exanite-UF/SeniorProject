@@ -138,30 +138,7 @@ void ModelPreviewer::RenderWindowTriangle()
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 
-        // Camera Setup
-        glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
-        glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
-        glm::mat4 model = glm::mat4(1.0f);
-
-        glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-        //// Material Settings for Phong Shader
-        glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.diffuseColor"), 1, glm::value_ptr(diffuseColor));
-        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
-        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
-        float materialSpecFactor = 0.0f;
-        float materialEmisFactor = 0.0f;
-        float materialShininess = 32.0f;
-        glUniform1f(glGetUniformLocation(triangleShader->ID, "defaultMaterial.specularFactor"), materialSpecFactor);
-        glUniform1f(glGetUniformLocation(triangleShader->ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
-        glUniform1f(glGetUniformLocation(triangleShader->ID, "defaultMaterial.shininess"), materialShininess);
-
-        loadedModel->Draw(*triangleShader);
+        loadedModel->Draw(*triangleShader, Position, Front, Up, windowSize.x, windowSize.y);
     }
 }
 
