@@ -2,11 +2,11 @@
 #include <src/voxelizer/Model.h>
 #include <stb_image.h>
 
-void Model::Draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
+void Model::draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
-        meshes[i].Draw(shader, Position, Front, Up, windowWidth, windowHeight);
+        meshes[i].draw(shader, Position, Front, Up, windowWidth, windowHeight);
     }
 }
 
@@ -64,14 +64,14 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
             vector = glm::vec3(0.0f, 1.0f, 0.0f);
         }
 
-        vertex.Position = vector;
+        vertex.position = vector;
 
         if (mesh->HasNormals())
         {
             vector.x = mesh->mNormals[i].x;
             vector.y = mesh->mNormals[i].y;
             vector.z = mesh->mNormals[i].z;
-            vertex.Normal = vector;
+            vertex.normal = vector;
         }
 
         if (mesh->mTextureCoords[0])
@@ -79,7 +79,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
             glm::vec2 tex;
             tex.x = mesh->mTextureCoords[0][i].x;
             tex.y = mesh->mTextureCoords[0][i].y;
-            vertex.TexCoords = tex;
+            vertex.uv = tex;
 
             if (mesh->mTangents)
             {
@@ -87,7 +87,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
                 vector.x = mesh->mTangents[i].x;
                 vector.y = mesh->mTangents[i].y;
                 vector.z = mesh->mTangents[i].z;
-                vertex.Tangent = vector;
+                vertex.tangent = vector;
             }
 
             if (mesh->mBitangents)
@@ -96,12 +96,12 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
                 vector.x = mesh->mBitangents[i].x;
                 vector.y = mesh->mBitangents[i].y;
                 vector.z = mesh->mBitangents[i].z;
-                vertex.Bitangent = vector;
+                vertex.bitangent = vector;
             }
         }
         else
         {
-            vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+            vertex.uv = glm::vec2(0.0f, 0.0f);
         }
         vertices.push_back(vertex);
     }
@@ -150,20 +150,20 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
                 // Vertex position
                 aiVector3D pos = mesh->mVertices[index];
-                triangle.vertices[j].Position = glm::vec3(pos.x, pos.y, pos.z);
+                triangle.vertices[j].position = glm::vec3(pos.x, pos.y, pos.z);
 
                 // Vertex normal (if available)
                 if (mesh->HasNormals())
                 {
                     aiVector3D normal = mesh->mNormals[index];
-                    triangle.vertices[j].Normal = glm::vec3(normal.x, normal.y, normal.z);
+                    triangle.vertices[j].normal = glm::vec3(normal.x, normal.y, normal.z);
                 }
 
                 // Vertex texture coordinates (if available)
                 if (mesh->HasTextureCoords(0))
                 {
                     aiVector3D texCoord = mesh->mTextureCoords[0][index];
-                    triangle.vertices[j].TexCoords = glm::vec2(texCoord.x, texCoord.y);
+                    triangle.vertices[j].uv = glm::vec2(texCoord.x, texCoord.y);
                 }
             }
 
@@ -213,16 +213,16 @@ TriangleMaterial loadMaterial(aiMaterial* mat)
     float shininess;
 
     mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-    material.Diffuse = glm::vec3(color.r, color.b, color.g);
+    material.diffuse = glm::vec3(color.r, color.b, color.g);
 
     mat->Get(AI_MATKEY_COLOR_AMBIENT, color);
-    material.Ambient = glm::vec3(color.r, color.b, color.g);
+    material.ambient = glm::vec3(color.r, color.b, color.g);
 
     mat->Get(AI_MATKEY_COLOR_SPECULAR, color);
-    material.Specular = glm::vec3(color.r, color.b, color.g);
+    material.specular = glm::vec3(color.r, color.b, color.g);
 
     mat->Get(AI_MATKEY_SHININESS, shininess);
-    material.Shininess = shininess;
+    material.shininess = shininess;
 
     return material;
 }

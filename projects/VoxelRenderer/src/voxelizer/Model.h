@@ -12,10 +12,10 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 
 struct TriangleMaterial
 {
-    glm::vec3 Diffuse;
-    glm::vec3 Specular;
-    glm::vec3 Ambient;
-    float Shininess;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    glm::vec3 ambient;
+    float shininess;
 };
 
 class Model
@@ -26,7 +26,7 @@ public:
     {
         loadModel(path);
     }
-    void Draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
+    void draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
     std::vector<Mesh> meshes; // make private
     std::vector<Triangle> getTriangles();
 

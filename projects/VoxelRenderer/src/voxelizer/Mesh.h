@@ -17,11 +17,11 @@
 
 struct Vertex
 {
-    glm::vec3 Position;
-    glm::vec3 Normal;
-    glm::vec2 TexCoords;
-    glm::vec3 Tangent;
-    glm::vec3 Bitangent;
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 uv;
+    glm::vec3 tangent;
+    glm::vec3 bitangent;
 };
 
 struct Triangle
@@ -31,18 +31,18 @@ struct Triangle
     glm::vec3 minPoint() const
     {
         glm::vec3 minPoint;
-        minPoint.x = std::min({ vertices[0].Position.x, vertices[1].Position.x, vertices[2].Position.x });
-        minPoint.y = std::min({ vertices[0].Position.y, vertices[1].Position.y, vertices[2].Position.y });
-        minPoint.z = std::min({ vertices[0].Position.z, vertices[1].Position.z, vertices[2].Position.z });
+        minPoint.x = std::min({ vertices[0].position.x, vertices[1].position.x, vertices[2].position.x });
+        minPoint.y = std::min({ vertices[0].position.y, vertices[1].position.y, vertices[2].position.y });
+        minPoint.z = std::min({ vertices[0].position.z, vertices[1].position.z, vertices[2].position.z });
         return minPoint;
     }
 
     glm::vec3 maxPoint() const
     {
         glm::vec3 maxPoint;
-        maxPoint.x = std::max({ vertices[0].Position.x, vertices[1].Position.x, vertices[2].Position.x });
-        maxPoint.y = std::max({ vertices[0].Position.y, vertices[1].Position.y, vertices[2].Position.y });
-        maxPoint.z = std::max({ vertices[0].Position.z, vertices[1].Position.z, vertices[2].Position.z });
+        maxPoint.x = std::max({ vertices[0].position.x, vertices[1].position.x, vertices[2].position.x });
+        maxPoint.y = std::max({ vertices[0].position.y, vertices[1].position.y, vertices[2].position.y });
+        maxPoint.z = std::max({ vertices[0].position.z, vertices[1].position.z, vertices[2].position.z });
         return maxPoint;
     }
 };
@@ -67,5 +67,5 @@ public:
     std::vector<TriangleTexture> textures;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TriangleTexture> textures);
-    void Draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
+    void draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
 };

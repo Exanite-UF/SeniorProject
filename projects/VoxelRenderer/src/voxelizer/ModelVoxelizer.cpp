@@ -22,8 +22,8 @@ void ModelVoxelizer::setupBoundingBox()
     {
         for (const Vertex vertex : mesh.vertices)
         {
-            minBounds = glm::min(minBounds, vertex.Position);
-            maxBounds = glm::max(maxBounds, vertex.Position);
+            minBounds = glm::min(minBounds, vertex.position);
+            maxBounds = glm::max(maxBounds, vertex.position);
         }
     }
 
@@ -45,9 +45,9 @@ bool ModelVoxelizer::triangleBoxOverlap(const glm::vec3& boxCenter, const glm::v
 
     // Convert triangle vertices to box space
     glm::vec3 v[3] = {
-        triVertices[0].Position - boxCenter,
-        triVertices[1].Position - boxCenter,
-        triVertices[2].Position - boxCenter
+        triVertices[0].position - boxCenter,
+        triVertices[1].position - boxCenter,
+        triVertices[2].position - boxCenter
     };
 
     // Triangle edges
@@ -334,7 +334,7 @@ void ModelVoxelizer::generateVoxelMesh()
     std::cout << "VOXELIZED!" << std::endl;
 }
 
-void ModelVoxelizer::DrawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
+void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
 {
     if (!isVoxelized)
     {

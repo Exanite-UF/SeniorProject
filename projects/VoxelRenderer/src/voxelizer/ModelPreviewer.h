@@ -28,9 +28,9 @@ private:
     std::thread voxelThread;
 
     // Camera Attributes
-    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 5.0f);
-    glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
+    glm::vec3 cameraForwardDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 cameraUpDirection = glm::vec3(0.0f, 1.0f, 0.0f);
 
     std::shared_ptr<Model> loadedModel {};
 
@@ -45,12 +45,12 @@ public:
     // Set instead of load since the voxelizer should be the one to load
     void setModel(const std::shared_ptr<Model>& model);
 
-    void CreateWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox, std::string modelPath);
-    void CreateWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox);
+    void createWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox, std::string modelPath);
+    void createWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox);
 
-    void RenderWindowTriangle();
-    void RenderWindowVoxel();
+    void renderWindowTriangle();
+    void renderWindowVoxel();
 
-    void CloseWindowTriangle();
-    void CloseWindowVoxel();
+    void closeWindowTriangle();
+    void closeWindowVoxel();
 };
