@@ -27,7 +27,6 @@ private:
     std::shared_ptr<TransformComponent> transform {};
     std::vector<std::shared_ptr<Component>> components {};
 
-public:
     explicit GameObject(const std::string& name = defaultName);
 
     void notifyRemovingFromWorld();
