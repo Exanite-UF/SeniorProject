@@ -13,4 +13,6 @@ public:
 
     static ImVec4 toImGui(const glm::vec4& vec);
     static glm::vec4 toGlm(const ImVec4& vec);
+
+    static std::string getCondensedHeader(std::string headerText);
 };

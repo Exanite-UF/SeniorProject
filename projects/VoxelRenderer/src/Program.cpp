@@ -63,8 +63,7 @@
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
 
-// Helper Function
-void HeaderCondenser(std::string& headerText_);
+#include "utilities/ImGuiUtility.h"
 
 Program::Program()
 {
@@ -623,13 +622,10 @@ void Program::run()
                         ImGui::Unindent(indentSize);
 
                         // Polygnol Mesh Preview
-                        std::string originalModelHeader = "Import & Preview Model";
-                        HeaderCondenser(originalModelHeader);
-
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.750f, 0.625f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.129f, 0.460f, 0.405f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
-                        if (ImGui::Button(originalModelHeader.c_str()))
+                        if (ImGui::Button(ImGuiUtility::getCondensedHeader("Import & Preview Model").c_str()))
                         {
                             // static std::string lastFile = modelFileName;
                             showOriginalModelMenu = !showOriginalModelMenu;
@@ -648,16 +644,13 @@ void Program::run()
                         ImGui::PopStyleColor(3);
 
                         // Voxel Mesh Preview
-                        std::string voxelizedModelHeader = "Voxelize & Preview Model";
-                        HeaderCondenser(voxelizedModelHeader);
-
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.770f, 0.372f, 0.0f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.510f, 0.320f, 0.143f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
 
                         if (isModelLoaded)
                         {
-                            if (ImGui::Button(voxelizedModelHeader.c_str()))
+                            if (ImGui::Button(ImGuiUtility::getCondensedHeader("Voxelize & Preview Model").c_str()))
                             {
                                 showVoxelizedModelMenu = !showVoxelizedModelMenu;
 
@@ -962,25 +955,5 @@ void Program::runLateStartupTests()
         importer.FreeScene();
 
         Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
-    }
-}
-
-// Helper Function
-void HeaderCondenser(std::string& headerText_)
-{
-    float availableWidth = ImGui::GetContentRegionAvail().x * 0.9f;
-    float textWidth = ImGui::CalcTextSize(headerText_.c_str()).x;
-
-    if (textWidth > availableWidth)
-    {
-        std::string ellipsis = "...";
-        float ellipsisWidth = ImGui::CalcTextSize(ellipsis.c_str()).x;
-
-        while (ImGui::CalcTextSize((headerText_ + ellipsis).c_str()).x > (availableWidth) && headerText_.length() > 1)
-        {
-            headerText_.pop_back();
-        }
-
-        headerText_ += ellipsis;
     }
 }

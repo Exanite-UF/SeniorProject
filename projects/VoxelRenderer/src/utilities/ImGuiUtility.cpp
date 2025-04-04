@@ -19,3 +19,24 @@ glm::vec4 ImGuiUtility::toGlm(const ImVec4& vec)
 {
     return glm::vec4(vec.x, vec.y, vec.z, vec.w);
 }
+
+std::string ImGuiUtility::getCondensedHeader(std::string headerText)
+{
+    float availableWidth = ImGui::GetContentRegionAvail().x * 0.9f;
+    float textWidth = ImGui::CalcTextSize(headerText.c_str()).x;
+
+    if (textWidth > availableWidth)
+    {
+        std::string ellipsis = "...";
+        float ellipsisWidth = ImGui::CalcTextSize(ellipsis.c_str()).x;
+
+        while (ImGui::CalcTextSize((headerText + ellipsis).c_str()).x > (availableWidth) && headerText.length() > 1)
+        {
+            headerText.pop_back();
+        }
+
+        headerText += ellipsis;
+    }
+
+    return headerText;
+}
