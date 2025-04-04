@@ -222,6 +222,25 @@ void setSecondaryDirection(ivec3 coord, vec4 value)
 }
 
 
+uniform bool whichAccumulatingVector;
+layout(std430, binding = 13) buffer AccumulatingMotionVectors
+{
+    float accumulatingMotionVectors[];
+};
+
+void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    if(whichAccumulatingVector){
+        accumulatingMotionVectors[index + 0] = accumulatingMotionVectors[index + 2] + value.x;
+        accumulatingMotionVectors[index + 1] = accumulatingMotionVectors[index + 3] + value.y;
+    }else{
+        accumulatingMotionVectors[index + 2] = accumulatingMotionVectors[index + 0] + value.x;
+        accumulatingMotionVectors[index + 3] = accumulatingMotionVectors[index + 1] + value.y;
+    }
+    
+}
+
 struct RayHit
 {
     bool wasHit;
@@ -736,9 +755,10 @@ void main()
 
         hitLocation.xy *= 0.5;
         hitLocation.xy += 0.5;
-        vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
+        //vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
         // vec2 motionVector = hitLocation.xy;
-        setFirstHitMotionVector(texelCoord, motionVector);
+        //setFirstHitMotionVector(texelCoord, motionVector);
+        changeAccumulatingMotionVectors(texelCoord, 1 * (vec2(texelCoord.xy) - hitLocation.xy * resolution.xy));
         //setFirstHitMotionVector(texelCoord, vec2(texelCoord.xy) - hitLocation.xy * resolution.xy);
     }
 

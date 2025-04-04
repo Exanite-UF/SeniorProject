@@ -67,10 +67,13 @@ void VoxelRenderer::remakeTextures()
     attentuationBuffer2.setSize(size1D);
     accumulatedLightBuffer2.setSize(size1D);
 
-    sampleDirection.setSize(size1D);
-    sampleRadiance.setSize(size1D);
-    sampleWeights.setSize(size1D);
-    samplePosition.setSize(size1D);
+    sampleDirection1.setSize(size1D);
+    sampleDirection2.setSize(size1D);
+    sampleRadiance1.setSize(size1D);
+    sampleRadiance2.setSize(size1D);
+    sampleWeights1.setSize(size1D);
+    sampleWeights2.setSize(size1D);
+    motionVectors.setSize(size1D);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -559,7 +562,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     materialBuffer.bind(11);
     secondaryDirection.bind(12);
-    //sampleDirection.bind(13);
+    motionVectors.bind(13);
 
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
@@ -576,6 +579,8 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
         glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), skybox->getSunAngularSize());
         glUniform3fv(glGetUniformLocation(primaryRayProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
+
+        glUniform1i(glGetUniformLocation(primaryRayProgram, "whichAccumulatingVector"), whichMotionVectors);
 
         for (auto& chunkComponent : chunks)
         {
@@ -654,11 +659,13 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     materialBuffer.unbind();
     secondaryDirection.unbind();
+    motionVectors.unbind();
     //sampleDirection.unbind();
 
     afterCast(maxDepth);
 
     whichStartBuffer = !whichStartBuffer;
+    whichMotionVectors = !whichMotionVectors;
 
     glUseProgram(0);
 }
@@ -690,10 +697,31 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     MaterialManager& materialManager = MaterialManager::getInstance();
     materialManager.getMaterialDefinitionsBuffer().bind(7); // This binds the material definitions for each material
 
-    sampleDirection.bind(8);
-    sampleRadiance.bind(9);
-    sampleWeights.bind(10);
-    samplePosition.bind(11);
+    
+    
+
+    if(whichSampleRadiance){
+        sampleDirection1.bind(8);
+        sampleDirection2.bind(9);
+
+        sampleRadiance1.bind(10);
+        sampleRadiance2.bind(11);
+
+        sampleWeights1.bind(12);
+        sampleWeights2.bind(13);
+    }else{
+        sampleDirection1.bind(9);
+        sampleDirection2.bind(8);
+
+        sampleRadiance1.bind(11);
+        sampleRadiance2.bind(10);
+
+        sampleWeights1.bind(13);
+        sampleWeights2.bind(12);
+    }
+
+    motionVectors.bind(14);
+    
 
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
@@ -711,6 +739,8 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "visualMultiplier"), skybox->getVisualMultiplier());
 
     glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
+
+    glUniform1i(glGetUniformLocation(pathTraceToFramebufferProgram, "whichMotionVectors"), whichMotionVectors);
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
@@ -743,10 +773,17 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     secondaryDirection.unbind();
     materialManager.getMaterialDefinitionsBuffer().unbind();
 
-    sampleDirection.unbind();
-    sampleRadiance.unbind();
-    sampleWeights.unbind();
-    samplePosition.unbind();
+    sampleDirection1.unbind();
+    sampleDirection2.unbind();
+    sampleRadiance1.unbind();
+    sampleRadiance2.unbind();
+    sampleWeights1.unbind();
+    sampleWeights2.unbind();
+    motionVectors.unbind();
+    
+
+    whichMotionVectors = !whichMotionVectors;
+    whichSampleRadiance = !whichSampleRadiance;
 
     glUseProgram(0);
 }

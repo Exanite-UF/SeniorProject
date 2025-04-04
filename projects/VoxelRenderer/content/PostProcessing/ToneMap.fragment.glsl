@@ -12,6 +12,7 @@ vec3 toneMapFilmic(vec3 color)
     return (color * (6.2 * color + 0.5)) / (color * (6.2 * color + 1.7) + 0.06);
 }
 
+
 vec3 toneMapACES(vec3 color)
 {
     return clamp((color * (2.51 * color + 0.03)) / (color * (2.43 * color + 0.59) + 0.14), 0.0, 1.0);

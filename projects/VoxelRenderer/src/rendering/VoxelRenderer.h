@@ -59,15 +59,23 @@ private:
     // These are primary ray info
     GraphicsBuffer<glm::vec3> normalBuffer; // world space
     GraphicsBuffer<glm::vec3> positionBuffer; // world space
-    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue)
+    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue) This carries the output motion vectors
     GraphicsBuffer<std::int32_t> materialBuffer; //(materialID)
     GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z)
     GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
 
-    GraphicsBuffer<glm::vec4> sampleDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
-    GraphicsBuffer<glm::vec3> sampleRadiance; //(r, g, b)
-    GraphicsBuffer<glm::vec3> sampleWeights;
-    GraphicsBuffer<glm::vec3> samplePosition;
+    bool whichSampleRadiance = false;
+    GraphicsBuffer<glm::vec4> sampleDirection1; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::vec4> sampleDirection2; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::vec3> sampleRadiance1; //(r, g, b)
+    GraphicsBuffer<glm::vec3> sampleRadiance2; //(r, g, b)
+    GraphicsBuffer<glm::vec3> sampleWeights1;
+    GraphicsBuffer<glm::vec3> sampleWeights2;
+
+    bool whichMotionVectors = false;
+    GraphicsBuffer<glm::vec4> motionVectors;//This accumulates motion vector values to prevent undershooting from sub pixel movement
+    
+    
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 

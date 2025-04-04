@@ -278,7 +278,7 @@ void Program::run()
         }
 
         // Tonemap
-        if (true)
+        if (false)
         {
 
             auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
