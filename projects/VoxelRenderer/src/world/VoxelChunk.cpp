@@ -5,28 +5,24 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkUtility.h>
+#include <tracy/Tracy.hpp>
 
 #include "VoxelChunkResources.h"
 
-VoxelChunk::VoxelChunk(glm::ivec3 size)
+VoxelChunk::VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData)
 {
     this->currentNoiseTime = 0;
 
-    // Initialize chunk size and contents
-    // Chunk size must be a power of 2
-    size = {
-        1 << glm::log2(size.x - 1) + 1,
-        1 << glm::log2(size.y - 1) + 1,
-        1 << glm::log2(size.z - 1) + 1
-    };
-
     setSize(size);
 
-    // Generates initial occupancy map data (non-essential)
-    generatePlaceholderData(0, true, 0.6);
+    if (shouldGeneratePlaceholderData)
+    {
+        // Generates initial occupancy map data
+        generatePlaceholderData(0, true, 0.6);
 
-    // Generates initial material map (non-essential)
-    generatePlaceholderMaterialMap();
+        // Generates initial material map
+        generatePlaceholderMaterialMap();
+    }
 }
 
 glm::ivec3 VoxelChunk::getSize() const
@@ -51,8 +47,14 @@ const GraphicsBuffer<uint16_t>& VoxelChunk::getMaterialMap()
 
 void VoxelChunk::setSize(glm::ivec3 size)
 {
-    // The size is validated by VoxelChunkUtility below
-    this->size = size;
+    ZoneScoped;
+
+    // Chunk size must be a power of 2
+    this->size = {
+        1 << glm::log2(size.x - 1) + 1,
+        1 << glm::log2(size.y - 1) + 1,
+        1 << glm::log2(size.z - 1) + 1
+    };
 
     occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
     this->occupancyMap.setSize(occupancyMapIndices[occupancyMapIndices.size() - 1]);
@@ -62,6 +64,8 @@ void VoxelChunk::setSize(glm::ivec3 size)
 
 void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise, float fillAmount)
 {
+    ZoneScoped;
+
     auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto makeNoiseComputeProgram = voxelWorldManager.makeNoiseComputeProgram;
 
@@ -92,6 +96,8 @@ void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise
 
 void VoxelChunk::updateMipMaps()
 {
+    ZoneScoped;
+
     auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto makeMipMapComputeProgram = voxelWorldManager.makeMipMapComputeProgram;
 
@@ -125,6 +131,8 @@ void VoxelChunk::updateMipMaps()
 
 void VoxelChunk::generatePlaceholderMaterialMap()
 {
+    ZoneScoped;
+
     auto& voxelWorldManager = VoxelChunkResources::getInstance();
     auto assignMaterialComputeProgram = voxelWorldManager.assignMaterialComputeProgram;
 
@@ -147,6 +155,8 @@ void VoxelChunk::generatePlaceholderMaterialMap()
 
 void VoxelChunk::generatePlaceholderData(double deltaTime, bool useRandomNoise, float fillAmount)
 {
+    ZoneScoped;
+
     generateNoiseOccupancyMap(currentNoiseTime, useRandomNoise, fillAmount);
     updateMipMaps();
 

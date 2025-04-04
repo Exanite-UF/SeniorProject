@@ -10,15 +10,14 @@ private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureData> textureData;
 
-    glm::ivec3 chunkSize;
     int seed = 0;
 
     // Stone Terrain
     int octaves = 3;
     float persistence = 0.5;
-    int baseHeight = 100;
+    int baseHeightBlocks = 20;
     float frequency = 0.002;
-    int terrainMaxAmplitude = 100;
+    int terrainMaxAmplitudeBlocks = 20;
 
     // Replace surface with dirt
     int dirtDepth = 5;
@@ -29,7 +28,7 @@ private:
     void generateData(VoxelChunkData& data) override;
 
 public:
-    explicit PrototypeWorldGenerator(const glm::ivec3& chunkSize, const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
+    explicit PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
 
     void showDebugMenu() override;
 };

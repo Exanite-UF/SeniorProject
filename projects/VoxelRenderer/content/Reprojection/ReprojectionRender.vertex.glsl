@@ -4,6 +4,9 @@ layout(location = 0) in vec3 aPos;
 layout(binding = 0) uniform sampler2D positionTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
 
+layout(binding = 2) uniform sampler2D sourceTexture;
+layout(binding = 3) uniform sampler2D miscTexture;
+
 uniform vec4 inverseCameraRotation;
 uniform vec3 cameraPosition;
 uniform ivec2 resolution;
@@ -11,6 +14,12 @@ uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 
 out vec2 uv;
 out float distance1;
+out float isSkyBox;
+
+out vec3 color;
+out vec3 normal;
+out vec4 misc;
+out vec3 posOut;
 
 vec3 qtransform(vec4 q, vec3 v)
 {
@@ -29,7 +38,8 @@ float remainder(float a, float m)
 
 void main()
 {
-    vec3 pos = texture(positionTexture, aPos.xy).xyz;
+    posOut = texture(positionTexture, aPos.xy).xyz;
+    vec3 pos = posOut;
     vec3 pos2 = mod(pos, 1) - mod(cameraPosition, 1);
     vec3 pos3 = floor(pos) - floor(cameraPosition);
     vec3 pos4 = floor(pos);
@@ -54,18 +64,19 @@ void main()
 
     pos.xy = pos3.xy + pos2.xy;
 
-    // vec3 normal = texture(normalTexture, aPos.xy).xyz;
-    // normal = vec3(normal.y, normal.z, normal.x);
+    normal = texture(normalTexture, aPos.xy).xyz;
 
-    // float distFromSurface = abs(dot(normal, pos));
-    // float distAlongSurface = length(cross(normal, pos));
+    if (length(normal) < 0.5)
+    {
+        isSkyBox = 1;
+    }
+    else
+    {
+        isSkyBox = 0;
+    }
 
-    // float temp2 = length(cross(normalize(pos), normal));
-    // float temp3 = length(dot(normalize(pos), normal));
-    // pos.xy += 0.001 * normal.xy * (temp2 + 1);// / (length(pos) / distAlongSurface);// / temp3;// ;// / (distAlongSurface);
-    // pos.y /= 1 + 0.01* normal.y;
-
-    // pos.xy *= 1 - 0.002 * length(normal.xy);
+    color = texture(sourceTexture, aPos.xy).xyz;
+    misc = texture(miscTexture, aPos.xy);
 
     pos.y *= resolution.x / float(resolution.y); // Correct for aspect ratio
     pos.z *= horizontalFovTan;

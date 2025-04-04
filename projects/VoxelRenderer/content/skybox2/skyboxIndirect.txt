@@ -1,0 +1,7 @@
+px.hdr
+nx.hdr
+py.hdr
+ny.hdr
+pz.hdr
+nz.hdr
+https://polyhaven.com/a/pretoria_gardens

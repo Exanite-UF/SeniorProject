@@ -1,6 +1,6 @@
 #include "Texture.h"
 
-Texture::Texture(GLuint textureId, TextureType type, glm::ivec2 size)
+Texture::Texture(GLuint textureId, TextureType type, glm::ivec2 size, bool isCubemap)
     : size(size)
 {
     this->textureId = textureId;
@@ -8,6 +8,7 @@ Texture::Texture(GLuint textureId, TextureType type, glm::ivec2 size)
     // glMakeTextureHandleResidentARB(bindlessHandle);
 
     this->type = type;
+    _isCubemap = isCubemap;
 }
 
 GLuint Texture::getTextureId()
@@ -28,4 +29,9 @@ glm::ivec2 Texture::getSize()
 TextureType Texture::getType()
 {
     return type;
+}
+
+bool Texture::isCubemap() const
+{
+    return _isCubemap;
 }
