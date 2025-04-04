@@ -18,26 +18,28 @@ void ModelPreviewer::setModel(const std::shared_ptr<Model>& model)
     voxelShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathVoxel, Content::Triangulation::fragShaderPathVoxel);
 }
 
-void ModelPreviewer::createWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox, std::string modelPath)
+void ModelPreviewer::createWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath)
 {
     if (triangleThreadRunning)
     {
         return;
     }
 
-    this->modelVox = modelVox;
+    this->modelVoxelizer = modelVoxelizer;
 
-    // Create Triangle Window in the Main Thread
+    // Create Triangle Window in the main thread
     triangleWindow = std::make_shared<Window>("Voxelizer triangle window", mainWindow.get());
+
+    // Restore original context
     mainWindow->makeContextCurrent();
 
     triangleThreadRunning = true;
-    triangleThread = std::thread([this, modelPath, modelVox]()
+    triangleThread = std::thread([this, modelPath, modelVoxelizer]()
         {
             triangleWindow->makeContextCurrent();
 
-            modelVox->loadModel(const_cast<char*>(modelPath.c_str()));
-            setModel(modelVox->getModel());
+            modelVoxelizer->loadModel(const_cast<char*>(modelPath.c_str()));
+            setModel(modelVoxelizer->getModel());
 
             // Render Loop
             while (triangleThreadRunning && !glfwWindowShouldClose(triangleWindow->getGlfwWindowHandle()))
@@ -72,28 +74,30 @@ void ModelPreviewer::createWindowTriangle(const std::shared_ptr<Window>& mainWin
         });
 }
 
-void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox)
+void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer)
 {
     if (voxelThreadRunning)
     {
         return;
     }
 
-    this->modelVox = modelVox;
+    this->modelVoxelizer = modelVoxelizer;
 
-    // Create Voxel Window in the Main Thread
+    // Create Voxel Window in the main thread
     voxelWindow = std::make_shared<Window>("Voxelizer voxel window", mainWindow.get());
+
+    // Restore original context
     mainWindow->makeContextCurrent();
 
     voxelThreadRunning = true;
-    voxelThread = std::thread([this, modelVox]()
+    voxelThread = std::thread([this, modelVoxelizer]()
         {
             voxelWindow->makeContextCurrent();
 
             printf("STARTING RENDER LOOP\n");
 
             // generate voxels
-            modelVox->voxelizeModel();
+            modelVoxelizer->voxelizeModel();
 
             // Render Loop
             while (voxelThreadRunning && !glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
@@ -128,12 +132,11 @@ void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow
 
 void ModelPreviewer::renderWindowTriangle()
 {
-    if (triangleWindow && loadedModel && !glfwWindowShouldClose(triangleWindow->getGlfwWindowHandle()))
+    if (loadedModel)
     {
-        triangleWindow->makeContextCurrent();
-        glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
+        glClearColor(0.2f, 0.2f, 0.2f, 0);
         glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         loadedModel->draw(triangleShader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize.x, windowSize.y);
     }
@@ -141,15 +144,13 @@ void ModelPreviewer::renderWindowTriangle()
 
 void ModelPreviewer::renderWindowVoxel()
 {
-    if (voxelWindow && modelVox && modelVox->isVoxelized && !glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
+    if (modelVoxelizer && modelVoxelizer->isVoxelized)
     {
-        triangleWindow->makeContextCurrent();
-
-        glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
+        glClearColor(0.2f, 0.2f, 0.2f, 0);
         glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        modelVox->drawVoxels(voxelShader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize.x, windowSize.y);
+        modelVoxelizer->drawVoxels(voxelShader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize.x, windowSize.y);
     }
 }
 
@@ -158,7 +159,6 @@ void ModelPreviewer::closeWindowTriangle()
     if (!triangleThreadRunning)
         return;
 
-    modelVox = nullptr;
     // Signal thead to stop
     triangleThreadRunning = false;
 
@@ -180,7 +180,6 @@ void ModelPreviewer::closeWindowVoxel()
     if (!voxelThreadRunning)
         return;
 
-    modelVox = nullptr;
     // Signal thead to stop
     voxelThreadRunning = false;
 
