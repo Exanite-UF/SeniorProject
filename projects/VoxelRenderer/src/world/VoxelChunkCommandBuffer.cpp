@@ -1,37 +1,7 @@
 #include "VoxelChunkCommandBuffer.h"
 
-#include <algorithm>
-#include <ranges>
 #include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
-
-VoxelChunkCommandBuffer::ChunkVersionLock::ChunkVersionLock(const std::shared_ptr<VoxelChunkComponent>& component, const int expectedVersion)
-{
-    this->component = component;
-
-    // Acquire lock for chunk version and wait for chunk version to match expected version
-    lockChunkVersion = std::unique_lock(component->getModificationData().versionMutex);
-
-    component->getModificationData().versionCondition.wait(lockChunkVersion, [&]()
-        {
-            return component->getModificationData().version == expectedVersion;
-        });
-
-    // We now have confirmed that the chunk version matches the expected version
-    // Release the lock
-    // No other thread will modify the version until we increment it ourselves
-    lockChunkVersion.unlock();
-}
-
-VoxelChunkCommandBuffer::ChunkVersionLock::~ChunkVersionLock()
-{
-    // Make sure to always increment version after we're done
-    // Not doing so leads to deadlock
-    // TODO: Use weak pointers for better safety?
-    lockChunkVersion.lock();
-    component->getModificationData().version++;
-    component->getModificationData().versionCondition.notify_all();
-}
 
 void VoxelChunkCommandBuffer::setSize(const glm::ivec3& size)
 {
@@ -79,12 +49,9 @@ void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool 
     setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, int expectedVersion) const
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
 {
     ZoneScoped;
-
-    // Lock, verify or wait until the chunk version is equal to expected
-    ChunkVersionLock lockChunkVersion(component, expectedVersion);
 
     // Acquire lock for component, but not for the scene
     std::unique_lock lockComponent(component->getMutex());
@@ -176,7 +143,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 auto command = setExistsOnGpuCommands.at(entry.index);
 
                 // Never write to GPU using setExistsOnGpu, we can handle it better here
-                // TODO: For some reason, the chunk could have been removed from the world by this point
                 component->setExistsOnGpu(command.existsOnGpu, false);
 
                 // Write if needed

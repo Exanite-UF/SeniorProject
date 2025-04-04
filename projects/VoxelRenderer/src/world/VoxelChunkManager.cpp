@@ -28,15 +28,13 @@
 VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
     const std::shared_ptr<SceneComponent>& scene,
-    const VoxelChunkCommandBuffer& commandBuffer,
-    const int expectedVersion)
+    const VoxelChunkCommandBuffer& commandBuffer)
 {
     ZoneScoped;
 
     this->component = component;
     this->scene = scene;
     this->commandBuffer = commandBuffer;
-    this->expectedVersion = expectedVersion;
 }
 
 VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
@@ -253,13 +251,29 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
         // Unlock the mutex
         pendingRequestsLock.unlock();
 
-        // Apply the chunk command buffer
+        try
         {
-            ZoneScopedN("Chunk modification");
+            // Wait for any dependencies to finish
+            task->dependencies.waitForPending();
 
-            MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
-            Log::verbose("Applying chunk command buffer");
-            task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex, task->expectedVersion);
+            // Apply the chunk command buffer
+            {
+                ZoneScopedN("Chunk modification");
+
+                MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
+                Log::verbose("Applying chunk command buffer");
+                task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
+            }
+
+            // Complete the promise
+            task->promise.set_value();
+        }
+        catch (...)
+        {
+            // Complete the promise
+            task->promise.set_exception(std::current_exception());
+
+            throw;
         }
     }
 
@@ -810,14 +824,18 @@ void VoxelChunkManager::showDebugMenu()
     }
 }
 
-void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
 {
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
-    std::lock_guard lockChunkVersion(component->getModificationData().versionMutex);
 
-    auto expectedVersion = component->getModificationData().pendingVersion;
-    component->getModificationData().pendingVersion++;
+    auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
+    task->dependencies.addPending(component->getModificationData().pendingTasks.getPending());
 
-    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer, expectedVersion));
+    auto sharedFuture = task->promise.get_future().share();
+    component->getModificationData().pendingTasks.addPending(sharedFuture);
+
+    modificationThreadState.pendingTasks.emplace(task);
     modificationThreadState.pendingTasksCondition.notify_one();
+
+    return sharedFuture;
 }

@@ -10,17 +10,6 @@ class VoxelChunkCommandBuffer
     friend class VoxelChunkManager;
 
 private:
-    class ChunkVersionLock
-    {
-    private:
-        std::unique_lock<std::mutex> lockChunkVersion;
-        std::shared_ptr<VoxelChunkComponent> component;
-
-    public:
-        explicit ChunkVersionLock(const std::shared_ptr<VoxelChunkComponent>& component, int expectedVersion);
-        ~ChunkVersionLock();
-    };
-
     enum CommandType
     {
         SetSize,
@@ -126,5 +115,5 @@ public:
 
 private:
     // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
-    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, int expectedVersion) const;
+    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const;
 };

@@ -7,6 +7,7 @@
 #include <queue>
 #include <src/Constants.h>
 
+#include <src/threading/PendingTasks.h>
 #include <src/utilities/Singleton.h>
 #include <src/windowing/GlfwContext.h>
 #include <src/world/SceneComponent.h>
@@ -52,9 +53,10 @@ private:
         std::shared_ptr<VoxelChunkComponent> component {};
         std::shared_ptr<SceneComponent> scene {};
         VoxelChunkCommandBuffer commandBuffer {};
-        int expectedVersion {};
+        std::promise<void> promise {};
+        PendingTasks<void> dependencies;
 
-        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer, int expectedVersion);
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer);
     };
 
     struct ChunkLoadTask
@@ -157,7 +159,7 @@ public:
     void showDebugMenu();
 
     // Can be called from any thread
-    void submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
+    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
 
     ~VoxelChunkManager() override;
 
