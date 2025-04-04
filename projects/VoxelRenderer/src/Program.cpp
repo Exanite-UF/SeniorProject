@@ -1,6 +1,8 @@
 #include <src/utilities/ImGui.h>
 #include <src/utilities/OpenGl.h>
 
+#include <tracy/Tracy.hpp>
+
 #include <Jolt/Jolt.h>
 
 #include <Jolt/Core/Factory.h>
@@ -55,19 +57,22 @@
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/SceneComponent.h>
+#include <src/world/SkyboxComponent.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
 
 // Helper Function
-void HeaderCondenser(std::string &headerText_);
+void HeaderCondenser(std::string& headerText_);
 
 Program::Program()
 {
+    ZoneScoped;
+
     // Ensure preconditions are met
     runEarlyStartupTests();
-    Log::log("Starting Voxel Renderer");
+    Log::information("Starting Voxel Renderer");
 
     // Init GLFW
     if (!glfwInit())
@@ -75,8 +80,16 @@ Program::Program()
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    offscreenContext = std::make_shared<GlfwContext>();
-    window = std::make_shared<Window>(offscreenContext.get());
+    std::shared_ptr<GlfwContext> previousContext {};
+
+    for (int i = 0; i < Constants::VoxelChunkManager::maxChunkModificationThreads; ++i)
+    {
+        previousContext = std::make_shared<GlfwContext>(previousContext.get());
+        chunkModificationThreadContexts.push_back(previousContext);
+    }
+
+    previousContext = offscreenContext = std::make_shared<GlfwContext>(previousContext.get());
+    previousContext = window = std::make_shared<Window>(previousContext.get());
 
     window->makeContextCurrent();
 
@@ -85,8 +98,19 @@ Program::Program()
 
 Program::~Program()
 {
-    // Cleanup singletons
-    SingletonManager::destroyAllSingletons();
+    ZoneScoped;
+
+    {
+        ZoneScopedN("Destroy scene");
+
+        sceneObject->removeFromWorld();
+    }
+
+    {
+        ZoneScopedN("Cleanup singletons");
+
+        SingletonManager::destroyAllSingletons();
+    }
 
     // Shutdown GLFW
     glfwTerminate();
@@ -114,45 +138,52 @@ void Program::run()
     // glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // Sets the Z clip range to [0, 1]
 
     // Create the scene GameObject
-    auto sceneObject = GameObject::createRootObject("Scene");
-    auto scene = sceneObject->addComponent<SceneComponent>();
-
-    // Create the chunk GameObjects
+    sceneObject = GameObject::createRootObject("Scene");
+    scene = sceneObject->addComponent<SceneComponent>();
     auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
-    for (int x = 0; x < 3; x++)
+
+    auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
+    scene->setSkybox(skybox);
+
+    // Generate static, noise-based chunks for testing purposes
+    if (true)
     {
-        for (int y = 0; y < 3; ++y)
+        voxelChunkManager.settings.isChunkLoadingEnabled = false;
+        voxelChunkManager.settings.enableCulling = false;
+        for (int x = 0; x < 3; x++)
         {
-            auto voxelChunkObject = sceneObject->createChildObject("Chunk (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+            for (int y = 0; y < 3; ++y)
+            {
+                auto voxelChunkObject = sceneObject->createChildObject(std::format("Chunk ({}, {})", x, y));
 
-            auto& voxelChunk = scene->chunks.emplace_back(voxelChunkObject->addComponent<VoxelChunkComponent>());
-            voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
+                auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
+                voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
 
-            scene->chunks.push_back(voxelChunk);
+                scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
+            }
         }
     }
 
     // Create the camera GameObject
     auto cameraObject = sceneObject->createChildObject("Camera");
     auto camera = cameraObject->addComponent<CameraComponent>();
-    auto& cameraTransform = camera->getTransform();
-    scene->camera = camera;
-    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25f));
-
-    auto& voxelChunk = scene->chunks.at(0);
+    auto cameraTransform = camera->getTransform();
+    scene->setCamera(camera);
+    cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
 
     // Initialize the chunk manager
-    voxelChunkManager.initialize(scene);
+    voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
 
     // Create the renderer
     Renderer renderer(window, offscreenContext);
     float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
 
-    renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
+    renderer.setRenderResolution(window->size);
+    // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
-    renderer.setRaysPerPixel(1);
-    renderer.setBounces(2);
+    int numberOfBounces = 3;
+    renderer.setBounces(numberOfBounces);
 
     // Configure post processing
     {
@@ -238,22 +269,49 @@ void Program::run()
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
         }
+
+        // Show other
+        if (false)
+        {
+            auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            showOther->setUniforms = [&renderer](GLuint program)
+            {
+                glUniform1i(glGetUniformLocation(program, "whichTexture"), 3);
+            };
+        }
+
+        // Tonemap
+        if (false)
+        {
+
+            auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            toneMap->setUniforms = [&renderer](GLuint program) {
+
+            };
+        }
+
+        // Show angular size
+        if (false)
+        {
+            auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            showAngularSize->setUniforms = [&renderer](GLuint program)
+            {
+                glUniform1f(glGetUniformLocation(program, "angularSize"), 0.5 * 3.1415926589 / 180);
+                glUniform1f(glGetUniformLocation(program, "horizontalFov"), renderer.getCurrentCameraFOV());
+                glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
+            };
+        }
     }
 
     // Engine time
     double totalElapsedTime = 0;
     auto previousTimestamp = std::chrono::high_resolution_clock::now();
 
-    // Fps counter
-    float fpsCycleTimer = 0;
-    float currentFPS = 0;
-    float averagedDeltaTime = 0;
-
     // Temporal accumulation
     int frameCount = 0;
-    int maxFrames = 0;
+    int maxFrames = 0; // TODO: Currently unused?
 
-    bool shouldRenderPathTrace = true;
+    bool shouldRenderPathTrace = true; // TODO: Currently unused?
 
     // Procedural Generation
     ExampleWorldGenerator exampleWorldGenerator {};
@@ -265,8 +323,11 @@ void Program::run()
     auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
     auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
 
-    TextureHeightmapWorldGenerator octaveWorldGenerator(glm::ivec3(chunkSize), openSimplexSynthesizer);
-    PrototypeWorldGenerator prototypeWorldGenerator(glm::ivec3(chunkSize), octaveSynthesizer);
+    TextureHeightmapWorldGenerator octaveWorldGenerator(openSimplexSynthesizer);
+    octaveWorldGenerator.setChunkSize(chunkSize);
+
+    PrototypeWorldGenerator prototypeWorldGenerator(octaveSynthesizer);
+    prototypeWorldGenerator.setChunkSize(chunkSize);
 
     // Model Previewer
     ModelPreviewer modelPreviewer {};
@@ -275,10 +336,13 @@ void Program::run()
     bool isModelVoxelized = false;
 
     renderer.setScene(scene);
-    //renderer.startAsynchronousReprojection();
+    // renderer.startAsynchronousReprojection();
 
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
+        const char* frameId = "Main Loop";
+        FrameMarkStart(frameId);
+
         // Engine time
         auto currentTimestamp = std::chrono::high_resolution_clock::now();
         double deltaTime = std::chrono::duration<double>(currentTimestamp - previousTimestamp).count();
@@ -289,27 +353,33 @@ void Program::run()
         fpsCycleTimer += deltaTime;
         if (fpsCycleTimer > 1)
         {
-            int framesThisCycle = renderer.getReprojectionCounter();
+            int displaysThisCycle = renderer.getReprojectionCounter();
             renderer.resetReprojectionCounter();
-            currentFPS = framesThisCycle / fpsCycleTimer;
-            averagedDeltaTime = fpsCycleTimer / framesThisCycle;
+            currentDisplayFps = displaysThisCycle / fpsCycleTimer;
+            averageDisplayDeltaTime = fpsCycleTimer / displaysThisCycle;
 
-            int framesThisCycle1 = renderer.getRenderCounter();
+            int rendersThisCycle = renderer.getRenderCounter();
             renderer.resetRenderCounter();
-            currentFPS1 = framesThisCycle1 / fpsCycleTimer;
-            averagedDeltaTime1 = fpsCycleTimer / framesThisCycle1;
+            currentRenderFps = rendersThisCycle / fpsCycleTimer;
+            averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
 
-            auto averagedDeltaTimeMs = averagedDeltaTime * 1000;
-            auto averagedDeltaTimeMs1 = averagedDeltaTime1 * 1000;
-            Log::log(std::to_string(currentFPS) + " Display FPS (" + std::to_string(averagedDeltaTimeMs) + " ms)" + " | " + std::to_string(currentFPS1) + " Render FPS (" + std::to_string(averagedDeltaTimeMs1) + " ms)");
+            // This lets you find the resolution at which 30fps is possible
+            // if(currentRenderFps - 30 > 10){
+            //     renderRatio *= 1.05;
+            // }else if(currentRenderFps - 30 < -5){
+            //     renderRatio *= 0.95;
+            // }
+
+            auto averagedDisplayDeltaTimeMs = averageDisplayDeltaTime * 1000;
+            auto averagedRenderDeltaTimeMs = averagedRenderDeltaTime * 1000;
+            Log::information(std::format("{} display FPS ({} ms) | {} render FPS ({} ms)", currentDisplayFps, averagedDisplayDeltaTimeMs, currentRenderFps, averagedRenderDeltaTimeMs));
 
             fpsCycleTimer = 0;
-            framesThisCycle = 0;
-            framesThisCycle1 = 0;
         }
 
         // Update systems
         window->update();
+        camera->resolution = window->size;
         inputManager->update();
         voxelChunkManager.update(deltaTime);
         sceneObject->update();
@@ -323,7 +393,7 @@ void Program::run()
 
                 camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
                 camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
-                camera->rotation.x = glm::clamp(camera->rotation.x, -glm::pi<float>() / 2, glm::pi<float>() / 2);
+                camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
 
                 cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
@@ -366,41 +436,68 @@ void Program::run()
                 cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
             }
 
-            if (input->isKeyHeld(GLFW_KEY_E))
-            {
-                voxelChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
-            }
-
             if (input->isKeyPressed(GLFW_KEY_G))
             {
-                //renderer.toggleAsynchronousReprojection();
+                // renderer.toggleAsynchronousReprojection();
             }
 
-            if (input->isKeyPressed(GLFW_KEY_F6))
+            if (input->isKeyPressed(GLFW_KEY_B))
             {
-                exaniteWorldGenerator.generate(*voxelChunk->getChunk());
+                renderer.toggleRendering();
             }
 
-            if (input->isKeyPressed(GLFW_KEY_F7))
+            if (input->isKeyPressed(GLFW_KEY_V))
             {
-                exampleWorldGenerator.generate(*voxelChunk->getChunk());
+                if (numberOfBounces == 3)
+                {
+                    numberOfBounces = 2;
+                }
+                else
+                {
+                    numberOfBounces = 3;
+                }
+
+                renderer.setBounces(numberOfBounces);
             }
 
-            if (input->isKeyPressed(GLFW_KEY_F8))
+            std::shared_ptr<VoxelChunkComponent> closestChunk {};
+            if (scene->tryGetClosestWorldChunk(closestChunk))
             {
-                prototypeWorldGenerator.generate(*voxelChunk->getChunk());
-            }
+                if (input->isKeyHeld(GLFW_KEY_E) && closestChunk->getExistsOnGpu())
+                {
+                    std::lock_guard lock(closestChunk->getMutex());
 
-            if (isRemakeNoiseRequested)
-            {
-                // The noise time should not be incremented here
-                voxelChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
-                isRemakeNoiseRequested = false;
+                    closestChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                }
+
+                if (isRemakeNoiseRequested && closestChunk->getExistsOnGpu())
+                {
+                    std::lock_guard lock(closestChunk->getMutex());
+
+                    // The noise time (corresponds to the deltaTime parameter) should not be incremented here
+                    closestChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                    isRemakeNoiseRequested = false;
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_F6))
+                {
+                    exaniteWorldGenerator.generate(*closestChunk);
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_F7))
+                {
+                    exampleWorldGenerator.generate(*closestChunk);
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_F8))
+                {
+                    prototypeWorldGenerator.generate(*closestChunk);
+                }
             }
 
             if (input->isKeyPressed(GLFW_KEY_F))
             {
-                GLFWmonitor* monitor = glfwGetWindowMonitor(window->getGlfwWindowHandle());
+                auto* monitor = glfwGetWindowMonitor(window->getGlfwWindowHandle());
                 if (monitor == nullptr)
                 {
                     window->setFullscreen();
@@ -461,7 +558,6 @@ void Program::run()
             float menuHeight = windowSize.y / 4;
             const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
 
-            
             for (int i = 0; i < numMenus; i++)
             {
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
@@ -474,8 +570,8 @@ void Program::run()
 
                 float indentSize = ImGui::GetWindowContentRegionMax().x / 16.0f;
 
-                static bool collapsedStates[6] = {  true, true, true, true, true, true };
-                
+                static bool collapsedStates[6] = { true, true, true, true, true, true };
+
                 // Stats
                 if (i == 0 && input->isKeyPressed(GLFW_KEY_F3))
                 {
@@ -483,7 +579,7 @@ void Program::run()
                 }
 
                 ImGui::SetNextWindowCollapsed(collapsedStates[i], ImGuiCond_Always);
-                
+
                 ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
                 ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
@@ -500,22 +596,23 @@ void Program::run()
                         ImGui::Text("\n");
 
                         ImGui::Text("Camera Look Direction");
-                        ImGui::Text("\tX: %.2f Y: %.2f Z: %.2f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
+                        ImGui::Text("\tX: %.4f Y: %.4f Z: %.4f", cameraLookDirection.x, cameraLookDirection.y, cameraLookDirection.z);
 
                         ImGui::Text("\n");
 
-                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentFPS, currentFPS1);
+                        ImGui::Text("FPS: %.2f (Display) | %.2f (Render)", currentDisplayFps, currentRenderFps);
                         ImGui::Text("Reprojection Enabled: %s", renderer.getIsAsynchronousReprojectionEnabled() ? "True" : "False");
                         ImGui::Text("Window Resolution: %d x %d", window->size.x, window->size.y);
                         ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
                         ImGui::Text("Render Ratio: %.2f", renderRatio);
+                        ImGui::Text("Number of bounces: %d", numberOfBounces);
 
                         break;
                     }
                     case 1:
                     {
                         // Should be relative path
-                        //std::string modelFileName = "../../content/Triangulation/suzanne.obj";
+                        // std::string modelFileName = "../../content/Triangulation/suzanne.obj";
                         std::string modelFileName = "content/Triangulation/suzanne.obj";
 
                         ImGui::Text("Please choose a file.");
@@ -524,7 +621,6 @@ void Program::run()
                         ImGui::InputText("", &modelFileName);
                         ImGui::PopID();
                         ImGui::Unindent(indentSize);
-
 
                         // Polygnol Mesh Preview
                         std::string originalModelHeader = "Import & Preview Model";
@@ -535,7 +631,7 @@ void Program::run()
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
                         if (ImGui::Button(originalModelHeader.c_str()))
                         {
-                            //static std::string lastFile = modelFileName;
+                            // static std::string lastFile = modelFileName;
                             showOriginalModelMenu = !showOriginalModelMenu;
                             if (showOriginalModelMenu)
                             {
@@ -551,7 +647,6 @@ void Program::run()
                         }
                         ImGui::PopStyleColor(3);
 
-
                         // Voxel Mesh Preview
                         std::string voxelizedModelHeader = "Voxelize & Preview Model";
                         HeaderCondenser(voxelizedModelHeader);
@@ -565,7 +660,7 @@ void Program::run()
                             if (ImGui::Button(voxelizedModelHeader.c_str()))
                             {
                                 showVoxelizedModelMenu = !showVoxelizedModelMenu;
-                                
+
                                 if (showVoxelizedModelMenu)
                                 {
                                     modelPreviewer.CreateWindowVoxel(&modelVoxelizer);
@@ -580,16 +675,14 @@ void Program::run()
                         }
                         ImGui::PopStyleColor(3);
 
-
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.253f, 0.540f, 0.248f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.313f, 0.450f, 0.310f, 0.5f));
-                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f)); 
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
 
                         if (isModelVoxelized)
                         {
                             if (ImGui::Button("Add to world"))
                             {
-                                
                             }
                         }
 
@@ -603,7 +696,7 @@ void Program::run()
                         exampleWorldGenerator.showDebugMenu();
                         octaveWorldGenerator.showDebugMenu();
                         prototypeWorldGenerator.showDebugMenu();
-                        
+
                         voxelChunkManager.showDebugMenu();
 
                         break;
@@ -620,6 +713,8 @@ void Program::run()
                         ImGui::Text("Q - Toggle Mouse Input");
                         ImGui::Text("T - Change Noise Type");
                         ImGui::Text("G - Toggle Reprojection");
+                        ImGui::Text("V - Toggle Bounce Count");
+                        ImGui::Text("B - Pause/Unpause Rendering");
                         ImGui::Text("Mouse Scroll - Change Move Speed");
                         ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
                         ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");
@@ -643,40 +738,41 @@ void Program::run()
         // Render
         {
             renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glDepthFunc(GL_GREATER);
-
 
             renderer.pollCamera(camera);
             renderer.render();
             glFinish();
-            
 
             frameCount++;
         }
 
         // Present
         window->present();
+
+        FrameMarkEnd(frameId);
+        FrameMark;
     }
 
-    //renderer.stopAsynchronousReprojection(); // messing with preview window
-    sceneObject->destroy();
-    std::cout << "END" << std::endl;
+    renderer.stopAsynchronousReprojection();
 }
 
 void Program::checkForContentFolder()
 {
+    ZoneScoped;
+
     if (!std::filesystem::is_directory("content"))
     {
         throw std::runtime_error("Could not find content folder. Is the working directory set correctly?");
     }
 
-    Log::log("Found content folder");
+    Log::information("Found content folder");
 }
 
 void Program::runEarlyStartupTests()
 {
-    Log::log("Running early startup tests (in constructor)");
+    ZoneScoped;
+
+    Log::information("Running early startup tests (in constructor)");
 
     {
         // Make sure the content folder exists
@@ -712,7 +808,7 @@ void Program::runEarlyStartupTests()
         // Letting the shared_ptr fall out of scope or explicitly resetting it will unsubscribe from the event
         auto listener = testEvent.subscribe([&](int value)
             {
-                Log::log("Event was successfully called");
+                Log::information("Event was successfully called");
                 counter += value;
             });
 
@@ -735,7 +831,7 @@ void Program::runEarlyStartupTests()
 
         auto listener = testEvent.subscribe([&](int value)
             {
-                Log::log("Buffered event was successfully called");
+                Log::information("Buffered event was successfully called");
                 counter += value;
             });
 
@@ -759,31 +855,61 @@ void Program::runEarlyStartupTests()
 
 void Program::runLateStartupTests()
 {
-    Log::log("Running late startup tests (in run())");
+    ZoneScoped;
+
+    Log::information("Running late startup tests (in run())");
 
     {
-        // Verify GameObject destroy API
+        // Verify GameObject removeFromWorld API
+        auto root = GameObject::createRootObject("Root");
+        auto rootTransform = root->getTransform();
+
+        auto child1 = root->createChildObject("Child1");
+        auto child1Transform = child1->getTransform();
+
+        auto child2 = root->createChildObject("Child2");
+        auto child2Transform = child2->getTransform();
+
+        Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
+
+        child1->removeFromWorld();
+        Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been removed from the world");
+
+        root->removeFromWorld();
+        Assert::isTrue(!root->getIsPartOfWorld(), "Root GameObject should have been removed from the world");
+        Assert::isTrue(!child1->getIsPartOfWorld(), "Child1 GameObject should have been removed from the world");
+        Assert::isTrue(!child2->getIsPartOfWorld(), "Child2 GameObject should have been removed from the world");
+    }
+
+    Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
+    Assert::isTrue(Component::getInstanceCount() == 0, "No Components should be currently alive");
+
+    {
+        // Verify Transform setParent API
         auto root = GameObject::createRootObject("Root");
 
         auto child1 = root->createChildObject("Child1");
         auto child2 = root->createChildObject("Child2");
         Assert::isTrue(root->getTransform()->getChildren().size() == 2, "Root GameObject should have 2 children");
 
-        child1->destroy();
+        child2->getTransform()->setParent(nullptr);
+        Assert::isTrue(!child2->getTransform()->hasParent(), "Child2 GameObject should not have a parent");
         Assert::isTrue(root->getTransform()->getChildren().size() == 1, "Root GameObject should have 1 children");
-        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
+        Assert::isTrue(root->getTransform()->getChildren().at(0)->getGameObject() == child1, "Root GameObject have Child1 as its only child");
 
-        root->destroy();
-        Assert::isTrue(!root->getIsAlive(), "Root GameObject should have been destroyed");
-        Assert::isTrue(!child1->getIsAlive(), "Child1 GameObject should have been destroyed");
-        Assert::isTrue(!child2->getIsAlive(), "Child2 GameObject should have been destroyed");
+        child2->removeFromWorld();
+        root->removeFromWorld();
     }
+
+    Assert::isTrue(GameObject::getInstanceCount() == 0, "No GameObjects should be currently alive");
+    Assert::isTrue(Component::getInstanceCount() == 0, "No Components should be currently alive");
 
     {
         // Verify shader storage block size is large enough
         GLint size;
         glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
-        Log::log("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
+        Log::information("GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " + std::to_string(size) + " bytes.");
 
         // 134217728 is the GL_MAX_SHADER_STORAGE_BLOCK_SIZE of Exanite's laptop, also equal to 512x512x512
         Assert::isTrue(size >= 134217728, "OpenGL driver not supported: GL_MAX_SHADER_STORAGE_BLOCK_SIZE is not big enough");
@@ -796,14 +922,14 @@ void Program::runLateStartupTests()
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workgroupSizes.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workgroupSizes.z);
 
-        Log::log("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
+        Log::information("GL_MAX_COMPUTE_WORK_GROUP_SIZE is <" + std::to_string(workgroupSizes.x) + ", " + std::to_string(workgroupSizes.y) + ", " + std::to_string(workgroupSizes.z) + ">" + ".");
 
         glm::ivec3 workgroupCounts;
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workgroupCounts.x);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &workgroupCounts.y);
         glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workgroupCounts.z);
 
-        Log::log("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
+        Log::information("GL_MAX_COMPUTE_WORK_GROUP_COUNT is <" + std::to_string(workgroupCounts.x) + ", " + std::to_string(workgroupCounts.y) + ", " + std::to_string(workgroupCounts.z) + ">" + ".");
     }
 
     {
@@ -816,11 +942,11 @@ void Program::runLateStartupTests()
 
         if (maxShaderBlockSize >= 2 * 512 * 512 * 512)
         {
-            Log::log("512x512x512 sized voxel chunks are supported on this device!");
+            Log::information("512x512x512 sized voxel chunks are supported on this device!");
         }
         else
         {
-            Log::log("512x512x512 sized voxel chunks are NOT supported on this device!");
+            Log::information("512x512x512 sized voxel chunks are NOT supported on this device!");
         }
     }
 
@@ -840,7 +966,7 @@ void Program::runLateStartupTests()
 }
 
 // Helper Function
-void HeaderCondenser(std::string &headerText_)
+void HeaderCondenser(std::string& headerText_)
 {
     float availableWidth = ImGui::GetContentRegionAvail().x * 0.9f;
     float textWidth = ImGui::CalcTextSize(headerText_.c_str()).x;

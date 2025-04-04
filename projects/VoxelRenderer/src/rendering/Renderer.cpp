@@ -1,5 +1,7 @@
 #include "Renderer.h"
 
+#include <tracy/Tracy.hpp>
+
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -13,12 +15,18 @@ GLuint Renderer::drawTextureProgram {};
 
 void Renderer::offscreenRenderingFunc()
 {
+    tracy::SetThreadName("Offscreen rendering");
+
     offscreenContext->makeContextCurrent();
 
-    while (isRenderingOffscreen)
+    while (_isRenderingOffscreen)
     {
+        const char* frameId = "Render offscreen";
+        FrameMarkStart(frameId);
+
         _render();
-        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+        FrameMarkEnd(frameId);
     }
 }
 
@@ -42,6 +50,12 @@ Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared
     voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
     reprojection = std::unique_ptr<AsyncReprojectionRenderer>(new AsyncReprojectionRenderer());
     postProcessing = std::unique_ptr<PostProcessRenderer>(new PostProcessRenderer());
+    svgf = std::unique_ptr<SVGF>(new SVGF());
+}
+
+Renderer::~Renderer()
+{
+    stopAsynchronousReprojection();
 }
 
 void Renderer::makeFramebuffers()
@@ -63,14 +77,16 @@ void Renderer::makeFramebuffers()
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, positionTextures[i], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normalTextures[i], 0);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, materialTextures[i], 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, miscTextures[i], 0);
+        // glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, colorSquaredTextures[i], 0);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     owningThread = std::this_thread::get_id();
     isSizeDirtyThread = false;
 
-    glViewport(0, 0, renderResolution.x, renderResolution.y); // Adjust the viewport of the offscreen context
+    // This shouldn't be here (The offscreen context already sets the view port)
+    // glViewport(0, 0, renderResolution.x, renderResolution.y); // Adjust the viewport of the offscreen context
 }
 
 void Renderer::swapDisplayBuffer()
@@ -84,6 +100,7 @@ void Renderer::swapDisplayBuffer()
         std::scoped_lock lock(bufferLocks.display, bufferLocks.ready);
 
         std::swap(bufferMapping.display, bufferMapping.ready);
+        lastRenderedFrameIndex = bufferMapping.display;
 
         isNewerFrame = false;
     }
@@ -98,11 +115,9 @@ void Renderer::swapWorkingBuffer()
     std::scoped_lock lock(bufferLocks.ready, bufferLocks.working);
 
     std::swap(bufferMapping.ready, bufferMapping.working);
+    // reprojection->combineBuffers(colorTextures[lastRenderedFrameIndex], colorTextures[bufferMapping.ready], miscTextures[bufferMapping.ready], positionTextures[lastRenderedFrameIndex], positionTextures[bufferMapping.ready], lastRenderedPosition);
 
-    reprojection->combineBuffers(lastRenderedPosition - olderRenderedPosition, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV,
-        colorTextures[bufferMapping.display], colorTextures[bufferMapping.ready],
-        positionTextures[bufferMapping.display], positionTextures[bufferMapping.ready],
-        materialTextures[bufferMapping.ready], normalTextures[bufferMapping.ready]);
+    lastRenderedFrameIndex = bufferMapping.ready;
 
     isNewerFrame = true;
 }
@@ -190,9 +205,9 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Create material texture
-        glDeleteTextures(1, &materialTextures[i]);
-        glGenTextures(1, &materialTextures[i]);
-        glBindTexture(GL_TEXTURE_2D, materialTextures[i]);
+        glDeleteTextures(1, &miscTextures[i]);
+        glGenTextures(1, &miscTextures[i]);
+        glBindTexture(GL_TEXTURE_2D, miscTextures[i]);
         {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -202,21 +217,17 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     isNewerFrame = false;
-    reprojection->setSize(renderResolution);
+    reprojection->setRenderResolution(renderResolution);
     voxelRenderer->setResolution(renderResolution);
+    svgf->setRenderResolution(renderResolution);
 
     isSizeDirtyThread = true;
-}
-
-void Renderer::setRaysPerPixel(int number)
-{
-    voxelRenderer->setRaysPerPixel(number);
 }
 
 void Renderer::pollCamera(const std::shared_ptr<CameraComponent>& camera)
@@ -239,46 +250,66 @@ void Renderer::setBounces(const int& bounces)
 
 void Renderer::render(float fov)
 {
-    if (!isRenderingOffscreen)
+    const char* frameId = "Render to screen";
+    FrameMarkStart(frameId);
+
+    if (!_isRenderingOffscreen)
     {
         _render();
     }
 
-    glDepthFunc(GL_GREATER);
     reproject(fov);
-
     postProcess();
 
     finalDisplay();
+
+    FrameMarkEnd(frameId);
 }
 
 void Renderer::_render()
 {
+    if (_isRenderingPaused)
+    {
+        return;
+    }
+
     if (isSizeDirtyThread)
     {
         makeFramebuffers();
+        svgf->makeFramebuffer();
     }
 
     {
         glViewport(0, 0, renderResolution.x, renderResolution.y);
         std::scoped_lock lock(cameraMtx);
 
-        olderRenderedPosition = lastRenderedPosition;
-        lastRenderedPosition = currentCameraPosition;
-        lastRenderedRotation = currentCameraRotation;
-        lastRenderedFOV = currentCameraFOV;
-
-        if (isRenderingOffscreen)
+        if (_isRenderingOffscreen)
         {
             lastRenderedFOV += overdrawFOV;
             lastRenderedFOV = std::min(lastRenderedFOV, maxFov);
         }
 
-        voxelRenderer->prepareRayTraceFromCamera(lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+        voxelRenderer->prepareRayTraceFromCamera(currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        {
+            std::shared_lock lockScene(scene->getMutex());
 
-        voxelRenderer->executePathTrace(scene->chunks, bounces);
+            voxelRenderer->executePathTrace(scene->getAllChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, scene);
+        }
 
-        voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV);
+        // Thqis need SVGF's framebuffer
+        // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
+        voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
+
+        // SVGF
+        svgf->lock();
+        svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
+        svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
+        svgf->unlock();
+
+        olderRenderedPosition = lastRenderedPosition;
+        lastRenderedPosition = currentCameraPosition;
+        lastRenderedRotation = currentCameraRotation;
+        lastRenderedFOV = currentCameraFOV;
     }
 
     glFinish();
@@ -317,24 +348,22 @@ void Renderer::reproject(float fov)
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, outputColorTexture, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, outputPositionTexture, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, outputNormalTexture, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, outputMaterialTexture, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, outputMiscTexture, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, outputDepthTexture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Do the render
-    reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], materialTextures[bufferMapping.display]);
+
+    if (_isRenderingOffscreen || _isRenderingPaused)
+    {
+        reprojection->render(framebuffer, glm::ivec2(width, height), currentCameraPosition, currentCameraRotation, fov, colorTextures[bufferMapping.display], positionTextures[bufferMapping.display], normalTextures[bufferMapping.display], miscTextures[bufferMapping.display]);
+    }
+    else
+    {
+        reprojection->bypass(framebuffer, glm::ivec2(width, height), colorTextures[bufferMapping.display]);
+    }
 
     // Delete the framebuffer
     glDeleteFramebuffers(1, &framebuffer);
@@ -349,13 +378,14 @@ void Renderer::postProcess()
     // Do the post processing
     if (postProcessing->hasAnyProcesses())
     {
-        postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMaterialTexture);
+        postProcessing->applyAllProcesses(this->outputResolution, outputColorTexture, outputPositionTexture, outputNormalTexture, outputMiscTexture);
     }
 }
 
 void Renderer::finalDisplay()
 {
     std::scoped_lock lock(outputLock);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(drawTextureProgram);
 
@@ -369,6 +399,7 @@ void Renderer::finalDisplay()
         glBindTexture(GL_TEXTURE_2D, outputColorTexture);
     }
 
+    glDisable(GL_DEPTH_TEST);
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
@@ -434,36 +465,36 @@ void Renderer::makeOutputTextures()
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Remake the material texture
-    glDeleteTextures(1, &outputMaterialTexture);
-    glGenTextures(1, &outputMaterialTexture);
-    glBindTexture(GL_TEXTURE_2D, outputMaterialTexture);
+    // Remake the misc texture
+    glDeleteTextures(1, &outputMiscTexture);
+    glGenTextures(1, &outputMiscTexture);
+    glBindTexture(GL_TEXTURE_2D, outputMiscTexture);
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 bool Renderer::getIsAsynchronousReprojectionEnabled()
 {
-    return isRenderingOffscreen;
+    return _isRenderingOffscreen;
 }
 
 void Renderer::startAsynchronousReprojection()
 {
-    isRenderingOffscreen = true;
+    _isRenderingOffscreen = true;
     isSizeDirtyThread = true;
     offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
 }
 
 void Renderer::stopAsynchronousReprojection()
 {
-    isRenderingOffscreen = false;
+    _isRenderingOffscreen = false;
     if (offscreenThread.joinable())
     {
         offscreenThread.join();
@@ -473,7 +504,7 @@ void Renderer::stopAsynchronousReprojection()
 
 void Renderer::toggleAsynchronousReprojection()
 {
-    if (isRenderingOffscreen)
+    if (_isRenderingOffscreen)
     {
         stopAsynchronousReprojection();
     }
@@ -537,4 +568,19 @@ float Renderer::getCurrentCameraFOV()
 glm::ivec2 Renderer::getUpscaleResolution()
 {
     return outputResolution;
+}
+
+void Renderer::toggleRendering()
+{
+    _isRenderingPaused = !_isRenderingPaused;
+}
+
+bool Renderer::isRenderingPaused()
+{
+    return _isRenderingPaused;
+}
+
+bool Renderer::isRenderingAsynchronously()
+{
+    return _isRenderingOffscreen;
 }

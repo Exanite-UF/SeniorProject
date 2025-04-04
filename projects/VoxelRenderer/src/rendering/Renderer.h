@@ -13,6 +13,7 @@
 
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/PostProcessing.h>
+#include <src/rendering/SVGF.h>
 #include <src/rendering/VoxelRenderer.h>
 #include <src/utilities/OpenGl.h>
 #include <src/windowing/GlfwContext.h>
@@ -22,6 +23,7 @@
 
 class VoxelRenderer;
 class AsyncReprojectionRenderer;
+class SVGF;
 
 class Renderer
 {
@@ -41,8 +43,9 @@ private:
     std::shared_ptr<GlfwContext> offscreenContext = nullptr;
 
     std::thread offscreenThread;
-    bool isRenderingOffscreen = false;
+    bool _isRenderingOffscreen = false;
     bool isSizeDirtyThread = false;
+    bool _isRenderingPaused = false;
 
     void offscreenRenderingFunc();
 
@@ -74,6 +77,7 @@ private:
         std::uint8_t ready = 1;
         std::uint8_t working = 2;
     } bufferMapping;
+    std::uint8_t lastRenderedFrameIndex = 0;
 
     bool isNewerFrame = false;
 
@@ -84,10 +88,12 @@ private:
         std::recursive_mutex working {};
     } bufferLocks {};
 
+    // These are used to triple buffer the data displayed by asynchronous reprojection
+    GLuint latestColorTexture = 0;
     std::array<GLuint, 3> colorTextures {};
     std::array<GLuint, 3> positionTextures {};
     std::array<GLuint, 3> normalTextures {};
-    std::array<GLuint, 3> materialTextures {};
+    std::array<GLuint, 3> miscTextures {};
 
 private:
     std::shared_ptr<SceneComponent> scene = nullptr;
@@ -96,6 +102,7 @@ private:
     std::unique_ptr<VoxelRenderer> voxelRenderer = nullptr;
     std::unique_ptr<AsyncReprojectionRenderer> reprojection = nullptr;
     std::unique_ptr<PostProcessRenderer> postProcessing = nullptr;
+    std::unique_ptr<SVGF> svgf = nullptr;
 
     static GLuint drawTextureProgram;
 
@@ -109,7 +116,7 @@ private:
     GLuint outputColorTexture {};
     GLuint outputPositionTexture {};
     GLuint outputNormalTexture {};
-    GLuint outputMaterialTexture {};
+    GLuint outputMiscTexture {};
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure
@@ -124,6 +131,7 @@ private:
 
 public:
     Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext);
+    ~Renderer();
 
     // This needs to be called on the thread that needs to render to the asynchronous reprojection input
     void makeFramebuffers();
@@ -142,7 +150,6 @@ public:
 
     const glm::ivec2& getRenderResolution();
     void setRenderResolution(glm::ivec2 renderResolution);
-    void setRaysPerPixel(int number);
 
     void pollCamera(const std::shared_ptr<CameraComponent>& camera);
     void setScene(const std::shared_ptr<SceneComponent>& scene);
@@ -175,4 +182,9 @@ public:
     float getCurrentCameraFOV();
 
     glm::ivec2 getUpscaleResolution();
+
+    void toggleRendering();
+    bool isRenderingPaused();
+
+    bool isRenderingAsynchronously();
 };

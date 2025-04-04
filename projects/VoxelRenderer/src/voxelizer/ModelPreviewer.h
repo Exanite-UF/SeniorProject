@@ -7,24 +7,23 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <src/windowing/Window.h>
-#include <src/voxelizer/Shader.h>
 #include <src/voxelizer/Model.h>
 #include <src/voxelizer/ModelVoxelizer.h>
+#include <src/voxelizer/Shader.h>
+#include <src/windowing/Window.h>
 
-#include <thread> 
 #include <atomic>
-
+#include <thread>
 
 class ModelPreviewer
 {
 private:
-    glm::ivec2 windowSize = {320, 240};
+    glm::ivec2 windowSize = { 320, 240 };
     GLFWwindow* triangleWindow = nullptr;
     GLFWwindow* voxelWindow = nullptr;
 
-    std::atomic<bool> triangleThreadRunning{false};
-    std::atomic<bool> voxelThreadRunning{false};
+    std::atomic<bool> triangleThreadRunning { false };
+    std::atomic<bool> voxelThreadRunning { false };
     std::thread triangleThread;
     std::thread voxelThread;
 
@@ -38,15 +37,13 @@ private:
     std::string fragShaderPathTriangle = "content/Triangulation/Phong.fragment.glsl";
     std::string vertShaderPathVoxel = "content/Triangulation/Voxel.vertex.glsl";
     std::string fragShaderPathVoxel = "content/Triangulation/Voxel.fragment.glsl";
-    
+
     Shader* triangleShader = nullptr;
     Shader* voxelShader = nullptr;
 
     ModelVoxelizer* modelVox = nullptr;
 
-
 public:
-
     ~ModelPreviewer();
 
     // Set instead of load since the voxelizer should be the one to load

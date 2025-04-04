@@ -1,22 +1,54 @@
 cmake_minimum_required(VERSION 3.28)
 project(SeniorProject LANGUAGES C CXX)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(DEBUG)
+endif()
+
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # This postfixes a "d" to shared library names in DEBUG mode
 set(CMAKE_DEBUG_POSTFIX d)
 
-# Enable Inter-Procedural Optimization (IPO) if supported by the compiler
-#include(CheckIPOSupported)
-#check_ipo_supported(RESULT IS_IPO_SUPPORTED)
-#if(IS_IPO_SUPPORTED)
-#    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-#endif()
-
 # Globally disable shared library prefix for Windows
 if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
+endif()
+
+# Set IPO policy
+# The NEW policy enables IPO flags for all compilers if possible and to error if not
+# We check for compatibility below so using the new policy is safe
+cmake_policy(SET CMP0069 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+
+# Enable Inter-Procedural Optimization (IPO) if supported by the compiler
+include(CheckIPOSupported)
+check_ipo_supported(RESULT IS_IPO_SUPPORTED)
+if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
+# Enable architecture specific optimizations
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-march=native)
+endif()
+
+# Support Windows 10 or later
+# See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
+if (WIN32)
+    add_definitions(-D_WIN32_WINNT=0x0A00)
+endif()
+
+# Set option variable policy
+# The NEW policy enables the use of the option() function
+cmake_policy(SET CMP0077 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+# Hardcoded AddressSanitizer toggle
+if (OFF)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
 endif()
 
 # --- Third party ---
@@ -96,6 +128,35 @@ add_subdirectory(./external/boost-v1.87.0)
 # CGAL
 add_library(cgal INTERFACE)
 target_include_directories(cgal INTERFACE ./external/cgal-v6.0.1/include)
+
+# Tracy
+# Enable Tracy profiling for a program by linking it with Tracy::TracyClient
+
+# Only enable Tracy profiling if SP_ENABLE_PROFILING=ON
+if(SP_ENABLE_PROFILING)
+    set(TRACY_ENABLE ON)
+else ()
+    set(TRACY_ENABLE OFF)
+endif()
+
+set(TRACY_ON_DEMAND ON)
+set(TRACY_CALLSTACK ON)
+
+if (DEBUGINFOD_LIBRARY)
+    message(STATUS "Found libdebuginfod. Setting TRACY_DEBUGINFOD to ON")
+    set(TRACY_DEBUGINFOD ON)
+endif()
+
+add_subdirectory(./external/tracy)
+
+# Tracy UI
+# Run by running the tracy-profiler target
+if(NOT ((DEFINED ENV{GITHUB_ACTIONS}) OR (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")))
+    add_subdirectory(./external/tracy/profiler)
+endif()
+
+# debuginfod
+find_library(DEBUGINFOD_LIBRARY NAMES debuginfod)
 
 # Extra libraries
 add_library(extra STATIC)

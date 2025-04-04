@@ -10,12 +10,6 @@ public:
     class VoxelChunk
     {
     public:
-        // This is equivalent to 2*4*4
-        // The more occupancy mip levels we have, the higher this limit is
-        // 2 is from storing voxels in 2x2x2 cells
-        // 4 is from dividing by 4 twice to generate our 3 material mip levels
-        static constexpr uint32_t minSizePerAxis = 32;
-
         // The max number of mip levels in our occupancy map
         // This is arbitrary, but 10 is very large amount
         // 10 means that the max chunk size is 2^10 = 4096
@@ -23,12 +17,24 @@ public:
 
         // The max number of material definitions
         static constexpr uint32_t maxMaterialCount = 65536;
+
+        // Directly uploading a large chunk of memory to the GPU blocks the rendering thread,
+        // even when the upload is done from a separate OpenGL context on a separate thread
+        // This is used to break up the upload into chunks
+        static constexpr int chunkUploadSleepTimeMs = 10;
+        static constexpr uint64_t maxChunkUploadSizeBytes = 32 * 1024 * 1024;
     };
 
     class VoxelChunkComponent
     {
     public:
         static constexpr glm::ivec3 chunkSize = glm::ivec3(512, 512, 512);
+    };
+
+    class VoxelChunkManager
+    {
+    public:
+        static constexpr int maxChunkModificationThreads = 2;
     };
 
     class GameObject

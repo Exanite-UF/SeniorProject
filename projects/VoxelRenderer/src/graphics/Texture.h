@@ -17,8 +17,10 @@ private:
 
     TextureType type {};
 
+    bool _isCubemap;
+
 public:
-    explicit Texture(GLuint textureId, TextureType type, glm::ivec2 size);
+    explicit Texture(GLuint textureId, TextureType type, glm::ivec2 size, bool isCubemap);
 
     GLuint getTextureId();
     uint64_t getBindlessHandle();
@@ -26,4 +28,6 @@ public:
     glm::ivec2 getSize();
 
     TextureType getType();
+
+    bool isCubemap() const;
 };

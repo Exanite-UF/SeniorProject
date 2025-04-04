@@ -1,112 +1,169 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include <condition_variable>
 #include <memory>
 #include <queue>
+#include <src/Constants.h>
 
-#include <src/utilities/Log.h>
 #include <src/utilities/Singleton.h>
+#include <src/windowing/GlfwContext.h>
 #include <src/world/SceneComponent.h>
+#include <src/world/VoxelChunkCommandBuffer.h>
 #include <src/world/VoxelChunkData.h>
 
 class VoxelChunkManager : public Singleton<VoxelChunkManager>
 {
-private:
-    struct ChunkLoadRequest
-    {
-    public:
-        glm::ivec2 chunkPosition;
-        glm::ivec3 chunkSize;
-
-        VoxelChunkData chunkData;
-
-        explicit ChunkLoadRequest(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
-        {
-            this->chunkPosition = chunkPosition;
-            this->chunkSize = chunkSize;
-        }
-    };
-
-    struct LoadedChunkData
-    {
-    public:
-        std::shared_ptr<VoxelChunkComponent> chunk {};
-        glm::ivec2 chunkPosition;
-
-        bool isLoading = true;
-
-        bool isUnloading = false;
-        float unloadWaitTime = 0;
-
-        explicit LoadedChunkData(const glm::ivec2& chunkPosition)
-        {
-            this->chunkPosition = chunkPosition;
-        }
-    };
-
-    struct ManagerData
+public:
+    struct ManagerSettings
     {
     public:
         // ----- Rendering -----
 
         // The distance at which chunks begin to be generated on a separate thread
-        int generationDistance = 3; // TODO
+        int generationDistance = 2; // TODO
 
         // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 2;
+        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
 
-        // ----- Loading -----
+        // ----- Chunks -----
 
-        std::thread chunkLoadingThread {};
-
-        // Used to wake up the chunk loading thread
-        std::condition_variable chunkLoadingThreadCondition {};
-
-        std::mutex pendingChunkLoadRequestsMutex {};
-        std::mutex completedChunkLoadRequestsMutex {};
-
-        std::queue<std::shared_ptr<ChunkLoadRequest>> pendingRequests {};
-        std::queue<std::shared_ptr<ChunkLoadRequest>> completedRequests {};
-
-        // ----- Unloading -----
+        // False prevents chunks from loading and unloading
+        bool isChunkLoadingEnabled = true;
 
         // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 1;
+        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+
+        glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
+
+        // ---- Culling -----
+
+        // Only works in DEBUG builds
+        bool showDebugVisualizations = false;
+
+        bool enableCulling = true;
+    };
+
+private:
+    struct ChunkModificationTask
+    {
+    public:
+        std::shared_ptr<VoxelChunkComponent> component;
+        std::shared_ptr<SceneComponent> scene;
+        VoxelChunkCommandBuffer commandBuffer;
+
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer);
+    };
+
+    struct ChunkLoadTask
+    {
+    public:
+        glm::ivec2 chunkPosition;
+        glm::ivec3 chunkSize;
+
+        std::shared_ptr<VoxelChunkData> chunkData;
+
+        explicit ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
+    };
+
+    class ActiveWorldChunk : public NonCopyable
+    {
+    public:
+        std::shared_ptr<VoxelChunkComponent> component {};
+        glm::ivec2 chunkPosition;
+
+        bool isLoading = true;
+
+        bool isUnloading = false;
+        float timeSpentWaitingForUnload = 0;
+
+        bool isDisplayed = false;
+        std::shared_ptr<SceneComponent> scene;
+
+        explicit ActiveWorldChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
+        ~ActiveWorldChunk() override;
+    };
+
+    struct ManagerState
+    {
+    public:
+        // ----- Primary state -----
+
+        std::atomic<bool> isRunning = false;
+        std::vector<std::shared_ptr<GlfwContext>> modificationThreadContexts {};
+
+        // ----- Scene -----
+
+        std::shared_ptr<SceneComponent> scene;
+        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveWorldChunk>> activeChunks {};
 
         // ----- Camera -----
 
         glm::vec3 cameraWorldPosition {};
         glm::ivec2 cameraChunkPosition {};
 
-        // ----- Caching -----
+        // ----- Chunk loading -----
 
-        // If true, then we need to check for chunks to load/unload and *mark* them as such. We will load/unload them in a separate step
+        // If true, then we need to check for chunks to load/unload and mark them as such. We will load/unload them in a separate step
         bool isChunkLoadingDirty = true;
 
         // If true, then we need to check for chunks to unload
         bool isChunkUnloadingDirty = true;
-
-        // ----- Chunks -----
-
-        std::unordered_map<glm::ivec2, LoadedChunkData> loadedChunks {};
     };
 
-private:
-    std::atomic<bool> isRunning = false;
-    std::shared_ptr<SceneComponent> scene;
+    struct LoadingThreadState
+    {
+    public:
+        std::vector<std::thread> threads {};
 
-    ManagerData data;
+        std::condition_variable pendingTasksCondition {};
+        std::mutex pendingTasksMutex {};
+        std::queue<std::shared_ptr<ChunkLoadTask>> pendingTasks {};
 
-    void chunkLoaderThreadEntrypoint();
+        std::mutex completedTasksMutex {};
+        std::queue<std::shared_ptr<ChunkLoadTask>> completedTasks {};
+    };
+
+    struct ModificationThreadState
+    {
+    public:
+        std::vector<std::thread> threads {};
+
+        std::condition_variable_any pendingTasksCondition {};
+        std::recursive_mutex pendingTasksMutex {};
+        std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
+
+        // Allow only one thread to upload at a time
+        // Used to limit the amount of uploads, mutual exclusion isn't required
+        std::mutex gpuUploadMutex {};
+    };
 
 public:
-    void initialize(const std::shared_ptr<SceneComponent>& scene);
+    ManagerSettings settings {};
+
+private:
+    ManagerState state {};
+    LoadingThreadState loadingThreadState {};
+    ModificationThreadState modificationThreadState {};
+
+    void chunkLoadingThreadEntrypoint(int threadId);
+    void chunkModificationThreadEntrypoint(int threadId);
+
+public:
+    void initialize(const std::shared_ptr<SceneComponent>& scene, const std::vector<std::shared_ptr<GlfwContext>>& modificationThreadContexts);
 
     void update(float deltaTime);
     void showDebugMenu();
 
+    // Can be called from any thread
+    void submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
+
     ~VoxelChunkManager() override;
+
+protected:
+    void onSingletonDestroy() override;
+
+private:
+    bool isChunkVisible(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera) const;
 };

@@ -7,14 +7,8 @@
 #include "VoxelChunkUtility.h"
 #include <src/world/VoxelChunk.h>
 
-std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(glm::ivec3 size)
+std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3& size)
 {
-    constexpr auto minSizePerAxis = Constants::VoxelChunk::minSizePerAxis;
-    if (size.x < minSizePerAxis || size.y < minSizePerAxis || size.z < minSizePerAxis)
-    {
-        throw std::runtime_error("The minimum size of a voxel chunk along each axis is " + std::to_string(minSizePerAxis));
-    }
-
     uint8_t layerCount = 1 + std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 4 /*This is a 4 and not a 2, because the mip map generation will break if the top level mip map has side length 1. This prevents that from occuring.*/) / 2); // This is what the name says it is
     layerCount = glm::min(layerCount, Constants::VoxelChunk::maxOccupancyMapLayerCount); // Limit the max number of mip maps
 

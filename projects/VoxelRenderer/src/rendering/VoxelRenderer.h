@@ -3,15 +3,23 @@
 #include <mutex>
 #include <semaphore>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/graphics/Texture.h>
 #include <src/rendering/AsynchronousReprojection.h>
 #include <src/rendering/Renderer.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/world/CameraComponent.h>
 #include <src/world/MaterialManager.h>
+#include <src/world/SceneComponent.h>
+#include <src/world/SkyboxComponent.h>
 #include <src/world/VoxelChunkComponent.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/packing.hpp> // For packing/unpacking
+#include <glm/gtc/type_precision.hpp> // Provides uint16
 
 class Renderer;
 
@@ -32,26 +40,44 @@ private:
     // GLuint rayStartBuffer; //(x, y, z, isPerformingTrace)
     // GLuint rayDirectionBuffer; //(x, y, z, [unused])
 
+    // A ray trace step needs to exist that goes through a single chunk and gets the hit info
+
     // These are used as input and output
-    GraphicsBuffer<glm::vec3> rayStartBuffer1;
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer1;
-    GraphicsBuffer<glm::vec3> rayStartBuffer2;
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer2;
+    bool whichStartBuffer = false;
+    GraphicsBuffer<glm::vec3> rayStartBuffer1; // This is where rays will start from
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer1; // This is the direction rays will go in //convert to half
+    GraphicsBuffer<glm::vec3> rayStartBuffer2; // This is where rays will start from
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer2; // This is the direction rays will go in //convert to half
 
-    // These buffers are used to store the result of a ray trace step
-    GraphicsBuffer<float> rayHitMiscBuffer; //(wasHit, depth)
+    // These buffers are used to store the result of a path trace
+    bool whichAccumulationBuffer = false;
+    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b) //convert to half
 
-    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
+    // This is reset before every cast
+    GraphicsBuffer<float> rayMisc; //(depth)
 
-    // Used as the final output buffers
-    GraphicsBuffer<glm::vec3> normalBuffer;
-    GraphicsBuffer<glm::vec3> positionBuffer;
-    GraphicsBuffer<glm::vec3> materialBuffer; //(roughness, _, _)
+    // These are primary ray info
+    bool whichDepth = false;
+    GraphicsBuffer<glm::vec3> normalBuffer; // world space //convert to half?
+    GraphicsBuffer<glm::vec3> positionBuffer; // world space
+    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue) This carries the output motion vectors //convert to half
+    GraphicsBuffer<std::int32_t> materialBuffer; //(materialID)
+    GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z) //convert to half
+    GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution //convert to half
 
-    int currentBuffer = 0;
+    bool whichSampleRadiance = false;
+    GraphicsBuffer<glm::u16vec4> sampleDirection1; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::u16vec4> sampleDirection2; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::u16vec3> sampleRadiance1; //(r, g, b)
+    GraphicsBuffer<glm::u16vec3> sampleRadiance2; //(r, g, b)
+    GraphicsBuffer<glm::u16vec3> sampleWeights1;
+    GraphicsBuffer<glm::u16vec3> sampleWeights2;
+
+    bool whichMotionVectors = false;
+    GraphicsBuffer<glm::u16vec4> motionVectors; // This accumulates motion vector values to prevent undershooting from sub pixel movement
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
@@ -63,8 +89,12 @@ private:
     static GLuint fullCastProgram;
     static GLuint pathTraceToFramebufferProgram;
 
+    static GLuint resetPrimaryRayInfoProgram;
+    static GLuint beforeCastProgram;
+    static GLuint primaryRayProgram;
+    static GLuint groupPixelsProgram;
+
     glm::ivec2 size {};
-    int raysPerPixel = 0;
 
     bool isSizingDirty = true; // This is used to automatically remake the buffers only if the size of the buffers has changed
 
@@ -78,21 +108,27 @@ private:
 
     friend class Renderer;
 
-    void afterCast();
+    float maxDepth = 10000.0;
 
 public:
     void setResolution(glm::ivec2 size);
-    void setRaysPerPixel(int number);
 
+    // This sets the ray directions
+    // It also resets all data that determined by a path trace
     void prepareRayTraceFromCamera(const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, bool resetLight = true);
 
-    void resetHitInfo();
+    // Resets information that is determined by primary rays
+    void resetPrimaryRayInfo();
 
-    void resetVisualInfo(bool resetLight = true, bool resetAttenuation = true, bool resetFirstHit = true, bool drawSkyBox = true);
+    void resetVisualInfo(float maxDepth);
+    void beforeCast(float maxDepth, std::shared_ptr<SceneComponent> scene, bool shouldDrawSkybox = true);
+    void afterCast(float maxDepth);
 
-    void executeRayTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, bool isFirstRay);
+    void executePrimaryRay(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, std::shared_ptr<SceneComponent> scene);
 
-    void executePathTrace(std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces);
+    void executeRayTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, int shadingRate, const glm::ivec2& offset, std::shared_ptr<SceneComponent> scene);
 
-    void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV);
+    void executePathTrace(const std::vector<std::shared_ptr<VoxelChunkComponent>>& chunks, int bounces, const glm::vec3& pastCameraPosition, const glm::quat& pastCameraRotation, const float& pastCameraFOV, std::shared_ptr<SceneComponent> scene);
+
+    void render(const GLuint& framebuffer, const std::array<GLenum, 4>& drawBuffers, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV, std::shared_ptr<SceneComponent> scene);
 };

@@ -1,7 +1,5 @@
 #include <src/voxelizer/ModelVoxelizer.h>
 
-
-
 ModelVoxelizer::~ModelVoxelizer()
 {
     if (loadedModel)
@@ -46,7 +44,7 @@ void ModelVoxelizer::setupBoundingBox()
     printf("BOUNDING BOX SETUP\n");
 }
 
-bool ModelVoxelizer::triangleBoxOverlap(const glm::vec3& boxCenter,const glm::vec3& boxHalfSize, const Vertex triVertices[3])
+bool ModelVoxelizer::triangleBoxOverlap(const glm::vec3& boxCenter, const glm::vec3& boxHalfSize, const Vertex triVertices[3])
 {
     // Seperating Axis Theorem
 
@@ -55,7 +53,7 @@ bool ModelVoxelizer::triangleBoxOverlap(const glm::vec3& boxCenter,const glm::ve
         triVertices[0].Position - boxCenter,
         triVertices[1].Position - boxCenter,
         triVertices[2].Position - boxCenter
-    }; 
+    };
 
     // Triangle edges
     glm::vec3 e0 = v[1] - v[0];
@@ -69,35 +67,43 @@ bool ModelVoxelizer::triangleBoxOverlap(const glm::vec3& boxCenter,const glm::ve
         glm::vec3(0, 0, 1)
     };
 
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
             glm::vec3 axis = cross(e0, boxNormals[j]);
-            if (axis == glm::vec3(0)) continue; // Skip parallel axes
-            
+            if (axis == glm::vec3(0))
+                continue; // Skip parallel axes
+
             axis = glm::normalize(axis);
             float triMin, triMax, boxMin, boxMax;
             projectTriangle(axis, v, triMin, triMax);
             projectBox(axis, glm::vec3(0), boxHalfSize, boxMin, boxMax);
-            if (!overlaps(triMin, triMax, boxMin, boxMax)) return false;
+            if (!overlaps(triMin, triMax, boxMin, boxMax))
+                return false;
         }
     }
 
     // Test the 3 separating axes from the box faces
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         float triMin, triMax, boxMin, boxMax;
         projectTriangle(boxNormals[i], v, triMin, triMax);
         projectBox(boxNormals[i], glm::vec3(0), boxHalfSize, boxMin, boxMax);
-        if (!overlaps(triMin, triMax, boxMin, boxMax)) return false;
+        if (!overlaps(triMin, triMax, boxMin, boxMax))
+            return false;
     }
 
     // Test the triangle normal as separating axis
     glm::vec3 triNormal = cross(e0, e1);
-    if (triNormal != glm::vec3(0)) {
+    if (triNormal != glm::vec3(0))
+    {
         triNormal = glm::normalize(triNormal);
         float triMin, triMax, boxMin, boxMax;
         projectTriangle(triNormal, v, triMin, triMax);
         projectBox(triNormal, glm::vec3(0), boxHalfSize, boxMin, boxMax);
-        if (!overlaps(triMin, triMax, boxMin, boxMax)) return false;
+        if (!overlaps(triMin, triMax, boxMin, boxMax))
+            return false;
     }
 
     // No separating axis found - intersection exists
@@ -117,42 +123,42 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
 {
     printf("TRIANGLE VOXELIZATION BEGIN\n");
 
-
     std::unordered_map<glm::ivec3, std::vector<Triangle>, HashFunction> spatialGrid;
-    for (const Triangle& tri : loadedModel->getTriangles()) {
-        glm::ivec3 minCell = worldToGrid(tri.minPoint());  // Convert min point of triangle to grid
-        glm::ivec3 maxCell = worldToGrid(tri.maxPoint());  // Convert max point of triangle to grid
+    for (const Triangle& tri : loadedModel->getTriangles())
+    {
+        glm::ivec3 minCell = worldToGrid(tri.minPoint()); // Convert min point of triangle to grid
+        glm::ivec3 maxCell = worldToGrid(tri.maxPoint()); // Convert max point of triangle to grid
 
         // Iterate over the range of grid cells that the triangle covers
         for (int z = minCell.z; z <= maxCell.z; ++z)
             for (int y = minCell.y; y <= maxCell.y; ++y)
                 for (int x = minCell.x; x <= maxCell.x; ++x)
                 {
-                    //std::cout << z << " " << y << " " << x << std::endl;
-                    spatialGrid[{x, y, z}].push_back(tri); // Store the triangle in the corresponding grid cell
+                    // std::cout << z << " " << y << " " << x << std::endl;
+                    spatialGrid[{ x, y, z }].push_back(tri); // Store the triangle in the corresponding grid cell
                 }
     }
 
     std::vector<bool> localVoxels(voxels.size(), false);
-    
-    #pragma omp parallel for collapse(3) schedule(dynamic)
+
+#pragma omp parallel for collapse(3) schedule(dynamic)
     for (int z = 0; z < gridSize.z; ++z)
     {
         for (int y = 0; y < gridSize.y; ++y)
         {
             for (int x = 0; x < gridSize.x; ++x)
             {
-                //std::cout << z << " " << y << " " << x << std::endl;
+                // std::cout << z << " " << y << " " << x << std::endl;
                 glm::vec3 voxelMin = minBounds + glm::vec3(x, y, z) * voxelSize;
                 glm::ivec3 gridCell = worldToGrid(voxelMin); //
 
-                //for (const Triangle& tri : loadedModel->getTriangles())
+                // for (const Triangle& tri : loadedModel->getTriangles())
                 for (const Triangle& tri : spatialGrid[gridCell])
                 {
                     if (triangleIntersection(tri, voxelMin))
                     {
                         localVoxels[z * gridSize.x * gridSize.y + y * gridSize.x + x] = true;
-                        //voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x] = true;
+                        // voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x] = true;
                         break;
                     }
                 }
@@ -160,8 +166,8 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
         }
     }
 
-    // Copy results to global memory
-    #pragma omp parallel for
+// Copy results to global memory
+#pragma omp parallel for
     for (size_t i = 0; i < voxels.size(); ++i)
         voxels[i] = localVoxels[i];
     printf("TRIANGLE VOXELIZATION DONE\n");
@@ -169,7 +175,6 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
 
 void ModelVoxelizer::raymarchVoxelization(std::vector<bool>& voxels)
 {
-
 }
 
 void ModelVoxelizer::voxelizeModel(int option)
@@ -182,10 +187,9 @@ void ModelVoxelizer::voxelizeModel(int option)
 
     setupBoundingBox();
 
-    //triangleVoxelization(voxelGrid);
+    // triangleVoxelization(voxelGrid);
 
     generateVoxelMesh();
-
 }
 
 void ModelVoxelizer::generateVoxelMesh()
@@ -193,69 +197,68 @@ void ModelVoxelizer::generateVoxelMesh()
     printf("GENERATING VOXEL MESH\n");
 
     std::vector<float> cubeVertices = {
-        -0.5f, -0.5f, -0.5f,    1.0f, 0.0f,     0.0f, 0.0f, -1.0f, //BACK
-         0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, 0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,    0.0f, 1.0f,     0.0f, 0.0f, -1.0f,
-        -0.5f,  0.5f, -0.5f,    1.0f, 1.0f,     0.0f, 0.0f, -1.0f,
-    
-        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,     0.0f, 0.0f, 1.0f, //FRONT
-         0.5f, -0.5f,  0.5f,    1.0f, 0.0f,     0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,    1.0f, 1.0f,     0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,     0.0f, 0.0f, 1.0f,
-    
-        -0.5f,  0.5f,  0.5f,    1.0f, 1.0f,     -1.0f, 0.0f, 0.0f, //LEFT
-        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,     -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,    1.0f, 0.0f,     -1.0f, 0.0f, 0.0f,
-    
-        0.5f,  0.5f,  0.5f,     0.0f, 1.0f,     1.0f,  0.0f,  0.0f, //RIGHT
-        0.5f,  0.5f, -0.5f,     1.0f, 1.0f,     1.0f,  0.0f,  0.0f,
-        0.5f, -0.5f, -0.5f,     1.0f, 0.0f,     1.0f,  0.0f,  0.0f,
-        0.5f, -0.5f,  0.5f,     0.0f, 0.0f,     1.0f,  0.0f,  0.0f,
-    
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, -1.0f,  0.0f, //bottom
-         0.5f, -0.5f, -0.5f,    1.0f, 0.0f,     0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,    1.0f, 1.0f,     0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,    0.0f, 1.0f,     0.0f, -1.0f,  0.0f,
-    
-        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,     0.0f,  1.0f,  0.0f, // TOP FACE
-         0.5f,  0.5f, -0.5f,    1.0f, 1.0f,     0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,    1.0f, 0.0f,     0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,    0.0f, 0.0f,     0.0f,  1.0f,  0.0f
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, // BACK
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f,
+        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
+
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // FRONT
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+
+        -0.5f, 0.5f, 0.5f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f, // LEFT
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, // RIGHT
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, // bottom
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f, -1.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f,
+
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // TOP FACE
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f
     };
-    
+
     const unsigned int cubeIndices[] = {
         0, 1, 2,
         2, 3, 0,
-    
+
         4, 5, 6,
         6, 7, 4,
-    
+
         8, 9, 10,
-        10, 11, 8, 
-    
+        10, 11, 8,
+
         12, 13, 14,
         14, 15, 12,
-    
+
         16, 17, 18,
         18, 19, 16,
-    
+
         20, 21, 22,
         22, 23, 20
     };
 
-
-    //for (int z = 0; z < gridSize.z; ++z) {
-    //    for (int y = 0; y < gridSize.y; ++y) {
-    //        for (int x = 0; x < gridSize.x; ++x) {
-//
-    //            if (!voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) 
+    // for (int z = 0; z < gridSize.z; ++z) {
+    //     for (int y = 0; y < gridSize.y; ++y) {
+    //         for (int x = 0; x < gridSize.x; ++x) {
+    //
+    //            if (!voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
     //            {
     //                continue;
     //            }
-//
+    //
     //            glm::vec3 voxelCenter = minBounds + glm::vec3(x + 0.5f, y + 0.5f, z + 0.5f) * voxelSize;
-//
+    //
     //            // Transform template vertices to world space
     //            for (const auto& index : cubeIndices) {
     //                Vertex v;
@@ -303,13 +306,13 @@ void ModelVoxelizer::generateVoxelMesh()
 
     // Generate and bind instance VBO for voxel positions
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    //glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
 
     // Instance Position attribute (location = 1)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-    glVertexAttribDivisor(1, 1);  // Tell OpenGL this is per-instance data
+    glVertexAttribDivisor(1, 1); // Tell OpenGL this is per-instance data
 
     GLint isEnabled;
     glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &isEnabled);
@@ -317,19 +320,18 @@ void ModelVoxelizer::generateVoxelMesh()
 
     // Unbind VAO
 
-    //activeVoxels.clear();
-    //for (int z = 0; z < gridSize.z; ++z) {
-    //    for (int y = 0; y < gridSize.y; ++y) {
-    //        for (int x = 0; x < gridSize.x; ++x) {
-    //            if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
-    //                activeVoxels.emplace_back(x, y, z);
-    //            }
-    //        }
-    //    }
-    //}
+    // activeVoxels.clear();
+    // for (int z = 0; z < gridSize.z; ++z) {
+    //     for (int y = 0; y < gridSize.y; ++y) {
+    //         for (int x = 0; x < gridSize.x; ++x) {
+    //             if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
+    //                 activeVoxels.emplace_back(x, y, z);
+    //             }
+    //         }
+    //     }
+    // }
 
-
-    //DEBUG
+    // DEBUG
 
     glBindVertexArray(0);
 
@@ -344,17 +346,15 @@ void ModelVoxelizer::DrawVoxels(Shader& shader)
         return;
     }
 
-
     // Update instance buffer with active voxel positions
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    //glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
-    //glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
-
+    // glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
 
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
-    //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    //glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
+    // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    // glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
     glDrawArraysInstanced(GL_TRIANGLES, 0, 8, activeVoxels.size());
 }
