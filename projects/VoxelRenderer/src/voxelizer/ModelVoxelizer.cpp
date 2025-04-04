@@ -337,24 +337,49 @@ void ModelVoxelizer::generateVoxelMesh()
     std::cout << "VOXELIZED!" << std::endl;
 }
 
-void ModelVoxelizer::DrawVoxels(Shader& shader)
+void ModelVoxelizer::DrawVoxels(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
 {
     if (!isVoxelized)
     {
         return;
     }
-
+    glUseProgram(shader.ID);
 
     // Update instance buffer with active voxel positions
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    //glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     //glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
     //glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
 
+    shader.use();
+
+
+    // Camera Setup
+    glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.001f, 1000.0f);
+    glm::mat4 model = glm::mat4(1.0f);
+
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+    //// Material Settings for Phong Shader
+    glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.diffuseColor"),  1,  glm::value_ptr(diffuseColor));
+    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
+    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
+    float materialSpecFactor = 0.0f;
+    float materialEmisFactor = 0.0f;
+    float materialShininess = 32.0f;
+    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.specularFactor"), materialSpecFactor);
+    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
+    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.shininess"), materialShininess);
 
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
     //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    //glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
-    glDrawArraysInstanced(GL_TRIANGLES, 0, 8, activeVoxels.size());
+    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
+    //glDrawArraysInstanced(GL_TRIANGLES, 0, 8, activeVoxels.size());
 }

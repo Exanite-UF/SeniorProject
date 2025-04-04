@@ -108,7 +108,7 @@ void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
         return;
     }
 
-    modelVox = modelVox_;
+    modelVox = modelVox_; //
 
     // Ensure GLFW is initialized in the main thread
     if (!glfwInit())
@@ -192,12 +192,11 @@ void ModelPreviewer::RenderWindowTriangle()
         glEnable(GL_DEPTH_TEST); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 
+
         // Camera Setup
         glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
         glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
         glm::mat4 model = glm::mat4(1.0f);
-
-        triangleShader->use();
 
         glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(triangleShader->ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -232,33 +231,7 @@ void ModelPreviewer::RenderWindowVoxel()
         glEnable(GL_DEPTH_TEST); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 
-        // Camera Setup
-        glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
-        glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowSize.x / (float)windowSize.y, 0.001f, 1000.0f);
-        glm::mat4 model = glm::mat4(1.0f);
-
-        voxelShader->use();
-
-        glUniformMatrix4fv(glGetUniformLocation(voxelShader->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(voxelShader->ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(voxelShader->ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-        //// Material Settings for Phong Shader
-        glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glUniform3fv(glGetUniformLocation(voxelShader->ID, "defaultMaterial.diffuseColor"),  1,  glm::value_ptr(diffuseColor));
-        glUniform3fv(glGetUniformLocation(voxelShader->ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
-        glUniform3fv(glGetUniformLocation(voxelShader->ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
-        float materialSpecFactor = 0.0f;
-        float materialEmisFactor = 0.0f;
-        float materialShininess = 32.0f;
-        glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.specularFactor"), materialSpecFactor);
-        glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
-        glUniform1f(glGetUniformLocation(voxelShader->ID, "defaultMaterial.shininess"), materialShininess);
-
-
-        modelVox->DrawVoxels(*voxelShader);
+        modelVox->DrawVoxels(*voxelShader, Position, Front, Up, windowSize.x, windowSize.y);
 
         glfwSwapBuffers(voxelWindow);
     }
