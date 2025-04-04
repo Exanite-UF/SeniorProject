@@ -1,4 +1,6 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+#extension GL_NV_gpu_shader5 : enable
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -230,18 +232,18 @@ void setSecondaryDirection(ivec3 coord, vec4 value)
 uniform bool whichAccumulatingVector;
 layout(std430, binding = 13) buffer AccumulatingMotionVectors
 {
-    float accumulatingMotionVectors[];
+    float16_t accumulatingMotionVectors[];
 };
 
 void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     if(whichAccumulatingVector){
-        accumulatingMotionVectors[index + 0] = accumulatingMotionVectors[index + 2] + value.x;
-        accumulatingMotionVectors[index + 1] = accumulatingMotionVectors[index + 3] + value.y;
+        accumulatingMotionVectors[index + 0] = accumulatingMotionVectors[index + 2] + float16_t(value.x);
+        accumulatingMotionVectors[index + 1] = accumulatingMotionVectors[index + 3] + float16_t(value.y);
     }else{
-        accumulatingMotionVectors[index + 2] = accumulatingMotionVectors[index + 0] + value.x;
-        accumulatingMotionVectors[index + 3] = accumulatingMotionVectors[index + 1] + value.y;
+        accumulatingMotionVectors[index + 2] = accumulatingMotionVectors[index + 0] + float16_t(value.x);
+        accumulatingMotionVectors[index + 3] = accumulatingMotionVectors[index + 1] + float16_t(value.y);
     }
     
 }

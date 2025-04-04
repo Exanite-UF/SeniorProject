@@ -1,4 +1,6 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+#extension GL_NV_gpu_shader5 : enable
 
 struct MaterialDefinition
 {
@@ -83,12 +85,12 @@ layout(std430, binding = 7) buffer MaterialDefinitions
 
 layout(std430, binding = 8) buffer SampleDirectionIn
 {
-    float sampleDirectionIn[];
+    float16_t sampleDirectionIn[];
 };
 
 layout(std430, binding = 9) buffer SampleDirectionOut
 {
-    float sampleDirectionOut[];
+    float16_t sampleDirectionOut[];
 };
 
 vec4 getSampleDirection(ivec3 coord)
@@ -100,21 +102,21 @@ vec4 getSampleDirection(ivec3 coord)
 void setSampleDirection(ivec3 coord, vec4 value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
-    sampleDirectionOut[index + 0] = value.x;
-    sampleDirectionOut[index + 1] = value.y;
-    sampleDirectionOut[index + 2] = value.z;
-    sampleDirectionOut[index + 3] = value.w;
+    sampleDirectionOut[index + 0] = float16_t(value.x);
+    sampleDirectionOut[index + 1] = float16_t(value.y);
+    sampleDirectionOut[index + 2] = float16_t(value.z);
+    sampleDirectionOut[index + 3] = float16_t(value.w);
 }
 
 
 layout(std430, binding = 10) buffer SampleRadianceIn
 {
-    float sampleRadiancein[];
+    float16_t sampleRadiancein[];
 };
 
 layout(std430, binding = 11) buffer SampleRadianceOut
 {
-    float sampleRadianceout[];
+    float16_t sampleRadianceout[];
 };
 
 vec3 getSampleRadiance(ivec3 coord)
@@ -126,19 +128,19 @@ vec3 getSampleRadiance(ivec3 coord)
 void setSampleRadiance(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
-    sampleRadianceout[index + 0] = value.x;
-    sampleRadianceout[index + 1] = value.y;
-    sampleRadianceout[index + 2] = value.z;
+    sampleRadianceout[index + 0] = float16_t(value.x);
+    sampleRadianceout[index + 1] = float16_t(value.y);
+    sampleRadianceout[index + 2] = float16_t(value.z);
 }
 
 layout(std430, binding = 12) buffer SampleWeightsIn
 {
-    float sampleWeightsIn[];
+    float16_t sampleWeightsIn[];
 };
 
 layout(std430, binding = 13) buffer SampleWeightsOut
 {
-    float sampleWeightsOut[];
+    float16_t sampleWeightsOut[];
 };
 
 vec3 getSampleWeights(ivec3 coord)
@@ -150,27 +152,27 @@ vec3 getSampleWeights(ivec3 coord)
 void setSampleWeights(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
-    sampleWeightsOut[index + 0] = value.x;
-    sampleWeightsOut[index + 1] = value.y;
-    sampleWeightsOut[index + 2] = value.z;
+    sampleWeightsOut[index + 0] = float16_t(value.x);
+    sampleWeightsOut[index + 1] = float16_t(value.y);
+    sampleWeightsOut[index + 2] = float16_t(value.z);
 }
 
 
 uniform bool whichMotionVectors;
 layout(std430, binding = 14) buffer MotionVectors
 {
-    float motionVectors[];
+    float16_t motionVectors[];
 };
 
 void setMotionVectors(ivec3 coord, vec2 value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     if(whichMotionVectors){
-        motionVectors[index + 0] = value.x;
-        motionVectors[index + 1] = value.y;
+        motionVectors[index + 0] = float16_t(value.x);
+        motionVectors[index + 1] = float16_t(value.y);
     }else{
-        motionVectors[index + 2] = value.x;
-        motionVectors[index + 3] = value.y;
+        motionVectors[index + 2] = float16_t(value.x);
+        motionVectors[index + 3] = float16_t(value.y);
     }
     
 }

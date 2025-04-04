@@ -17,6 +17,10 @@
 #include <src/world/SkyboxComponent.h>
 #include <src/world/VoxelChunkComponent.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_precision.hpp> // Provides uint16
+#include <glm/gtc/packing.hpp> // For packing/unpacking
+
 class Renderer;
 
 // The voxel renderer needs to be able to render multiple voxel chunks
@@ -66,15 +70,15 @@ private:
     GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
 
     bool whichSampleRadiance = false;
-    GraphicsBuffer<glm::vec4> sampleDirection1; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
-    GraphicsBuffer<glm::vec4> sampleDirection2; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
-    GraphicsBuffer<glm::vec3> sampleRadiance1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> sampleRadiance2; //(r, g, b)
-    GraphicsBuffer<glm::vec3> sampleWeights1;
-    GraphicsBuffer<glm::vec3> sampleWeights2;
+    GraphicsBuffer<glm::u16vec4> sampleDirection1; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::u16vec4> sampleDirection2; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::u16vec3> sampleRadiance1; //(r, g, b)
+    GraphicsBuffer<glm::u16vec3> sampleRadiance2; //(r, g, b)
+    GraphicsBuffer<glm::u16vec3> sampleWeights1;
+    GraphicsBuffer<glm::u16vec3> sampleWeights2;
 
     bool whichMotionVectors = false;
-    GraphicsBuffer<glm::vec4> motionVectors;//This accumulates motion vector values to prevent undershooting from sub pixel movement
+    GraphicsBuffer<glm::u16vec4> motionVectors;//This accumulates motion vector values to prevent undershooting from sub pixel movement
     
     
 
