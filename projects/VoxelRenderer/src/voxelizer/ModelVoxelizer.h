@@ -27,11 +27,14 @@ private:
     glm::vec3 minBounds {};
     glm::vec3 maxBounds {};
 
-    std::vector<Vertex> voxelMesh;
+    std::vector<Vertex> voxelMesh {};
 
     // Voxel Rendering
-    unsigned int voxelVAO, voxelVBO, voxelEBO, instanceVBO;
-    std::vector<glm::vec3> activeVoxels;
+    unsigned int voxelVAO {};
+    unsigned int voxelVBO {};
+    unsigned int voxelEBO {};
+    unsigned int instanceVBO {};
+    std::vector<glm::vec3> activeVoxels {};
 
     void setupBoundingBox();
 
@@ -88,10 +91,13 @@ private:
     void generateVoxelMesh();
 
 public:
+    bool isVoxelized = false;
+
     ~ModelVoxelizer();
+
     void loadModel(char* path);
     std::shared_ptr<Model> getModel();
     void voxelizeModel(int option = 0);
+
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
-    bool isVoxelized = false;
 };

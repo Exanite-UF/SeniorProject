@@ -12,20 +12,19 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 
 struct TriangleMaterial
 {
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-    glm::vec3 ambient;
-    float shininess;
+    glm::vec3 diffuse {};
+    glm::vec3 specular {};
+    glm::vec3 ambient {};
+    float shininess {};
 };
 
 class Model
 {
 public:
-    std::vector<TriangleTexture> textures_loaded;
-    Model(char* path)
-    {
-        loadModel(path);
-    }
+    std::vector<TriangleTexture> textures_loaded {};
+
+    explicit Model(const std::string& path);
+
     void draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
     std::vector<Mesh> meshes; // make private
     std::vector<Triangle> getTriangles();

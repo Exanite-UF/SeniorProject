@@ -17,16 +17,16 @@
 
 struct Vertex
 {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 uv;
-    glm::vec3 tangent;
-    glm::vec3 bitangent;
+    glm::vec3 position {};
+    glm::vec3 normal {};
+    glm::vec2 uv {};
+    glm::vec3 tangent {};
+    glm::vec3 bitangent {};
 };
 
 struct Triangle
 {
-    Vertex vertices[3];
+    Vertex vertices[3] {};
 
     glm::vec3 minPoint() const
     {
@@ -50,15 +50,18 @@ struct Triangle
 // Not sure if we'll end up using this
 struct TriangleTexture
 {
-    unsigned int id;
-    std::string type;
-    std::string path;
+    unsigned int id {};
+    std::string type {};
+    std::string path {};
 };
 
 class Mesh
 {
 private:
-    unsigned int VAO, VBO, EBO;
+    unsigned int VAO {};
+    unsigned int VBO {};
+    unsigned int EBO {};
+
     void setupMesh();
 
 public:

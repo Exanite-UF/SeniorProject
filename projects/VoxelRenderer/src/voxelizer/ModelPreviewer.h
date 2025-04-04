@@ -24,8 +24,8 @@ private:
 
     std::atomic<bool> triangleThreadRunning { false };
     std::atomic<bool> voxelThreadRunning { false };
-    std::thread triangleThread;
-    std::thread voxelThread;
+    std::thread triangleThread {};
+    std::thread voxelThread {};
 
     // Camera Attributes
     glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
