@@ -41,7 +41,7 @@ void ModelVoxelizer::setupBoundingBox()
 
 bool ModelVoxelizer::triangleBoxOverlap(const glm::vec3& boxCenter, const glm::vec3& boxHalfSize, const Vertex triVertices[3])
 {
-    // Seperating Axis Theorem
+    // Separating Axis Theorem
 
     // Convert triangle vertices to box space
     glm::vec3 v[3] = {
@@ -192,38 +192,44 @@ void ModelVoxelizer::generateVoxelMesh()
     printf("GENERATING VOXEL MESH\n");
 
     std::vector cubeVertices = {
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, // BACK
-        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
+        // Back
+        VertexPositionUvNormal(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+        VertexPositionUvNormal(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
 
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // FRONT
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        // Front
+        VertexPositionUvNormal(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        VertexPositionUvNormal(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 
-        -0.5f, 0.5f, 0.5f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f, // LEFT
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+        // Left
+        VertexPositionUvNormal(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), -glm::vec3(1.0f, 0.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), -glm::vec3(1.0f, 0.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), -glm::vec3(1.0f, 0.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), -glm::vec3(1.0f, 0.0f, 0.0f)),
 
-        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, // RIGHT
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        // Right
+        VertexPositionUvNormal(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
 
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, // bottom
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f, -1.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f,
+        // Bottom
+        VertexPositionUvNormal(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
 
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // TOP FACE
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f
+        // Top
+        VertexPositionUvNormal(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)),
+        VertexPositionUvNormal(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0))
     };
 
-    const unsigned int cubeIndices[] = {
+    std::vector<GLuint> cubeIndices = {
         0, 1, 2,
         2, 3, 0,
 
@@ -279,25 +285,25 @@ void ModelVoxelizer::generateVoxelMesh()
 
     glBindVertexArray(voxelVAO);
 
-    // Cube VBO (positions)
+    // Cube VBO (vertices)
     glBindBuffer(GL_ARRAY_BUFFER, voxelVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cubeVertices.size() * sizeof(VertexPositionUvNormal), cubeVertices.data(), GL_STATIC_DRAW);
 
     // Cube EBO (indices)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, voxelEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices), cubeIndices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, cubeIndices.size() * sizeof(GLuint), cubeIndices.data(), GL_STATIC_DRAW);
 
     // Position attribute (location = 0)
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, position)));
 
     // Texture Coordinate attribute (location = 2)
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, uv)));
 
     // Normal attribute (location = 3)
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, normal)));
 
     // Generate and bind instance VBO for voxel positions
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -306,12 +312,8 @@ void ModelVoxelizer::generateVoxelMesh()
 
     // Instance Position attribute (location = 1)
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), reinterpret_cast<void*>(0));
     glVertexAttribDivisor(1, 1); // Tell OpenGL this is per-instance data
-
-    GLint isEnabled;
-    glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &isEnabled);
-    std::cout << "Instance attribute enabled: " << isEnabled << std::endl;
 
     // Unbind VAO
 
@@ -334,7 +336,7 @@ void ModelVoxelizer::generateVoxelMesh()
     std::cout << "VOXELIZED!" << std::endl;
 }
 
-void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
+void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, int windowWidth, int windowHeight)
 {
     if (!isVoxelized)
     {
@@ -349,7 +351,7 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
 
     // Camera Setup
-    glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
+    glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraForwardDirection, cameraUpDirection);
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.001f, 1000.0f);
     glm::mat4 model = glm::mat4(1.0f);
 
@@ -374,5 +376,5 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
     // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
+    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, reinterpret_cast<void*>(0), activeVoxels.size());
 }

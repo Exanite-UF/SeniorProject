@@ -18,6 +18,23 @@ struct HashFunction
 
 class ModelVoxelizer
 {
+    struct VertexPositionUvNormal
+    {
+        glm::vec3 position {};
+        glm::vec2 uv {};
+        glm::vec3 normal {};
+
+        explicit VertexPositionUvNormal(
+            const glm::vec3& position,
+            const glm::vec2& uv,
+            const glm::vec3& normal)
+        {
+            this->position = position;
+            this->uv = uv;
+            this->normal = normal;
+        }
+    };
+
 private:
     std::shared_ptr<Model> loadedModel {};
     int gridResolution {};
@@ -99,5 +116,5 @@ public:
     std::shared_ptr<Model> getModel();
     void voxelizeModel(int option = 0);
 
-    void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
+    void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, int windowWidth, int windowHeight);
 };
