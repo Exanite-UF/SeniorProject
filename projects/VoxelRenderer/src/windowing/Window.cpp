@@ -2,7 +2,7 @@
 
 #include <src/windowing/Window.h>
 
-Window::Window(GlfwContext* shareWith)
+Window::Window(GlfwContext* shareWith, bool initializeImGui)
     : GlfwContext(true, shareWith)
 {
     // Register GLFW callbacks
@@ -19,16 +19,20 @@ Window::Window(GlfwContext* shareWith)
         glfwSetInputMode(glfwWindowHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
 
-    glfwSwapInterval(1); // Enable vsync
+    // Enable vsync
+    glfwSwapInterval(1);
 
-    // Init IMGUI
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-    ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
-    ImGui_ImplOpenGL3_Init();
+    if (initializeImGui)
+    {
+        // Init IMGUI
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+        ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
+        ImGui_ImplOpenGL3_Init();
+    }
 }
 
 Window::~Window()
