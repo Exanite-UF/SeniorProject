@@ -50,6 +50,7 @@
 #include <src/utilities/Assert.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
+#include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
 #include <src/utilities/TupleHasher.h>
 #include <src/voxelizer/ModelPreviewer.h>
@@ -62,8 +63,6 @@
 #include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
-
-#include "utilities/ImGuiUtility.h"
 
 Program::Program()
 {
