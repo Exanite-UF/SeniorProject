@@ -24,7 +24,7 @@ private:
 public:
     SkyboxComponent() = default;
 
-    //Indirect format
+    // Indirect format
     /*
     right.jpg
     left.jpg

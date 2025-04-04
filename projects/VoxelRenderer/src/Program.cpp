@@ -181,8 +181,6 @@ void Program::run()
     int numberOfBounces = 3;
     renderer.setBounces(numberOfBounces);
 
-
-    
     // Configure post processing
     {
         // Gaussian blur

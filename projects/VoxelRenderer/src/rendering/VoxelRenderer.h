@@ -18,8 +18,8 @@
 #include <src/world/VoxelChunkComponent.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/type_precision.hpp> // Provides uint16
 #include <glm/gtc/packing.hpp> // For packing/unpacking
+#include <glm/gtc/type_precision.hpp> // Provides uint16
 
 class Renderer;
 
@@ -44,7 +44,7 @@ private:
 
     // These are used as input and output
     bool whichStartBuffer = false;
-    GraphicsBuffer<glm::vec3> rayStartBuffer1; // This is where rays will start from 
+    GraphicsBuffer<glm::vec3> rayStartBuffer1; // This is where rays will start from
     GraphicsBuffer<glm::vec3> rayDirectionBuffer1; // This is the direction rays will go in //convert to half
     GraphicsBuffer<glm::vec3> rayStartBuffer2; // This is where rays will start from
     GraphicsBuffer<glm::vec3> rayDirectionBuffer2; // This is the direction rays will go in //convert to half
@@ -77,9 +77,7 @@ private:
     GraphicsBuffer<glm::u16vec3> sampleWeights2;
 
     bool whichMotionVectors = false;
-    GraphicsBuffer<glm::u16vec4> motionVectors;//This accumulates motion vector values to prevent undershooting from sub pixel movement
-    
-    
+    GraphicsBuffer<glm::u16vec4> motionVectors; // This accumulates motion vector values to prevent undershooting from sub pixel movement
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 
