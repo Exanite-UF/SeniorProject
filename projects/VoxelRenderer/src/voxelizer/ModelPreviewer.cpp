@@ -141,7 +141,7 @@ void ModelPreviewer::RenderWindowTriangle()
 
 void ModelPreviewer::RenderWindowVoxel()
 {
-    if (voxelWindow && modelVox->isVoxelized && !glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
+    if (voxelWindow && modelVox && modelVox->isVoxelized && !glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
     {
         triangleWindow->makeContextCurrent();
 
