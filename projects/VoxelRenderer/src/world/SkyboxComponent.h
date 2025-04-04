@@ -23,6 +23,16 @@ private:
 
 public:
     SkyboxComponent() = default;
+
+    // Indirect format
+    /*
+    right.jpg
+    left.jpg
+    top.jpg
+    bottom.jpg
+    front.jpg
+    back.jpg
+    */
     // Setting format
     /*
     sunDir.x
@@ -31,6 +41,7 @@ public:
     sunAngularSize (in degrees)
     sunBrightnessMultiplier
     skyBrightnessMultiplier
+    visualBrightnessMultiplier
     */
     SkyboxComponent(const std::string& cubemapFilePath, const std::string& skyboxSettingFilePath);
 

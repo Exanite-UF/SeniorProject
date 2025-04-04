@@ -51,151 +51,180 @@ void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool 
     setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, int expectedVersion) const
 {
     ZoneScoped;
 
-    // Acquire lock for component, but not for the scene
-    std::unique_lock lockComponent(component->getMutex());
-    if (!component->getIsPartOfWorld())
-    {
-        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+    // Acquire lock for chunk version and wait for chunk version to match expected version
+    std::unique_lock lockChunkVersion(component->getModificationData().versionMutex);
 
-        return;
-    }
-
-    auto& chunkData = component->getRawChunkData();
-
-    // TODO: Track exact changes for optimized CPU -> GPU copies
-    // Change tracking
-    bool isGpuUpToDate = true;
-
-    for (const auto entry : commands)
-    {
-        switch (entry.type)
+    component->getModificationData().versionCondition.wait(lockChunkVersion, [&]()
         {
-            case SetSize:
+            return component->getModificationData().version == expectedVersion;
+        });
+
+    // We now have confirmed that the chunk version matches the expected version
+    // Release the lock
+    // No other thread should modify the version
+    lockChunkVersion.unlock();
+
+    try
+    {
+        // Acquire lock for component, but not for the scene
+        std::unique_lock lockComponent(component->getMutex());
+        if (!component->getIsPartOfWorld())
+        {
+            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+            return;
+        }
+
+        auto& chunkData = component->getRawChunkData();
+
+        // TODO: Track exact changes for optimized CPU -> GPU copies
+        // Change tracking
+        bool isGpuUpToDate = true;
+
+        for (const auto entry : commands)
+        {
+            switch (entry.type)
             {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetSize");
-
-                auto command = setSizeCommands.at(entry.index);
-                chunkData.setSize(command.size);
-
-                isGpuUpToDate = false;
-
-                break;
-            }
-            case SetOccupancy:
-            {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetOccupancy");
-
-                auto command = setOccupancyCommands.at(entry.index);
-                chunkData.setVoxelOccupancy(command.position, command.isOccupied);
-
-                isGpuUpToDate = false;
-
-                break;
-            }
-            case SetMaterial:
-            {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaterial");
-
-                auto command = setMaterialCommands.at(entry.index);
-                chunkData.setVoxelMaterialIndex(command.position, command.materialIndex);
-
-                isGpuUpToDate = false;
-
-                break;
-            }
-            case ClearOccupancy:
-            {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - ClearOccupancy");
-
-                chunkData.clearOccupancyMap();
-
-                isGpuUpToDate = false;
-
-                break;
-            }
-            case ClearMaterial:
-            {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - ClearMaterial");
-
-                chunkData.clearMaterialMap();
-
-                isGpuUpToDate = false;
-
-                break;
-            }
-            case Copy:
-            {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - Copy");
-
-                auto command = copyCommands.at(entry.index);
-                chunkData.copyFrom(*command.source);
-
-                isGpuUpToDate = false;
-
-                break;
-            }
-            case SetExistsOnGpu:
-            {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
-
-                auto command = setExistsOnGpuCommands.at(entry.index);
-                auto previouslyExistedOnGpu = component->getExistsOnGpu();
-
-                // Never write to GPU using setExistsOnGpu, we can handle it better here
-                component->setExistsOnGpu(command.existsOnGpu, false);
-
-                // Write if needed
-                if (command.existsOnGpu && command.writeToGpu)
+                case SetSize:
                 {
-                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Write to GPU");
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetSize");
 
-                    // We only need shared access because we are modifying a GPU resource
-                    // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
-                    lockComponent.unlock();
+                    auto command = setSizeCommands.at(entry.index);
+                    chunkData.setSize(command.size);
+
+                    isGpuUpToDate = false;
+
+                    break;
+                }
+                case SetOccupancy:
+                {
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetOccupancy");
+
+                    auto command = setOccupancyCommands.at(entry.index);
+                    chunkData.setVoxelOccupancy(command.position, command.isOccupied);
+
+                    isGpuUpToDate = false;
+
+                    break;
+                }
+                case SetMaterial:
+                {
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaterial");
+
+                    auto command = setMaterialCommands.at(entry.index);
+                    chunkData.setVoxelMaterialIndex(command.position, command.materialIndex);
+
+                    isGpuUpToDate = false;
+
+                    break;
+                }
+                case ClearOccupancy:
+                {
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - ClearOccupancy");
+
+                    chunkData.clearOccupancyMap();
+
+                    isGpuUpToDate = false;
+
+                    break;
+                }
+                case ClearMaterial:
+                {
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - ClearMaterial");
+
+                    chunkData.clearMaterialMap();
+
+                    isGpuUpToDate = false;
+
+                    break;
+                }
+                case Copy:
+                {
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - Copy");
+
+                    auto command = copyCommands.at(entry.index);
+                    chunkData.copyFrom(*command.source);
+
+                    isGpuUpToDate = false;
+
+                    break;
+                }
+                case SetExistsOnGpu:
+                {
+                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
+
+                    auto command = setExistsOnGpuCommands.at(entry.index);
+                    auto previouslyExistedOnGpu = component->getExistsOnGpu();
+
+                    // Never write to GPU using setExistsOnGpu, we can handle it better here
+                    component->setExistsOnGpu(command.existsOnGpu, false);
+
+                    // Write if needed
+                    if (command.existsOnGpu && command.writeToGpu)
                     {
-                        std::shared_lock sharedLockComponent(component->getMutex());
+                        ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Write to GPU");
+
+                        // We only need shared access because we are modifying a GPU resource
+                        // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
+                        lockComponent.unlock();
+                        {
+                            std::shared_lock sharedLockComponent(component->getMutex());
+                            if (!component->getIsPartOfWorld())
+                            {
+                                Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                                return;
+                            }
+
+                            {
+                                std::lock_guard lockGpuUpload(gpuUploadMutex);
+                                chunkData.writeTo(*component->getChunk());
+                            }
+
+                            isGpuUpToDate = true;
+                        }
+
+                        lockComponent.lock();
                         if (!component->getIsPartOfWorld())
                         {
-                            Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+                            Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
                             return;
                         }
-
-                        {
-                            std::lock_guard lockGpuUpload(gpuUploadMutex);
-                            chunkData.writeTo(*component->getChunk());
-                        }
-
-                        isGpuUpToDate = true;
                     }
 
-                    lockComponent.lock();
-                    if (!component->getIsPartOfWorld())
-                    {
-                        Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                        return;
-                    }
+                    break;
                 }
+            }
+        }
 
-                break;
+        if (!isGpuUpToDate && component->getExistsOnGpu())
+        {
+            ZoneScopedN("VoxelChunkCommandBuffer::apply - Write to GPU");
+
+            {
+                std::lock_guard lockGpuUpload(gpuUploadMutex);
+                chunkData.writeTo(*component->getChunk());
             }
         }
     }
-
-    if (!isGpuUpToDate && component->getExistsOnGpu())
+    catch (...)
     {
-        ZoneScopedN("VoxelChunkCommandBuffer::apply - Write to GPU");
+        // Make sure to always increment version after we're done
+        // Not doing so leads to deadlock
+        // TODO: Use weak pointers for better safety?
+        lockChunkVersion.lock();
+        component->getModificationData().version++;
 
-        {
-            std::lock_guard lockGpuUpload(gpuUploadMutex);
-            chunkData.writeTo(*component->getChunk());
-        }
+        throw;
     }
+
+    lockChunkVersion.lock();
+    component->getModificationData().version++;
 }
 
 void VoxelChunkCommandBuffer::clear()

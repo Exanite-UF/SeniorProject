@@ -115,5 +115,5 @@ public:
 
 private:
     // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
-    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const;
+    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, int expectedVersion) const;
 };
