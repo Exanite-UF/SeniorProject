@@ -759,8 +759,9 @@ void VoxelChunkManager::showDebugMenu()
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
 
             // Drawing parameters
-            float cellSize = 10;
-            float dotSize = 6;
+            float cellSize = 16;
+            float dotSize = 12;
+            float speckSize = 8;
             float spacing = 2;
 
             auto* drawList = ImGui::GetWindowDrawList();
@@ -775,7 +776,9 @@ void VoxelChunkManager::showDebugMenu()
 
             auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
             auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
-            auto visibleDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
+
+            auto defaultSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+            auto visibleSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
 
             auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
 
@@ -796,6 +799,12 @@ void VoxelChunkManager::showDebugMenu()
                     auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
                     auto dotColor = defaultDotColor;
 
+                    // Speck
+                    auto speckPadding = (cellSize - speckSize) / 2;
+                    auto speckTopLeft = cellTopLeft + glm::vec2(speckPadding);
+                    auto speckBottomRight = cellBottomRight - glm::vec2(speckPadding);
+                    auto speckColor = defaultSpeckColor;
+
                     auto chunkIterator = state.activeChunks.find(chunkPosition);
                     if (chunkIterator != state.activeChunks.end())
                     {
@@ -811,18 +820,20 @@ void VoxelChunkManager::showDebugMenu()
                             cellColor = unloadingCellColor;
                         }
 
-                        if (chunk->component->getRendererData().isVisible)
-                        {
-                            dotColor = visibleDotColor;
-                        }
-                        else if (chunk->component->getExistsOnGpu())
+                        if (chunk->component->getExistsOnGpu())
                         {
                             dotColor = uploadedDotColor;
+                        }
+
+                        if (chunk->component->getRendererData().isVisible)
+                        {
+                            speckColor = visibleSpeckColor;
                         }
                     }
 
                     drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
                     drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
+                    drawList->AddRectFilled(ImGuiUtility::toImGui(speckTopLeft), ImGuiUtility::toImGui(speckBottomRight), speckColor);
                 }
             }
         }
