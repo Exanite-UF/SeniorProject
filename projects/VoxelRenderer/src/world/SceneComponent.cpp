@@ -66,6 +66,25 @@ bool SceneComponent::tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent
     return !!outResult;
 }
 
+void SceneComponent::addObjectChunk(const std::shared_ptr<VoxelChunkComponent>& chunk)
+{
+    auto iterator = std::find(objectChunks.begin(), objectChunks.end(), chunk);
+    if (iterator != objectChunks.end())
+    {
+        // Already added
+        return;
+    }
+
+    allChunks.push_back(chunk);
+    objectChunks.push_back(chunk);
+}
+
+void SceneComponent::removeObjectChunk(const std::shared_ptr<VoxelChunkComponent>& chunk)
+{
+    std::erase(allChunks, chunk);
+    std::erase(objectChunks, chunk);
+}
+
 void SceneComponent::addWorldChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk)
 {
     if (worldChunksByChunkPosition.emplace(chunkPosition, chunk).second)
