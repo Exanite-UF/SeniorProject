@@ -1,8 +1,10 @@
 #pragma once
 
+#include <src/gameobjects/GameObject.h>
 #include <src/input/InputManager.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/windowing/Window.h>
+#include <src/world/SceneComponent.h>
 
 class Program : public NonCopyable
 {
@@ -17,18 +19,28 @@ private:
     static void runLateStartupTests();
 
 public:
-    std::shared_ptr<GlfwContext> offscreenContext;
-    std::shared_ptr<Window> window;
+    std::shared_ptr<GlfwContext> offscreenContext {};
+    std::vector<std::shared_ptr<GlfwContext>> chunkModificationThreadContexts {};
+    std::shared_ptr<Window> window {};
 
-    std::shared_ptr<InputManager> inputManager;
+    std::shared_ptr<InputManager> inputManager {};
+
+    std::shared_ptr<GameObject> sceneObject {};
+    std::shared_ptr<SceneComponent> scene {};
 
     bool isWorkload = false; // View toggle
     bool useRandomNoise = true; // Noise type toggle
     float fillAmount = 0.6;
-    bool isRemakeNoiseRequested = true;
+    bool isRemakeNoiseRequested = false;
 
-    float currentFPS1 = 0;
-    float averagedDeltaTime1 = 0;
+    // Fps counter
+    float fpsCycleTimer = 0;
+
+    float currentDisplayFps = 0;
+    float averageDisplayDeltaTime = 0;
+
+    float currentRenderFps = 0;
+    float averagedRenderDeltaTime = 0;
 
     Program();
     ~Program() override;

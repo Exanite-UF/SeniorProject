@@ -9,7 +9,7 @@ MaterialManager::MaterialManager()
     // Define custom materials
     {
         auto& material = createMaterial("dirt", "Dirt");
-        material->albedo = ColorUtility::htmlToLinear("#70381c");
+        material->albedo = ColorUtility::htmlToLinear("#70381c"); // glm::vec3(1, 1, 1); //
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -18,7 +18,7 @@ MaterialManager::MaterialManager()
 
     {
         auto& material = createMaterial("stone", "stone");
-        material->albedo = ColorUtility::htmlToLinear("#ababab");
+        material->albedo = ColorUtility::htmlToLinear("#5F5F5F");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -27,7 +27,25 @@ MaterialManager::MaterialManager()
 
     {
         auto& material = createMaterial("grass", "grass");
-        material->albedo = ColorUtility::htmlToLinear("#41b000");
+        material->albedo = ColorUtility::htmlToLinear("#636434");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
+        auto& material = createMaterial("oak_log", "oak_log");
+        material->albedo = ColorUtility::htmlToLinear("#473621");
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
+        auto& material = createMaterial("oak_leaf", "oak_leaf");
+        material->albedo = ColorUtility::htmlToLinear("#434F1E");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
@@ -74,11 +92,11 @@ MaterialManager::MaterialManager()
     for (size_t i = materials.size(); i < Constants::VoxelChunk::maxMaterialCount; i++)
     {
         auto& material = createMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
-        if (i % 4 == 0)
+        if ((rand() % 10000) / 10000.0 <= 0.1)
         {
             material->emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
             material->albedo = material->emission;
-            material->emission *= 0.2;
+            material->emission *= 0.5;
             // material->emission = glm::vec3(1, 1, 1);
             // material->emission *= glm::vec3(0.1, 0.1, 0.1);
 
@@ -89,11 +107,11 @@ MaterialManager::MaterialManager()
         {
             material->emission = glm::vec3(0, 0, 0);
             material->albedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
-            material->metallic = (rand() % 1000) / 1000.0;
+            material->metallic = 0 * (rand() % 1000) / 1000.0;
             material->metallicAlbedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
         }
 
-        material->roughness = (rand() % 1000) / 1000.0;
+        material->roughness = std::pow((rand() % 1000) / 1000.0, 2);
     }
 
     updateGpuMaterialData();
@@ -109,7 +127,7 @@ const std::shared_ptr<Material>& MaterialManager::getMaterialByKey(const std::st
     return materialsByKey.at(key);
 }
 
-bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& material)
+bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& outMaterial)
 {
     auto entry = materialsByKey.find(key);
     if (entry == materialsByKey.end())
@@ -117,7 +135,7 @@ bool MaterialManager::tryGetMaterialByKey(const std::string& key, std::shared_pt
         return false;
     }
 
-    material = entry->second;
+    outMaterial = entry->second;
     return true;
 }
 

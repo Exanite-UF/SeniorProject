@@ -1,13 +1,16 @@
 #pragma once
 
+#include <atomic>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 #include <src/graphics/GraphicsBuffer.h>
+#include <src/utilities/CountInstances.h>
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
 
-class VoxelChunk : public NonCopyable
+class VoxelChunk : public NonCopyable, public CountInstances<VoxelChunk>
 {
 private:
     glm::ivec3 size; // Size of the voxel chunk in voxels
@@ -18,7 +21,7 @@ private:
     GraphicsBuffer<uint16_t> materialMap; // This stores the voxel material data
 
 public:
-    explicit VoxelChunk(glm::ivec3 size);
+    explicit VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData);
 
     void setSize(glm::ivec3 size);
     [[nodiscard]] glm::ivec3 getSize() const;

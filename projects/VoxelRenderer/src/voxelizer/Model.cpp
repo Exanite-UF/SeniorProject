@@ -1,9 +1,8 @@
-#include <src/voxelizer/Model.h>
 #include <src/utilities/OpenGl.h>
+#include <src/voxelizer/Model.h>
 #include <stb_image.h>
 
-
-void Model::Draw(Shader &shader)
+void Model::Draw(Shader& shader)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
@@ -14,10 +13,8 @@ void Model::Draw(Shader &shader)
 void Model::loadModel(std::string path)
 {
     Assimp::Importer import;
-    const aiScene *scene = import.ReadFile(path,
-    aiProcess_Triangulate |
-    aiProcess_CalcTangentSpace |
-    aiProcess_FlipUVs); 
+    const aiScene* scene = import.ReadFile(path,
+        aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -31,29 +28,29 @@ void Model::loadModel(std::string path)
 }
 
 // recursively travels through assimp's tree structure
-void Model::processNode(aiNode *node, const aiScene *scene)
+void Model::processNode(aiNode* node, const aiScene* scene)
 {
-    //process all node's meshes
+    // process all node's meshes
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         meshes.push_back(processMesh(mesh, scene));
     }
 
-    //process each node's child mesh
+    // process each node's child mesh
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
         processNode(node->mChildren[i], scene);
     }
 }
 
-Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
+Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<TriangleTexture> textures;
 
-    //Vertex Data
+    // Vertex Data
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         Vertex vertex;
@@ -62,7 +59,8 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
 
-        if (glm::length(vector) < 0.1f) {
+        if (glm::length(vector) < 0.1f)
+        {
             vector = glm::vec3(0.0f, 1.0f, 0.0f);
         }
 
@@ -79,7 +77,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         if (mesh->mTextureCoords[0])
         {
             glm::vec2 tex;
-            tex.x = mesh->mTextureCoords[0][i].x; 
+            tex.x = mesh->mTextureCoords[0][i].x;
             tex.y = mesh->mTextureCoords[0][i].y;
             vertex.TexCoords = tex;
 
@@ -91,7 +89,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
                 vector.z = mesh->mTangents[i].z;
                 vertex.Tangent = vector;
             }
-            
+
             if (mesh->mBitangents)
             {
                 // bitangent
@@ -108,7 +106,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         vertices.push_back(vertex);
     }
 
-    //Indices
+    // Indices
     for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
@@ -118,7 +116,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         }
     }
 
-    //Material
+    // Material
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
@@ -136,7 +134,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
     }
 
-    //Triangle Data
+    // Triangle Data
     for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
@@ -229,7 +227,7 @@ TriangleMaterial loadMaterial(aiMaterial* mat)
     return material;
 }
 
-unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma)
+unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
 {
     std::string filename = std::string(path);
     filename = directory + '/' + filename;
@@ -238,7 +236,7 @@ unsigned int TextureFromFile(const char *path, const std::string &directory, boo
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+    unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
     if (data)
     {
         GLenum format;

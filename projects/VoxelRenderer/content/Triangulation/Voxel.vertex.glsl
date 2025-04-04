@@ -1,9 +1,9 @@
 #version 330 core
 layout(location = 0) in vec3 aPos; // Cube vertex positions
 layout(location = 1) in vec3 instancePos; // Instance position for each voxel
-layout (location = 2) in vec2 aTexCoord;
-layout (location = 3) in vec3 aNormal;
-  
+layout(location = 2) in vec2 aTexCoord;
+layout(location = 3) in vec3 aNormal;
+
 out vec3 FragPos;
 out vec3 Normal;
 out vec2 TexCoord;

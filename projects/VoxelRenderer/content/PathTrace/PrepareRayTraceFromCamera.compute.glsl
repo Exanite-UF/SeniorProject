@@ -6,16 +6,30 @@ layout(std430, binding = 0) buffer RayPosition
 {
     float rayPosition[];
 };
+
 layout(std430, binding = 1) buffer RayDirection
 {
     float rayDirection[];
 };
 
-uniform ivec3 resolution; //(xSize, ySize, raysPerPixel)
+layout(std430, binding = 2) buffer PrimaryDirection
+{
+    writeonly float primaryDirection[];
+};
+
+uniform ivec3 resolution; //(xSize, ySize, 1)
 uniform vec3 camPosition;
 uniform vec4 camRotation;
 uniform float horizontalFovTan; // This equals tan(horizontal fov * 0.5)
 uniform vec2 jitter; //([0, 1), [0, 1))
+
+void setPrimaryDirection(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    primaryDirection[index + 0] = value.x;
+    primaryDirection[index + 1] = value.y;
+    primaryDirection[index + 2] = value.z;
+}
 
 // Applies a quaternion
 vec3 qtransform(vec4 q, vec3 v)
@@ -104,7 +118,7 @@ void main()
     vec3 right = qtransform(camRotation, vec3(0, -1, 0));
 
     // The random offset allows for temporal accumulation
-    vec2 randOffset = vec2(random(vec3(texelCoord) + jitter.x), random(vec3(texelCoord) + jitter.y)); // Create a random offset using the position of the texel and a provided jitter
+    vec2 randOffset = 0 * (vec2(random(vec3(texelCoord) + jitter.x), random(vec3(texelCoord) + jitter.y)) - vec2(0.5)); // Create a random offset using the position of the texel and a provided jitter
 
     vec2 uv = ((texelCoord.xy + randOffset) / size.xy - 0.5) * 2.0; //([-1, 1), [-1, 1))
     uv.y *= float(size.y) / size.x; // Correct for aspect ratio
@@ -113,4 +127,5 @@ void main()
 
     setPos(texelCoord, camPosition);
     setDir(texelCoord, rayDir);
+    setPrimaryDirection(texelCoord, rayDir);
 }
