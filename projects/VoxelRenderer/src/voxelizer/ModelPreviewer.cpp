@@ -1,8 +1,6 @@
+#include <chrono>
 #include <src/voxelizer/ModelPreviewer.h>
 #include <thread>
-#include <chrono>
-#include <thread>
-
 
 ModelPreviewer::~ModelPreviewer()
 {
@@ -22,7 +20,6 @@ void ModelPreviewer::setModel(Model* model_)
     triangleShader = new Shader(vertShaderPathTriangle.c_str(), fragShaderPathTriangle.c_str());
     voxelShader = new Shader(vertShaderPathVoxel.c_str(), fragShaderPathVoxel.c_str());
 }
-
 
 void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string modelPath)
 {
@@ -53,52 +50,52 @@ void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string
     }
 
     triangleThreadRunning = true;
-    triangleThread = std::thread([this, modelPath]() {
-        glfwMakeContextCurrent(triangleWindow);
-
-        modelVox->loadModel(const_cast<char*>(modelPath.c_str()));
-        setModel(modelVox->getModel());
-
-        glewExperimental = GL_TRUE;
-        if (glewInit() != GLEW_OK)
+    triangleThread = std::thread([this, modelPath]()
         {
-            printf("FAILED TO INITIALIZE GLEW!\n");
-            triangleThreadRunning = false;
-            return;
-        }
-
-
-        // Render Loop
-        while (triangleThreadRunning && !glfwWindowShouldClose(triangleWindow)) {
-            if (glfwWindowShouldClose(triangleWindow)) {
-                triangleThreadRunning = false;
-                break; 
-            }
             glfwMakeContextCurrent(triangleWindow);
-            glfwPollEvents();
 
-            // Initial render
-            RenderWindowTriangle();
+            modelVox->loadModel(const_cast<char*>(modelPath.c_str()));
+            setModel(modelVox->getModel());
 
-
-            static auto last_frame = std::chrono::steady_clock::now();
-            auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
-            if (elapsed.count() < 33) {  // ~30 FPS
-                std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
+            glewExperimental = GL_TRUE;
+            if (glewInit() != GLEW_OK)
+            {
+                printf("FAILED TO INITIALIZE GLEW!\n");
+                triangleThreadRunning = false;
+                return;
             }
-            last_frame = now;
 
-            //glfwSwapBuffers(triangleWindow);
-        }
+            // Render Loop
+            while (triangleThreadRunning && !glfwWindowShouldClose(triangleWindow))
+            {
+                if (glfwWindowShouldClose(triangleWindow))
+                {
+                    triangleThreadRunning = false;
+                    break;
+                }
+                glfwMakeContextCurrent(triangleWindow);
+                glfwPollEvents();
 
-        // Cleanup in the rendering thread
-        glfwDestroyWindow(triangleWindow);
-        triangleWindow = nullptr;
-        triangleThreadRunning = false;
+                // Initial render
+                RenderWindowTriangle();
 
-    });
+                static auto last_frame = std::chrono::steady_clock::now();
+                auto now = std::chrono::steady_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
+                if (elapsed.count() < 33)
+                { // ~30 FPS
+                    std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
+                }
+                last_frame = now;
 
+                // glfwSwapBuffers(triangleWindow);
+            }
+
+            // Cleanup in the rendering thread
+            glfwDestroyWindow(triangleWindow);
+            triangleWindow = nullptr;
+            triangleThreadRunning = false;
+        });
 }
 
 void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
@@ -130,57 +127,56 @@ void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
     }
 
     voxelThreadRunning = true;
-    voxelThread = std::thread([this]() {
-        glfwMakeContextCurrent(voxelWindow);
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-
-        glewExperimental = GL_TRUE;
-        if (glewInit() != GLEW_OK)
+    voxelThread = std::thread([this]()
         {
-            printf("FAILED TO INITIALIZE GLEW!\n");
-            voxelThreadRunning = false;
-            return;
-        }
+            glfwMakeContextCurrent(voxelWindow);
+            // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        printf("STARTING RENDER LOOP\n");
-
-        //generate voxels
-        modelVox->voxelizeModel();
-
-
-        // Render Loop
-        while (voxelThreadRunning && !glfwWindowShouldClose(voxelWindow)) {
-            if (glfwWindowShouldClose(voxelWindow)) {
+            glewExperimental = GL_TRUE;
+            if (glewInit() != GLEW_OK)
+            {
+                printf("FAILED TO INITIALIZE GLEW!\n");
                 voxelThreadRunning = false;
-                break; 
+                return;
             }
 
-            glfwPollEvents();
+            printf("STARTING RENDER LOOP\n");
 
-            // Initial render
-            RenderWindowVoxel();
-            //glfwSwapBuffers(voxelWindow);
+            // generate voxels
+            modelVox->voxelizeModel();
 
+            // Render Loop
+            while (voxelThreadRunning && !glfwWindowShouldClose(voxelWindow))
+            {
+                if (glfwWindowShouldClose(voxelWindow))
+                {
+                    voxelThreadRunning = false;
+                    break;
+                }
 
-            static auto last_frame = std::chrono::steady_clock::now();
-            auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
-            if (elapsed.count() < 33) {  // ~30 FPS
-                std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
+                glfwPollEvents();
+
+                // Initial render
+                RenderWindowVoxel();
+                // glfwSwapBuffers(voxelWindow);
+
+                static auto last_frame = std::chrono::steady_clock::now();
+                auto now = std::chrono::steady_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame);
+                if (elapsed.count() < 33)
+                { // ~30 FPS
+                    std::this_thread::sleep_for(std::chrono::milliseconds(33 - elapsed.count()));
+                }
+                last_frame = now;
+
+                // glfwSwapInterval(1); // Enable V-Sync to sync frames with monitor refresh rate
             }
-            last_frame = now;
 
-            //glfwSwapInterval(1); // Enable V-Sync to sync frames with monitor refresh rate
-        }
-
-        // Cleanup in the rendering thread
-        glfwDestroyWindow(voxelWindow);
-        voxelWindow = nullptr;
-        voxelThreadRunning = false;
-
-    });
-
+            // Cleanup in the rendering thread
+            glfwDestroyWindow(voxelWindow);
+            voxelWindow = nullptr;
+            voxelThreadRunning = false;
+        });
 }
 
 void ModelPreviewer::RenderWindowTriangle()
@@ -189,9 +185,8 @@ void ModelPreviewer::RenderWindowTriangle()
     {
         glfwMakeContextCurrent(triangleWindow);
         glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
-        glEnable(GL_DEPTH_TEST); 
+        glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
-
 
         // Camera Setup
         glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
@@ -206,7 +201,7 @@ void ModelPreviewer::RenderWindowTriangle()
         glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.diffuseColor"),  1,  glm::value_ptr(diffuseColor));
+        glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.diffuseColor"), 1, glm::value_ptr(diffuseColor));
         glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
         glUniform3fv(glGetUniformLocation(triangleShader->ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
         float materialSpecFactor = 0.0f;
@@ -228,7 +223,7 @@ void ModelPreviewer::RenderWindowVoxel()
     {
         glfwMakeContextCurrent(voxelWindow);
         glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
-        glEnable(GL_DEPTH_TEST); 
+        glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 
         modelVox->DrawVoxels(*voxelShader, Position, Front, Up, windowSize.x, windowSize.y);
@@ -239,44 +234,44 @@ void ModelPreviewer::RenderWindowVoxel()
 
 void ModelPreviewer::CloseWindowTriangle()
 {
-    if (!triangleThreadRunning) return;
+    if (!triangleThreadRunning)
+        return;
 
     modelVox = nullptr;
-    //Signal thead to stop
+    // Signal thead to stop
     triangleThreadRunning = false;
 
-    //Ensure window gets closed
+    // Ensure window gets closed
     if (triangleWindow)
     {
         glfwSetWindowShouldClose(triangleWindow, true);
     }
 
     // Wait for thread to finish
-    if (triangleThread.joinable()) {
+    if (triangleThread.joinable())
+    {
         triangleThread.join();
     }
 }
 
 void ModelPreviewer::CloseWindowVoxel()
 {
-    if (!voxelThreadRunning) return;
+    if (!voxelThreadRunning)
+        return;
 
     modelVox = nullptr;
-    //Signal thead to stop
+    // Signal thead to stop
     voxelThreadRunning = false;
 
-    //Ensure window gets closed
+    // Ensure window gets closed
     if (voxelWindow)
     {
         glfwSetWindowShouldClose(voxelWindow, true);
     }
 
     // Wait for thread to finish
-    if (voxelThread.joinable()) {
+    if (voxelThread.joinable())
+    {
         voxelThread.join();
     }
 }
-
-
-
-
