@@ -10,6 +10,17 @@ class VoxelChunkCommandBuffer
     friend class VoxelChunkManager;
 
 private:
+    class ChunkVersionLock
+    {
+    private:
+        std::unique_lock<std::mutex> lockChunkVersion;
+        std::shared_ptr<VoxelChunkComponent> component;
+
+    public:
+        explicit ChunkVersionLock(const std::shared_ptr<VoxelChunkComponent>& component, int expectedVersion);
+        ~ChunkVersionLock();
+    };
+
     enum CommandType
     {
         SetSize,

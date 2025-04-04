@@ -816,6 +816,7 @@ void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComp
     std::lock_guard lockChunkVersion(component->getModificationData().versionMutex);
 
     auto expectedVersion = component->getModificationData().pendingVersion;
+    component->getModificationData().pendingVersion++;
 
     modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer, expectedVersion));
     modificationThreadState.pendingTasksCondition.notify_one();
