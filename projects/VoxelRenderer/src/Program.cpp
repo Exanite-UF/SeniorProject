@@ -154,7 +154,6 @@ void Program::run()
 
                 auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                 voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                // voxelChunk->getTransform()->addGlobalPosition(glm::vec3(0, 0, 0) + glm::vec3(0, 0, 0));
 
                 scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
             }
@@ -175,7 +174,8 @@ void Program::run()
     Renderer renderer(window, offscreenContext);
     float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
 
-    renderer.setRenderResolution(window->size); // Render resolution can be set separately from display resolution
+    renderer.setRenderResolution(window->size);
+    // Render resolution can be set separately from display resolution
     // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
     int numberOfBounces = 3;
@@ -272,12 +272,12 @@ void Program::run()
             auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             showOther->setUniforms = [&renderer](GLuint program)
             {
-                glUniform1i(glGetUniformLocation(program, "whichTexture"), 2);
+                glUniform1i(glGetUniformLocation(program, "whichTexture"), 3);
             };
         }
 
         // Tonemap
-        if (true)
+        if (false)
         {
 
             auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));

@@ -17,6 +17,10 @@
 #include <src/world/SkyboxComponent.h>
 #include <src/world/VoxelChunkComponent.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/packing.hpp> // For packing/unpacking
+#include <glm/gtc/type_precision.hpp> // Provides uint16
+
 class Renderer;
 
 // The voxel renderer needs to be able to render multiple voxel chunks
@@ -41,28 +45,39 @@ private:
     // These are used as input and output
     bool whichStartBuffer = false;
     GraphicsBuffer<glm::vec3> rayStartBuffer1; // This is where rays will start from
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer1; // This is the direction rays will go in
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer1; // This is the direction rays will go in //convert to half
     GraphicsBuffer<glm::vec3> rayStartBuffer2; // This is where rays will start from
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer2; // This is the direction rays will go in
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer2; // This is the direction rays will go in //convert to half
 
     // These buffers are used to store the result of a path trace
     bool whichAccumulationBuffer = false;
-    GraphicsBuffer<glm::vec3> secondaryHitLocation; //(x, y, z) //TODO: Set this using the first pass of secondary rays
-    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
+    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b) //convert to half
 
     // This is reset before every cast
     GraphicsBuffer<float> rayMisc; //(depth)
 
     // These are primary ray info
-    GraphicsBuffer<glm::vec3> normalBuffer; // world space
+    bool whichDepth = false;
+    GraphicsBuffer<glm::vec3> normalBuffer; // world space //convert to half?
     GraphicsBuffer<glm::vec3> positionBuffer; // world space
-    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue)
+    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue) This carries the output motion vectors //convert to half
     GraphicsBuffer<std::int32_t> materialBuffer; //(materialID)
-    GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z)
-    GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z) //convert to half
+    GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution //convert to half
+
+    bool whichSampleRadiance = false;
+    GraphicsBuffer<glm::u16vec4> sampleDirection1; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::u16vec4> sampleDirection2; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::u16vec3> sampleRadiance1; //(r, g, b)
+    GraphicsBuffer<glm::u16vec3> sampleRadiance2; //(r, g, b)
+    GraphicsBuffer<glm::u16vec3> sampleWeights1;
+    GraphicsBuffer<glm::u16vec3> sampleWeights2;
+
+    bool whichMotionVectors = false;
+    GraphicsBuffer<glm::u16vec4> motionVectors; // This accumulates motion vector values to prevent undershooting from sub pixel movement
 
     GLuint materialTexturesBuffer; // This buffer will store the structs of material textures
 

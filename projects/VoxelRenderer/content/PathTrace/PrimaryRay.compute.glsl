@@ -1,4 +1,6 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+#extension GL_NV_gpu_shader5 : enable
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -183,11 +185,18 @@ void setFirstHitRoughness(ivec3 coord, float value)
     firstHitMisc[0 + index] = value.x;
 }
 
-void setFirstHitMotionVector(ivec3 coord, vec2 value)
+uniform bool whichDepth;
+void setFirstHitOldDepth(ivec3 coord, float value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
-    firstHitMisc[1 + index] = value.x;
-    firstHitMisc[2 + index] = value.y;
+    if (whichDepth)
+    {
+        firstHitMisc[1 + index] = value;
+    }
+    else
+    {
+        firstHitMisc[2 + index] = value;
+    }
 }
 
 void setFirstHitHue(ivec3 coord, float value)
@@ -219,6 +228,27 @@ void setSecondaryDirection(ivec3 coord, vec4 value)
     secondaryDirection[index + 1] = value.y;
     secondaryDirection[index + 2] = value.z;
     secondaryDirection[index + 3] = value.w;
+}
+
+uniform bool whichAccumulatingVector;
+layout(std430, binding = 13) buffer AccumulatingMotionVectors
+{
+    float16_t accumulatingMotionVectors[];
+};
+
+void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    if (whichAccumulatingVector)
+    {
+        accumulatingMotionVectors[index + 0] = accumulatingMotionVectors[index + 2] + float16_t(value.x);
+        accumulatingMotionVectors[index + 1] = accumulatingMotionVectors[index + 3] + float16_t(value.y);
+    }
+    else
+    {
+        accumulatingMotionVectors[index + 2] = accumulatingMotionVectors[index + 0] + float16_t(value.x);
+        accumulatingMotionVectors[index + 3] = accumulatingMotionVectors[index + 1] + float16_t(value.y);
+    }
 }
 
 struct RayHit
@@ -705,6 +735,7 @@ void main()
 
     // Set the data that comes from the ray intersection test
     setRayDepth(texelCoord, hit.dist); // Update the nearest distance
+    setFirstHitOldDepth(texelCoord, hit.dist);
     setFirstHitPosition(texelCoord, hit.hitLocation);
     setFirstHitNormal(texelCoord, hit.normal);
 
@@ -735,9 +766,11 @@ void main()
 
         hitLocation.xy *= 0.5;
         hitLocation.xy += 0.5;
-        vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
-        // vec2 motionVector = hitLocation.xy;
-        setFirstHitMotionVector(texelCoord, motionVector);
+        // vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
+        //  vec2 motionVector = hitLocation.xy;
+        // setFirstHitMotionVector(texelCoord, motionVector);
+        changeAccumulatingMotionVectors(texelCoord, 1 * (vec2(texelCoord.xy) - hitLocation.xy * resolution.xy));
+        // setFirstHitMotionVector(texelCoord, vec2(texelCoord.xy) - hitLocation.xy * resolution.xy);
     }
 
     // Set the information that comes from material
@@ -766,17 +799,16 @@ void main()
         if (sunAngularSize > 0 && dot(normal, sunDirection) > 0.0)
         {
             float p = 0.1;
+            float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
+            vec3 targetDir = normalize(sunDirection);
 
             if (randomVec2(seed).x < p)
             {
-                float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
                 float cosTheta = 1 - randomVec2(seed).x * (1 - cos(maxTheta));
                 float theta = acos(cosTheta);
                 float phi = randomVec2(seed).y * 2 * 3.1415926589;
 
                 vec3 local = vec3(sin(theta), sin(theta), cos(theta)) * vec3(cos(phi), sin(phi), 1);
-
-                vec3 targetDir = normalize(sunDirection);
 
                 vec3 up = abs(targetDir.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
                 vec3 tangent = normalize(cross(up, targetDir));

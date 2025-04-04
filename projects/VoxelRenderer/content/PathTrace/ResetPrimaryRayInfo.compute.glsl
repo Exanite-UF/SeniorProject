@@ -64,7 +64,7 @@ void main()
     index = 4 * (texelCoord.x + texelCoord.y * resolution.x);
 
     rayMisc[index + 0] = -1; // By default the primary ray hits a material with negative roughness
-    rayMisc[index + 1] = 0;
-    rayMisc[index + 2] = 0;
+    // rayMisc[index + 1] = 0; // these need to persist
+    // rayMisc[index + 2] = 0; // these need to persist
     rayMisc[index + 3] = 0;
 }
