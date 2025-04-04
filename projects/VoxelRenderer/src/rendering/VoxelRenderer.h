@@ -57,6 +57,7 @@ private:
     GraphicsBuffer<float> rayMisc; //(depth)
 
     // These are primary ray info
+    bool whichDepth = false;
     GraphicsBuffer<glm::vec3> normalBuffer; // world space
     GraphicsBuffer<glm::vec3> positionBuffer; // world space
     GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue) This carries the output motion vectors

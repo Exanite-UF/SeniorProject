@@ -581,6 +581,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         glUniform3fv(glGetUniformLocation(primaryRayProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
 
         glUniform1i(glGetUniformLocation(primaryRayProgram, "whichAccumulatingVector"), whichMotionVectors);
+        glUniform1i(glGetUniformLocation(primaryRayProgram, "whichDepth"), whichDepth);
 
         for (auto& chunkComponent : chunks)
         {
@@ -666,6 +667,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     whichStartBuffer = !whichStartBuffer;
     whichMotionVectors = !whichMotionVectors;
+    whichDepth = !whichDepth;
 
     glUseProgram(0);
 }
@@ -741,6 +743,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
 
     glUniform1i(glGetUniformLocation(pathTraceToFramebufferProgram, "whichMotionVectors"), whichMotionVectors);
+    glUniform1i(glGetUniformLocation(pathTraceToFramebufferProgram, "whichDepth"), whichDepth);
 
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 

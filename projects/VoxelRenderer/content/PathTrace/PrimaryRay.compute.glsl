@@ -183,11 +183,16 @@ void setFirstHitRoughness(ivec3 coord, float value)
     firstHitMisc[0 + index] = value.x;
 }
 
-void setFirstHitMotionVector(ivec3 coord, vec2 value)
+uniform bool whichDepth;
+void setFirstHitOldDepth(ivec3 coord, float value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
-    firstHitMisc[1 + index] = value.x;
-    firstHitMisc[2 + index] = value.y;
+    if(whichDepth){
+        firstHitMisc[1 + index] = value;
+    }else{
+        firstHitMisc[2 + index] = value;
+    }
+    
 }
 
 void setFirstHitHue(ivec3 coord, float value)
@@ -725,6 +730,7 @@ void main()
 
     // Set the data that comes from the ray intersection test
     setRayDepth(texelCoord, hit.dist); // Update the nearest distance
+    setFirstHitOldDepth(texelCoord, hit.dist);
     setFirstHitPosition(texelCoord, hit.hitLocation);
     setFirstHitNormal(texelCoord, hit.normal);
 

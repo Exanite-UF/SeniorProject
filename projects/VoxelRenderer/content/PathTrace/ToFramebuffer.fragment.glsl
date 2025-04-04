@@ -19,6 +19,7 @@ uniform ivec3 resolution; //(xSize, ySize, 1)
 uniform vec4 cameraRotation;
 uniform vec3 cameraPosition;
 uniform float random; // This is used to make non-deterministic randomness
+uniform bool whichDepth;
 
 layout(std430, binding = 0) buffer AccumulatedLight
 {
@@ -402,6 +403,17 @@ void main()
     vec3 normal = getNormal(texelCoord); // worldspace
     vec3 position = getPosition(texelCoord); // worldspace
     vec4 misc = getMisc(texelCoord);
+    
+    float oldDepth;
+    float currentDepth;
+
+    if(whichDepth){
+        currentDepth = misc.z;
+        oldDepth = misc.y;
+    }else{
+        currentDepth = misc.y;
+        oldDepth = misc.z;
+    }
 
     vec2 motionVectors = getMotionVectors(texelCoord);
     misc.yz = motionVectors / resolution.xy;//Set the output motion vectors
@@ -431,7 +443,7 @@ void main()
     temporalResevoirDirection = getSampleDirection(previousTexelCoord);
     temporalResevoirWeights = getSampleWeights(previousTexelCoord);
 
-    if(any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x)){
+    if(any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || abs(currentDepth - oldDepth) > 1){
         temporalResevoirRadiance *= 0;
         temporalResevoirDirection *= 0;
         temporalResevoirWeights *= 0;
@@ -477,6 +489,12 @@ void main()
             // Materials of different roughnesses have different bounce distributions, so they cannot be combined
             vec4 sampleMisc = getMisc(coord);
             if (abs(sampleMisc.x - misc.x) > 0.1)
+            {
+                continue;
+            }
+
+            vec3 samplePosition = getPosition(coord);
+            if (length(samplePosition - position) > 1)
             {
                 continue;
             }
