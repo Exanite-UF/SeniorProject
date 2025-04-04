@@ -116,5 +116,5 @@ public:
     std::shared_ptr<Model> getModel();
     void voxelizeModel(int option = 0);
 
-    void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, int windowWidth, int windowHeight);
+    void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
 };

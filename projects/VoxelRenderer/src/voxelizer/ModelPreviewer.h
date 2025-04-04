@@ -17,8 +17,6 @@
 class ModelPreviewer
 {
 private:
-    glm::ivec2 windowSize = { 320, 240 };
-
     std::shared_ptr<Window> triangleWindow {};
     std::shared_ptr<Window> voxelWindow {};
 

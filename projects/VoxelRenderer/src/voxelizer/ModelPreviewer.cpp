@@ -135,7 +135,7 @@ void ModelPreviewer::renderTriangleWindow()
 
     if (loadedModel)
     {
-        loadedModel->draw(triangleShader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize.x, windowSize.y);
+        loadedModel->draw(triangleShader, cameraPosition, cameraForwardDirection, cameraUpDirection, triangleWindow->size);
     }
 }
 
@@ -150,7 +150,7 @@ void ModelPreviewer::renderVoxelWindow()
 
     if (modelVoxelizer && modelVoxelizer->isVoxelized)
     {
-        modelVoxelizer->drawVoxels(voxelShader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize.x, windowSize.y);
+        modelVoxelizer->drawVoxels(voxelShader, cameraPosition, cameraForwardDirection, cameraUpDirection, voxelWindow->size);
     }
 }
 
