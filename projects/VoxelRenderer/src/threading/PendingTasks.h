@@ -71,17 +71,12 @@ void PendingTasks<T>::waitForPending()
     // Must use while statement since more tasks could have been added during the wait
     while (true)
     {
-        std::unique_lock lock(mutex);
-
         // Use a copy so we don't have to lock the original vector
-        auto copy = pending;
+        auto copy = getPending();
         if (copy.empty())
         {
             return;
         }
-
-        // Unlock before waiting
-        lock.unlock();
 
         // Wait for all known tasks
         for (auto dependency : copy)
