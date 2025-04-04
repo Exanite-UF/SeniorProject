@@ -438,7 +438,7 @@ void Program::run()
 
             if (input->isKeyPressed(GLFW_KEY_G))
             {
-                // renderer.toggleAsynchronousReprojection();
+                renderer.toggleAsynchronousReprojection();
             }
 
             if (input->isKeyPressed(GLFW_KEY_B))
