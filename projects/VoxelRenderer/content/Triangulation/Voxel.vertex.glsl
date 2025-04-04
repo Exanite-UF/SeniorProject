@@ -1,4 +1,5 @@
-#version 330 core
+#version 460 core
+
 layout(location = 0) in vec3 aPos; // Cube vertex positions
 layout(location = 1) in vec3 instancePos; // Instance position for each voxel
 layout(location = 2) in vec2 aTexCoord;
