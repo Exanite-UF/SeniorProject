@@ -21,7 +21,7 @@ void ModelPreviewer::setModel(Model* model_)
     voxelShader = new Shader(vertShaderPathVoxel.c_str(), fragShaderPathVoxel.c_str());
 }
 
-void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string modelPath)
+void ModelPreviewer::CreateWindowTriangle(std::shared_ptr<Window> mainWindow, ModelVoxelizer* modelVox_, std::string modelPath)
 {
     if (triangleThreadRunning)
     {
@@ -31,7 +31,7 @@ void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string
     modelVox = modelVox_;
 
     // Create Triangle Window in the Main Thread
-    triangleWindow = std::make_shared<Window>(nullptr);
+    triangleWindow = std::make_shared<Window>(mainWindow.get());
 
     if (!triangleWindow)
     {
@@ -80,7 +80,7 @@ void ModelPreviewer::CreateWindowTriangle(ModelVoxelizer* modelVox_, std::string
         });
 }
 
-void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
+void ModelPreviewer::CreateWindowVoxel(std::shared_ptr<Window> mainWindow, ModelVoxelizer* modelVox_)
 {
     if (voxelThreadRunning)
     {
@@ -90,7 +90,7 @@ void ModelPreviewer::CreateWindowVoxel(ModelVoxelizer* modelVox_)
     modelVox = modelVox_;
 
     // Create Triangle Window in the Main Thread
-    voxelWindow = std::make_shared<Window>(nullptr);
+    voxelWindow = std::make_shared<Window>(mainWindow.get());
     if (!voxelWindow)
     {
         printf("FAILED TO CREATE MODEL TRIANGLE VIEW WINDOW!\n");
