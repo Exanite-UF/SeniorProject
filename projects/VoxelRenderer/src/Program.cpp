@@ -336,7 +336,7 @@ void Program::run()
     bool isModelVoxelized = false;
 
     renderer.setScene(scene);
-    // renderer.startAsynchronousReprojection();
+    renderer.startAsynchronousReprojection();
 
     while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
     {
