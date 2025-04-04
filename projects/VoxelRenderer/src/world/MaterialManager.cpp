@@ -92,11 +92,11 @@ MaterialManager::MaterialManager()
     for (size_t i = materials.size(); i < Constants::VoxelChunk::maxMaterialCount; i++)
     {
         auto& material = createMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
-        if ((rand() % 10000) / 10000.0 <= 0.01)
+        if ((rand() % 10000) / 10000.0 <= 0.1)
         {
             material->emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
             material->albedo = material->emission;
-            material->emission *= 0.5 * 10;
+            material->emission *= 0.5;
             // material->emission = glm::vec3(1, 1, 1);
             // material->emission *= glm::vec3(0.1, 0.1, 0.1);
 

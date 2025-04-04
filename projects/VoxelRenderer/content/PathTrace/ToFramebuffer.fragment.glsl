@@ -454,6 +454,10 @@ void main()
     if (misc.x < 0.01)
     {
         radius = 0;
+
+        temporalResevoirRadiance *= 0;
+        temporalResevoirDirection *= 0;
+        temporalResevoirWeights *= 0;
     }
     //radius = 0;
 
