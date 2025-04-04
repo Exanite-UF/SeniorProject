@@ -278,44 +278,51 @@ void ModelVoxelizer::generateVoxelMesh()
     activeVoxels.clear();
     activeVoxels.push_back(glm::vec3(0, 0, 0));
 
-    glGenVertexArrays(1, &voxelVAO);
+    // Create cube VBO (vertices)
     glGenBuffers(1, &voxelVBO);
-    glGenBuffers(1, &voxelEBO);
-    glGenBuffers(1, &instanceVBO);
-
-    glBindVertexArray(voxelVAO);
-
-    // Cube VBO (vertices)
     glBindBuffer(GL_ARRAY_BUFFER, voxelVBO);
     glBufferData(GL_ARRAY_BUFFER, cubeVertices.size() * sizeof(VertexPositionUvNormal), cubeVertices.data(), GL_STATIC_DRAW);
 
-    // Cube EBO (indices)
+    // Create cube EBO (indices)
+    glGenBuffers(1, &voxelEBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, voxelEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, cubeIndices.size() * sizeof(GLuint), cubeIndices.data(), GL_STATIC_DRAW);
 
-    // Position attribute (location = 0)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, position)));
-
-    // Texture Coordinate attribute (location = 2)
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, uv)));
-
-    // Normal attribute (location = 3)
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, normal)));
-
-    // Generate and bind instance VBO for voxel positions
+    // Create instance VBO containing voxel positions
+    glGenBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    // glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
 
-    // Instance Position attribute (location = 1)
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), reinterpret_cast<void*>(0));
-    glVertexAttribDivisor(1, 1); // Tell OpenGL this is per-instance data
+    // Create VAO
+    glGenVertexArrays(1, &voxelVAO);
+    glBindVertexArray(voxelVAO);
+    {
+        // Read from vertex buffer
+        glBindBuffer(GL_ARRAY_BUFFER, voxelVBO);
+        {
+            // Position (0)
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, position)));
 
-    // Unbind VAO
+            // Uv (2)
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, uv)));
+
+            // Normal (3)
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPositionUvNormal), reinterpret_cast<void*>(offsetof(VertexPositionUvNormal, normal)));
+        }
+
+        // Read from instance buffer
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+        {
+            // Instance position (1)
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), reinterpret_cast<void*>(0));
+            glVertexAttribDivisor(1, 1); // Tell OpenGL this is per-instance data
+        }
+    }
+    glBindVertexArray(0);
 
     // activeVoxels.clear();
     // for (int z = 0; z < gridSize.z; ++z) {
@@ -327,10 +334,6 @@ void ModelVoxelizer::generateVoxelMesh()
     //         }
     //     }
     // }
-
-    // DEBUG
-
-    glBindVertexArray(0);
 
     isVoxelized = true;
     std::cout << "VOXELIZED!" << std::endl;
