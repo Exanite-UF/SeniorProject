@@ -378,7 +378,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
         // Check for chunks to unload
         int chunksUpdated = 0;
-        std::vector<glm::ivec2> chunksToUnload {};
+        std::vector<glm::ivec2> chunkPositionsToUnload {};
         for (auto& chunk : std::ranges::views::values(state.activeChunks))
         {
             if (chunk->isUnloading)
@@ -388,17 +388,22 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 if (chunk->timeSpentWaitingForUnload > settings.chunkUnloadTime)
                 {
-                    chunksToUnload.push_back(chunk->chunkPosition);
+                    chunkPositionsToUnload.push_back(chunk->chunkPosition);
                 }
             }
         }
 
-        for (auto chunkToUnload : chunksToUnload)
+        for (auto chunkPositionToUnload : chunkPositionsToUnload)
         {
-            ZoneScopedN("Chunk unload");
+            // Get chunk and wait until it has no pending tasks before unloading
+            auto chunkToUnloadIterator = state.activeChunks.find(chunkPositionToUnload);
+            if (chunkToUnloadIterator != state.activeChunks.end() && chunkToUnloadIterator->second->component->getModificationData().pendingTasks.getPending().empty())
+            {
+                ZoneScopedN("Chunk unload");
 
-            Log::information(std::format("Unloaded chunk at ({}, {})", chunkToUnload.x, chunkToUnload.y));
-            state.activeChunks.erase(chunkToUnload);
+                Log::information(std::format("Unloaded chunk at ({}, {})", chunkPositionToUnload.x, chunkPositionToUnload.y));
+                state.activeChunks.erase(chunkPositionToUnload);
+            }
         }
 
         if (chunksUpdated == 0)
