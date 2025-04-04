@@ -44,30 +44,29 @@ private:
 
     // These are used as input and output
     bool whichStartBuffer = false;
-    GraphicsBuffer<glm::vec3> rayStartBuffer1; // This is where rays will start from
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer1; // This is the direction rays will go in
+    GraphicsBuffer<glm::vec3> rayStartBuffer1; // This is where rays will start from 
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer1; // This is the direction rays will go in //convert to half
     GraphicsBuffer<glm::vec3> rayStartBuffer2; // This is where rays will start from
-    GraphicsBuffer<glm::vec3> rayDirectionBuffer2; // This is the direction rays will go in
+    GraphicsBuffer<glm::vec3> rayDirectionBuffer2; // This is the direction rays will go in //convert to half
 
     // These buffers are used to store the result of a path trace
     bool whichAccumulationBuffer = false;
-    GraphicsBuffer<glm::vec3> secondaryHitLocation; //(x, y, z) //TODO: Set this using the first pass of secondary rays
-    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b)
-    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b)
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b)
+    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b) //convert to half
 
     // This is reset before every cast
     GraphicsBuffer<float> rayMisc; //(depth)
 
     // These are primary ray info
     bool whichDepth = false;
-    GraphicsBuffer<glm::vec3> normalBuffer; // world space
+    GraphicsBuffer<glm::vec3> normalBuffer; // world space //convert to half?
     GraphicsBuffer<glm::vec3> positionBuffer; // world space
-    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue) This carries the output motion vectors
+    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue) This carries the output motion vectors //convert to half
     GraphicsBuffer<std::int32_t> materialBuffer; //(materialID)
-    GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z)
-    GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
+    GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z) //convert to half
+    GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution //convert to half
 
     bool whichSampleRadiance = false;
     GraphicsBuffer<glm::u16vec4> sampleDirection1; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution
