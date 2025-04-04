@@ -2,10 +2,11 @@
 
 #include <src/windowing/Window.h>
 
-Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enableImGui)
+Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enableImGui, bool isMainWindow)
     : GlfwContext(contextName, true, shareWith)
 {
     this->enableImGui = enableImGui;
+    this->isMainWindow = isMainWindow;
 
     // Register GLFW callbacks
     registerGlfwCallbacks();
@@ -59,7 +60,12 @@ void Window::update()
         ImGui::NewFrame();
     }
 
-    glfwPollEvents();
+    if (isMainWindow)
+    {
+        // We can only poll events on the main thread
+        glfwPollEvents();
+    }
+
     glfwGetWindowSize(glfwWindowHandle, &size.x, &size.y);
 
     windowSizeEvent.flush();

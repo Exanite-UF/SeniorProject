@@ -19,7 +19,9 @@ private:
     // Stores last known window sizes/positions when not in fullscreen mode
     glm::i32vec2 lastWindowedPosition = glm::i32vec2(0);
     glm::i32vec2 lastWindowedSize = glm::i32vec2(1);
+
     bool enableImGui = false;
+    bool isMainWindow = false;
 
     void registerGlfwCallbacks();
 
@@ -48,7 +50,7 @@ public:
     BufferedEvent<Window*, double, double> scrollEvent {};
     BufferedEvent<Window*, int> cursorEnterEvent {};
 
-    explicit Window(const std::string& contextName, GlfwContext* shareWith = nullptr, bool enableImGui = false);
+    explicit Window(const std::string& contextName, GlfwContext* shareWith = nullptr, bool enableImGui = false, bool isMainWindow = false);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
     ~Window();
