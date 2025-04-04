@@ -31,7 +31,7 @@ void ModelPreviewer::CreateWindowTriangle(std::shared_ptr<Window> mainWindow, Mo
     modelVox = modelVox_;
 
     // Create Triangle Window in the Main Thread
-    triangleWindow = std::make_shared<Window>(mainWindow.get());
+    triangleWindow = std::make_shared<Window>("Voxelizer triangle window", mainWindow.get());
 
     if (!triangleWindow)
     {
@@ -89,8 +89,8 @@ void ModelPreviewer::CreateWindowVoxel(std::shared_ptr<Window> mainWindow, Model
 
     modelVox = modelVox_;
 
-    // Create Triangle Window in the Main Thread
-    voxelWindow = std::make_shared<Window>(mainWindow.get());
+    // Create Voxel Window in the Main Thread
+    voxelWindow = std::make_shared<Window>("Voxelizer voxel window", mainWindow.get());
     if (!voxelWindow)
     {
         printf("FAILED TO CREATE MODEL TRIANGLE VIEW WINDOW!\n");

@@ -47,7 +47,7 @@ public:
     BufferedEvent<Window*, double, double> scrollEvent {};
     BufferedEvent<Window*, int> cursorEnterEvent {};
 
-    explicit Window(GlfwContext* shareWith = nullptr, bool initializeImGui = false);
+    explicit Window(const std::string& contextName, GlfwContext* shareWith = nullptr, bool initializeImGui = false);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
     ~Window();

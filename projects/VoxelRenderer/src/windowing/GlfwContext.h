@@ -13,16 +13,12 @@ private:
 protected:
     // Pointer returned by glfwCreateWindow
     GLFWwindow* glfwWindowHandle;
+    std::string contextName;
 
-    inline static std::atomic<int> nextId;
-
-    // Stores ID for logging and debugging purposes
-    int id;
-
-    explicit GlfwContext(bool isWindow, const GlfwContext* shareWith = nullptr);
+    explicit GlfwContext(const std::string& contextName, bool isWindow, const GlfwContext* shareWith = nullptr);
 
 public:
-    explicit GlfwContext(GlfwContext* shareWith = nullptr);
+    explicit GlfwContext(const std::string& contextName, const GlfwContext* shareWith = nullptr);
     ~GlfwContext() override;
 
     void makeContextCurrent() const;

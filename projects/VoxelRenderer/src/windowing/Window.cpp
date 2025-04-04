@@ -2,8 +2,8 @@
 
 #include <src/windowing/Window.h>
 
-Window::Window(GlfwContext* shareWith, bool initializeImGui)
-    : GlfwContext(true, shareWith)
+Window::Window(const std::string& contextName, GlfwContext* shareWith, bool initializeImGui)
+    : GlfwContext(contextName, true, shareWith)
 {
     // Register GLFW callbacks
     registerGlfwCallbacks();

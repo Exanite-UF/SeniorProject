@@ -5,11 +5,10 @@
 
 #include "GlfwContext.h"
 
-GlfwContext::GlfwContext(bool isWindow, const GlfwContext* shareWith)
+GlfwContext::GlfwContext(const std::string& contextName, bool isWindow, const GlfwContext* shareWith)
 {
-    // Set ID for debugging
-    id = nextId;
-    nextId++;
+    // Set name for debugging purposes
+    this->contextName = contextName;
 
     // Configure GLFW and OpenGL
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Request OpenGL 4.6
@@ -42,8 +41,8 @@ GlfwContext::GlfwContext(bool isWindow, const GlfwContext* shareWith)
     glDebugMessageCallback(onOpenGlDebugMessage, this);
 }
 
-GlfwContext::GlfwContext(GlfwContext* shareWith)
-    : GlfwContext(false, shareWith)
+GlfwContext::GlfwContext(const std::string& contextName, const GlfwContext* shareWith)
+    : GlfwContext(contextName, false, shareWith)
 {
 }
 
@@ -72,7 +71,7 @@ void GlfwContext::onOpenGlDebugMessage(GLenum source, GLenum type, GLuint id, GL
     }
 
     std::string messageStr(message, length);
-    Log::warning("GL context " + std::to_string(self->id) + ": " + messageStr);
+    Log::warning("GL context '" + self->contextName + "': " + messageStr);
 }
 
 GLFWwindow* GlfwContext::getGlfwWindowHandle() const

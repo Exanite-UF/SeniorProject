@@ -84,12 +84,12 @@ Program::Program()
 
     for (int i = 0; i < Constants::VoxelChunkManager::maxChunkModificationThreads; ++i)
     {
-        previousContext = std::make_shared<GlfwContext>(previousContext.get());
+        previousContext = std::make_shared<GlfwContext>("Chunk modification", previousContext.get());
         chunkModificationThreadContexts.push_back(previousContext);
     }
 
-    previousContext = offscreenContext = std::make_shared<GlfwContext>(previousContext.get());
-    previousContext = window = std::make_shared<Window>(previousContext.get(), true);
+    previousContext = offscreenContext = std::make_shared<GlfwContext>("Offscreen context", previousContext.get());
+    previousContext = window = std::make_shared<Window>("Main window", previousContext.get(), true);
 
     window->makeContextCurrent();
 
