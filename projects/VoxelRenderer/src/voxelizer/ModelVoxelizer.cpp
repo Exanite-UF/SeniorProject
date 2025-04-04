@@ -340,15 +340,13 @@ void ModelVoxelizer::DrawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     {
         return;
     }
-    glUseProgram(shader->programId);
-
-    // Update instance buffer with active voxel positions
-    // glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    // glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
-    // glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
-    // glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
 
     shader->use();
+
+    // Update instance buffer with active voxel positions
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
 
     // Camera Setup
     glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
@@ -377,5 +375,4 @@ void ModelVoxelizer::DrawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     glBindVertexArray(voxelVAO);
     // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
-    // glDrawArraysInstanced(GL_TRIANGLES, 0, 8, activeVoxels.size());
 }
