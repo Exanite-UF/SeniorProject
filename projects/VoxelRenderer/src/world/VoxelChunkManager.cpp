@@ -736,15 +736,18 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        if (ImGui::SliderInt("Render distance", &settings.loadDistance, 0, 1))
+        if (ImGui::SliderInt("Load distance", &settings.loadDistance, 0, 3))
         {
             state.isChunkLoadingDirty = true;
         }
 
+        ImGui::SliderFloat("Chunk upload budget", &settings.chunkUploadBudget, 4, 20);
+
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
-        ImGui::Text("%s", std::format("Render distance: {}", settings.loadDistance).c_str());
+        ImGui::Text("%s", std::format("Load distance: {}", settings.loadDistance).c_str());
+        ImGui::Text("%s", std::format("GPU chunk upload budget (full size chunks): {}", settings.chunkUploadBudget).c_str());
         ImGui::Text("%s", std::format("GPU uploaded voxel chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
