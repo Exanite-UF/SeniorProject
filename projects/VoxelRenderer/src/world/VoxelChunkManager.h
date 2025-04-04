@@ -22,11 +22,12 @@ public:
     public:
         // ----- Rendering -----
 
-        // The distance at which chunks begin to be generated on a separate thread
-        int generationDistance = 2; // TODO
+        // The distance at which chunks begin to be loaded on a separate thread
+        int loadDistance = 2;
 
-        // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
+        // This defines the number of full size chunked that can be uploaded
+        // This is a float because LODed chunks take up less memory
+        float chunkUploadBudget = 9;
 
         // ----- Chunks -----
 

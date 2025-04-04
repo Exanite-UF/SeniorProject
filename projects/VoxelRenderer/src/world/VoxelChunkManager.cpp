@@ -306,9 +306,9 @@ void VoxelChunkManager::update(const float deltaTime)
 
         // Calculate which chunks should be loaded
         std::unordered_set<glm::ivec2> chunksToLoad {};
-        for (int x = -settings.renderDistance; x <= settings.renderDistance; ++x)
+        for (int x = -settings.loadDistance; x <= settings.loadDistance; ++x)
         {
-            for (int y = -settings.renderDistance; y <= settings.renderDistance; ++y)
+            for (int y = -settings.loadDistance; y <= settings.loadDistance; ++y)
             {
                 auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y);
                 chunksToLoad.emplace(chunkPosition);
@@ -445,7 +445,6 @@ void VoxelChunkManager::update(const float deltaTime)
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
-                    commandBuffer.setExistsOnGpu(true);
 
                     submitCommandBuffer(chunk->component, commandBuffer);
                 }
@@ -737,7 +736,7 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        if (ImGui::SliderInt("Render distance", &settings.renderDistance, 0, 1))
+        if (ImGui::SliderInt("Render distance", &settings.loadDistance, 0, 1))
         {
             state.isChunkLoadingDirty = true;
         }
@@ -745,7 +744,7 @@ void VoxelChunkManager::showDebugMenu()
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
-        ImGui::Text("%s", std::format("Render distance: {}", settings.renderDistance).c_str());
+        ImGui::Text("%s", std::format("Render distance: {}", settings.loadDistance).c_str());
         ImGui::Text("%s", std::format("GPU uploaded voxel chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
@@ -753,7 +752,7 @@ void VoxelChunkManager::showDebugMenu()
 
         {
             // Chunk display distance parameters
-            int displayDistance = settings.renderDistance + 1;
+            int displayDistance = settings.loadDistance + 1;
 
             glm::ivec2 displaySize = glm::ivec2(displayDistance * 2 + 1);
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
