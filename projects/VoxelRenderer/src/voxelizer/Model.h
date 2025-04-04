@@ -25,7 +25,7 @@ public:
 
     explicit Model(const std::string& path);
 
-    void draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
+    void draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, int windowWidth, int windowHeight);
     std::vector<Mesh> meshes; // make private
     std::vector<Triangle> getTriangles();
 

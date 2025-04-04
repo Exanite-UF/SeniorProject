@@ -134,7 +134,7 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
                 }
     }
 
-    std::vector<bool> localVoxels(voxels.size(), false);
+    std::vector localVoxels(voxels.size(), false);
 
 #pragma omp parallel for collapse(3) schedule(dynamic)
     for (int z = 0; z < gridSize.z; ++z)
@@ -191,7 +191,7 @@ void ModelVoxelizer::generateVoxelMesh()
 {
     printf("GENERATING VOXEL MESH\n");
 
-    std::vector<float> cubeVertices = {
+    std::vector cubeVertices = {
         -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, // BACK
         0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
         0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f,
