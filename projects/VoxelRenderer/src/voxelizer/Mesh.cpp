@@ -60,7 +60,7 @@ void Mesh::Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 U
         shader.setInt(("material." + name + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
-    
+
     glActiveTexture(GL_TEXTURE0);
 
     // Camera Setup
