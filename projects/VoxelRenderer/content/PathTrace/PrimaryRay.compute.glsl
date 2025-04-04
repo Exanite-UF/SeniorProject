@@ -189,12 +189,14 @@ uniform bool whichDepth;
 void setFirstHitOldDepth(ivec3 coord, float value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
-    if(whichDepth){
+    if (whichDepth)
+    {
         firstHitMisc[1 + index] = value;
-    }else{
+    }
+    else
+    {
         firstHitMisc[2 + index] = value;
     }
-    
 }
 
 void setFirstHitHue(ivec3 coord, float value)
@@ -228,7 +230,6 @@ void setSecondaryDirection(ivec3 coord, vec4 value)
     secondaryDirection[index + 3] = value.w;
 }
 
-
 uniform bool whichAccumulatingVector;
 layout(std430, binding = 13) buffer AccumulatingMotionVectors
 {
@@ -238,14 +239,16 @@ layout(std430, binding = 13) buffer AccumulatingMotionVectors
 void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
-    if(whichAccumulatingVector){
+    if (whichAccumulatingVector)
+    {
         accumulatingMotionVectors[index + 0] = accumulatingMotionVectors[index + 2] + float16_t(value.x);
         accumulatingMotionVectors[index + 1] = accumulatingMotionVectors[index + 3] + float16_t(value.y);
-    }else{
+    }
+    else
+    {
         accumulatingMotionVectors[index + 2] = accumulatingMotionVectors[index + 0] + float16_t(value.x);
         accumulatingMotionVectors[index + 3] = accumulatingMotionVectors[index + 1] + float16_t(value.y);
     }
-    
 }
 
 struct RayHit
@@ -763,11 +766,11 @@ void main()
 
         hitLocation.xy *= 0.5;
         hitLocation.xy += 0.5;
-        //vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
-        // vec2 motionVector = hitLocation.xy;
-        //setFirstHitMotionVector(texelCoord, motionVector);
+        // vec2 motionVector = (((vec2(texelCoord.xy)) / resolution.xy) - hitLocation.xy); // UNfortunately this suffers from floating point inaccuracy. (So when close by, it drifts)
+        //  vec2 motionVector = hitLocation.xy;
+        // setFirstHitMotionVector(texelCoord, motionVector);
         changeAccumulatingMotionVectors(texelCoord, 1 * (vec2(texelCoord.xy) - hitLocation.xy * resolution.xy));
-        //setFirstHitMotionVector(texelCoord, vec2(texelCoord.xy) - hitLocation.xy * resolution.xy);
+        // setFirstHitMotionVector(texelCoord, vec2(texelCoord.xy) - hitLocation.xy * resolution.xy);
     }
 
     // Set the information that comes from material

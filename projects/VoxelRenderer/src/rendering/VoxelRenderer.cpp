@@ -661,7 +661,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     materialBuffer.unbind();
     secondaryDirection.unbind();
     motionVectors.unbind();
-    //sampleDirection.unbind();
+    // sampleDirection.unbind();
 
     afterCast(maxDepth);
 
@@ -699,10 +699,8 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     MaterialManager& materialManager = MaterialManager::getInstance();
     materialManager.getMaterialDefinitionsBuffer().bind(7); // This binds the material definitions for each material
 
-    
-    
-
-    if(whichSampleRadiance){
+    if (whichSampleRadiance)
+    {
         sampleDirection1.bind(8);
         sampleDirection2.bind(9);
 
@@ -711,7 +709,9 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
         sampleWeights1.bind(12);
         sampleWeights2.bind(13);
-    }else{
+    }
+    else
+    {
         sampleDirection1.bind(9);
         sampleDirection2.bind(8);
 
@@ -723,7 +723,6 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     }
 
     motionVectors.bind(14);
-    
 
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
@@ -783,7 +782,6 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     sampleWeights1.unbind();
     sampleWeights2.unbind();
     motionVectors.unbind();
-    
 
     whichMotionVectors = !whichMotionVectors;
     whichSampleRadiance = !whichSampleRadiance;
