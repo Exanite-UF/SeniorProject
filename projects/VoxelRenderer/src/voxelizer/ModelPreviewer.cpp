@@ -156,9 +156,6 @@ void ModelPreviewer::renderVoxelWindow()
 
 void ModelPreviewer::closeWindowTriangle()
 {
-    if (!triangleThreadRunning)
-        return;
-
     // Signal thead to stop
     triangleThreadRunning = false;
 
@@ -177,9 +174,6 @@ void ModelPreviewer::closeWindowTriangle()
 
 void ModelPreviewer::closeWindowVoxel()
 {
-    if (!voxelThreadRunning)
-        return;
-
     // Signal thead to stop
     voxelThreadRunning = false;
 
