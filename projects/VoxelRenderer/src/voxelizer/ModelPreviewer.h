@@ -48,8 +48,8 @@ public:
     void createWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath);
     void createWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer);
 
-    void renderWindowTriangle();
-    void renderWindowVoxel();
+    void renderTriangleWindow();
+    void renderVoxelWindow();
 
     void closeWindowTriangle();
     void closeWindowVoxel();

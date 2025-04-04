@@ -55,7 +55,7 @@ void ModelPreviewer::createWindowTriangle(const std::shared_ptr<Window>& mainWin
                 triangleWindow->update();
 
                 // Initial render
-                renderWindowTriangle();
+                renderTriangleWindow();
 
                 static auto last_frame = std::chrono::steady_clock::now();
                 auto now = std::chrono::steady_clock::now();
@@ -111,7 +111,7 @@ void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow
                 voxelWindow->update();
 
                 // Initial render
-                renderWindowVoxel();
+                renderVoxelWindow();
 
                 static auto last_frame = std::chrono::steady_clock::now();
                 auto now = std::chrono::steady_clock::now();
@@ -130,26 +130,32 @@ void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow
         });
 }
 
-void ModelPreviewer::renderWindowTriangle()
+void ModelPreviewer::renderTriangleWindow()
 {
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.2f, 0.2f, 0.2f, 0);
+    glClearDepth(1);
+    glDepthFunc(GL_LESS);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     if (loadedModel)
     {
-        glClearColor(0.2f, 0.2f, 0.2f, 0);
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         loadedModel->draw(triangleShader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize.x, windowSize.y);
     }
 }
 
-void ModelPreviewer::renderWindowVoxel()
+void ModelPreviewer::renderVoxelWindow()
 {
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.2f, 0.2f, 0.2f, 0);
+    glClearDepth(1);
+    glDepthFunc(GL_LESS);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     if (modelVoxelizer && modelVoxelizer->isVoxelized)
     {
-        glClearColor(0.2f, 0.2f, 0.2f, 0);
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         modelVoxelizer->drawVoxels(voxelShader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize.x, windowSize.y);
     }
 }
