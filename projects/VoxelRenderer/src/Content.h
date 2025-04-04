@@ -58,10 +58,9 @@ public:
     class Triangulation
     {
     public:
-        // TODO: Use string_views
-        constexpr static const char* vertShaderPathTriangle = "content/Triangulation/Phong.vertex.glsl";
-        constexpr static const char* fragShaderPathTriangle = "content/Triangulation/Phong.fragment.glsl";
-        constexpr static const char* vertShaderPathVoxel = "content/Triangulation/Voxel.vertex.glsl";
-        constexpr static const char* fragShaderPathVoxel = "content/Triangulation/Voxel.fragment.glsl";
+        constexpr static std::string_view vertShaderPathTriangle = "content/Triangulation/Phong.vertex.glsl";
+        constexpr static std::string_view fragShaderPathTriangle = "content/Triangulation/Phong.fragment.glsl";
+        constexpr static std::string_view vertShaderPathVoxel = "content/Triangulation/Voxel.vertex.glsl";
+        constexpr static std::string_view fragShaderPathVoxel = "content/Triangulation/Voxel.fragment.glsl";
     };
 };

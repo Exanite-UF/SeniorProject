@@ -42,7 +42,7 @@ void Renderer::isOwningThreadCheck() const
 
 Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext)
 {
-    drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
+    drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader)->programId;
 
     this->mainContext = mainContext;
     this->offscreenContext = offscreenContext;

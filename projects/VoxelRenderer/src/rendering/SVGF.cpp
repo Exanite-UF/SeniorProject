@@ -33,10 +33,10 @@ void SVGF::isLockOwningThreadCheck() const
 
 SVGF::SVGF()
 {
-    integrateFrameProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::integrateFrameFragmentShader);
-    firstWaveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::firstWaveletIterationFragmentShader);
-    waveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::waveletIterationFragmentShader);
-    toFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::toFramebufferSVGFFragmentShader);
+    integrateFrameProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::integrateFrameFragmentShader)->programId;
+    firstWaveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::firstWaveletIterationFragmentShader)->programId;
+    waveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::waveletIterationFragmentShader)->programId;
+    toFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::toFramebufferSVGFFragmentShader)->programId;
 }
 
 void SVGF::remakeTextures()

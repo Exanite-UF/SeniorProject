@@ -26,7 +26,7 @@ public:
     {
         loadModel(path);
     }
-    void Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
+    void Draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
     std::vector<Mesh> meshes; // make private
     std::vector<Triangle> getTriangles();
 
@@ -34,7 +34,7 @@ private:
     std::string directory;
     std::vector<Triangle> triangles;
 
-    void loadModel(std::string path);
+    void loadModel(const std::string& path);
     void processNode(aiNode* node, const aiScene* scene);
     Mesh processMesh(aiMesh* mesh, const aiScene* scene);
     std::vector<TriangleTexture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);

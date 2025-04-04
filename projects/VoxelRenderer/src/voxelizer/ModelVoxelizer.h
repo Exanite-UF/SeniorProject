@@ -92,6 +92,6 @@ public:
     void loadModel(char* path);
     std::shared_ptr<Model> getModel();
     void voxelizeModel(int option = 0);
-    void DrawVoxels(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
+    void DrawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
     bool isVoxelized = false;
 };

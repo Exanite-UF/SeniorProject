@@ -9,7 +9,6 @@
 
 #include <src/voxelizer/Model.h>
 #include <src/voxelizer/ModelVoxelizer.h>
-#include <src/voxelizer/Shader.h>
 #include <src/windowing/Window.h>
 
 #include <atomic>
@@ -35,8 +34,8 @@ private:
 
     std::shared_ptr<Model> loadedModel {};
 
-    std::shared_ptr<Shader> triangleShader {};
-    std::shared_ptr<Shader> voxelShader {};
+    std::shared_ptr<ShaderProgram> triangleShader {};
+    std::shared_ptr<ShaderProgram> voxelShader {};
 
     std::shared_ptr<ModelVoxelizer> modelVox {};
 

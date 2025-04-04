@@ -190,7 +190,7 @@ void Program::run()
         // Gaussian blur
         if (false)
         {
-            auto blurX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+            auto blurX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)->programId));
             blurX->setUniforms = [&renderer](GLuint program)
             {
                 float standardDeviation = 2;
@@ -211,7 +211,7 @@ void Program::run()
                 glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
             };
 
-            auto blurY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+            auto blurY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)->programId));
             blurY->setUniforms = [&renderer](GLuint program)
             {
                 float standardDeviation = 2;
@@ -236,7 +236,7 @@ void Program::run()
         // Denoise approach 1
         if (false)
         {
-            auto denoiseX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto denoiseX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             denoiseX->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
@@ -246,7 +246,7 @@ void Program::run()
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
 
-            auto denoiseY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto denoiseY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             denoiseY->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
@@ -260,7 +260,7 @@ void Program::run()
         // Denoise approach 2
         if (false)
         {
-            auto denoise = renderer.addPostProcessEffect(PostProcessEffect::getEffect("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto denoise = renderer.addPostProcessEffect(PostProcessEffect::getEffect("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             denoise->setUniforms = [&renderer](GLuint program)
             {
                 glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
@@ -273,7 +273,7 @@ void Program::run()
         // Show other
         if (false)
         {
-            auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             showOther->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1i(glGetUniformLocation(program, "whichTexture"), 3);
@@ -284,7 +284,7 @@ void Program::run()
         if (false)
         {
 
-            auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader)->programId, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             toneMap->setUniforms = [&renderer](GLuint program) {
 
             };
@@ -293,7 +293,7 @@ void Program::run()
         // Show angular size
         if (false)
         {
-            auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader)->programId, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             showAngularSize->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1f(glGetUniformLocation(program, "angularSize"), 0.5 * 3.1415926589 / 180);

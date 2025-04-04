@@ -2,7 +2,7 @@
 #include <src/voxelizer/Model.h>
 #include <stb_image.h>
 
-void Model::Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
+void Model::Draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
@@ -10,7 +10,7 @@ void Model::Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 
     }
 }
 
-void Model::loadModel(std::string path)
+void Model::loadModel(const std::string& path)
 {
     Assimp::Importer import;
     const aiScene* scene = import.ReadFile(path,

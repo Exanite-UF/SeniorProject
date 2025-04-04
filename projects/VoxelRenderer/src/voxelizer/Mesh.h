@@ -10,11 +10,10 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <src/graphics/ShaderProgram.h>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include <src/voxelizer/Shader.h>
 
 struct Vertex
 {
@@ -68,5 +67,5 @@ public:
     std::vector<TriangleTexture> textures;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TriangleTexture> textures);
-    void Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
+    void Draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
 };

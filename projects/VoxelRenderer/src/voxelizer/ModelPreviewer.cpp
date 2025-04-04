@@ -1,5 +1,6 @@
 #include <chrono>
 #include <src/Content.h>
+#include <src/graphics/ShaderManager.h>
 #include <src/voxelizer/ModelPreviewer.h>
 #include <thread>
 
@@ -12,8 +13,9 @@ ModelPreviewer::~ModelPreviewer()
 void ModelPreviewer::setModel(const std::shared_ptr<Model>& model)
 {
     loadedModel = model;
-    triangleShader = std::make_shared<Shader>(Content::Triangulation::vertShaderPathTriangle, Content::Triangulation::fragShaderPathTriangle);
-    voxelShader = std::make_shared<Shader>(Content::Triangulation::vertShaderPathVoxel, Content::Triangulation::fragShaderPathVoxel);
+
+    triangleShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathTriangle, Content::Triangulation::fragShaderPathTriangle);
+    voxelShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathVoxel, Content::Triangulation::fragShaderPathVoxel);
 }
 
 void ModelPreviewer::CreateWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox, std::string modelPath)
@@ -133,7 +135,7 @@ void ModelPreviewer::RenderWindowTriangle()
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 
-        loadedModel->Draw(*triangleShader, Position, Front, Up, windowSize.x, windowSize.y);
+        loadedModel->Draw(triangleShader, Position, Front, Up, windowSize.x, windowSize.y);
     }
 }
 
@@ -147,7 +149,7 @@ void ModelPreviewer::RenderWindowVoxel()
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear depth?
 
-        modelVox->DrawVoxels(*voxelShader, Position, Front, Up, windowSize.x, windowSize.y);
+        modelVox->DrawVoxels(voxelShader, Position, Front, Up, windowSize.x, windowSize.y);
     }
 }
 

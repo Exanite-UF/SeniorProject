@@ -37,9 +37,9 @@ void Mesh::setupMesh()
     glBindVertexArray(0);
 }
 
-void Mesh::Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
+void Mesh::Draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
 {
-    shader.use();
+    shader->use();
 
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
@@ -56,7 +56,7 @@ void Mesh::Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 U
         {
             number = std::to_string(specularNr++);
         }
-        shader.setInt(("material." + name + number).c_str(), i);
+        shader->setInt(("material." + name + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
 
@@ -67,23 +67,23 @@ void Mesh::Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 U
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.001f, 1000.0f);
     glm::mat4 model = glm::mat4(1.0f);
 
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader->programId, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(glGetUniformLocation(shader->programId, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader->programId, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
     //// Material Settings for Phong Shader
     glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.diffuseColor"), 1, glm::value_ptr(diffuseColor));
-    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
-    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
+    glUniform3fv(glGetUniformLocation(shader->programId, "defaultMaterial.diffuseColor"), 1, glm::value_ptr(diffuseColor));
+    glUniform3fv(glGetUniformLocation(shader->programId, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
+    glUniform3fv(glGetUniformLocation(shader->programId, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
     float materialSpecFactor = 0.0f;
     float materialEmisFactor = 0.0f;
     float materialShininess = 32.0f;
-    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.specularFactor"), materialSpecFactor);
-    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
-    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.shininess"), materialShininess);
+    glUniform1f(glGetUniformLocation(shader->programId, "defaultMaterial.specularFactor"), materialSpecFactor);
+    glUniform1f(glGetUniformLocation(shader->programId, "defaultMaterial.emissiveFactor"), materialEmisFactor);
+    glUniform1f(glGetUniformLocation(shader->programId, "defaultMaterial.shininess"), materialShininess);
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

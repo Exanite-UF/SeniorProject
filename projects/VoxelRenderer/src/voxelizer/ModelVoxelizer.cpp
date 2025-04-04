@@ -1,3 +1,4 @@
+#include <src/graphics/ShaderProgram.h>
 #include <src/voxelizer/ModelVoxelizer.h>
 
 ModelVoxelizer::~ModelVoxelizer() = default;
@@ -333,13 +334,13 @@ void ModelVoxelizer::generateVoxelMesh()
     std::cout << "VOXELIZED!" << std::endl;
 }
 
-void ModelVoxelizer::DrawVoxels(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
+void ModelVoxelizer::DrawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
 {
     if (!isVoxelized)
     {
         return;
     }
-    glUseProgram(shader.ID);
+    glUseProgram(shader->programId);
 
     // Update instance buffer with active voxel positions
     // glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -347,30 +348,30 @@ void ModelVoxelizer::DrawVoxels(Shader& shader, glm::vec3 Position, glm::vec3 Fr
     // glBufferData(GL_ARRAY_BUFFER, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data(), GL_STATIC_DRAW);
     // glBufferSubData(GL_ARRAY_BUFFER, 0, activeVoxels.size() * sizeof(glm::vec3), activeVoxels.data());
 
-    shader.use();
+    shader->use();
 
     // Camera Setup
     glm::mat4 view = glm::lookAt(Position, Position + Front, Up);
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.001f, 1000.0f);
     glm::mat4 model = glm::mat4(1.0f);
 
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader->programId, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(glGetUniformLocation(shader->programId, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader->programId, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
     //// Material Settings for Phong Shader
     glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 emissiveColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.diffuseColor"), 1, glm::value_ptr(diffuseColor));
-    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
-    glUniform3fv(glGetUniformLocation(shader.ID, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
+    glUniform3fv(glGetUniformLocation(shader->programId, "defaultMaterial.diffuseColor"), 1, glm::value_ptr(diffuseColor));
+    glUniform3fv(glGetUniformLocation(shader->programId, "defaultMaterial.specularColor"), 1, glm::value_ptr(specularColor));
+    glUniform3fv(glGetUniformLocation(shader->programId, "defaultMaterial.emissiveColor"), 1, glm::value_ptr(emissiveColor));
     float materialSpecFactor = 0.0f;
     float materialEmisFactor = 0.0f;
     float materialShininess = 32.0f;
-    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.specularFactor"), materialSpecFactor);
-    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.emissiveFactor"), materialEmisFactor);
-    glUniform1f(glGetUniformLocation(shader.ID, "defaultMaterial.shininess"), materialShininess);
+    glUniform1f(glGetUniformLocation(shader->programId, "defaultMaterial.specularFactor"), materialSpecFactor);
+    glUniform1f(glGetUniformLocation(shader->programId, "defaultMaterial.emissiveFactor"), materialEmisFactor);
+    glUniform1f(glGetUniformLocation(shader->programId, "defaultMaterial.shininess"), materialShininess);
 
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
