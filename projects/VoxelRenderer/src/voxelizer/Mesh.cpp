@@ -39,7 +39,6 @@ void Mesh::setupMesh()
 
 void Mesh::Draw(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight)
 {
-
     shader.use();
 
     unsigned int diffuseNr = 1;

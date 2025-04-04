@@ -1,41 +1,36 @@
 #include <chrono>
+#include <src/Content.h>
 #include <src/voxelizer/ModelPreviewer.h>
 #include <thread>
 
 ModelPreviewer::~ModelPreviewer()
 {
-    if (loadedModel)
-    {
-        delete loadedModel;
-        delete triangleShader;
-        delete voxelShader;
-    }
     CloseWindowTriangle();
     CloseWindowVoxel();
 }
 
-void ModelPreviewer::setModel(Model* model_)
+void ModelPreviewer::setModel(const std::shared_ptr<Model>& model)
 {
-    loadedModel = model_;
-    triangleShader = new Shader(vertShaderPathTriangle.c_str(), fragShaderPathTriangle.c_str());
-    voxelShader = new Shader(vertShaderPathVoxel.c_str(), fragShaderPathVoxel.c_str());
+    loadedModel = model;
+    triangleShader = std::make_shared<Shader>(Content::Triangulation::vertShaderPathTriangle, Content::Triangulation::fragShaderPathTriangle);
+    voxelShader = std::make_shared<Shader>(Content::Triangulation::vertShaderPathVoxel, Content::Triangulation::fragShaderPathVoxel);
 }
 
-void ModelPreviewer::CreateWindowTriangle(std::shared_ptr<Window> mainWindow, ModelVoxelizer* modelVox_, std::string modelPath)
+void ModelPreviewer::CreateWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox, std::string modelPath)
 {
     if (triangleThreadRunning)
     {
         return;
     }
 
-    modelVox = modelVox_;
+    this->modelVox = modelVox;
 
     // Create Triangle Window in the Main Thread
     triangleWindow = std::make_shared<Window>("Voxelizer triangle window", mainWindow.get());
     mainWindow->makeContextCurrent();
 
     triangleThreadRunning = true;
-    triangleThread = std::thread([this, modelPath]()
+    triangleThread = std::thread([this, modelPath, modelVox]()
         {
             triangleWindow->makeContextCurrent();
 
@@ -75,21 +70,21 @@ void ModelPreviewer::CreateWindowTriangle(std::shared_ptr<Window> mainWindow, Mo
         });
 }
 
-void ModelPreviewer::CreateWindowVoxel(std::shared_ptr<Window> mainWindow, ModelVoxelizer* modelVox_)
+void ModelPreviewer::CreateWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox)
 {
     if (voxelThreadRunning)
     {
         return;
     }
 
-    modelVox = modelVox_;
+    this->modelVox = modelVox;
 
     // Create Voxel Window in the Main Thread
     voxelWindow = std::make_shared<Window>("Voxelizer voxel window", mainWindow.get());
     mainWindow->makeContextCurrent();
 
     voxelThreadRunning = true;
-    voxelThread = std::thread([this]()
+    voxelThread = std::thread([this, modelVox]()
         {
             voxelWindow->makeContextCurrent();
 

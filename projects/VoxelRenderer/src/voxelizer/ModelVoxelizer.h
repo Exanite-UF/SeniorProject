@@ -18,14 +18,14 @@ struct HashFunction
 
 class ModelVoxelizer
 {
-
 private:
-    Model* loadedModel = nullptr; // might want to replace with shared ptr
-    int gridResolution;
-    glm::ivec3 gridSize;
-    glm::vec3 voxelSize;
-    std::vector<bool> voxelGrid;
-    glm::vec3 minBounds, maxBounds;
+    std::shared_ptr<Model> loadedModel {};
+    int gridResolution {};
+    glm::ivec3 gridSize {};
+    glm::vec3 voxelSize {};
+    std::vector<bool> voxelGrid {};
+    glm::vec3 minBounds {};
+    glm::vec3 maxBounds {};
 
     std::vector<Vertex> voxelMesh;
 
@@ -90,7 +90,7 @@ private:
 public:
     ~ModelVoxelizer();
     void loadModel(char* path);
-    Model* getModel();
+    std::shared_ptr<Model> getModel();
     void voxelizeModel(int option = 0);
     void DrawVoxels(Shader& shader, glm::vec3 Position, glm::vec3 Front, glm::vec3 Up, int windowWidth, int windowHeight);
     bool isVoxelized = false;

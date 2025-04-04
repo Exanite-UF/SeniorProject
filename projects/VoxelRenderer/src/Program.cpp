@@ -330,8 +330,8 @@ void Program::run()
     prototypeWorldGenerator.setChunkSize(chunkSize);
 
     // Model Previewer
-    ModelPreviewer modelPreviewer {};
-    ModelVoxelizer modelVoxelizer {};
+    std::shared_ptr<ModelPreviewer> modelPreviewer = std::make_shared<ModelPreviewer>();
+    std::shared_ptr<ModelVoxelizer> modelVoxelizer = std::make_shared<ModelVoxelizer>();
     bool isModelLoaded = false;
     bool isModelVoxelized = false;
 
@@ -636,12 +636,12 @@ void Program::run()
                             if (showOriginalModelMenu)
                             {
                                 // make this set and load model so that the VAO/VBO work on same thread
-                                modelPreviewer.CreateWindowTriangle(window, &modelVoxelizer, modelFileName);
+                                modelPreviewer->CreateWindowTriangle(window, modelVoxelizer, modelFileName);
                                 isModelLoaded = true;
                             }
                             else
                             {
-                                modelPreviewer.CloseWindowTriangle();
+                                modelPreviewer->CloseWindowTriangle();
                                 isModelLoaded = false;
                             }
                         }
@@ -663,12 +663,12 @@ void Program::run()
 
                                 if (showVoxelizedModelMenu)
                                 {
-                                    modelPreviewer.CreateWindowVoxel(window, &modelVoxelizer);
+                                    modelPreviewer->CreateWindowVoxel(window, modelVoxelizer);
                                     isModelVoxelized = true;
                                 }
                                 else
                                 {
-                                    modelPreviewer.CloseWindowVoxel();
+                                    modelPreviewer->CloseWindowVoxel();
                                     isModelVoxelized = false;
                                 }
                             }

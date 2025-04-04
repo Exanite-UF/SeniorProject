@@ -1,21 +1,15 @@
 #include <src/voxelizer/ModelVoxelizer.h>
 
-ModelVoxelizer::~ModelVoxelizer()
-{
-    if (loadedModel)
-    {
-        delete loadedModel;
-    }
-}
+ModelVoxelizer::~ModelVoxelizer() = default;
 
-Model* ModelVoxelizer::getModel()
+std::shared_ptr<Model> ModelVoxelizer::getModel()
 {
     return loadedModel;
 }
 
 void ModelVoxelizer::loadModel(char* path)
 {
-    loadedModel = new Model(path);
+    loadedModel = std::make_shared<Model>(path);
 }
 
 void ModelVoxelizer::setupBoundingBox()

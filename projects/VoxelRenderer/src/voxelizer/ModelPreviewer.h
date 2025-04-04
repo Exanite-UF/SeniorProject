@@ -33,25 +33,21 @@ private:
     glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    Model* loadedModel = nullptr; // might want to replace with shared ptr
-    std::string vertShaderPathTriangle = "content/Triangulation/Phong.vertex.glsl";
-    std::string fragShaderPathTriangle = "content/Triangulation/Phong.fragment.glsl";
-    std::string vertShaderPathVoxel = "content/Triangulation/Voxel.vertex.glsl";
-    std::string fragShaderPathVoxel = "content/Triangulation/Voxel.fragment.glsl";
+    std::shared_ptr<Model> loadedModel {};
 
-    Shader* triangleShader = nullptr;
-    Shader* voxelShader = nullptr;
+    std::shared_ptr<Shader> triangleShader {};
+    std::shared_ptr<Shader> voxelShader {};
 
-    ModelVoxelizer* modelVox = nullptr;
+    std::shared_ptr<ModelVoxelizer> modelVox {};
 
 public:
     ~ModelPreviewer();
 
     // Set instead of load since the voxelizer should be the one to load
-    void setModel(Model* model_);
+    void setModel(const std::shared_ptr<Model>& model);
 
-    void CreateWindowTriangle(std::shared_ptr<Window> mainWindow, ModelVoxelizer* modelVox, std::string modelPath);
-    void CreateWindowVoxel(std::shared_ptr<Window> mainWindow, ModelVoxelizer* modelVox);
+    void CreateWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox, std::string modelPath);
+    void CreateWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVox);
 
     void RenderWindowTriangle();
     void RenderWindowVoxel();
