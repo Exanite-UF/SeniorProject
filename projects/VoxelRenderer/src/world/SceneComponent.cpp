@@ -89,7 +89,7 @@ void SceneComponent::removeWorldChunk(const glm::ivec3& chunkPosition)
     }
 }
 
-void SceneComponent::setSkybox(std::shared_ptr<SkyboxComponent>& skybox)
+void SceneComponent::setSkybox(const std::shared_ptr<SkyboxComponent>& skybox)
 {
     this->skybox = skybox;
 }
