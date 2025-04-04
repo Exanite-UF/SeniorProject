@@ -2,9 +2,11 @@
 
 #include <src/windowing/Window.h>
 
-Window::Window(const std::string& contextName, GlfwContext* shareWith, bool initializeImGui)
+Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enableImGui)
     : GlfwContext(contextName, true, shareWith)
 {
+    this->enableImGui = enableImGui;
+
     // Register GLFW callbacks
     registerGlfwCallbacks();
 
@@ -22,7 +24,7 @@ Window::Window(const std::string& contextName, GlfwContext* shareWith, bool init
     // Enable vsync
     glfwSwapInterval(1);
 
-    if (initializeImGui)
+    if (enableImGui)
     {
         // Init IMGUI
         IMGUI_CHECKVERSION();
@@ -37,19 +39,25 @@ Window::Window(const std::string& contextName, GlfwContext* shareWith, bool init
 
 Window::~Window()
 {
-    // Shutdown IMGUI
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    if (enableImGui)
+    {
+        // Shutdown IMGUI
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
 }
 
 void Window::update()
 {
-    // Update IMGUI
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    if (enableImGui)
+    {
+        // Update IMGUI
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
 
     glfwPollEvents();
     glfwGetWindowSize(glfwWindowHandle, &size.x, &size.y);
@@ -64,8 +72,11 @@ void Window::update()
 
 void Window::present()
 {
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (enableImGui)
+    {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 
     glfwSwapBuffers(glfwWindowHandle);
 }
