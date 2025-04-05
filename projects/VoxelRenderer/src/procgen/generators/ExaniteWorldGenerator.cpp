@@ -61,29 +61,12 @@ void ExaniteWorldGenerator::generateData(VoxelChunkData& data)
 
 void ExaniteWorldGenerator::showDebugMenu()
 {
-    // To Fix the Long title issue for headers
-    std::string headerText = "Exanite's Generator";
-
-    float availableWidth = ImGui::GetContentRegionAvail().x;
-    float textWidth = ImGui::CalcTextSize(headerText.c_str()).x;
-
-    if (textWidth > availableWidth)
-    {
-        while (ImGui::CalcTextSize((headerText + "...").c_str()).x > availableWidth && headerText.length() > 3)
-        {
-            headerText.pop_back();
-        }
-        headerText += "...";
-    }
-
     ImGui::PushID("ExaniteWorldGenerator");
     {
-        ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
-        if (ImGui::CollapsingHeader(headerText.c_str()))
+        if (ImGui::CollapsingHeader("Exanite's Generator"))
         {
             ImGui::Text("This generator is used to test material palette solving");
         }
-        ImGui::PopTextWrapPos();
     }
     ImGui::PopID();
 }
