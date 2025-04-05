@@ -87,7 +87,7 @@ Program::Program()
     }
 
     previousContext = offscreenContext = std::make_shared<GlfwContext>("Offscreen context", previousContext.get());
-    previousContext = window = std::make_shared<Window>("Main window", previousContext.get(), true, true);
+    previousContext = window = std::make_shared<Window>("Main window", previousContext.get());
 
     window->makeContextCurrent();
 
