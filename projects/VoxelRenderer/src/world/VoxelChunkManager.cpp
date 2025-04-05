@@ -851,19 +851,20 @@ void VoxelChunkManager::showDebugMenu()
             }
         }
     }
+}
 
-    std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
-    {
-        std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
+{
+    std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
-        auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
-        task->dependencies.addPending(component->getModificationData().pendingTasks.getPending());
+    auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
+    task->dependencies.addPending(component->getModificationData().pendingTasks.getPending());
 
-        auto sharedFuture = task->promise.get_future().share();
-        component->getModificationData().pendingTasks.addPending(sharedFuture);
+    auto sharedFuture = task->promise.get_future().share();
+    component->getModificationData().pendingTasks.addPending(sharedFuture);
 
-        modificationThreadState.pendingTasks.emplace(task);
-        modificationThreadState.pendingTasksCondition.notify_one();
+    modificationThreadState.pendingTasks.emplace(task);
+    modificationThreadState.pendingTasksCondition.notify_one();
 
-        return sharedFuture;
-    }
+    return sharedFuture;
+}
