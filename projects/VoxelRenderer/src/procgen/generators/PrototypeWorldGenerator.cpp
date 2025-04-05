@@ -15,25 +15,28 @@
 #include <src/utilities/VectorUtility.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
+#include <tracy/Tracy.hpp>
+#include <format>
+#include <src/utilities/Log.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
     auto& materialManager = MaterialManager::getInstance();
 
     std::shared_ptr<Material> stoneMaterial;
-    WorldUtility::tryGetMaterial("stone", materialManager, stoneMaterial);
-
     std::shared_ptr<Material> dirtMaterial;
-    WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
-
     std::shared_ptr<Material> grassMaterial;
-    WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
-
     std::shared_ptr<Material> oakLogMaterial;
-    WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
-
     std::shared_ptr<Material> oakLeafMaterial;
-    WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
+
+    {
+        ZoneScopedN("Get Materials");
+        WorldUtility::tryGetMaterial("stone", materialManager, stoneMaterial);
+        WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
+        WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
+        WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
+        WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);    
+    }
 
     // Fill texture data with random noise, each block evaluated once
     FastNoiseLite simplexNoise;
@@ -47,75 +50,85 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     PoissonDiskPointSynthesizer pointSynthesizer(seed);
     std::vector<glm::vec3> treeLocations;
 
-    int numPoints = 20;
-    pointSynthesizer.generatePoints(treeLocations, numPoints);
-    pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
+    {
+        ZoneScopedN("Generate points");
 
-    // Lexicographic sort
-    VectorUtility::lexicographicSort(treeLocations);
+        int numPoints = 20;
+        pointSynthesizer.generatePoints(treeLocations, numPoints);
+        pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
+    
+        // Lexicographic sort
+        VectorUtility::lexicographicSort(treeLocations);
+    }
 
     int treeIndex = 0;
     glm::vec3 treeLocation(treeLocations.at(treeIndex));
     float probabilityToFill = 0.6;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
-    glm::vec2 offset = chunkSize * chunkPosition;
-    for (int x = 0; x < data.getSize().x; ++x)
+    
     {
-        for (int y = 0; y < data.getSize().y; ++y)
+        ZoneScopedN("Generate terrain");
+
+        glm::vec2 offset = chunkSize * chunkPosition;
+        for (int x = 0; x < data.getSize().x; ++x)
         {
-            // Stone Terrain, retain same shape as using voxels of blockLength 1
-            float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
-            int offsetVoxels = (int)(baseHeightBlocks + (perlinNoiseSample * terrainMaxAmplitudeBlocks));
-            int heightVoxels = glm::min(data.getSize().z, offsetVoxels);
-
-            for (int z = 0; z < heightVoxels; ++z)
+            for (int y = 0; y < data.getSize().y; ++y)
             {
-                data.setVoxelOccupancy({ x, y, z }, true);
-                data.setVoxelMaterial({ x, y, z }, stoneMaterial);
-            }
+                // Stone Terrain, retain same shape as using voxels of blockLength 1
+                float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
+                int offsetVoxels = (int)(baseHeightBlocks + (perlinNoiseSample * terrainMaxAmplitudeBlocks));
+                int heightVoxels = glm::min(data.getSize().z, offsetVoxels);
 
-            // Replace surface with grass
-            int lastHeightBlocks = heightVoxels - 1;
-            for (int z = lastHeightBlocks; z >= lastHeightBlocks - grassDepth && z >= 0; --z)
-            {
-                data.setVoxelOccupancy({ x, y, z }, true);
-                data.setVoxelMaterial({ x, y, z }, grassMaterial);
-            }
-            lastHeightBlocks -= grassDepth;
-
-            // Replace surface with dirt
-            for (int z = lastHeightBlocks; z >= lastHeightBlocks - dirtDepth && z >= 0; --z)
-            {
-                data.setVoxelOccupancy({ x, y, z }, true);
-                data.setVoxelMaterial({ x, y, z }, dirtMaterial);
-            }
-            lastHeightBlocks -= dirtDepth;
-
-            if (treeLocation.x == x && treeLocation.y == y)
-            {
-                glm::vec3 originVoxel({ x, y, heightVoxels });
-
-                // Naive seeding. Is there a better way?
-                std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
-
-                int treeHeightVoxels = randomBetween(treeHeightRangeMeters.x * voxelsPerMeter, treeHeightRangeMeters.y * voxelsPerMeter);
-                int treeWidthVoxels = randomBetween(treeWidthRangeMeters.x * voxelsPerMeter, treeWidthRangeMeters.y * voxelsPerMeter);
-                int leafWidthX = randomBetween(leafWidthXRangeMeters.x * voxelsPerMeter, leafWidthXRangeMeters.y * voxelsPerMeter);
-                int leafWidthY = randomBetween(leafWidthYRangeMeters.x * voxelsPerMeter, leafWidthYRangeMeters.y * voxelsPerMeter);
-                int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
-                int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
-
-                generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill);
-
-                treeIndex++;
-                if (treeIndex < treeLocations.size())
+                for (int z = 0; z < heightVoxels; ++z)
                 {
-                    treeLocation = treeLocations.at(treeIndex);
+                    data.setVoxelOccupancy({ x, y, z }, true);
+                    data.setVoxelMaterial({ x, y, z }, stoneMaterial);
                 }
-                else
+
+                // Replace surface with grass
+                int lastHeightBlocks = heightVoxels - 1;
+                for (int z = lastHeightBlocks; z >= lastHeightBlocks - grassDepth && z >= 0; --z)
                 {
-                    treeLocation = { -1, -1, -1 };
+                    data.setVoxelOccupancy({ x, y, z }, true);
+                    data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                }
+                lastHeightBlocks -= grassDepth;
+
+                // Replace surface with dirt
+                for (int z = lastHeightBlocks; z >= lastHeightBlocks - dirtDepth && z >= 0; --z)
+                {
+                    data.setVoxelOccupancy({ x, y, z }, true);
+                    data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                }
+                lastHeightBlocks -= dirtDepth;
+
+                if (treeLocation.x == x && treeLocation.y == y)
+                {
+                    glm::vec3 originVoxel({ x, y, heightVoxels });
+                    Log::verbose(std::format("Tree Origin Voxel:({:.2f}, {:.2f})", originVoxel.x, originVoxel.y));
+
+                    // Naive seeding. Is there a better way?
+                    std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
+
+                    int treeHeightVoxels = randomBetween(treeHeightRangeMeters.x * voxelsPerMeter, treeHeightRangeMeters.y * voxelsPerMeter);
+                    int treeWidthVoxels = randomBetween(treeWidthRangeMeters.x * voxelsPerMeter, treeWidthRangeMeters.y * voxelsPerMeter);
+                    int leafWidthX = randomBetween(leafWidthXRangeMeters.x * voxelsPerMeter, leafWidthXRangeMeters.y * voxelsPerMeter);
+                    int leafWidthY = randomBetween(leafWidthYRangeMeters.x * voxelsPerMeter, leafWidthYRangeMeters.y * voxelsPerMeter);
+                    int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
+                    int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
+
+                    generateTree(data, oakLogMaterial, oakLeafMaterial, originVoxel, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, probabilityToFill);
+
+                    treeIndex++;
+                    if (treeIndex < treeLocations.size())
+                    {
+                        treeLocation = treeLocations.at(treeIndex);
+                    }
+                    else
+                    {
+                        treeLocation = { -1, -1, -1 };
+                    }
                 }
             }
         }
@@ -129,6 +142,8 @@ int PrototypeWorldGenerator::randomBetween(int min, int max)
 
 void PrototypeWorldGenerator::generateTree(VoxelChunkData& data, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial, glm::vec3 originVoxel, int treeHeightVoxels, int treeWidthVoxels, int leafWidthX, int leafWidthY, int leafExtentBelowZ, int leafExtentAboveZ, float leafProbabilityToFill)
 {
+    ZoneScoped;
+
     // Tree Trunk
     generateRectangle(data, logMaterial, originVoxel, treeWidthVoxels, treeWidthVoxels, treeHeightVoxels);
 
@@ -149,7 +164,7 @@ void PrototypeWorldGenerator::generateRectangle(VoxelChunkData& data, std::share
         {
             for (int localZ = 0; localZ <= height; ++localZ)
             {
-                glm::vec3 localVoxel = { originVoxel.y + localX - widthXOffset, originVoxel.y + localY - widthYOffset, originVoxel.z + localZ };
+                glm::vec3 localVoxel = { originVoxel.x + localX - widthXOffset, originVoxel.y + localY - widthYOffset, originVoxel.z + localZ };
 
                 // Fall through
                 if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
@@ -185,7 +200,7 @@ void PrototypeWorldGenerator::generateAbsPyramid(VoxelChunkData& data, std::shar
         {
             for (int localZ = -extentBelowZ; localZ <= extentAboveZ; ++localZ)
             {
-                glm::vec3 localVoxel = { originVoxel.y + localX, originVoxel.y + localY, originVoxel.z + localZ };
+                glm::vec3 localVoxel = { originVoxel.x + localX, originVoxel.y + localY, originVoxel.z + localZ };
 
                 // Fall through
                 if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
