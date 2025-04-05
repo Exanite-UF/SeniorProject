@@ -50,17 +50,19 @@
 #include <src/utilities/Assert.h>
 #include <src/utilities/BufferedEvent.h>
 #include <src/utilities/Event.h>
+#include <src/utilities/ImGuiUtility.h>
 #include <src/utilities/Log.h>
 #include <src/utilities/TupleHasher.h>
+#include <src/voxelizer/ModelPreviewer.h>
+#include <src/voxelizer/ModelVoxelizer.h>
 #include <src/windowing/Window.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/SceneComponent.h>
+#include <src/world/SkyboxComponent.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
-
-#include <src/world/SkyboxComponent.h>
 
 Program::Program()
 {
@@ -80,12 +82,12 @@ Program::Program()
 
     for (int i = 0; i < Constants::VoxelChunkManager::maxChunkModificationThreads; ++i)
     {
-        previousContext = std::make_shared<GlfwContext>(previousContext.get());
+        previousContext = std::make_shared<GlfwContext>("Chunk modification", previousContext.get());
         chunkModificationThreadContexts.push_back(previousContext);
     }
 
-    previousContext = offscreenContext = std::make_shared<GlfwContext>(previousContext.get());
-    previousContext = window = std::make_shared<Window>(previousContext.get());
+    previousContext = offscreenContext = std::make_shared<GlfwContext>("Offscreen context", previousContext.get());
+    previousContext = window = std::make_shared<Window>("Main window", previousContext.get());
 
     window->makeContextCurrent();
 
@@ -142,7 +144,7 @@ void Program::run()
     scene->setSkybox(skybox);
 
     // Generate static, noise-based chunks for testing purposes
-    if (true)
+    if (false)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         voxelChunkManager.settings.enableCulling = false;
@@ -186,7 +188,7 @@ void Program::run()
         // Gaussian blur
         if (false)
         {
-            auto blurX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+            auto blurX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurX", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)->programId));
             blurX->setUniforms = [&renderer](GLuint program)
             {
                 float standardDeviation = 2;
@@ -207,7 +209,7 @@ void Program::run()
                 glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
             };
 
-            auto blurY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)));
+            auto blurY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("GaussianBlurY", ShaderManager::getInstance().getPostProcessProgram(Content::applyKernelLineFragmentShader)->programId));
             blurY->setUniforms = [&renderer](GLuint program)
             {
                 float standardDeviation = 2;
@@ -232,7 +234,7 @@ void Program::run()
         // Denoise approach 1
         if (false)
         {
-            auto denoiseX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto denoiseX = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseX", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             denoiseX->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1i(glGetUniformLocation(program, "isXAxis"), true);
@@ -242,7 +244,7 @@ void Program::run()
                 glUniform2iv(glGetUniformLocation(program, "resolution"), 1, glm::value_ptr(renderer.getUpscaleResolution()));
             };
 
-            auto denoiseY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto denoiseY = renderer.addPostProcessEffect(PostProcessEffect::getEffect("DenoiseY", ShaderManager::getInstance().getPostProcessProgram(Content::denoiseShader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             denoiseY->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1i(glGetUniformLocation(program, "isXAxis"), false);
@@ -256,7 +258,7 @@ void Program::run()
         // Denoise approach 2
         if (false)
         {
-            auto denoise = renderer.addPostProcessEffect(PostProcessEffect::getEffect("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto denoise = renderer.addPostProcessEffect(PostProcessEffect::getEffect("Denoise", ShaderManager::getInstance().getPostProcessProgram(Content::denoise2Shader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             denoise->setUniforms = [&renderer](GLuint program)
             {
                 glUniform3fv(glGetUniformLocation(program, "cameraPosition"), 1, glm::value_ptr(renderer.getCurrentCameraPosition()));
@@ -269,7 +271,7 @@ void Program::run()
         // Show other
         if (false)
         {
-            auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader), GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
+            auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
             showOther->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1i(glGetUniformLocation(program, "whichTexture"), 3);
@@ -280,7 +282,7 @@ void Program::run()
         if (false)
         {
 
-            auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            auto toneMap = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ToneMap", ShaderManager::getInstance().getPostProcessProgram(Content::toneMapShader)->programId, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             toneMap->setUniforms = [&renderer](GLuint program) {
 
             };
@@ -289,7 +291,7 @@ void Program::run()
         // Show angular size
         if (false)
         {
-            auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader), GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
+            auto showAngularSize = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowAngularSize", ShaderManager::getInstance().getPostProcessProgram(Content::showAngularSizeShader)->programId, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0, GL_TEXTURE0));
             showAngularSize->setUniforms = [&renderer](GLuint program)
             {
                 glUniform1f(glGetUniformLocation(program, "angularSize"), 0.5 * 3.1415926589 / 180);
@@ -325,8 +327,11 @@ void Program::run()
     PrototypeWorldGenerator prototypeWorldGenerator(octaveSynthesizer);
     prototypeWorldGenerator.setChunkSize(chunkSize);
 
-    // IMGUI Menu
-    bool showMenuGUI = false;
+    // Model Previewer
+    std::shared_ptr<ModelPreviewer> modelPreviewer = std::make_shared<ModelPreviewer>();
+    std::shared_ptr<ModelVoxelizer> modelVoxelizer = std::make_shared<ModelVoxelizer>();
+    bool isModelLoaded = false;
+    bool isModelVoxelized = false;
 
     renderer.setScene(scene);
     renderer.startAsynchronousReprojection();
@@ -544,12 +549,6 @@ void Program::run()
                 camera->moveSpeed *= pow(1.1, input->getMouseScroll().y);
             }
 
-            // F3 Debug Menu
-            if (input->isKeyPressed(GLFW_KEY_F3))
-            {
-                showMenuGUI = !showMenuGUI;
-            }
-
             //  Debug UI
             const int numMenus = 5;
             ImVec2 windowSize = ImVec2(window->size.x, window->size.y);
@@ -564,16 +563,23 @@ void Program::run()
                 ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
                 ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
 
-                if (i == 0 && showMenuGUI)
+                static bool showOriginalModelMenu = false;
+                static bool showVoxelizedModelMenu = false;
+
+                float indentSize = ImGui::GetWindowContentRegionMax().x / 16.0f;
+
+                static bool collapsedStates[6] = { true, true, true, true, true, true };
+
+                // Stats
+                if (i == 0 && input->isKeyPressed(GLFW_KEY_F3))
                 {
-                    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
-                }
-                else if (i == 0)
-                {
-                    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Always);
+                    collapsedStates[i] = !collapsedStates[i];
                 }
 
+                ImGui::SetNextWindowCollapsed(collapsedStates[i], ImGuiCond_Always);
+
                 ImGui::Begin(menuTitles[i], nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
                 ImGui::PushTextWrapPos(ImGui::GetWindowContentRegionMax().x);
                 switch (i)
                 {
@@ -603,7 +609,76 @@ void Program::run()
                     }
                     case 1:
                     {
-                        ImGui::Text("TO BE ADDED");
+                        // Should be relative path
+                        // std::string modelFileName = "../../content/Triangulation/suzanne.obj";
+                        std::string modelFileName = "content/Triangulation/suzanne.obj";
+
+                        ImGui::Text("Please choose a file.");
+                        ImGui::Indent(indentSize);
+                        ImGui::PushID("ModelKey");
+                        ImGui::InputText("", &modelFileName);
+                        ImGui::PopID();
+                        ImGui::Unindent(indentSize);
+
+                        // Triangle Mesh Preview
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.750f, 0.625f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.129f, 0.460f, 0.405f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
+                        if (ImGui::Button("Import & Preview Model"))
+                        {
+                            // static std::string lastFile = modelFileName;
+                            showOriginalModelMenu = !showOriginalModelMenu;
+                            if (showOriginalModelMenu)
+                            {
+                                // make this set and load model so that the VAO/VBO work on same thread
+                                modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFileName);
+                                isModelLoaded = true;
+                            }
+                            else
+                            {
+                                modelPreviewer->closeWindowTriangle();
+                                isModelLoaded = false;
+                            }
+                        }
+                        ImGui::PopStyleColor(3);
+
+                        // Voxel Mesh Preview
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.770f, 0.372f, 0.0f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.510f, 0.320f, 0.143f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
+
+                        if (isModelLoaded)
+                        {
+                            if (ImGui::Button("Voxelize & Preview Model"))
+                            {
+                                showVoxelizedModelMenu = !showVoxelizedModelMenu;
+
+                                if (showVoxelizedModelMenu)
+                                {
+                                    modelPreviewer->createVoxelWindow(window, modelVoxelizer);
+                                    isModelVoxelized = true;
+                                }
+                                else
+                                {
+                                    modelPreviewer->closeWindowVoxel();
+                                    isModelVoxelized = false;
+                                }
+                            }
+                        }
+                        ImGui::PopStyleColor(3);
+
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.253f, 0.540f, 0.248f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.313f, 0.450f, 0.310f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
+
+                        if (isModelVoxelized)
+                        {
+                            if (ImGui::Button("Add to world"))
+                            {
+                            }
+                        }
+
+                        ImGui::PopStyleColor(3);
 
                         break;
                     }
@@ -645,6 +720,7 @@ void Program::run()
                         break;
                     }
                 }
+                collapsedStates[i] = ImGui::IsWindowCollapsed();
                 ImGui::PopTextWrapPos();
                 ImGui::End();
                 ImGui::PopStyleColor();

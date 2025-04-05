@@ -104,6 +104,21 @@ void VoxelChunkData::setVoxelMaterialIndex(const glm::ivec3& position, const uin
     data.materialMap[voxelIndex] = materialIndex;
 }
 
+bool VoxelChunkData::isValidPosition(const glm::ivec3& position) const
+{
+    if (position.x <= 0 || position.y <= 0 || position.z <= 0)
+    {
+        return false;
+    }
+
+    if (position.x > data.size.x || position.y > data.size.y || position.z > data.size.z)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void VoxelChunkData::clearOccupancyMap()
 {
     std::fill(data.occupancyMap.begin(), data.occupancyMap.end(), 0);
@@ -132,7 +147,7 @@ void VoxelChunkData::copyFrom(VoxelChunk& chunk)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void VoxelChunkData::writeTo(VoxelChunk& chunk)
+void VoxelChunkData::copyTo(VoxelChunk& chunk)
 {
     ZoneScoped;
 
@@ -204,7 +219,7 @@ void VoxelChunkData::copyFrom(VoxelChunkData& data)
     this->data = data.data;
 }
 
-void VoxelChunkData::writeTo(VoxelChunkData& data)
+void VoxelChunkData::copyTo(VoxelChunkData& data)
 {
     ZoneScoped;
 

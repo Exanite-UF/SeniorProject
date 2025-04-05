@@ -90,18 +90,18 @@ void VoxelRenderer::handleDirtySizing()
 
 VoxelRenderer::VoxelRenderer()
 {
-    prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
-    resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
-    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
-    fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
-    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader);
+    prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader)->programId;
+    resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader)->programId;
+    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader)->programId;
+    fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader)->programId;
+    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader)->programId;
 
-    resetPrimaryRayInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetPrimaryRayInfoComputeShader);
-    beforeCastProgram = ShaderManager::getInstance().getComputeProgram(Content::beforeCastComputeShader);
-    primaryRayProgram = ShaderManager::getInstance().getComputeProgram(Content::castPrimaryRayComputeShader);
-    groupPixelsProgram = ShaderManager::getInstance().getComputeProgram(Content::groupPixelsComputeShader);
+    resetPrimaryRayInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetPrimaryRayInfoComputeShader)->programId;
+    beforeCastProgram = ShaderManager::getInstance().getComputeProgram(Content::beforeCastComputeShader)->programId;
+    primaryRayProgram = ShaderManager::getInstance().getComputeProgram(Content::castPrimaryRayComputeShader)->programId;
+    groupPixelsProgram = ShaderManager::getInstance().getComputeProgram(Content::groupPixelsComputeShader)->programId;
 
-    pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader);
+    pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader)->programId;
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
