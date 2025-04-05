@@ -1,24 +1,24 @@
-#include <src/procgen/synthesizers/GridPointSynthesizer.h>
 #include <cmath>
-#include <src/procgen/data/FlatArrayData.h>
-#include <typeinfo>
-#include <imgui/imgui.h>
-#include <src/utilities/Log.h>
 #include <format>
+#include <imgui/imgui.h>
+#include <src/procgen/data/FlatArrayData.h>
+#include <src/procgen/synthesizers/GridPointSynthesizer.h>
+#include <src/utilities/Log.h>
+#include <typeinfo>
 
-void GridPointSynthesizer::generatePoints(std::vector<glm::vec3>& inPoints, uint32_t numPoints) 
+void GridPointSynthesizer::generatePoints(std::vector<glm::vec3>& inPoints, uint32_t numPoints)
 {
-	int squareGridLength = (int) std::ceil(std::sqrt(numPoints)); 
+    int squareGridLength = (int)std::ceil(std::sqrt(numPoints));
 
-	for(int x = 0; x < squareGridLength; x++)
-	{
-		for(int y = 0; y < squareGridLength; y++)
-		{
-            glm::vec3 point = {(float)x / squareGridLength, (float)y / squareGridLength, 0};
-			inPoints.push_back(point);
+    for (int x = 0; x < squareGridLength; x++)
+    {
+        for (int y = 0; y < squareGridLength; y++)
+        {
+            glm::vec3 point = { (float)x / squareGridLength, (float)y / squareGridLength, 0 };
+            inPoints.push_back(point);
             Log::verbose(std::format("Grid Point [0-1]: ({:.2f}, {:.2f})", point.x, point.y));
-		}
-	}
+        }
+    }
 }
 
 void GridPointSynthesizer::rescalePointsToChunkSize(std::vector<glm::vec3>& inPoints, VoxelChunkData& chunkData)

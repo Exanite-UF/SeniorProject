@@ -4,12 +4,13 @@
 
 #include <FastNoiseLite/FastNoiseLite.h>
 #include <cstdlib>
+#include <format>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/WorldUtility.h>
 #include <src/procgen/data/FlatArrayData.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
-#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/GridPointSynthesizer.h>
+#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
@@ -17,8 +18,6 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
 #include <tracy/Tracy.hpp>
-#include <format>
-#include <src/utilities/Log.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
@@ -36,7 +35,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
         WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
         WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
-        WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);    
+        WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
     }
 
     // Fill texture data with random noise, each block evaluated once
@@ -58,7 +57,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         int numPoints = 20;
         pointSynthesizer.generatePoints(treeLocations, numPoints);
         pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
-    
+
         // Lexicographic sort
         VectorUtility::lexicographicSort(treeLocations);
     }
@@ -68,7 +67,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     float probabilityToFill = 0.6;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
-    
+
     {
         ZoneScopedN("Generate terrain");
 
