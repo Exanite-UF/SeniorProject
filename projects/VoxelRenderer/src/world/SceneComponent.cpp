@@ -1,7 +1,6 @@
+#include "SceneComponent.h"
+#include <glm/gtx/quaternion.hpp>
 #include <src/world/SceneComponent.h>
-
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/quaternion.hpp"
 
 std::shared_mutex& SceneComponent::getMutex()
 {
@@ -18,68 +17,84 @@ const std::shared_ptr<CameraComponent>& SceneComponent::getCamera()
     return camera;
 }
 
-const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getChunks()
+const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getAllChunks()
 {
-    return chunks;
+    return allChunks;
 }
 
-bool SceneComponent::tryGetChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& result)
+const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getObjectChunks()
 {
-    auto iterator = chunksByChunkPosition.find(chunkPosition);
-    if (iterator == chunksByChunkPosition.end())
+    return objectChunks;
+}
+
+const std::vector<std::shared_ptr<VoxelChunkComponent>>& SceneComponent::getWorldChunks()
+{
+    return worldChunks;
+}
+
+bool SceneComponent::tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& outResult)
+{
+    auto iterator = worldChunksByChunkPosition.find(chunkPosition);
+    if (iterator == worldChunksByChunkPosition.end())
     {
         return false;
     }
 
-    result = iterator->second;
+    outResult = iterator->second;
 
     return true;
 }
 
-bool SceneComponent::tryGetClosestChunk(std::shared_ptr<VoxelChunkComponent>& result)
+bool SceneComponent::tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent>& outResult)
 {
     auto cameraPosition = camera->getTransform()->getGlobalPosition();
 
-    result = {};
+    outResult = {};
     float closestSquareDistance = std::numeric_limits<float>::infinity();
-    for (auto& chunk : chunks)
+    for (auto& chunk : worldChunks)
     {
         auto offset = chunk->getTransform()->getGlobalPosition() - cameraPosition;
         auto distance = glm::length2(offset);
 
         if (distance < closestSquareDistance)
         {
-            result = chunk;
+            outResult = chunk;
             closestSquareDistance = distance;
         }
     }
 
-    return !!result;
+    return !!outResult;
 }
 
-void SceneComponent::addChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk)
+void SceneComponent::addWorldChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk)
 {
-    if (chunksByChunkPosition.emplace(chunkPosition, chunk).second)
+    if (worldChunksByChunkPosition.emplace(chunkPosition, chunk).second)
     {
-        // If emplace succeeds, also add it to the flattened vector
-        chunks.push_back(chunk);
+        allChunks.push_back(chunk);
+        worldChunks.push_back(chunk);
     }
 }
 
-void SceneComponent::removeChunk(const glm::ivec3& chunkPosition)
+void SceneComponent::removeWorldChunk(const glm::ivec3& chunkPosition)
 {
     // Find chunk in chunksByChunkPosition and erase it
-    auto mapIterator = chunksByChunkPosition.find(chunkPosition);
-    if (mapIterator != chunksByChunkPosition.end())
+    auto mapIterator = worldChunksByChunkPosition.find(chunkPosition);
+    if (mapIterator != worldChunksByChunkPosition.end())
     {
         auto chunk = mapIterator->second;
-        chunksByChunkPosition.erase(mapIterator);
+        worldChunksByChunkPosition.erase(mapIterator);
 
-        // If removal from chunksByChunkPosition succeeds, also remove it from the flattened vector
-        auto vectorIterator = std::find(chunks.begin(), chunks.end(), chunk);
-        if (vectorIterator != chunks.end())
-        {
-            chunks.erase(vectorIterator);
-        }
+        std::erase(allChunks, chunk);
+        std::erase(worldChunks, chunk);
     }
+}
+
+void SceneComponent::setSkybox(std::shared_ptr<SkyboxComponent>& skybox)
+{
+    this->skybox = skybox;
+}
+
+std::shared_ptr<SkyboxComponent> SceneComponent::getSkybox()
+{
+    return skybox;
 }

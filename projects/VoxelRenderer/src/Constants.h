@@ -17,12 +17,24 @@ public:
 
         // The max number of material definitions
         static constexpr uint32_t maxMaterialCount = 65536;
+
+        // Directly uploading a large chunk of memory to the GPU blocks the rendering thread,
+        // even when the upload is done from a separate OpenGL context on a separate thread
+        // This is used to break up the upload into chunks
+        static constexpr int chunkUploadSleepTimeMs = 10;
+        static constexpr uint64_t maxChunkUploadSizeBytes = 32 * 1024 * 1024;
     };
 
     class VoxelChunkComponent
     {
     public:
         static constexpr glm::ivec3 chunkSize = glm::ivec3(512, 512, 512);
+    };
+
+    class VoxelChunkManager
+    {
+    public:
+        static constexpr int maxChunkModificationThreads = 2;
     };
 
     class GameObject

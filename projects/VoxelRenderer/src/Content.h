@@ -21,11 +21,21 @@ public:
     constexpr static std::string_view pathTraceToFramebufferShader = "content/PathTrace/ToFramebuffer.fragment.glsl";
     constexpr static std::string_view afterCastComputerShader = "content/PathTrace/AfterCast.compute.glsl";
 
+    constexpr static std::string_view resetPrimaryRayInfoComputeShader = "content/PathTrace/ResetPrimaryRayInfo.compute.glsl";
+    constexpr static std::string_view beforeCastComputeShader = "content/PathTrace/BeforeCast.compute.glsl";
+    constexpr static std::string_view castPrimaryRayComputeShader = "content/PathTrace/PrimaryRay.compute.glsl";
+    constexpr static std::string_view groupPixelsComputeShader = "content/PathTrace/GroupPixels.compute.glsl";
+
+    // SVGF
+    constexpr static std::string_view integrateFrameFragmentShader = "content/SVGF/IntegrateFrame.fragment.glsl";
+    constexpr static std::string_view firstWaveletIterationFragmentShader = "content/SVGF/WaveletIterationFirst.fragment.glsl";
+    constexpr static std::string_view waveletIterationFragmentShader = "content/SVGF/WaveletIteration.fragment.glsl";
+    constexpr static std::string_view toFramebufferSVGFFragmentShader = "content/SVGF/ToFramebuffer.fragment.glsl";
+
     // Reprojection
     constexpr static std::string_view renderReprojectionVertexShader = "content/Reprojection/ReprojectionRender.vertex.glsl";
     constexpr static std::string_view renderReprojectionFragmentShader = "content/Reprojection/ReprojectionRender.fragment.glsl";
-    constexpr static std::string_view combineReprojectionFragmentShader = "content/Reprojection/CombineFrames.fragment.glsl";
-    constexpr static std::string_view makeCombineMaskFragmentShader = "content/Reprojection/MakeCombineMask.fragment.glsl";
+    constexpr static std::string_view bypassReprojectionFragmentShader = "content/Reprojection/Bypass.fragment.glsl";
 
     // Voxel Manipulation
     constexpr static std::string_view makeMipMapComputeShader = "content/VoxelManipulation/MakeMipMap.compute.glsl";
@@ -37,7 +47,11 @@ public:
 
     // Post Processing
     constexpr static std::string_view applyKernelLineFragmentShader = "content/PostProcessing/ApplyKernelLine.fragment.glsl";
+    constexpr static std::string_view showOtherFragmentShader = "content/PostProcessing/ShowOther.fragment.glsl";
 
     constexpr static std::string_view denoiseShader = "content/PostProcessing/Denoise.fragment.glsl";
     constexpr static std::string_view denoise2Shader = "content/PostProcessing/Denoise2.fragment.glsl";
+
+    constexpr static std::string_view toneMapShader = "content/PostProcessing/ToneMap.fragment.glsl";
+    constexpr static std::string_view showAngularSizeShader = "content/PostProcessing/ShowAngularSize.fragment.glsl";
 };

@@ -1,9 +1,12 @@
 #include "VoxelChunkData.h"
 
+#include <chrono>
 #include <set>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkUtility.h>
 #include <stdexcept>
+#include <thread>
+#include <tracy/Tracy.hpp>
 
 VoxelChunkData::VoxelChunkData()
 {
@@ -11,6 +14,8 @@ VoxelChunkData::VoxelChunkData()
 
 VoxelChunkData::VoxelChunkData(const glm::ivec3& size)
 {
+    ZoneScoped;
+
     setSize(size);
 }
 
@@ -21,6 +26,8 @@ const glm::ivec3& VoxelChunkData::getSize() const
 
 void VoxelChunkData::setSize(const glm::ivec3& size)
 {
+    ZoneScoped;
+
     this->data.size = size;
 
     data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
@@ -124,6 +131,8 @@ void VoxelChunkData::clearMaterialMap()
 
 void VoxelChunkData::copyFrom(VoxelChunk& chunk)
 {
+    ZoneScoped;
+
     if (data.size != chunk.getSize())
     {
         setSize(chunk.getSize());
@@ -140,28 +149,79 @@ void VoxelChunkData::copyFrom(VoxelChunk& chunk)
 
 void VoxelChunkData::writeTo(VoxelChunk& chunk)
 {
+    ZoneScoped;
+
+    constexpr int sleepTime = Constants::VoxelChunk::chunkUploadSleepTimeMs;
+    constexpr uint64_t uploadChunkSize = Constants::VoxelChunk::maxChunkUploadSizeBytes;
+
     if (chunk.getSize() != data.size)
     {
         throw std::runtime_error("Target chunk does not have the same size");
     }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    // Upload in chunks to prevent blocking the OpenGL driver
+    {
+        uint64_t byteCount = data.occupancyMap.size();
+        int uploadChunkCount = (byteCount + uploadChunkSize - 1) / uploadChunkSize;
+        for (int i = 0; i < uploadChunkCount; ++i)
+        {
+            ZoneScopedN("Chunked occupancy data upload");
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.materialMap.size() * 2, data.materialMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
+            int offset = i * uploadChunkSize;
 
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.occupancyMap.data()) + offset);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+            {
+                ZoneScopedN("Sleep");
+
+                glFlush();
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+            }
+        }
+    }
+
+    // Update mipmaps
+    // This doesn't block the OpenGL
     chunk.updateMipMaps();
+
+    // Upload in chunks to prevent blocking the OpenGL driver
+    {
+        uint64_t byteCount = data.materialMap.size() * 2;
+        int uploadChunkCount = (byteCount + uploadChunkSize - 1) / uploadChunkSize;
+        for (int i = 0; i < uploadChunkCount; ++i)
+        {
+            ZoneScopedN("Chunked material data upload");
+
+            uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
+            int offset = i * uploadChunkSize;
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.materialMap.data()) + offset);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+            {
+                ZoneScopedN("Sleep");
+
+                glFlush();
+                std::this_thread::sleep_for(std::chrono::milliseconds(Constants::VoxelChunk::chunkUploadSleepTimeMs));
+            }
+        }
+    }
 }
 
 void VoxelChunkData::copyFrom(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     this->data = data.data;
 }
 
 void VoxelChunkData::writeTo(VoxelChunkData& data)
 {
+    ZoneScoped;
+
     data.data = this->data;
 }

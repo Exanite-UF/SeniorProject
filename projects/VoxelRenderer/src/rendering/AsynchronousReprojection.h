@@ -19,16 +19,9 @@ class AsyncReprojectionRenderer
 {
 private:
     static GLuint renderProgram;
-    static GLuint combineProgram;
-    static GLuint combineMaskProgram;
+    static GLuint bypassProgram;
 
     int currentBuffer = 0;
-
-    // These textures are only used by Asynchronous Reprojection when combining frames
-    // As such it only needs old and new versions
-    std::array<GLuint, 2> frameCountTextures {};
-
-    GLuint combineMaskTextureID {};
 
     glm::ivec2 size {}; // The size of the offscreen render
 
@@ -41,20 +34,19 @@ private:
 
     void generateMesh(const glm::ivec2& size);
 
-    AsyncReprojectionRenderer(); // This is only supposed to be ran by Renderer
+    AsyncReprojectionRenderer(); // This is only supposed to be run by Renderer
 
     friend class Renderer;
 
 public:
-    void setSize(glm::ivec2 size);
+    void setRenderResolution(glm::ivec2 size); // This sets the render resolution that is expected as input
 
     GLuint getColorTexture() const;
     GLuint getPositionTexture() const;
-    GLuint getMaterialTexture() const;
+    GLuint getMiscTexture() const;
 
     void render(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const glm::vec3& cameraPosition, const glm::quat& cameraRotation, const float& cameraFOV,
-        const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& materialTexture);
+        const GLuint& colorTexture, const GLuint& positionTexture, const GLuint& normalTexture, const GLuint& miscTexture);
 
-    void combineBuffers(const glm::vec3& cameraMovement, const glm::vec3& lastRenderedCameraPosition, const glm::quat& lastRenderedCameraRotation, const float& lastRenderedCameraFOV,
-        const GLuint& oldColorTexture, const GLuint& newColorTexture, const GLuint& oldPositionTexture, const GLuint& newPositionTexture, const GLuint& newMaterialTexture, const GLuint& newNormalTexture);
+    void bypass(GLuint framebuffer, const glm::ivec2& reprojectionResolution, const GLuint& inputTexture);
 };

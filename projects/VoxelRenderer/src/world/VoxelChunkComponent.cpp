@@ -2,6 +2,7 @@
 
 #include <src/Constants.h>
 #include <src/utilities/MeasureElapsedTimeScope.h>
+#include <tracy/Tracy.hpp>
 
 VoxelChunkComponent::VoxelChunkComponent()
     : VoxelChunkComponent(false)
@@ -10,6 +11,8 @@ VoxelChunkComponent::VoxelChunkComponent()
 
 VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderData)
 {
+    ZoneScoped;
+
     if (shouldGeneratePlaceholderData)
     {
         existsOnGpu = true;
@@ -23,14 +26,24 @@ const std::unique_ptr<VoxelChunk>& VoxelChunkComponent::getChunk()
     return chunk.value();
 }
 
+const VoxelChunkData& VoxelChunkComponent::getChunkData()
+{
+    return chunkData;
+}
+
 std::shared_mutex& VoxelChunkComponent::getMutex()
 {
     return mutex;
 }
 
-VoxelChunkData& VoxelChunkComponent::getChunkData()
+VoxelChunkData& VoxelChunkComponent::getRawChunkData()
 {
     return chunkData;
+}
+
+VoxelChunkComponent::RendererData& VoxelChunkComponent::getRendererData()
+{
+    return rendererData;
 }
 
 bool VoxelChunkComponent::getExistsOnGpu() const
@@ -40,6 +53,10 @@ bool VoxelChunkComponent::getExistsOnGpu() const
 
 void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
 {
+    ZoneScoped;
+
+    assertIsPartOfWorld();
+
     if (this->existsOnGpu == existsOnGpu)
     {
         return;
@@ -65,11 +82,13 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writ
     }
 }
 
-void VoxelChunkComponent::onDestroy()
+void VoxelChunkComponent::onRemovingFromWorld()
 {
-    Component::onDestroy();
+    ZoneScoped;
 
     std::lock_guard lock(getMutex());
 
     setExistsOnGpu(false);
+
+    Component::onRemovingFromWorld();
 }

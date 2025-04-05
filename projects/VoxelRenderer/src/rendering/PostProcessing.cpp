@@ -4,6 +4,7 @@
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
+#include <tracy/Tracy.hpp>
 
 GLuint PostProcessRenderer::drawTextureProgram {};
 std::unordered_map<std::string, GLuint> PostProcessRenderer::programs {};
@@ -72,6 +73,8 @@ void PostProcessEffect::unbindTextures()
 
 void PostProcessEffect::applyProcess(GLuint currentOutput, GLuint previousOutputTexture, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {
+    ZoneScoped;
+
     GLuint framebuffer;
     glGenFramebuffers(1, &framebuffer);
 
@@ -106,6 +109,8 @@ void PostProcessEffect::applyProcess(GLuint currentOutput, GLuint previousOutput
 
 void PostProcessEffect::preventDuplicateBindings()
 {
+    ZoneScoped;
+
     static std::string message = "Cannot bind multiple textures to the same location.";
     std::unordered_set<GLenum> usedBindings;
 
@@ -164,6 +169,8 @@ PostProcessEffect::PostProcessEffect(GLuint program, GLenum colorTextureBinding,
 
 std::shared_ptr<PostProcessEffect> PostProcessEffect::getEffect(std::string name, GLuint program, GLenum colorTextureBinding, GLenum positionTextureBinding, GLenum normalTextureBinding, GLenum materialTextureBinding)
 {
+    ZoneScoped;
+
     if (existingProcesses.count(name))
     {
         return existingProcesses[name];
@@ -185,6 +192,7 @@ std::shared_ptr<PostProcessEffect> PostProcessEffect::getEffect(std::string name
 
 void PostProcessRenderer::applyProcess(std::size_t processID, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {
+    ZoneScoped;
 
     GLuint outputTexture;
     GLuint inputTexture;
@@ -200,6 +208,8 @@ void PostProcessRenderer::applyProcess(std::size_t processID, GLuint colorTextur
 
 void PostProcessRenderer::makeTextures()
 {
+    ZoneScoped;
+
     // Remake the color texture
     glDeleteTextures(2, renderTextures.data());
     glGenTextures(2, renderTextures.data());
@@ -226,6 +236,8 @@ PostProcessRenderer::PostProcessRenderer()
 
 void PostProcessRenderer::applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)
 {
+    ZoneScoped;
+
     if (this->outputResolution != outputResolution)
     {
         this->outputResolution = outputResolution;

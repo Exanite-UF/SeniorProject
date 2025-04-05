@@ -1,6 +1,5 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include <condition_variable>
@@ -37,6 +36,13 @@ public:
         float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
 
         glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
+
+        // ---- Culling -----
+
+        // Only works in DEBUG builds
+        bool showDebugVisualizations = false;
+
+        bool enableCulling = true;
     };
 
 private:
@@ -44,9 +50,10 @@ private:
     {
     public:
         std::shared_ptr<VoxelChunkComponent> component;
+        std::shared_ptr<SceneComponent> scene;
         VoxelChunkCommandBuffer commandBuffer;
 
-        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer);
     };
 
     struct ChunkLoadTask
@@ -60,7 +67,7 @@ private:
         explicit ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize);
     };
 
-    class ActiveChunk : public NonCopyable
+    class ActiveWorldChunk : public NonCopyable
     {
     public:
         std::shared_ptr<VoxelChunkComponent> component {};
@@ -74,8 +81,8 @@ private:
         bool isDisplayed = false;
         std::shared_ptr<SceneComponent> scene;
 
-        explicit ActiveChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
-        ~ActiveChunk() override;
+        explicit ActiveWorldChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
+        ~ActiveWorldChunk() override;
     };
 
     struct ManagerState
@@ -84,12 +91,12 @@ private:
         // ----- Primary state -----
 
         std::atomic<bool> isRunning = false;
-        std::shared_ptr<GlfwContext> modificationThreadContext;
+        std::vector<std::shared_ptr<GlfwContext>> modificationThreadContexts {};
 
         // ----- Scene -----
 
         std::shared_ptr<SceneComponent> scene;
-        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveChunk>> activeChunks {};
+        std::unordered_map<glm::ivec2, std::unique_ptr<ActiveWorldChunk>> activeChunks {};
 
         // ----- Camera -----
 
@@ -126,6 +133,10 @@ private:
         std::condition_variable_any pendingTasksCondition {};
         std::recursive_mutex pendingTasksMutex {};
         std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
+
+        // Allow only one thread to upload at a time
+        // Used to limit the amount of uploads, mutual exclusion isn't required
+        std::mutex gpuUploadMutex {};
     };
 
 public:
@@ -136,11 +147,11 @@ private:
     LoadingThreadState loadingThreadState {};
     ModificationThreadState modificationThreadState {};
 
-    void chunkLoadingThreadEntrypoint();
-    void chunkModificationThreadEntrypoint();
+    void chunkLoadingThreadEntrypoint(int threadId);
+    void chunkModificationThreadEntrypoint(int threadId);
 
 public:
-    void initialize(const std::shared_ptr<SceneComponent>& scene, const std::shared_ptr<GlfwContext>& modificationThreadContext);
+    void initialize(const std::shared_ptr<SceneComponent>& scene, const std::vector<std::shared_ptr<GlfwContext>>& modificationThreadContexts);
 
     void update(float deltaTime);
     void showDebugMenu();
@@ -152,4 +163,7 @@ public:
 
 protected:
     void onSingletonDestroy() override;
+
+private:
+    bool isChunkVisible(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera) const;
 };

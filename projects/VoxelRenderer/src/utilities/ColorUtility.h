@@ -28,4 +28,13 @@ public:
     // The alpha component can be excluded
     static glm::vec4 htmlToLinear(const std::string& value);
     static glm::vec4 htmlToSrgb(std::string value);
+
+    // Color is expected in hexadecimal form, encoded as an integer. No alpha channel.
+    // Eg: int color = 0xffffff
+    static std::string hexColorToAnsi(int color);
+
+    static std::string ansiForeground(int color);
+    static std::string ansiBackground(int color);
+
+    static std::string ansiReset();
 };
