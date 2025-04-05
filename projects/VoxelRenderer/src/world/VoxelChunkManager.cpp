@@ -748,7 +748,7 @@ void VoxelChunkManager::showDebugMenu()
 
         ImGui::Text("%s", std::format("Load distance: {}", settings.loadDistance).c_str());
         ImGui::Text("%s", std::format("GPU chunk upload budget (full size chunks): {}", settings.chunkUploadBudget).c_str());
-        ImGui::Text("%s", std::format("GPU uploaded voxel chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
+        ImGui::Text("%s", std::format("GPU uploaded chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
         ImGui::Text("%s", std::format("Chunk generation threads: {}", loadingThreadState.threads.size()).c_str());
