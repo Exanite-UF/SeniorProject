@@ -737,79 +737,84 @@ void VoxelChunkManager::showDebugMenu()
             glm::ivec2 displaySize = glm::ivec2(displayDistance * 2 + 1);
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
 
-            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-            ImGui::BeginChild("InvisibleBox", ImVec2(120, 120), true);
-
             // Drawing parameters
             float cellSize = 10;
             float dotSize = 6;
             float spacing = 2;
 
-            auto* drawList = ImGui::GetWindowDrawList();
-            auto windowPosition = ImGui::GetWindowPos();
-            auto drawPosition = ImGui::GetCursorPos();
-
-            auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
-            auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
-            auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
-            auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
-            auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
-
-            auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
-            auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
-            auto visibleDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
-
-            auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
-
-            for (int x = 0; x < displaySize.x; ++x)
+            ImGuiStyle& style = ImGui::GetStyle();
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+            auto gridContainerSize = ImVec2(cellSize * displaySize.x + (displaySize.x + 1) * spacing, cellSize * displaySize.y + (displaySize.y + 1) * spacing);
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::BeginChild("GridContainer", gridContainerSize, true);
             {
-                for (int y = 0; y < displaySize.y; ++y)
+                auto* drawList = ImGui::GetWindowDrawList();
+                auto windowPosition = ImGui::GetWindowPos();
+                auto drawPosition = ImGui::GetCursorPos();
+
+                auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+                auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
+                auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
+                auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
+                auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+
+                auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+                auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
+                auto visibleDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
+
+                auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
+
+                for (int x = 0; x < displaySize.x; ++x)
                 {
-                    auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
-
-                    // Cell
-                    auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
-                    auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
-                    auto cellColor = unloadedCellColor;
-
-                    // Dot
-                    auto dotPadding = (cellSize - dotSize) / 2;
-                    auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
-                    auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
-                    auto dotColor = defaultDotColor;
-
-                    auto chunkIterator = state.activeChunks.find(chunkPosition);
-                    if (chunkIterator != state.activeChunks.end())
+                    for (int y = 0; y < displaySize.y; ++y)
                     {
-                        auto& chunk = chunkIterator->second;
-                        cellColor = loadedCellColor;
+                        auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
 
-                        if (chunk->isLoading)
+                        // Cell
+                        auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
+                        auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
+                        auto cellColor = unloadedCellColor;
+
+                        // Dot
+                        auto dotPadding = (cellSize - dotSize) / 2;
+                        auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
+                        auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
+                        auto dotColor = defaultDotColor;
+
+                        auto chunkIterator = state.activeChunks.find(chunkPosition);
+                        if (chunkIterator != state.activeChunks.end())
                         {
-                            cellColor = loadingCellColor;
-                        }
-                        else if (chunk->isUnloading)
-                        {
-                            cellColor = unloadingCellColor;
+                            auto& chunk = chunkIterator->second;
+                            cellColor = loadedCellColor;
+
+                            if (chunk->isLoading)
+                            {
+                                cellColor = loadingCellColor;
+                            }
+                            else if (chunk->isUnloading)
+                            {
+                                cellColor = unloadingCellColor;
+                            }
+
+                            if (chunk->component->getRendererData().isVisible)
+                            {
+                                dotColor = visibleDotColor;
+                            }
+                            else if (chunk->component->getExistsOnGpu())
+                            {
+                                dotColor = uploadedDotColor;
+                            }
                         }
 
-                        if (chunk->component->getRendererData().isVisible)
-                        {
-                            dotColor = visibleDotColor;
-                        }
-                        else if (chunk->component->getExistsOnGpu())
-                        {
-                            dotColor = uploadedDotColor;
-                        }
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
                     }
-
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
                 }
             }
-
             ImGui::EndChild();
-            ImGui::PopStyleColor();
+            ImGui::PopStyleColor(2);
+            ImGui::PopStyleVar();
         }
     }
 }
