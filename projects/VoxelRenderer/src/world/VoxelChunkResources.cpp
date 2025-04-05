@@ -7,7 +7,7 @@ VoxelChunkResources::VoxelChunkResources()
 {
     auto& shaderManager = ShaderManager::getInstance();
 
-    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader);
-    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader);
-    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader);
+    makeNoiseComputeProgram = shaderManager.getComputeProgram(Content::makeNoiseComputeShader)->programId;
+    makeMipMapComputeProgram = shaderManager.getComputeProgram(Content::makeMipMapComputeShader)->programId;
+    assignMaterialComputeProgram = shaderManager.getComputeProgram(Content::assignMaterialComputeShader)->programId;
 }

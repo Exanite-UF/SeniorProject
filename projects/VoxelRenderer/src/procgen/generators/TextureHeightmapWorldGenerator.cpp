@@ -1,5 +1,6 @@
 #include <PerlinNoise/PerlinNoise.hpp>
 #include <imgui/imgui.h>
+#include <iostream>
 #include <memory>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>

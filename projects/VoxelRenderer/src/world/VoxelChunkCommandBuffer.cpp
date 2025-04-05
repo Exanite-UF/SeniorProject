@@ -164,7 +164,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                         {
                             std::lock_guard lockGpuUpload(gpuUploadMutex);
-                            chunkData.writeTo(*component->getChunk());
+                            chunkData.copyTo(*component->getChunk());
                         }
 
                         isGpuUpToDate = true;
@@ -190,7 +190,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
         {
             std::lock_guard lockGpuUpload(gpuUploadMutex);
-            chunkData.writeTo(*component->getChunk());
+            chunkData.copyTo(*component->getChunk());
         }
     }
 }

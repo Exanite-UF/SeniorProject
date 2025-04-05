@@ -66,6 +66,14 @@ void VoxelRenderer::remakeTextures()
     accumulatedLightBuffer1.setSize(size1D);
     attentuationBuffer2.setSize(size1D);
     accumulatedLightBuffer2.setSize(size1D);
+
+    sampleDirection1.setSize(size1D);
+    sampleDirection2.setSize(size1D);
+    sampleRadiance1.setSize(size1D);
+    sampleRadiance2.setSize(size1D);
+    sampleWeights1.setSize(size1D);
+    sampleWeights2.setSize(size1D);
+    motionVectors.setSize(size1D);
 }
 
 void VoxelRenderer::handleDirtySizing()
@@ -82,18 +90,18 @@ void VoxelRenderer::handleDirtySizing()
 
 VoxelRenderer::VoxelRenderer()
 {
-    prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
-    resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
-    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
-    fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
-    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader);
+    prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader)->programId;
+    resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader)->programId;
+    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader)->programId;
+    fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader)->programId;
+    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader)->programId;
 
-    resetPrimaryRayInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetPrimaryRayInfoComputeShader);
-    beforeCastProgram = ShaderManager::getInstance().getComputeProgram(Content::beforeCastComputeShader);
-    primaryRayProgram = ShaderManager::getInstance().getComputeProgram(Content::castPrimaryRayComputeShader);
-    groupPixelsProgram = ShaderManager::getInstance().getComputeProgram(Content::groupPixelsComputeShader);
+    resetPrimaryRayInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetPrimaryRayInfoComputeShader)->programId;
+    beforeCastProgram = ShaderManager::getInstance().getComputeProgram(Content::beforeCastComputeShader)->programId;
+    primaryRayProgram = ShaderManager::getInstance().getComputeProgram(Content::castPrimaryRayComputeShader)->programId;
+    groupPixelsProgram = ShaderManager::getInstance().getComputeProgram(Content::groupPixelsComputeShader)->programId;
 
-    pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader);
+    pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader)->programId;
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
@@ -554,6 +562,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     materialBuffer.bind(11);
     secondaryDirection.bind(12);
+    motionVectors.bind(13);
 
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
@@ -570,6 +579,9 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
         std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
         glUniform1f(glGetUniformLocation(primaryRayProgram, "sunAngularSize"), skybox->getSunAngularSize());
         glUniform3fv(glGetUniformLocation(primaryRayProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
+
+        glUniform1i(glGetUniformLocation(primaryRayProgram, "whichAccumulatingVector"), whichMotionVectors);
+        glUniform1i(glGetUniformLocation(primaryRayProgram, "whichDepth"), whichDepth);
 
         for (auto& chunkComponent : chunks)
         {
@@ -648,10 +660,14 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     materialBuffer.unbind();
     secondaryDirection.unbind();
+    motionVectors.unbind();
+    // sampleDirection.unbind();
 
     afterCast(maxDepth);
 
     whichStartBuffer = !whichStartBuffer;
+    whichMotionVectors = !whichMotionVectors;
+    whichDepth = !whichDepth;
 
     glUseProgram(0);
 }
@@ -683,6 +699,31 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     MaterialManager& materialManager = MaterialManager::getInstance();
     materialManager.getMaterialDefinitionsBuffer().bind(7); // This binds the material definitions for each material
 
+    if (whichSampleRadiance)
+    {
+        sampleDirection1.bind(8);
+        sampleDirection2.bind(9);
+
+        sampleRadiance1.bind(10);
+        sampleRadiance2.bind(11);
+
+        sampleWeights1.bind(12);
+        sampleWeights2.bind(13);
+    }
+    else
+    {
+        sampleDirection1.bind(9);
+        sampleDirection2.bind(8);
+
+        sampleRadiance1.bind(11);
+        sampleRadiance2.bind(10);
+
+        sampleWeights1.bind(13);
+        sampleWeights2.bind(12);
+    }
+
+    motionVectors.bind(14);
+
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
     glUniform4fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
@@ -698,6 +739,11 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     glUniform3fv(glGetUniformLocation(pathTraceToFramebufferProgram, "sunDir"), 1, glm::value_ptr(skybox->getSunDirection()));
     glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "visualMultiplier"), skybox->getVisualMultiplier());
 
+    glUniform1f(glGetUniformLocation(pathTraceToFramebufferProgram, "random"), (rand() % 1000000) / 1000000.f); // A little bit of randomness for temporal accumulation
+
+    glUniform1i(glGetUniformLocation(pathTraceToFramebufferProgram, "whichMotionVectors"), whichMotionVectors);
+    glUniform1i(glGetUniformLocation(pathTraceToFramebufferProgram, "whichDepth"), whichDepth);
+
     glBindVertexArray(GraphicsUtility::getEmptyVertexArray());
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -709,6 +755,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     }
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     if (whichAccumulationBuffer)
     {
@@ -727,6 +774,17 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     primaryDirection.unbind();
     secondaryDirection.unbind();
     materialManager.getMaterialDefinitionsBuffer().unbind();
+
+    sampleDirection1.unbind();
+    sampleDirection2.unbind();
+    sampleRadiance1.unbind();
+    sampleRadiance2.unbind();
+    sampleWeights1.unbind();
+    sampleWeights2.unbind();
+    motionVectors.unbind();
+
+    whichMotionVectors = !whichMotionVectors;
+    whichSampleRadiance = !whichSampleRadiance;
 
     glUseProgram(0);
 }

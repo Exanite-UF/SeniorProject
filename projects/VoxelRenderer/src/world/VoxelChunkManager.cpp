@@ -766,94 +766,104 @@ void VoxelChunkManager::showDebugMenu()
             float speckSize = 8;
             float spacing = 2;
 
-            auto* drawList = ImGui::GetWindowDrawList();
-            auto windowPosition = ImGui::GetWindowPos();
-            auto drawPosition = ImGui::GetCursorPos();
-
-            auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
-            auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
-            auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
-            auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
-            auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
-
-            auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
-            auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
-
-            auto defaultSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
-            auto visibleSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
-
-            auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
-
-            for (int x = 0; x < displaySize.x; ++x)
+            ImGuiStyle& style = ImGui::GetStyle();
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+            auto gridContainerSize = ImVec2(cellSize * displaySize.x + (displaySize.x + 1) * spacing, cellSize * displaySize.y + (displaySize.y + 1) * spacing);
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::BeginChild("GridContainer", gridContainerSize, true);
             {
-                for (int y = 0; y < displaySize.y; ++y)
+                auto* drawList = ImGui::GetWindowDrawList();
+                auto windowPosition = ImGui::GetWindowPos();
+                auto drawPosition = ImGui::GetCursorPos();
+
+                auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+                auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
+                auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
+                auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
+                auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+
+                auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+                auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
+
+                auto defaultSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+                auto visibleSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
+
+                auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
+
+                for (int x = 0; x < displaySize.x; ++x)
                 {
-                    auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
-
-                    // Cell
-                    auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
-                    auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
-                    auto cellColor = unloadedCellColor;
-
-                    // Dot
-                    auto dotPadding = (cellSize - dotSize) / 2;
-                    auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
-                    auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
-                    auto dotColor = defaultDotColor;
-
-                    // Speck
-                    auto speckPadding = (cellSize - speckSize) / 2;
-                    auto speckTopLeft = cellTopLeft + glm::vec2(speckPadding);
-                    auto speckBottomRight = cellBottomRight - glm::vec2(speckPadding);
-                    auto speckColor = defaultSpeckColor;
-
-                    auto chunkIterator = state.activeChunks.find(chunkPosition);
-                    if (chunkIterator != state.activeChunks.end())
+                    for (int y = 0; y < displaySize.y; ++y)
                     {
-                        auto& chunk = chunkIterator->second;
-                        cellColor = loadedCellColor;
+                        auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
 
-                        if (chunk->isLoading)
+                        // Cell
+                        auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
+                        auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
+                        auto cellColor = unloadedCellColor;
+
+                        // Dot
+                        auto dotPadding = (cellSize - dotSize) / 2;
+                        auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
+                        auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
+                        auto dotColor = defaultDotColor;
+
+                        // Speck
+                        auto speckPadding = (cellSize - speckSize) / 2;
+                        auto speckTopLeft = cellTopLeft + glm::vec2(speckPadding);
+                        auto speckBottomRight = cellBottomRight - glm::vec2(speckPadding);
+                        auto speckColor = defaultSpeckColor;
+
+                        auto chunkIterator = state.activeChunks.find(chunkPosition);
+                        if (chunkIterator != state.activeChunks.end())
                         {
-                            cellColor = loadingCellColor;
-                        }
-                        else if (chunk->isUnloading)
-                        {
-                            cellColor = unloadingCellColor;
+                            auto& chunk = chunkIterator->second;
+                            cellColor = loadedCellColor;
+
+                            if (chunk->isLoading)
+                            {
+                                cellColor = loadingCellColor;
+                            }
+                            else if (chunk->isUnloading)
+                            {
+                                cellColor = unloadingCellColor;
+                            }
+
+                            if (chunk->component->getExistsOnGpu())
+                            {
+                                dotColor = uploadedDotColor;
+                            }
+
+                            if (chunk->component->getRendererData().isVisible)
+                            {
+                                speckColor = visibleSpeckColor;
+                            }
                         }
 
-                        if (chunk->component->getExistsOnGpu())
-                        {
-                            dotColor = uploadedDotColor;
-                        }
-
-                        if (chunk->component->getRendererData().isVisible)
-                        {
-                            speckColor = visibleSpeckColor;
-                        }
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(speckTopLeft), ImGuiUtility::toImGui(speckBottomRight), speckColor);
                     }
-
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(speckTopLeft), ImGuiUtility::toImGui(speckBottomRight), speckColor);
                 }
+                ImGui::EndChild();
+                ImGui::PopStyleColor(2);
+                ImGui::PopStyleVar();
             }
         }
     }
-}
 
-std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
-{
-    std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
+    std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
+    {
+        std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
-    auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
-    task->dependencies.addPending(component->getModificationData().pendingTasks.getPending());
+        auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
+        task->dependencies.addPending(component->getModificationData().pendingTasks.getPending());
 
-    auto sharedFuture = task->promise.get_future().share();
-    component->getModificationData().pendingTasks.addPending(sharedFuture);
+        auto sharedFuture = task->promise.get_future().share();
+        component->getModificationData().pendingTasks.addPending(sharedFuture);
 
-    modificationThreadState.pendingTasks.emplace(task);
-    modificationThreadState.pendingTasksCondition.notify_one();
+        modificationThreadState.pendingTasks.emplace(task);
+        modificationThreadState.pendingTasksCondition.notify_one();
 
-    return sharedFuture;
-}
+        return sharedFuture;
+    }

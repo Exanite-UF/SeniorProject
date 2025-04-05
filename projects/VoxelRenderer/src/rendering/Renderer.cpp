@@ -42,7 +42,7 @@ void Renderer::isOwningThreadCheck() const
 
 Renderer::Renderer(const std::shared_ptr<Window>& mainContext, const std::shared_ptr<GlfwContext>& offscreenContext)
 {
-    drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
+    drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader)->programId;
 
     this->mainContext = mainContext;
     this->offscreenContext = offscreenContext;
@@ -296,8 +296,8 @@ void Renderer::_render()
             voxelRenderer->executePathTrace(scene->getAllChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, scene);
         }
 
-        // This need SVGF's framebuffer
-        // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV);
+        // Thqis need SVGF's framebuffer
+        // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
         voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
 
         // SVGF

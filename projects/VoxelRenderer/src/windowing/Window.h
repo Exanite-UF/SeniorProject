@@ -20,6 +20,9 @@ private:
     glm::i32vec2 lastWindowedPosition = glm::i32vec2(0);
     glm::i32vec2 lastWindowedSize = glm::i32vec2(1);
 
+    bool enableImGui = false;
+    bool isMainWindow = false;
+
     void registerGlfwCallbacks();
 
     // Gets called every time the window resizes
@@ -47,10 +50,10 @@ public:
     BufferedEvent<Window*, double, double> scrollEvent {};
     BufferedEvent<Window*, int> cursorEnterEvent {};
 
-    explicit Window(GlfwContext* shareWith = nullptr);
+    explicit Window(const std::string& contextName, GlfwContext* shareWith = nullptr, bool enableImGui = true, bool isMainWindow = true);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
-    ~Window();
+    ~Window() override;
 
     void update();
     void present();

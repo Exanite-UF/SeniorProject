@@ -1,4 +1,6 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+#extension GL_NV_gpu_shader5 : enable
 
 struct MaterialDefinition
 {
@@ -18,6 +20,8 @@ struct MaterialDefinition
 uniform ivec3 resolution; //(xSize, ySize, 1)
 uniform vec4 cameraRotation;
 uniform vec3 cameraPosition;
+uniform float random; // This is used to make non-deterministic randomness
+uniform bool whichDepth;
 
 layout(std430, binding = 0) buffer AccumulatedLight
 {
@@ -78,6 +82,113 @@ layout(std430, binding = 7) buffer MaterialDefinitions
     readonly restrict MaterialDefinition materialDefinitions[];
 };
 
+layout(std430, binding = 8) buffer SampleDirectionIn
+{
+    float16_t sampleDirectionIn[];
+};
+
+layout(std430, binding = 9) buffer SampleDirectionOut
+{
+    float16_t sampleDirectionOut[];
+};
+
+vec4 getSampleDirection(ivec3 coord)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec4(sampleDirectionIn[index + 0], sampleDirectionIn[index + 1], sampleDirectionIn[index + 2], sampleDirectionIn[index + 3]);
+}
+
+void setSampleDirection(ivec3 coord, vec4 value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    sampleDirectionOut[index + 0] = float16_t(value.x);
+    sampleDirectionOut[index + 1] = float16_t(value.y);
+    sampleDirectionOut[index + 2] = float16_t(value.z);
+    sampleDirectionOut[index + 3] = float16_t(value.w);
+}
+
+layout(std430, binding = 10) buffer SampleRadianceIn
+{
+    float16_t sampleRadiancein[];
+};
+
+layout(std430, binding = 11) buffer SampleRadianceOut
+{
+    float16_t sampleRadianceout[];
+};
+
+vec3 getSampleRadiance(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec3(sampleRadiancein[index + 0], sampleRadiancein[index + 1], sampleRadiancein[index + 2]);
+}
+
+void setSampleRadiance(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    sampleRadianceout[index + 0] = float16_t(value.x);
+    sampleRadianceout[index + 1] = float16_t(value.y);
+    sampleRadianceout[index + 2] = float16_t(value.z);
+}
+
+layout(std430, binding = 12) buffer SampleWeightsIn
+{
+    float16_t sampleWeightsIn[];
+};
+
+layout(std430, binding = 13) buffer SampleWeightsOut
+{
+    float16_t sampleWeightsOut[];
+};
+
+vec3 getSampleWeights(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec3(sampleWeightsIn[index + 0], sampleWeightsIn[index + 1], sampleWeightsIn[index + 2]);
+}
+
+void setSampleWeights(ivec3 coord, vec3 value)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    sampleWeightsOut[index + 0] = float16_t(value.x);
+    sampleWeightsOut[index + 1] = float16_t(value.y);
+    sampleWeightsOut[index + 2] = float16_t(value.z);
+}
+
+uniform bool whichMotionVectors;
+layout(std430, binding = 14) buffer MotionVectors
+{
+    float16_t motionVectors[];
+};
+
+void setMotionVectors(ivec3 coord, vec2 value)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    if (whichMotionVectors)
+    {
+        motionVectors[index + 0] = float16_t(value.x);
+        motionVectors[index + 1] = float16_t(value.y);
+    }
+    else
+    {
+        motionVectors[index + 2] = float16_t(value.x);
+        motionVectors[index + 3] = float16_t(value.y);
+    }
+}
+
+vec2 getMotionVectors(ivec3 coord)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    if (whichMotionVectors)
+    {
+        return vec2(motionVectors[index + 2], motionVectors[index + 3]);
+    }
+    else
+    {
+        return vec2(motionVectors[index + 0], motionVectors[index + 1]);
+    }
+}
+
 vec3 getLight(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
@@ -127,6 +238,16 @@ vec4 safeVec4(vec4 v, vec4 fallback)
         isnan(v.g) ? fallback.g : v.g,
         isnan(v.b) ? fallback.b : v.b,
         isnan(v.a) ? fallback.a : v.a);
+}
+
+float hash(float seed)
+{
+    return fract(sin((seed) * 12345.6789) * 43758.5453123);
+}
+
+vec2 randomVec2(float seed)
+{
+    return vec2(hash(seed), hash(seed + 1.0));
 }
 
 in vec2 uv;
@@ -239,27 +360,105 @@ vec3 skyBox(vec3 rayDirection)
     return texture(skybox, vec3(-rayDirection.y, rayDirection.z, -rayDirection.x)).xyz * visualMultiplier;
 }
 
+float ggxPDF(vec3 incomingDirection, vec3 outgoingDirection, vec3 normal)
+{
+    vec3 microfacetDirection = normalize(incomingDirection - outgoingDirection); // This is used by several things
+    return 1 / (dot(microfacetDirection, normal) / abs(dot(outgoingDirection, microfacetDirection)));
+}
+
+vec3 temporalResevoirRadiance;
+vec4 temporalResevoirDirection;
+vec3 temporalResevoirWeights;
+const float decay = 0.95;
+
+void addSample(ivec3 coord, float seed, vec3 normal, vec3 primaryDirection, vec3 newLight, vec4 newSecondaryDirection)
+{
+    vec3 sampleOutgoingLight = vec3(0);
+
+    float newWeight = length(newLight) * newSecondaryDirection.w; // length(thisOutgoingRadiance) * thisNextDirection.w;
+    float sumWeight = temporalResevoirWeights.y + newWeight;
+    float newSampleCount = temporalResevoirWeights.z + 1;
+    bool condition = (randomVec2(seed).x < (newWeight / sumWeight)); // || length(sampledLight) == 0;
+
+    if (condition)
+    {
+        vec4 direction = vec4(newSecondaryDirection.xyz, ggxPDF(newSecondaryDirection.xyz, primaryDirection, normal));
+        vec3 weights = vec3((sumWeight / (newSampleCount * length(newLight))), sumWeight, newSampleCount);
+        temporalResevoirRadiance = newLight;
+        temporalResevoirDirection = direction;
+        temporalResevoirWeights = weights;
+    }
+    else
+    {
+        vec3 weights = vec3((sumWeight / (newSampleCount * length(temporalResevoirRadiance))), sumWeight, newSampleCount);
+        temporalResevoirWeights = weights;
+    }
+}
+
 void main()
 {
     ivec3 texelCoord = ivec3(gl_FragCoord.xy, 0);
 
+    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y)) / resolution.x / resolution.y; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
+
     ivec3 size = resolution; // imageSize(hitPosition);
-    vec3 color = vec3(0);
 
     vec3 normal = getNormal(texelCoord); // worldspace
     vec3 position = getPosition(texelCoord); // worldspace
     vec4 misc = getMisc(texelCoord);
 
+    float oldDepth;
+    float currentDepth;
+
+    if (whichDepth)
+    {
+        currentDepth = misc.z;
+        oldDepth = misc.y;
+    }
+    else
+    {
+        currentDepth = misc.y;
+        oldDepth = misc.z;
+    }
+
+    vec2 motionVectors = getMotionVectors(texelCoord);
+    misc.yz = motionVectors / resolution.xy; // Set the output motion vectors
+    ivec2 pixelOffset = ivec2(floor(motionVectors + 0.5));
+    ivec3 previousTexelCoord = ivec3(texelCoord.xy - pixelOffset, 0);
+    setMotionVectors(previousTexelCoord, motionVectors - pixelOffset);
+
     vec3 light = vec3(0);
     float samples = 0;
-    MaterialDefinition voxelMaterial = materialDefinitions[getFirstHitMaterial(texelCoord)]; // Get the material index of the hit, and map it to an actual material
+    int materialID = getFirstHitMaterial(texelCoord);
+    MaterialDefinition voxelMaterial = materialDefinitions[materialID]; // Get the material index of the hit, and map it to an actual material
 
     vec3 direction = getPrimaryDirection(texelCoord);
+
+    // vec3 thisBRDFValue = brdf2(normal, direction, thisSecondaryDirection.xyz, voxelMaterial) * ggxPDF(thisSecondaryDirection.xyz, direction, normal);//* thisSecondaryDirection.w;
+    // vec3 thisOutgoingRadiance = thisBRDFValue * thisLight;
+
+    // light += thisLight * brdf2(normal, direction, thisSecondaryDirection.xyz, voxelMaterial) * thisSecondaryDirection.w;
+    // samples++;
+
+    temporalResevoirRadiance = getSampleRadiance(previousTexelCoord);
+    temporalResevoirDirection = getSampleDirection(previousTexelCoord);
+    temporalResevoirWeights = getSampleWeights(previousTexelCoord);
+
+    if (any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || abs(currentDepth - oldDepth) > 1)
+    {
+        temporalResevoirRadiance *= 0;
+        temporalResevoirDirection *= 0;
+        temporalResevoirWeights *= 0;
+    }
 
     int radius = 1;
     if (misc.x < 0.01)
     {
         radius = 0;
+
+        temporalResevoirRadiance *= 0;
+        temporalResevoirDirection *= 0;
+        temporalResevoirWeights *= 0;
     }
     // radius = 0;
 
@@ -269,25 +468,29 @@ void main()
         for (int j = -radius; j <= radius; j++)
         {
             ivec3 coord = texelCoord + ivec3(i, j, 0); // * abs(ivec3(i, j, 0));
+            ///
+            // if(i == j && i == 0){
+            //     continue;
+            // }
 
             // If this is offscreen
             if (coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y)
             {
                 continue;
             }
-
+            ///
             // If this pixel didn't have a secondary ray
             if (getMisc(coord).x < 0)
             {
                 continue;
             }
-
+            ///
             vec3 sampleNormal = getNormal(coord); // worldspace
             if (dot(sampleNormal, normal) < 0.9)
             {
                 continue;
             }
-
+            ///
             // Materials of different roughnesses have different bounce distributions, so they cannot be combined
             vec4 sampleMisc = getMisc(coord);
             if (abs(sampleMisc.x - misc.x) > 0.1)
@@ -295,18 +498,37 @@ void main()
                 continue;
             }
 
-            vec3 sampledLight = getLight(coord); // This is the radiance coming from the secondary rays
-            vec4 nextDirection = getSecondaryDirection(coord);
+            vec3 samplePosition = getPosition(coord);
+            if (length(samplePosition - position) > 1)
+            {
+                continue;
+            }
 
-            vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-            // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
+            vec3 newLight = getLight(coord);
+            vec4 newSecondaryDirection = getSecondaryDirection(coord);
+
             float multiplier = kernel[i + 1] * kernel[j + 1];
-            light += sampledLight * brdfValue * multiplier;
+            light += newLight * brdf2(normal, direction, newSecondaryDirection.xyz, voxelMaterial) * newSecondaryDirection.w * multiplier;
             samples += multiplier;
+
+            addSample(coord, seed + (i + 2) + 3 * (j + 2), normal, direction, newLight, newSecondaryDirection);
         }
     }
 
+    vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
+    vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
+    if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
+    {
+        light += sampleOutgoingLight;
+        samples++;
+    }
+
+    setSampleRadiance(texelCoord, temporalResevoirRadiance);
+    setSampleDirection(texelCoord, temporalResevoirDirection);
+    setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
+
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
+
     // normal is now in camera space
     //(1, 0, 0) away from the camera
     //(0, 1, 0) to the left

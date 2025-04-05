@@ -75,7 +75,7 @@ void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writ
 
         if (writeToGpu)
         {
-            chunkData.writeTo(*chunk.value());
+            chunkData.copyTo(*chunk.value());
         }
     }
     else

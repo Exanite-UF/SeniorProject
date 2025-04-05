@@ -107,7 +107,7 @@ MaterialManager::MaterialManager()
         {
             material->emission = glm::vec3(0, 0, 0);
             material->albedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
-            material->metallic = (rand() % 1000) / 1000.0;
+            material->metallic = 0 * (rand() % 1000) / 1000.0;
             material->metallicAlbedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
         }
 
@@ -163,7 +163,7 @@ void MaterialManager::updateGpuMaterialData()
     }
 
     // Write data to GPU
-    materialDefinitionsBuffer.readFrom(materialData);
+    materialDefinitionsBuffer.copyFrom(materialData);
 }
 
 std::shared_ptr<Material>& MaterialManager::createMaterial(const std::string& key, const std::string& name)

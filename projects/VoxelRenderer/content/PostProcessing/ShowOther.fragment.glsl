@@ -25,7 +25,7 @@ void main()
             out_color = texture(normalTexture, uv);
             break;
         case 3:
-            out_color = texture(miscTexture, uv);
+            out_color = vec4(0, texture(miscTexture, uv).yz, 1);
             break;
         default:
             out_color = texture(inputTexture, uv);
