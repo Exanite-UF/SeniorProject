@@ -163,7 +163,7 @@ void MaterialManager::updateGpuMaterialData()
     }
 
     // Write data to GPU
-    materialDefinitionsBuffer.readFrom(materialData);
+    materialDefinitionsBuffer.copyFrom(materialData);
 }
 
 std::shared_ptr<Material>& MaterialManager::createMaterial(const std::string& key, const std::string& name)

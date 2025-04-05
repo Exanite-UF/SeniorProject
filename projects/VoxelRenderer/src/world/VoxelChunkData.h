@@ -44,8 +44,8 @@ public:
     void clearMaterialMap();
 
     void copyFrom(VoxelChunk& chunk);
-    void writeTo(VoxelChunk& chunk);
+    void copyTo(VoxelChunk& chunk);
 
     void copyFrom(VoxelChunkData& data);
-    void writeTo(VoxelChunkData& data);
+    void copyTo(VoxelChunkData& data);
 };

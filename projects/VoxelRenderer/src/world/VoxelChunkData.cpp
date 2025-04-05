@@ -132,7 +132,7 @@ void VoxelChunkData::copyFrom(VoxelChunk& chunk)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void VoxelChunkData::writeTo(VoxelChunk& chunk)
+void VoxelChunkData::copyTo(VoxelChunk& chunk)
 {
     ZoneScoped;
 
@@ -204,7 +204,7 @@ void VoxelChunkData::copyFrom(VoxelChunkData& data)
     this->data = data.data;
 }
 
-void VoxelChunkData::writeTo(VoxelChunkData& data)
+void VoxelChunkData::copyTo(VoxelChunkData& data)
 {
     ZoneScoped;
 
