@@ -631,7 +631,7 @@ void Program::run()
                             if (showOriginalModelMenu)
                             {
                                 // make this set and load model so that the VAO/VBO work on same thread
-                                modelPreviewer->createWindowTriangle(window, modelVoxelizer, modelFileName);
+                                modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFileName);
                                 isModelLoaded = true;
                             }
                             else
@@ -655,7 +655,7 @@ void Program::run()
 
                                 if (showVoxelizedModelMenu)
                                 {
-                                    modelPreviewer->createWindowVoxel(window, modelVoxelizer);
+                                    modelPreviewer->createVoxelWindow(window, modelVoxelizer);
                                     isModelVoxelized = true;
                                 }
                                 else

@@ -18,7 +18,7 @@ void ModelPreviewer::setModel(const std::shared_ptr<Model>& model)
     voxelShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathVoxel, Content::Triangulation::fragShaderPathVoxel);
 }
 
-void ModelPreviewer::createWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath)
+void ModelPreviewer::createTriangleWindow(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath)
 {
     if (triangleThreadRunning)
     {
@@ -67,10 +67,11 @@ void ModelPreviewer::createWindowTriangle(const std::shared_ptr<Window>& mainWin
 
             // Cleanup
             triangleThreadRunning = false;
+            triangleWindow.reset();
         });
 }
 
-void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer)
+void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer)
 {
     if (voxelThreadRunning)
     {
@@ -121,6 +122,7 @@ void ModelPreviewer::createWindowVoxel(const std::shared_ptr<Window>& mainWindow
 
             // Cleanup
             voxelThreadRunning = false;
+            voxelWindow.reset();
         });
 }
 

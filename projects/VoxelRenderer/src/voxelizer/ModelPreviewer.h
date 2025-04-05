@@ -43,8 +43,8 @@ public:
     // Set instead of load since the voxelizer should be the one to load
     void setModel(const std::shared_ptr<Model>& model);
 
-    void createWindowTriangle(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath);
-    void createWindowVoxel(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer);
+    void createTriangleWindow(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath);
+    void createVoxelWindow(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer);
 
     void renderTriangleWindow();
     void renderVoxelWindow();

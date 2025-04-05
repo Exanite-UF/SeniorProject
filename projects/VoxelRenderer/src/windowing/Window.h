@@ -53,7 +53,7 @@ public:
     explicit Window(const std::string& contextName, GlfwContext* shareWith = nullptr, bool enableImGui = true, bool isMainWindow = true);
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
-    ~Window();
+    ~Window() override;
 
     void update();
     void present();
