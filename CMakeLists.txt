@@ -34,6 +34,15 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     add_compile_options(-march=native)
 endif()
 
+# Linux: Use gold linker when possible to reduce linking times
+find_program(GOLD_LINKER ld.gold)
+if (GOLD_LINKER)
+    message(STATUS "Gold linker found: ${GOLD_LINKER}")
+    set(CMAKE_CXX_LINKER_FLAGS "${CMAKE_CXX_LINKER_FLAGS} -fuse-ld=gold")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=gold")
+endif()
+
 # Support Windows 10 or later
 # See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
 if (WIN32)
