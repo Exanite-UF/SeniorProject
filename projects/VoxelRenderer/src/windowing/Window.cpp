@@ -36,6 +36,12 @@ Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enab
         ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
         ImGui_ImplOpenGL3_Init();
     }
+
+    // Add callbacks
+    windowSizeEvent.subscribePermanently([](Window* window, int width, int height)
+        {
+            glViewport(0, 0, width, height); // Adjusts the render target size for the window (ie. the render will resize to take up the full window)
+        });
 }
 
 Window::~Window()
@@ -99,8 +105,6 @@ void Window::onWindowSize(GLFWwindow* window, int width, int height)
     {
         return;
     }
-
-    glViewport(0, 0, width, height); // Adjusts the render target size for the window (ie. the render will resize to take up the full window)
 
     self->windowSizeEvent.raise(self, width, height);
 }
