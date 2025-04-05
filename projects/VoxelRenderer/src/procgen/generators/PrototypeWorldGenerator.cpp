@@ -9,6 +9,7 @@
 #include <src/procgen/data/FlatArrayData.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
+#include <src/procgen/synthesizers/GridPointSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
@@ -47,6 +48,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
+    // GridPointSynthesizer pointSynthesizer(seed);
     PoissonDiskPointSynthesizer pointSynthesizer(seed);
     std::vector<glm::vec3> treeLocations;
 
