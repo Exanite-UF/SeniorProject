@@ -34,13 +34,13 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     add_compile_options(-march=native)
 endif()
 
-# Linux: Use gold linker when possible to reduce linking times
-find_program(GOLD_LINKER ld.gold)
-if (GOLD_LINKER)
-    message(STATUS "Gold linker found: ${GOLD_LINKER}")
-    set(CMAKE_CXX_LINKER_FLAGS "${CMAKE_CXX_LINKER_FLAGS} -fuse-ld=gold -Wl,--threads")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold -Wl,--threads")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=gold -Wl,--threads")
+# Linux: Use mold linker when possible to reduce linking times
+find_program(MOLD_LINKER mold)
+if (MOLD_LINKER)
+    message(STATUS "Mold linker found: ${MOLD_LINKER}")
+    set(CMAKE_CXX_LINKER_FLAGS "${CMAKE_CXX_LINKER_FLAGS} -fuse-ld=mold")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=mold")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=mold")
 endif()
 
 # Support Windows 10 or later
