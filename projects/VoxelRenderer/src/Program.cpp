@@ -624,7 +624,7 @@ void Program::run()
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.750f, 0.625f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.129f, 0.460f, 0.405f, 0.5f));
                         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
-                        if (ImGui::Button(ImGuiUtility::getCondensedHeader("Import & Preview Model").c_str()))
+                        if (ImGui::Button("Import & Preview Model"))
                         {
                             // static std::string lastFile = modelFileName;
                             showOriginalModelMenu = !showOriginalModelMenu;
@@ -649,7 +649,7 @@ void Program::run()
 
                         if (isModelLoaded)
                         {
-                            if (ImGui::Button(ImGuiUtility::getCondensedHeader("Voxelize & Preview Model").c_str()))
+                            if (ImGui::Button("Voxelize & Preview Model"))
                             {
                                 showVoxelizedModelMenu = !showVoxelizedModelMenu;
 
