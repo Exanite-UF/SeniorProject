@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.28)
 project(SeniorProject LANGUAGES C CXX)
 
+# ----- Project wide configuration -----
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(DEBUG)
 endif()
@@ -60,7 +62,7 @@ if (OFF)
     add_link_options(-fsanitize=address)
 endif()
 
-# --- Third party ---
+# ----- Third party -----
 
 # OpenGL
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
@@ -175,6 +177,14 @@ target_sources(extra PRIVATE ${sources})
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/extra/src/*.c)
 target_sources(extra PRIVATE ${sources})
 
-# --- First party ---
+# ----- First party -----
 
 add_subdirectory(./projects/VoxelRenderer)
+
+# ----- Packaging -----
+
+set(CPACK_DEB_COMPONENT_INSTALL YES)
+set(CPACK_COMPONENTS_ALL "VoxelRenderer")
+include(CPack)
+message(STATUS "CPack components to pack: ${CPACK_COMPONENTS_ALL}")
+

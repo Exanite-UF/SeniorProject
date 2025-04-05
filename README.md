@@ -37,5 +37,5 @@ To package:
 ```sh
 # Must be ran inside the generated CMake build directory
 cmake --build . --target VoxelRenderer
-cpack --config CPackConfig-VoxelRenderer.cmake
+cpack -P VoxelRenderer -DCPACK_COMPONENTS_ALL="VoxelRenderer" -G ZIP
 ```
