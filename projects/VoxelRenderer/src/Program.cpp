@@ -17,9 +17,6 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <CGAL/Distance_2/Point_2_Point_2.h>
 
 #include <chrono>
