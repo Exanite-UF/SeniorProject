@@ -240,7 +240,7 @@ void VoxelChunkData::updateMipmaps()
     ZoneScoped;
 
     // Skip first layer since that's the ground truth
-    for (int i = 1; i < data.occupancyMapIndices.size(); ++i)
+    for (int i = 1; i < data.occupancyMapIndices.size() - 1; ++i)
     {
         // Calculate cell count
         auto previousCellCount = data.size >> i;
