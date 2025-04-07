@@ -223,16 +223,22 @@ std::vector<uint16_t>& VoxelChunkData::getRawMaterialMap()
 
 void VoxelChunkData::clearOccupancyMap()
 {
+    ZoneScoped;
+
     std::fill(data.occupancyMap.begin(), data.occupancyMap.end(), 0);
 }
 
 void VoxelChunkData::clearMaterialMap()
 {
+    ZoneScoped;
+
     std::fill(data.materialMap.begin(), data.materialMap.end(), 0);
 }
 
 void VoxelChunkData::updateMipmaps()
 {
+    ZoneScoped;
+
     // Skip first layer since that's the ground truth
     for (int i = 1; i < data.occupancyMapIndices.size(); ++i)
     {
@@ -372,11 +378,15 @@ void VoxelChunkData::copyTo(VoxelChunkData& other) const
 
 void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 {
+    ZoneScoped;
+
     // Update lod's size
     lod.setSize(data.size >> 1);
 
-    // Generate occupancy mipmap
+    // Generate occupancy LOD
     {
+        ZoneScopedN("Generate occupancy LOD");
+
         // Calculate cell count
         auto selfCellCount = data.size >> 1;
         auto lodCellCount = data.size >> 2;
@@ -413,8 +423,10 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
         }
     }
 
-    // Generate material mipmap
+    // Generate material LOD
     {
+        ZoneScopedN("Generate material LOD");
+
         auto lodSize = data.size >> 1;
 
         for (int lodZ = 0; lodZ < lodSize.z; ++lodZ)
