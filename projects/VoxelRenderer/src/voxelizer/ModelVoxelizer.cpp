@@ -28,17 +28,14 @@ void ModelVoxelizer::setupBoundingBox()
     }
 
     // Centering
-    boundingBoxCenter = (minBounds + maxBounds) * 0.5f;
-    minBounds -= boundingBoxCenter;
-    maxBounds -= boundingBoxCenter;
+    //glm::vec3 boundingBoxCenter = (minBounds + maxBounds) * 0.5f;
+    //minBounds -= boundingBoxCenter;
+    //maxBounds -= boundingBoxCenter;
 
     // Padding
     minBounds -= glm::vec3(1.0f);
     maxBounds += glm::vec3(1.0f);
 
-    std::cout << "Bounding Box Center: " << boundingBoxCenter.x << ", " << boundingBoxCenter.y << ", " << boundingBoxCenter.z << std::endl;
-    std::cout << "Min Bounds: " << minBounds.x << ", " << minBounds.y << ", " << minBounds.z << std::endl;
-    std::cout << "Max Bounds: " << maxBounds.x << ", " << maxBounds.y << ", " << maxBounds.z << std::endl;
 
     gridResolution = 64;
     gridSize = glm::ivec3(gridResolution);
@@ -299,13 +296,17 @@ void ModelVoxelizer::generateVoxelMesh()
         glVertexAttribDivisor(1, 1); // Tell OpenGL this is per-instance data
     }
     glBindVertexArray(0);
-
+    
     activeVoxels.clear();
+    glm::vec3 gridCenter = minBounds + (glm::vec3(gridSize) * 0.5f);
+
     for (int z = 0; z < gridSize.z; ++z) {
         for (int y = 0; y < gridSize.y; ++y) {
             for (int x = 0; x < gridSize.x; ++x) {
                 if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
-                    activeVoxels.emplace_back(x, y, z);
+                    glm::vec3 voxelWorldPosition = minBounds + glm::vec3(x, y, z);
+                    glm::vec3 centeredVoxelPosition = voxelWorldPosition - gridCenter;
+                    activeVoxels.emplace_back(centeredVoxelPosition);
                 }
             }
         }
@@ -332,8 +333,8 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     // Camera Setup
     glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraForwardDirection, cameraUpDirection);
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.001f, 1000.0f);
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), -boundingBoxCenter);
-    model = glm::scale(model, voxelSize);
+    glm::mat4 model = glm::mat4(1.0f); // Initialize to identity matrix
+    model = glm::scale(model, voxelSize); // Apply scaling
 
     glUniformMatrix4fv(glGetUniformLocation(shader->programId, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(glGetUniformLocation(shader->programId, "view"), 1, GL_FALSE, glm::value_ptr(view));
