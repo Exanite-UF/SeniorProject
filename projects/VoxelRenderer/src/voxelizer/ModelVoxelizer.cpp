@@ -27,11 +27,20 @@ void ModelVoxelizer::setupBoundingBox()
         }
     }
 
+    // Centering
+    boundingBoxCenter = (minBounds + maxBounds) * 0.5f;
+    minBounds -= boundingBoxCenter;
+    maxBounds -= boundingBoxCenter;
+
     // Padding
     minBounds -= glm::vec3(1.0f);
     maxBounds += glm::vec3(1.0f);
 
-    gridResolution = 16;
+    std::cout << "Bounding Box Center: " << boundingBoxCenter.x << ", " << boundingBoxCenter.y << ", " << boundingBoxCenter.z << std::endl;
+    std::cout << "Min Bounds: " << minBounds.x << ", " << minBounds.y << ", " << minBounds.z << std::endl;
+    std::cout << "Max Bounds: " << maxBounds.x << ", " << maxBounds.y << ", " << maxBounds.z << std::endl;
+
+    gridResolution = 64;
     gridSize = glm::ivec3(gridResolution);
     voxelSize = (maxBounds - minBounds) / glm::vec3(gridSize);
     voxelGrid = std::vector<bool>(gridSize.x * gridSize.y * gridSize.z, false);
@@ -145,6 +154,8 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
             {
                 // std::cout << z << " " << y << " " << x << std::endl;
                 glm::vec3 voxelMin = minBounds + glm::vec3(x, y, z) * voxelSize;
+                //glm::vec3 voxelCenter = voxelMin + voxelSize * 0.5f;
+                //std::cout << "Voxel Center: " << voxelCenter.x << ", " << voxelCenter.y << ", " << voxelCenter.z << std::endl;
                 glm::ivec3 gridCell = worldToGrid(voxelMin); //
 
                 // for (const Triangle& tri : loadedModel->getTriangles())
@@ -182,7 +193,7 @@ void ModelVoxelizer::voxelizeModel(int option)
 
     setupBoundingBox();
 
-    // triangleVoxelization(voxelGrid);
+    triangleVoxelization(voxelGrid);
 
     generateVoxelMesh();
 }
@@ -249,34 +260,7 @@ void ModelVoxelizer::generateVoxelMesh()
         22, 23, 20
     };
 
-    // for (int z = 0; z < gridSize.z; ++z) {
-    //     for (int y = 0; y < gridSize.y; ++y) {
-    //         for (int x = 0; x < gridSize.x; ++x) {
-    //
-    //            if (!voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
-    //            {
-    //                continue;
-    //            }
-    //
-    //            glm::vec3 voxelCenter = minBounds + glm::vec3(x + 0.5f, y + 0.5f, z + 0.5f) * voxelSize;
-    //
-    //            // Transform template vertices to world space
-    //            for (const auto& index : cubeIndices) {
-    //                Vertex v;
-    //                v.Position = glm::vec3(cubeVertices[(index * 8)], cubeVertices[(index * 8) + 1], cubeVertices[(index * 8) + 2]);
-    //                v.TexCoords = glm::vec2(cubeVertices[(index * 8) + 3], cubeVertices[(index * 8) + 4]);
-    //                v.Normal = glm::vec3(cubeVertices[(index * 8) + 5], cubeVertices[(index * 8) + 6], cubeVertices[(index * 8) + 7]);
-    //                v.Position = v.Position * voxelSize + voxelCenter;
-    //                voxelMesh.push_back(v);
-    //            }
-    //        }
-    //    }
-    //}
-
     // Setup
-
-    activeVoxels.clear();
-    activeVoxels.push_back(glm::vec3(0, 0, 0));
 
     glGenVertexArrays(1, &voxelVAO);
     glGenBuffers(1, &voxelVBO);
@@ -316,16 +300,16 @@ void ModelVoxelizer::generateVoxelMesh()
     }
     glBindVertexArray(0);
 
-    // activeVoxels.clear();
-    // for (int z = 0; z < gridSize.z; ++z) {
-    //     for (int y = 0; y < gridSize.y; ++y) {
-    //         for (int x = 0; x < gridSize.x; ++x) {
-    //             if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
-    //                 activeVoxels.emplace_back(x, y, z);
-    //             }
-    //         }
-    //     }
-    // }
+    activeVoxels.clear();
+    for (int z = 0; z < gridSize.z; ++z) {
+        for (int y = 0; y < gridSize.y; ++y) {
+            for (int x = 0; x < gridSize.x; ++x) {
+                if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
+                    activeVoxels.emplace_back(x, y, z);
+                }
+            }
+        }
+    }
 
     isVoxelized = true;
     std::cout << "VOXELIZED!" << std::endl;
@@ -348,7 +332,8 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     // Camera Setup
     glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraForwardDirection, cameraUpDirection);
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.001f, 1000.0f);
-    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), -boundingBoxCenter);
+    model = glm::scale(model, voxelSize);
 
     glUniformMatrix4fv(glGetUniformLocation(shader->programId, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(glGetUniformLocation(shader->programId, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -371,7 +356,6 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
     {
-        // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
     }
     glBindVertexArray(0);

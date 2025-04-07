@@ -26,7 +26,7 @@ private:
     std::thread voxelThread {};
 
     // Camera Attributes
-    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
+    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f);
     glm::vec3 cameraForwardDirection = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cameraUpDirection = glm::vec3(0.0f, 1.0f, 0.0f);
 

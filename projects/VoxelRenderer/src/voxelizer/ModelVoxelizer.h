@@ -52,6 +52,7 @@ private:
     unsigned int voxelEBO {};
     unsigned int instanceVBO {};
     std::vector<glm::vec3> activeVoxels {};
+    glm::vec3 boundingBoxCenter {};
 
     void setupBoundingBox();
 
