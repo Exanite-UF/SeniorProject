@@ -334,7 +334,7 @@ void VoxelChunkData::copyTo(VoxelChunk& other)
     }
 
     // Update mipmaps
-    // This doesn't block the OpenGL
+    // This doesn't block the OpenGL driver
     other.updateMipMaps();
 
     // Upload in chunks to prevent blocking the OpenGL driver
