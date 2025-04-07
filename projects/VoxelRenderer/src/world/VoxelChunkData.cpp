@@ -378,27 +378,33 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
         auto selfCellCount = data.size >> 1;
         auto lodCellCount = data.size >> 2;
 
-        for (int z = 0; z < lodCellCount.z; ++z)
+        for (int lodZ = 0; lodZ < lodCellCount.z; ++lodZ)
         {
-            for (int y = 0; y < lodCellCount.y; ++y)
+            for (int lodY = 0; lodY < lodCellCount.y; ++lodY)
             {
-                for (int x = 0; x < lodCellCount.x; ++x)
+                for (int lodX = 0; lodX < lodCellCount.x; ++lodX)
                 {
                     // This is the cell position in the LOD
-                    auto lodCellPosition = glm::ivec3(x, y, z);
+                    auto lodCellPosition = glm::ivec3(lodX, lodY, lodZ);
 
                     // We now need to get the 8 cells corresponding to this cell from the original data
                     uint8_t result = 0;
-                    for (int bitI = 0; bitI < 8; ++bitI)
+                    for (int z = 0; z < 2; ++z)
                     {
-                        auto selfCellOffset = glm::ivec3(((bitI & 0b100) >> 2), ((bitI & 0b010) >> 1), ((bitI & 0b001) >> 0));
-                        auto selfCellPosition = lodCellPosition * 2 + selfCellOffset;
-
-                        auto selfCellIndex = selfCellPosition.x + selfCellCount.x * (selfCellPosition.y + selfCellCount.y * selfCellPosition.z);
-
-                        if (data.occupancyMap[selfCellIndex] != 0)
+                        for (int y = 0; y < 2; ++y)
                         {
-                            result |= 1 << bitI;
+                            for (int x = 0; x < 2; ++x)
+                            {
+                                auto selfCellPosition = lodCellPosition * 2 + glm::ivec3(x, y, z);
+                                auto selfCellIndex = selfCellPosition.x + selfCellCount.x * (selfCellPosition.y + selfCellCount.y * selfCellPosition.z);
+
+                                if (data.occupancyMap[selfCellIndex] != 0)
+                                {
+                                    result |= 1;
+                                }
+
+                                result <<= 1;
+                            }
                         }
                     }
 
@@ -414,19 +420,41 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
     {
         auto lodSize = data.size >> 1;
 
-        for (int z = 0; z < lodSize.z; ++z)
+        for (int lodZ = 0; lodZ < lodSize.z; ++lodZ)
         {
-            for (int y = 0; y < lodSize.y; ++y)
+            for (int lodY = 0; lodY < lodSize.y; ++lodY)
             {
-                for (int x = 0; x < lodSize.x; ++x)
+                for (int lodX = 0; lodX < lodSize.x; ++lodX)
                 {
                     // This is the voxel position in the LOD
-                    auto lodPosition = glm::ivec3(x, y, z);
+                    auto lodPosition = glm::ivec3(lodX, lodY, lodZ);
+                    if (lod.getVoxelOccupancy(lodPosition))
+                    {
+                        // Skip air
+                        continue;
+                    }
 
                     // We now need to get 1 of the 8 original materials to show in the LOD
-                    // TODO: Use proper implementation. This is currently a placeholder that does nearest neighbor sampling
-                    auto materialIndex = getVoxelMaterialIndex(lodPosition * 2);
-                    lod.setVoxelMaterialIndex(lodPosition, materialIndex);
+                    // TODO: Use proper implementation. This is currently a placeholder implementation
+                    bool foundMaterial = false;
+                    for (int z = 0; !foundMaterial && z < 2; ++z)
+                    {
+                        for (int y = 0; !foundMaterial && y < 2; ++y)
+                        {
+                            for (int x = 0; !foundMaterial && x < 2; ++x)
+                            {
+                                auto selfPosition = lodPosition * 2 + glm::ivec3(x, y, z);
+
+                                if (getVoxelOccupancy(selfPosition))
+                                {
+                                    auto materialIndex = getVoxelMaterialIndex(lodPosition * 2);
+                                    lod.setVoxelMaterialIndex(lodPosition, materialIndex);
+
+                                    foundMaterial = true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
