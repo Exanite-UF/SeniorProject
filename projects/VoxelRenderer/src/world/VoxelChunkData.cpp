@@ -128,34 +128,34 @@ void VoxelChunkData::setVoxelOccupancy(const glm::ivec3& position, bool isOccupi
     }
 }
 
-bool VoxelChunkData::getMipmapVoxelOccupancy(const glm::ivec3& position, const int level) const
+bool VoxelChunkData::getMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, const int level) const
 {
     // Calculate cell position and count
-    auto cellPosition = position >> (1 + level);
+    auto cellPosition = positionInLevel >> 1;
     auto cellCount = data.size >> (1 + level);
 
     // Calculate byte index of cell
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices[level];
 
     // Calculate which bit to set
-    auto isOddPos = position & 1;
+    auto isOddPos = positionInLevel & 1;
     auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
     auto bit = 1 << bitsShifted;
 
     return (data.occupancyMap[cellIndex] & bit) != 0;
 }
 
-void VoxelChunkData::setMipmapVoxelOccupancy(const glm::ivec3& position, int level, bool isOccupied)
+void VoxelChunkData::setMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, int level, bool isOccupied)
 {
     // Calculate cell position and count
-    auto cellPosition = position >> (1 + level);
+    auto cellPosition = positionInLevel >> 1;
     auto cellCount = data.size >> (1 + level);
 
     // Calculate byte index of cell
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices[level];
 
     // Calculate which bit to set
-    auto isOddPos = position & 1;
+    auto isOddPos = positionInLevel & 1;
     auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
     auto bit = 1 << bitsShifted;
 
