@@ -3,12 +3,32 @@ project(SeniorProject LANGUAGES C CXX)
 
 # ----- Project wide configuration -----
 
+# --- CMake options ---
+
+# Set option variable policy
+# The NEW policy enables the use of the option() function
+cmake_policy(SET CMP0077 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+# --- Build configurations ---
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(DEBUG)
 endif()
 
+# --- Compilation options ---
+
+# Enable architecture specific optimizations
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-march=native)
+endif()
+
+# --- Linking options ---
+
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# --- Output options ---
 
 # This postfixes a "d" to shared library names in DEBUG mode
 set(CMAKE_DEBUG_POSTFIX d)
@@ -18,25 +38,17 @@ if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
-# Set IPO policy
-# The NEW policy enables IPO flags for all compilers if possible and to error if not
-# We check for compatibility below so using the new policy is safe
-cmake_policy(SET CMP0069 NEW)
-set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+# --- Windows ---
 
-# Enable Inter-Procedural Optimization (IPO) if supported by the compiler
-include(CheckIPOSupported)
-check_ipo_supported(RESULT IS_IPO_SUPPORTED)
-if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+# Support Windows 10 or later
+# See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
+if (WIN32)
+    add_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
 
-# Enable architecture specific optimizations
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_compile_options(-march=native)
-endif()
+# --- Linux ---
 
-# Linux: Use mold linker when possible to reduce linking times
+# Use mold linker when possible to reduce linking times
 find_program(MOLD_LINKER mold)
 if (MOLD_LINKER)
     message(STATUS "Mold linker found: ${MOLD_LINKER}")
@@ -45,16 +57,7 @@ if (MOLD_LINKER)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=mold")
 endif()
 
-# Support Windows 10 or later
-# See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
-if (WIN32)
-    add_definitions(-D_WIN32_WINNT=0x0A00)
-endif()
-
-# Set option variable policy
-# The NEW policy enables the use of the option() function
-cmake_policy(SET CMP0077 NEW)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+# --- Debug ---
 
 # Hardcoded AddressSanitizer toggle
 if (OFF)
