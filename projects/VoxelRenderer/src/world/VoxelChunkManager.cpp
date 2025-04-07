@@ -445,6 +445,7 @@ void VoxelChunkManager::update(const float deltaTime)
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
+                    commandBuffer.setExistsOnGpu(true);
 
                     submitCommandBuffer(chunk->component, commandBuffer);
                 }

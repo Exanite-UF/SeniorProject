@@ -23,7 +23,7 @@ public:
         // ----- Rendering -----
 
         // The distance at which chunks begin to be loaded on a separate thread
-        int loadDistance = 2;
+        int loadDistance = 1;
 
         // This defines the number of full size chunked that can be uploaded
         // This is a float because LODed chunks take up less memory
