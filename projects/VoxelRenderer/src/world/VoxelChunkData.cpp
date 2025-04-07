@@ -250,7 +250,7 @@ void VoxelChunkData::updateMipmaps()
                     uint8_t result = 0;
                     for (int bitI = 0; bitI < 8; ++bitI)
                     {
-                        auto previousCellOffset = glm::ivec3((bitI & 4 >> 2), (bitI & 2 >> 1), (bitI & 2 >> 0));
+                        auto previousCellOffset = glm::ivec3(((bitI & 0b100) >> 2), ((bitI & 0b010) >> 1), ((bitI & 0b001) >> 0));
                         auto previousCellPosition = currentCellPosition * 2 + previousCellOffset;
 
                         auto previousCellIndex = previousCellPosition.x + cellCount.x * (previousCellPosition.y + cellCount.y * previousCellPosition.z) + data.occupancyMapIndices[i - 1];
@@ -369,31 +369,32 @@ void VoxelChunkData::copyTo(VoxelChunkData& other) const
 
 void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 {
-    // Update other's size
-    lod.setSize(data.size >> 1, false);
+    // Update lod's size
+    lod.setSize(data.size >> 1);
 
     // Generate occupancy mipmap
     {
         // Calculate cell count
-        auto cellCount = data.size >> 2;
+        auto selfCellCount = data.size >> 1;
+        auto lodCellCount = data.size >> 2;
 
-        for (int z = 0; z < cellCount.z; ++z)
+        for (int z = 0; z < lodCellCount.z; ++z)
         {
-            for (int y = 0; y < cellCount.y; ++y)
+            for (int y = 0; y < lodCellCount.y; ++y)
             {
-                for (int x = 0; x < cellCount.x; ++x)
+                for (int x = 0; x < lodCellCount.x; ++x)
                 {
                     // This is the cell position in the LOD
                     auto lodCellPosition = glm::ivec3(x, y, z);
 
-                    // We now need to get the 8 cells corresponding to this cell from the previous mipmap
+                    // We now need to get the 8 cells corresponding to this cell from the original data
                     uint8_t result = 0;
                     for (int bitI = 0; bitI < 8; ++bitI)
                     {
-                        auto selfCellOffset = glm::ivec3((bitI & 4 >> 2), (bitI & 2 >> 1), (bitI & 2 >> 0));
+                        auto selfCellOffset = glm::ivec3(((bitI & 0b100) >> 2), ((bitI & 0b010) >> 1), ((bitI & 0b001) >> 0));
                         auto selfCellPosition = lodCellPosition * 2 + selfCellOffset;
 
-                        auto selfCellIndex = selfCellPosition.x + cellCount.x * (selfCellPosition.y + cellCount.y * selfCellPosition.z);
+                        auto selfCellIndex = selfCellPosition.x + selfCellCount.x * (selfCellPosition.y + selfCellCount.y * selfCellPosition.z);
 
                         if (data.occupancyMap[selfCellIndex] != 0)
                         {
@@ -401,8 +402,8 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                         }
                     }
 
-                    // Now set the value for the current mipmap
-                    auto lodCellIndex = lodCellPosition.x + cellCount.x * (lodCellPosition.y + cellCount.y * lodCellPosition.z);
+                    // Now set the value in the LOD
+                    auto lodCellIndex = lodCellPosition.x + lodCellCount.x * (lodCellPosition.y + lodCellCount.y * lodCellPosition.z);
                     lod.data.occupancyMap[lodCellIndex] = result;
                 }
             }
