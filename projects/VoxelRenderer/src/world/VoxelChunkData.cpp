@@ -87,6 +87,11 @@ void VoxelChunkData::setHasMipmaps(bool hasMipmaps)
     setSize(data.size, data.hasMipmaps);
 }
 
+int VoxelChunkData::getMipmapCount() const
+{
+    return std::max(0, static_cast<int>(data.occupancyMapIndices.size()) - 2);
+}
+
 bool VoxelChunkData::getVoxelOccupancy(const glm::ivec3& position) const
 {
     // Calculate cell position and count

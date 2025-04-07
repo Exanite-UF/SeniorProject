@@ -35,6 +35,8 @@ public:
     bool getHasMipmaps() const;
     void setHasMipmaps(bool hasMipmaps);
 
+    int getMipmapCount() const;
+
     [[nodiscard]] bool getVoxelOccupancy(const glm::ivec3& position) const;
     void setVoxelOccupancy(const glm::ivec3& position, bool isOccupied);
 
