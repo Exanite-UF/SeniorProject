@@ -128,6 +128,23 @@ void VoxelChunkData::setVoxelOccupancy(const glm::ivec3& position, bool isOccupi
     }
 }
 
+bool VoxelChunkData::getMipmapVoxelOccupancy(const glm::ivec3& position, const int level) const
+{
+    // Calculate cell position and count
+    auto cellPosition = position >> (1 + level);
+    auto cellCount = data.size >> (1 + level);
+
+    // Calculate byte index of cell
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices[level];
+
+    // Calculate which bit to set
+    auto isOddPos = position & 1;
+    auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
+    auto bit = 1 << bitsShifted;
+
+    return (data.occupancyMap[cellIndex] & bit) != 0;
+}
+
 const std::shared_ptr<Material>& VoxelChunkData::getVoxelMaterial(const glm::ivec3& position) const
 {
     auto& materialManager = MaterialManager::getInstance();
@@ -182,36 +199,10 @@ void VoxelChunkData::clearMaterialMap()
 
 void VoxelChunkData::updateMipmaps()
 {
-    // Todo: Remove commented code
-    // // Reads a byte from the previous mipmap
-    // uint getByte(ivec3 coord)
-    // {
-    //     int index = (coord.x + resolution.x * (coord.y + resolution.y * coord.z)) + int(previousStartByte);
-    //     int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
-    //     int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
-    //
-    //     return (occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset);
-    // }
-
-    // getVoxelOccupancy();
-    // // Calculate cell position and count
-    // auto cellPosition = position >> 1;
-    // auto cellCount = data.size >> 1;
-    //
-    // // Calculate byte index of cell
-    // auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z);
-    //
-    // // Calculate which bit to set
-    // auto isOddPos = position & 1;
-    // auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
-    // auto bit = 1 << bitsShifted;
-    //
-    // return (data.occupancyMap[cellIndex] & bit) != 0;
-
     // Calculate cell count
     auto cellCount = data.size >> 1;
 
-    // Skip first layer since that's our ground truth
+    // Skip first layer since that's the ground truth
     for (int i = 1; i < data.occupancyMapIndices.size(); ++i)
     {
         for (int z = 0; z < cellCount.z; ++z)
@@ -230,7 +221,7 @@ void VoxelChunkData::updateMipmaps()
                         auto previousCellOffset = glm::ivec3((bitI & 4 >> 2), (bitI & 2 >> 1), (bitI & 2 >> 0));
                         auto previousCellPosition = currentCellPosition * 2 + previousCellOffset;
 
-                        auto previousCellIndex = previousCellPosition.x + cellCount.x * (previousCellPosition.y + cellCount.y * previousCellPosition.z) + data.occupancyMapIndices.at(i - 1);
+                        auto previousCellIndex = previousCellPosition.x + cellCount.x * (previousCellPosition.y + cellCount.y * previousCellPosition.z) + data.occupancyMapIndices[i - 1];
 
                         if (data.occupancyMap[previousCellIndex] != 0)
                         {
@@ -239,7 +230,7 @@ void VoxelChunkData::updateMipmaps()
                     }
 
                     // Now set the value for the current mipmap
-                    auto currentCellIndex = currentCellPosition.x + cellCount.x * (currentCellPosition.y + cellCount.y * currentCellPosition.z) + data.occupancyMapIndices.at(i);
+                    auto currentCellIndex = currentCellPosition.x + cellCount.x * (currentCellPosition.y + cellCount.y * currentCellPosition.z) + data.occupancyMapIndices[i];
                     data.occupancyMap[currentCellIndex] = result;
                 }
             }

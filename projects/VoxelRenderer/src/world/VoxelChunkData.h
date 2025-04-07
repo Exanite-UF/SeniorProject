@@ -38,6 +38,8 @@ public:
     [[nodiscard]] bool getVoxelOccupancy(const glm::ivec3& position) const;
     void setVoxelOccupancy(const glm::ivec3& position, bool isOccupied);
 
+    [[nodiscard]] bool getMipmapVoxelOccupancy(const glm::ivec3& position, int level) const;
+
     [[nodiscard]] const std::shared_ptr<Material>& getVoxelMaterial(const glm::ivec3& position) const;
     void setVoxelMaterial(const glm::ivec3& position, const std::shared_ptr<Material>& material);
 
