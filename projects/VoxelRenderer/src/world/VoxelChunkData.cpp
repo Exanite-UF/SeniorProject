@@ -271,7 +271,7 @@ void VoxelChunkData::updateMipmaps()
                     }
 
                     // Now set the value for the current mipmap
-                    auto currentCellIndex = currentCellPosition.x + previousCellCount.x * (currentCellPosition.y + previousCellCount.y * currentCellPosition.z) + data.occupancyMapIndices.at(i);
+                    auto currentCellIndex = currentCellPosition.x + currentCellCount.x * (currentCellPosition.y + currentCellCount.y * currentCellPosition.z) + data.occupancyMapIndices.at(i);
                     data.occupancyMap.at(currentCellIndex) = result;
                 }
             }

@@ -989,10 +989,10 @@ void Program::runLateStartupTests()
         data.setHasMipmaps(true);
 
         Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
-        // Assert::isTrue(data.getOccupancyLayerCount() == 3, "Expected 3 occupancy layers");
-        // Assert::isTrue(data.getOccupancyMipmapCount() == 2, "Expected 2 occupancy mipmap layers");
-        // Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
-        // Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(1, 1, 1), 1), "Expected voxel to be occupied (level 1)");
-        // Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 2), "Expected voxel to be occupied (level 2)");
+        Assert::isTrue(data.getOccupancyLayerCount() == 3, "Expected 3 occupancy layers");
+        Assert::isTrue(data.getOccupancyMipmapCount() == 2, "Expected 2 occupancy mipmap layers");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(1, 1, 1), 1), "Expected voxel to be occupied (level 1)");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 2), "Expected voxel to be occupied (level 2)");
     }
 }
