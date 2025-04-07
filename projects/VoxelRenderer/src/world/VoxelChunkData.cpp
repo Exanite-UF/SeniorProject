@@ -261,8 +261,8 @@ void VoxelChunkData::updateMipmaps()
                     {
                         auto previousCellOffset = glm::ivec3(((bitI & 0b001) >> 0), ((bitI & 0b010) >> 1), ((bitI & 0b100) >> 2));
                         auto previousCellPosition = currentCellPosition * 2 + previousCellOffset;
-
                         auto previousCellIndex = previousCellPosition.x + previousCellCount.x * (previousCellPosition.y + previousCellCount.y * previousCellPosition.z) + data.occupancyMapIndices.at(i - 1);
+                        Assert::isTrue(previousCellIndex >= data.occupancyMapIndices.at(i - 1) && previousCellIndex < data.occupancyMapIndices.at(i), "previousCellIndex is out of bounds");
 
                         if (data.occupancyMap.at(previousCellIndex) != 0)
                         {
@@ -272,6 +272,7 @@ void VoxelChunkData::updateMipmaps()
 
                     // Now set the value for the current mipmap
                     auto currentCellIndex = currentCellPosition.x + currentCellCount.x * (currentCellPosition.y + currentCellCount.y * currentCellPosition.z) + data.occupancyMapIndices.at(i);
+                    Assert::isTrue(currentCellIndex >= data.occupancyMapIndices.at(i) && currentCellIndex < data.occupancyMapIndices.at(i + 1), "currentCellIndex is out of bounds");
                     data.occupancyMap.at(currentCellIndex) = result;
                 }
             }
@@ -406,8 +407,8 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                     {
                         auto selfCellOffset = glm::ivec3(((bitI & 0b001) >> 0), ((bitI & 0b010) >> 1), ((bitI & 0b100) >> 2));
                         auto selfCellPosition = lodCellPosition * 2 + selfCellOffset;
-
                         auto selfCellIndex = selfCellPosition.x + selfCellCount.x * (selfCellPosition.y + selfCellCount.y * selfCellPosition.z);
+                        Assert::isTrue(selfCellIndex >= data.occupancyMapIndices.at(0) && selfCellIndex < data.occupancyMapIndices.at(1), "selfCellIndex is out of bounds");
 
                         if (data.occupancyMap.at(selfCellIndex) != 0)
                         {
@@ -417,6 +418,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 
                     // Now set the value in the LOD
                     auto lodCellIndex = lodCellPosition.x + lodCellCount.x * (lodCellPosition.y + lodCellCount.y * lodCellPosition.z);
+                    Assert::isTrue(lodCellIndex >= lod.data.occupancyMapIndices.at(0) && lodCellIndex < lod.data.occupancyMapIndices.at(1), "lodCellIndex is out of bounds");
                     lod.data.occupancyMap.at(lodCellIndex) = result;
                 }
             }
