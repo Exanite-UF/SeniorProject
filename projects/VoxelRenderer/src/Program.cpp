@@ -954,6 +954,7 @@ void Program::runLateStartupTests()
     }
 
     {
+        // Test LOD generation
         VoxelChunkData original(glm::ivec3(4, 4, 4));
         original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
         original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
@@ -963,5 +964,18 @@ void Program::runLateStartupTests()
         original.copyToLod(lod);
         Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
         Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
+    }
+
+    {
+        // Test mipmap generation
+        VoxelChunkData data(glm::ivec3(8, 8, 8));
+        data.setVoxelOccupancy(glm::ivec3(4, 4, 4), true);
+        data.setHasMipmaps(true);
+
+        Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
+        Assert::isTrue(data.getMipmapCount() == 2, "Expected 2 mipmap layers");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(1, 1, 1), 1), "Expected voxel to be occupied (level 1)");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 2), "Expected voxel to be occupied (level 2)");
     }
 }
