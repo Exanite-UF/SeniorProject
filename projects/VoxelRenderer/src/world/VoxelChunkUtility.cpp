@@ -37,3 +37,18 @@ std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3
 
     return indices;
 }
+
+bool VoxelChunkUtility::isValidPosition(const glm::ivec3& position, const glm::ivec3& size)
+{
+    if (position.x <= 0 || position.y <= 0 || position.z <= 0)
+    {
+        return false;
+    }
+
+    if (position.x > size.x || position.y > size.y || position.z > size.z)
+    {
+        return false;
+    }
+
+    return true;
+}

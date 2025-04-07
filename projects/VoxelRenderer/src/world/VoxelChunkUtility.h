@@ -16,4 +16,6 @@ public:
     //
     // The max size of the returned vector is Constants::VoxelChunk::maxOccupancyMapLayerCount + 1
     static std::vector<uint32_t> getOccupancyMapIndices(const glm::ivec3& size);
+
+    [[nodiscard]] static bool isValidPosition(const glm::ivec3& position, const glm::ivec3& size);
 };
