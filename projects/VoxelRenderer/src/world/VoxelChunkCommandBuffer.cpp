@@ -1,7 +1,5 @@
 #include "VoxelChunkCommandBuffer.h"
 
-#include <algorithm>
-#include <ranges>
 #include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
 
@@ -143,7 +141,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
 
                 auto command = setExistsOnGpuCommands.at(entry.index);
-                auto previouslyExistedOnGpu = component->getExistsOnGpu();
 
                 // Never write to GPU using setExistsOnGpu, we can handle it better here
                 component->setExistsOnGpu(command.existsOnGpu, false);

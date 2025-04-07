@@ -1,15 +1,24 @@
 #include <cmath>
 #include <cstdint>
 #include <glm/vec3.hpp>
-#include <stdexcept>
 #include <string>
 
 #include "VoxelChunkUtility.h"
+
+#include <src/utilities/Assert.h>
 #include <src/world/VoxelChunk.h>
 
 std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3& size)
 {
-    uint8_t layerCount = 1 + std::floor(std::log2(std::min(std::min(size.x, size.y), size.z) / 4 /*This is a 4 and not a 2, because the mip map generation will break if the top level mip map has side length 1. This prevents that from occuring.*/) / 2); // This is what the name says it is
+    Assert::isTrue((size.x != 0) && ((size.x & (size.x - 1)) == 0), "size.x must be a power of 2");
+    Assert::isTrue((size.y != 0) && ((size.y & (size.y - 1)) == 0), "size.y must be a power of 2");
+    Assert::isTrue((size.z != 0) && ((size.z & (size.z - 1)) == 0), "size.z must be a power of 2");
+
+    // The division inside the log2 call is a 4, not 2, because the mipmap generation will break if the top level mipmap has side length 1. This prevents that from occurring.
+    // The mipmap generation breaks when the side length is 1 because the top level mipmap will only be represented by 1 bit instead of a full byte.
+    // A minimum side length makes the top level mipmap be at least 1 byte in size.
+    auto smallestSide = std::min(std::min(size.x, size.y), size.z);
+    uint8_t layerCount = 1 + std::floor(std::log2(smallestSide / 4) / 2);
     layerCount = glm::min(layerCount, Constants::VoxelChunk::maxOccupancyMapLayerCount); // Limit the max number of mip maps
 
     std::vector<uint32_t> indices(layerCount + 1);
@@ -27,4 +36,19 @@ std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3
     indices[indices.size() - 1] = totalByteCount;
 
     return indices;
+}
+
+bool VoxelChunkUtility::isValidPosition(const glm::ivec3& position, const glm::ivec3& size)
+{
+    if (position.x <= 0 || position.y <= 0 || position.z <= 0)
+    {
+        return false;
+    }
+
+    if (position.x > size.x || position.y > size.y || position.z > size.z)
+    {
+        return false;
+    }
+
+    return true;
 }

@@ -1,6 +1,7 @@
 #include "VoxelChunkData.h"
 
 #include <chrono>
+#include <glm/gtc/integer.hpp>
 #include <set>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkUtility.h>
@@ -8,15 +9,11 @@
 #include <thread>
 #include <tracy/Tracy.hpp>
 
-VoxelChunkData::VoxelChunkData()
-{
-}
-
-VoxelChunkData::VoxelChunkData(const glm::ivec3& size)
+VoxelChunkData::VoxelChunkData(const glm::ivec3& size, bool includeMipmaps)
 {
     ZoneScoped;
 
-    setSize(size);
+    setSize(size, includeMipmaps);
 }
 
 const glm::ivec3& VoxelChunkData::getSize() const
@@ -26,14 +23,68 @@ const glm::ivec3& VoxelChunkData::getSize() const
 
 void VoxelChunkData::setSize(const glm::ivec3& size)
 {
+    setSize(size, data.hasMipmaps);
+}
+
+void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
+{
     ZoneScoped;
 
-    this->data.size = size;
+    // Allow for size 0
+    if (size.x * size.y * size.z == 0)
+    {
+        this->data.size = size;
+        this->data.hasMipmaps = includeMipmaps;
 
-    data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
-    data.occupancyMap.resize(data.occupancyMapIndices.at(1));
+        data.occupancyMapIndices = { 0 };
+        data.occupancyMap.resize(0);
+        data.materialMap.resize(0);
+
+        return;
+    }
+
+    // Get next power of 2
+    size = {
+        glm::max(2, 1 << glm::log2(size.x - 1) + 1),
+        glm::max(2, 1 << glm::log2(size.y - 1) + 1),
+        glm::max(2, 1 << glm::log2(size.z - 1) + 1),
+    };
+
+    auto previousSize = this->data.size;
+    this->data.size = size;
+    this->data.hasMipmaps = includeMipmaps;
+
+    if (includeMipmaps)
+    {
+        // Store all mipmap layer data
+        data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
+        data.occupancyMap.resize(data.occupancyMapIndices.at(data.occupancyMapIndices.size() - 1));
+
+        // Update mipmaps if there was any previously existing data
+        // If there was not, then everything is just zero
+        if (previousSize != glm::ivec3(0))
+        {
+            updateMipmaps();
+        }
+    }
+    else
+    {
+        // Only store first layer of data
+        data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
+        data.occupancyMap.resize(data.occupancyMapIndices.at(1));
+    }
 
     data.materialMap.resize(size.x * size.y * size.z);
+}
+
+bool VoxelChunkData::getHasMipmaps() const
+{
+    return data.hasMipmaps;
+}
+
+void VoxelChunkData::setHasMipmaps(bool hasMipmaps)
+{
+    setSize(data.size, data.hasMipmaps);
 }
 
 bool VoxelChunkData::getVoxelOccupancy(const glm::ivec3& position) const
@@ -104,19 +155,19 @@ void VoxelChunkData::setVoxelMaterialIndex(const glm::ivec3& position, const uin
     data.materialMap[voxelIndex] = materialIndex;
 }
 
-bool VoxelChunkData::isValidPosition(const glm::ivec3& position) const
+std::vector<uint8_t>& VoxelChunkData::getRawOccupancyMap()
 {
-    if (position.x <= 0 || position.y <= 0 || position.z <= 0)
-    {
-        return false;
-    }
+    return data.occupancyMap;
+}
 
-    if (position.x > data.size.x || position.y > data.size.y || position.z > data.size.z)
-    {
-        return false;
-    }
+std::vector<uint32_t>& VoxelChunkData::getRawOccupancyMapIndices()
+{
+    return data.occupancyMapIndices;
+}
 
-    return true;
+std::vector<uint16_t>& VoxelChunkData::getRawMaterialMap()
+{
+    return data.materialMap;
 }
 
 void VoxelChunkData::clearOccupancyMap()
@@ -127,6 +178,11 @@ void VoxelChunkData::clearOccupancyMap()
 void VoxelChunkData::clearMaterialMap()
 {
     std::fill(data.materialMap.begin(), data.materialMap.end(), 0);
+}
+
+void VoxelChunkData::updateMipmaps()
+{
+    // TODO
 }
 
 void VoxelChunkData::copyFrom(VoxelChunk& chunk)
@@ -212,14 +268,14 @@ void VoxelChunkData::copyTo(VoxelChunk& chunk)
     }
 }
 
-void VoxelChunkData::copyFrom(VoxelChunkData& data)
+void VoxelChunkData::copyFrom(const VoxelChunkData& data)
 {
     ZoneScoped;
 
     this->data = data.data;
 }
 
-void VoxelChunkData::copyTo(VoxelChunkData& data)
+void VoxelChunkData::copyTo(VoxelChunkData& data) const
 {
     ZoneScoped;
 

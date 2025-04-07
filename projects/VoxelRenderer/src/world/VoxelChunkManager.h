@@ -7,6 +7,7 @@
 #include <queue>
 #include <src/Constants.h>
 
+#include <src/threading/PendingTasks.h>
 #include <src/utilities/Singleton.h>
 #include <src/windowing/GlfwContext.h>
 #include <src/world/SceneComponent.h>
@@ -21,11 +22,12 @@ public:
     public:
         // ----- Rendering -----
 
-        // The distance at which chunks begin to be generated on a separate thread
-        int generationDistance = 2; // TODO
+        // The distance at which chunks begin to be loaded on a separate thread
+        int loadDistance = 1;
 
-        // The distance at which chunks are loaded and uploaded to the GPU
-        int renderDistance = 1; // TODO: Increase renderDistance to 2 after LODs are added
+        // This defines the number of full size chunked that can be uploaded
+        // This is a float because LODed chunks take up less memory
+        float chunkUploadBudget = 9;
 
         // ----- Chunks -----
 
@@ -49,9 +51,11 @@ private:
     struct ChunkModificationTask
     {
     public:
-        std::shared_ptr<VoxelChunkComponent> component;
-        std::shared_ptr<SceneComponent> scene;
-        VoxelChunkCommandBuffer commandBuffer;
+        std::shared_ptr<VoxelChunkComponent> component {};
+        std::shared_ptr<SceneComponent> scene {};
+        VoxelChunkCommandBuffer commandBuffer {};
+        std::promise<void> promise {};
+        PendingTasks<void> dependencies;
 
         explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer);
     };
@@ -71,15 +75,14 @@ private:
     {
     public:
         std::shared_ptr<VoxelChunkComponent> component {};
-        glm::ivec2 chunkPosition;
+        glm::ivec2 chunkPosition {};
 
         bool isLoading = true;
 
         bool isUnloading = false;
         float timeSpentWaitingForUnload = 0;
 
-        bool isDisplayed = false;
-        std::shared_ptr<SceneComponent> scene;
+        std::shared_ptr<SceneComponent> scene {};
 
         explicit ActiveWorldChunk(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize, const std::shared_ptr<SceneComponent>& scene);
         ~ActiveWorldChunk() override;
@@ -157,7 +160,7 @@ public:
     void showDebugMenu();
 
     // Can be called from any thread
-    void submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
+    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
 
     ~VoxelChunkManager() override;
 

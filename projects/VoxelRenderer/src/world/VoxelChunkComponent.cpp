@@ -46,6 +46,11 @@ VoxelChunkComponent::RendererData& VoxelChunkComponent::getRendererData()
     return rendererData;
 }
 
+VoxelChunkComponent::ModificationData& VoxelChunkComponent::getModificationData()
+{
+    return modificationData;
+}
+
 bool VoxelChunkComponent::getExistsOnGpu() const
 {
     return existsOnGpu;

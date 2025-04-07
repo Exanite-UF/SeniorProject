@@ -17,9 +17,6 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <CGAL/Distance_2/Point_2_Point_2.h>
 
 #include <chrono>
@@ -143,7 +140,7 @@ void Program::run()
     auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
     scene->setSkybox(skybox);
 
-    // Generate static, noise-based chunks for testing purposes
+    // Generate static, noise-based placeholder chunks for testing purposes
     if (false)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;

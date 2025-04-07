@@ -36,6 +36,6 @@ This project uses CPack to package the built project. The project must be built 
 To package:
 ```sh
 # Must be ran inside the generated CMake build directory
-cmake --build .
-cpack --config CPackConfig-VoxelRenderer.cmake
+cmake --build . --target VoxelRenderer
+cpack -P VoxelRenderer -DCPACK_COMPONENTS_ALL="VoxelRenderer" -G ZIP
 ```

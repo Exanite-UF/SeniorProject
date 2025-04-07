@@ -1,12 +1,13 @@
 #pragma once
 
 #include <atomic>
+#include <future>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <shared_mutex>
 
 #include <src/gameobjects/Component.h>
+#include <src/threading/PendingTasks.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
 
@@ -18,6 +19,7 @@ class VoxelChunkComponent : public Component
     friend class VoxelChunkCommandBuffer;
 
 public:
+    // Used primarily by the renderer
     struct RendererData
     {
         std::atomic<bool> isVisible = false;
@@ -28,12 +30,19 @@ public:
         glm::vec3 previousScale;
     };
 
+    // Used primarily by the chunk modification threads
+    struct ModificationData
+    {
+        PendingTasks<void> pendingTasks {};
+    };
+
 private:
     std::optional<std::unique_ptr<VoxelChunk>> chunk; // Primarily accessed by render and chunk modification thread
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
     std::atomic<bool> existsOnGpu = false;
     RendererData rendererData {};
+    ModificationData modificationData {};
 
     std::shared_mutex mutex {};
 
@@ -56,6 +65,10 @@ public:
 
     // Unsynchronized
     RendererData& getRendererData();
+
+    // This method itself is unsynchronized
+    // See struct declaration for additional rules
+    ModificationData& getModificationData();
 
     bool getExistsOnGpu() const;
 
