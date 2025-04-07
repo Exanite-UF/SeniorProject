@@ -119,6 +119,16 @@ bool VoxelChunkData::isValidPosition(const glm::ivec3& position) const
     return true;
 }
 
+std::vector<uint8_t>& VoxelChunkData::getRawOccupancyMap()
+{
+    return data.occupancyMap;
+}
+
+std::vector<uint16_t>& VoxelChunkData::getRawMaterialMap()
+{
+    return data.materialMap;
+}
+
 void VoxelChunkData::clearOccupancyMap()
 {
     std::fill(data.occupancyMap.begin(), data.occupancyMap.end(), 0);

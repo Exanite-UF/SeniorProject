@@ -42,6 +42,9 @@ public:
 
     [[nodiscard]] bool isValidPosition(const glm::ivec3& position) const;
 
+    std::vector<uint8_t>& getRawOccupancyMap();
+    std::vector<uint16_t>& getRawMaterialMap();
+
     void clearOccupancyMap();
     void clearMaterialMap();
 
