@@ -56,34 +56,24 @@ bool VoxelChunkComponent::getExistsOnGpu() const
     return existsOnGpu;
 }
 
-void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
+void VoxelChunkComponent::allocateGpuData(const glm::ivec3& size)
 {
     ZoneScoped;
 
     assertIsPartOfWorld();
 
-    if (this->existsOnGpu == existsOnGpu)
-    {
-        return;
-    }
+    existsOnGpu = true;
+    chunk = std::make_unique<VoxelChunk>(size, false);
+}
 
-    this->existsOnGpu = existsOnGpu;
+void VoxelChunkComponent::deallocateGpuData()
+{
+    ZoneScoped;
 
-    if (existsOnGpu)
+    existsOnGpu = false;
+    if (chunk.has_value())
     {
-        chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, false);
-
-        if (writeToGpu)
-        {
-            chunkData.copyTo(*chunk.value());
-        }
-    }
-    else
-    {
-        if (chunk.has_value())
-        {
-            chunk.value().reset();
-        }
+        chunk.value().reset();
     }
 }
 
@@ -93,7 +83,7 @@ void VoxelChunkComponent::onRemovingFromWorld()
 
     std::lock_guard lock(getMutex());
 
-    setExistsOnGpu(false);
+    deallocateGpuData();
 
     Component::onRemovingFromWorld();
 }

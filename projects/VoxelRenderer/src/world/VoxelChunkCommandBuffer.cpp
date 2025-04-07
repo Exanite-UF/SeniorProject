@@ -141,9 +141,17 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
 
                 auto command = setExistsOnGpuCommands.at(entry.index);
-
-                // Never write to GPU using setExistsOnGpu, we can handle it better here
-                component->setExistsOnGpu(command.existsOnGpu, false);
+                if (command.existsOnGpu != component->getExistsOnGpu())
+                {
+                    if (command.existsOnGpu)
+                    {
+                        component->allocateGpuData(chunkData.getSize());
+                    }
+                    else
+                    {
+                        component->deallocateGpuData();
+                    }
+                }
 
                 // Write if needed
                 if (command.existsOnGpu && command.writeToGpu)

@@ -76,5 +76,6 @@ protected:
     void onRemovingFromWorld() override;
 
 private:
-    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
+    void allocateGpuData(const glm::ivec3& size);
+    void deallocateGpuData();
 };
