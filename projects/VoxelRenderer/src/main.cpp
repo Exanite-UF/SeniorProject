@@ -19,6 +19,7 @@ int main()
     {
         // TODO: No idea why this prints gibberish on Windows
         Log::fatal("Program crashed: Runtime error: " + std::string(e.what()));
+
         return 1;
     }
     catch (...)
