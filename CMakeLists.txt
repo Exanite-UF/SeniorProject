@@ -48,6 +48,14 @@ endif()
 
 # --- Linux ---
 
+# Use ccache when possible to reduce compilation times
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    message(STATUS "Ccache found: ${CCACHE_PROGRAM}")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+endif()
+
 # Use mold linker when possible to reduce linking times
 find_program(MOLD_LINKER mold)
 if (MOLD_LINKER)
