@@ -397,7 +397,7 @@ void VoxelChunkManager::update(const float deltaTime)
         {
             // Get chunk and wait until it has no pending tasks before unloading
             auto chunkToUnloadIterator = state.activeChunks.find(chunkPositionToUnload);
-            if (chunkToUnloadIterator != state.activeChunks.end() && chunkToUnloadIterator->second->component->getModificationData().pendingTasks.getPending().empty())
+            if (chunkToUnloadIterator != state.activeChunks.end() && chunkToUnloadIterator->second->component->getChunkManagerData().pendingTasks.getPending().empty())
             {
                 ZoneScopedN("Chunk unload");
 
@@ -859,10 +859,10 @@ std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::share
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
     auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
-    task->dependencies.addPending(component->getModificationData().pendingTasks.getPending());
+    task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());
 
     auto sharedFuture = task->promise.get_future().share();
-    component->getModificationData().pendingTasks.addPending(sharedFuture);
+    component->getChunkManagerData().pendingTasks.addPending(sharedFuture);
 
     modificationThreadState.pendingTasks.emplace(task);
     modificationThreadState.pendingTasksCondition.notify_one();

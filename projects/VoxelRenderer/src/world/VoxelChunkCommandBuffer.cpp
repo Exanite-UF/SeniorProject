@@ -49,6 +49,24 @@ void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool 
     setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
 }
 
+void VoxelChunkCommandBuffer::setEnableCpuMipmaps(bool enableCpuMipmaps)
+{
+    commands.emplace_back(SetEnableCpuMipmaps, setEnableCpuMipmapsCommands.size());
+    setEnableCpuMipmapsCommands.emplace_back(enableCpuMipmaps);
+}
+
+void VoxelChunkCommandBuffer::setActiveLod(int activeLod)
+{
+    commands.emplace_back(SetActiveLod, setActiveLodCommands.size());
+    setActiveLodCommands.emplace_back(activeLod);
+}
+
+void VoxelChunkCommandBuffer::setMaxLod(int maxLod)
+{
+    commands.emplace_back(SetMaxLod, setMaxLodCommands.size());
+    setMaxLodCommands.emplace_back(maxLod);
+}
+
 void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
 {
     ZoneScoped;
@@ -186,6 +204,24 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                         return;
                     }
                 }
+
+                break;
+            }
+            case SetEnableCpuMipmaps:
+            {
+                // TODO
+
+                break;
+            }
+            case SetActiveLod:
+            {
+                // TODO
+
+                break;
+            }
+            case SetMaxLod:
+            {
+                // TODO
 
                 break;
             }

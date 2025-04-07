@@ -46,7 +46,7 @@ VoxelChunkComponent::RendererData& VoxelChunkComponent::getRendererData()
     return rendererData;
 }
 
-VoxelChunkComponent::ModificationData& VoxelChunkComponent::getModificationData()
+VoxelChunkComponent::ChunkManagerData& VoxelChunkComponent::getChunkManagerData()
 {
     return modificationData;
 }

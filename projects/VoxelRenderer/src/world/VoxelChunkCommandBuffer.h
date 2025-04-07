@@ -19,6 +19,9 @@ private:
         ClearMaterial,
         Copy,
         SetExistsOnGpu,
+        SetEnableCpuMipmaps,
+        SetActiveLod,
+        SetMaxLod,
     };
 
     struct Command
@@ -89,6 +92,36 @@ private:
         }
     };
 
+    struct SetEnableCpuMipmapsCommand
+    {
+        bool enableCpuMipmaps;
+
+        explicit SetEnableCpuMipmapsCommand(const bool enableCpuMipmaps)
+        {
+            this->enableCpuMipmaps = enableCpuMipmaps;
+        }
+    };
+
+    struct SetActiveLodCommand
+    {
+        int activeLod;
+
+        explicit SetActiveLodCommand(const int activeLod)
+        {
+            this->activeLod = activeLod;
+        }
+    };
+
+    struct SetMaxLodCommand
+    {
+        int maxLod;
+
+        explicit SetMaxLodCommand(const int maxLod)
+        {
+            this->maxLod = maxLod;
+        }
+    };
+
     std::vector<Command> commands {};
 
     std::vector<SetSizeCommand> setSizeCommands {};
@@ -96,6 +129,9 @@ private:
     std::vector<SetMaterialCommand> setMaterialCommands {};
     std::vector<CopyCommand> copyCommands {};
     std::vector<SetExistsOnGpuCommand> setExistsOnGpuCommands {};
+    std::vector<SetEnableCpuMipmapsCommand> setEnableCpuMipmapsCommands {};
+    std::vector<SetActiveLodCommand> setActiveLodCommands {};
+    std::vector<SetMaxLodCommand> setMaxLodCommands {};
 
 public:
     void setSize(const glm::ivec3& size);
@@ -110,6 +146,11 @@ public:
     void copyFrom(const std::shared_ptr<VoxelChunkData>& data);
 
     void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
+
+    void setEnableCpuMipmaps(bool enableCpuMipmaps);
+
+    void setActiveLod(int activeLod);
+    void setMaxLod(int maxLod);
 
     void clear();
 

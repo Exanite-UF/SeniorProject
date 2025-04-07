@@ -30,10 +30,15 @@ public:
         glm::vec3 previousScale;
     };
 
-    // Used primarily by the chunk modification threads
-    struct ModificationData
+    // Used primarily by the chunk manager
+    struct ChunkManagerData
     {
+        // Used by chunk modification threads
         PendingTasks<void> pendingTasks {};
+
+        // Used by LODing system
+        int activeLod = 0;
+        std::vector<VoxelChunkData> lods {};
     };
 
 private:
@@ -42,7 +47,7 @@ private:
 
     std::atomic<bool> existsOnGpu = false;
     RendererData rendererData {};
-    ModificationData modificationData {};
+    ChunkManagerData modificationData {};
 
     std::shared_mutex mutex {};
 
@@ -63,12 +68,13 @@ public:
     // Prefer using a command buffer instead
     VoxelChunkData& getRawChunkData();
 
-    // Unsynchronized
+    // This method itself is unsynchronized
+    // See struct declaration for additional rules
     RendererData& getRendererData();
 
     // This method itself is unsynchronized
     // See struct declaration for additional rules
-    ModificationData& getModificationData();
+    ChunkManagerData& getChunkManagerData();
 
     bool getExistsOnGpu() const;
 
