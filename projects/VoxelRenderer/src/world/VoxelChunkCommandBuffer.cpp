@@ -174,12 +174,15 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 // TODO: Properly handle LODs
 
+                VoxelChunkData lod {};
+                chunkData.copyToLod(lod);
+
                 auto command = setExistsOnGpuCommands.at(entry.index);
                 if (command.existsOnGpu != component->getExistsOnGpu())
                 {
                     if (command.existsOnGpu)
                     {
-                        component->allocateGpuData(chunkData.getSize());
+                        component->allocateGpuData(lod.getSize());
                     }
                     else
                     {
@@ -206,7 +209,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                         {
                             std::lock_guard lockGpuUpload(gpuUploadMutex);
-                            chunkData.copyTo(*component->getChunk());
+                            lod.copyTo(*component->getChunk());
                         }
 
                         isGpuUpToDate = true;

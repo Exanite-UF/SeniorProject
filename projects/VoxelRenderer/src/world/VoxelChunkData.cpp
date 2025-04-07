@@ -367,10 +367,10 @@ void VoxelChunkData::copyTo(VoxelChunkData& other) const
     other.data = data;
 }
 
-void VoxelChunkData::copyToAsLod(VoxelChunkData& other) const
+void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 {
     // Update other's size
-    other.setSize(data.size >> 1, false);
+    lod.setSize(data.size >> 1, false);
 
     // Generate occupancy mipmap
     {
@@ -403,7 +403,7 @@ void VoxelChunkData::copyToAsLod(VoxelChunkData& other) const
 
                     // Now set the value for the current mipmap
                     auto lodCellIndex = lodCellPosition.x + cellCount.x * (lodCellPosition.y + cellCount.y * lodCellPosition.z);
-                    other.data.occupancyMap[lodCellIndex] = result;
+                    lod.data.occupancyMap[lodCellIndex] = result;
                 }
             }
         }
@@ -425,7 +425,7 @@ void VoxelChunkData::copyToAsLod(VoxelChunkData& other) const
                     // We now need to get 1 of the 8 original materials to show in the LOD
                     // TODO: Use proper implementation. This is currently a placeholder that does nearest neighbor sampling
                     auto materialIndex = getVoxelMaterialIndex(lodPosition * 2);
-                    other.setVoxelMaterialIndex(lodPosition, materialIndex);
+                    lod.setVoxelMaterialIndex(lodPosition, materialIndex);
                 }
             }
         }

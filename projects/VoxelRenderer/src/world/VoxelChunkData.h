@@ -65,5 +65,5 @@ public:
     void copyFrom(const VoxelChunkData& other);
     void copyTo(VoxelChunkData& other) const;
 
-    void copyToAsLod(VoxelChunkData& other) const;
+    void copyToLod(VoxelChunkData& lod) const;
 };
