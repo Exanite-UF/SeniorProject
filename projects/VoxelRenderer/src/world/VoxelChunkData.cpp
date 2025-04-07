@@ -142,7 +142,7 @@ bool VoxelChunkData::getMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, 
 {
     // Calculate cell position and count
     auto cellPosition = positionInLevel >> 1;
-    auto cellCount = data.size >> (1 + level);
+    auto cellCount = data.size >> (2 * level + 1);
 
     // Calculate byte index of cell
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices.at(level);
@@ -159,7 +159,7 @@ void VoxelChunkData::setMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, 
 {
     // Calculate cell position and count
     auto cellPosition = positionInLevel >> 1;
-    auto cellCount = data.size >> (1 + level);
+    auto cellCount = data.size >> (2 * level + 1);
 
     // Calculate byte index of cell
     auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices.at(level);
@@ -243,30 +243,58 @@ void VoxelChunkData::updateMipmaps()
     for (int i = 1; i < data.occupancyMapIndices.size() - 1; ++i)
     {
         // Calculate cell count
-        auto previousCellCount = data.size >> i;
-        auto currentCellCount = data.size >> (i + 1);
+        auto previousCellCount = data.size >> (2 * (i - 1) + 1);
+        auto currentCellCount = data.size >> (2 * i + 1);
 
-        for (int z = 0; z < currentCellCount.z; ++z)
+        for (int currentCellZ = 0; currentCellZ < currentCellCount.z; ++currentCellZ)
         {
-            for (int y = 0; y < currentCellCount.y; ++y)
+            for (int currentCellY = 0; currentCellY < currentCellCount.y; ++currentCellY)
             {
-                for (int x = 0; x < currentCellCount.x; ++x)
+                for (int currentCellX = 0; currentCellX < currentCellCount.x; ++currentCellX)
                 {
                     // This is the cell position in the current mipmap
-                    auto currentCellPosition = glm::ivec3(x, y, z);
+                    auto currentCellPosition = glm::ivec3(currentCellX, currentCellY, currentCellZ);
 
-                    // We now need to get the 8 cells corresponding to this cell from the previous mipmap
+                    // 64 bits in the previous mipmap corresponds to 1 bit in the current mipmap
+                    // 64 bits corresponds to a 4x4x4 voxel region or a 2x2x2 cell region
+                    //
+                    // However, we need to get a full byte,
+                    // so we actually need to loop over a 4x4x4 cell region in the previous mipmap to get a cell for this mipmap
+                    //
+                    // This requires the use of two sets of 3D for loops
                     uint8_t result = 0;
-                    for (int bitI = 0; bitI < 8; ++bitI)
+                    uint8_t bit = 1;
+                    for (int currentVoxelZ = 0; currentVoxelZ < 2; ++currentVoxelZ)
                     {
-                        auto previousCellOffset = glm::ivec3(((bitI & 0b001) >> 0), ((bitI & 0b010) >> 1), ((bitI & 0b100) >> 2));
-                        auto previousCellPosition = currentCellPosition * 2 + previousCellOffset;
-                        auto previousCellIndex = previousCellPosition.x + previousCellCount.x * (previousCellPosition.y + previousCellCount.y * previousCellPosition.z) + data.occupancyMapIndices.at(i - 1);
-                        Assert::isTrue(previousCellIndex >= data.occupancyMapIndices.at(i - 1) && previousCellIndex < data.occupancyMapIndices.at(i), "previousCellIndex is out of bounds");
-
-                        if (data.occupancyMap.at(previousCellIndex) != 0)
+                        for (int currentVoxelY = 0; currentVoxelY < 2; ++currentVoxelY)
                         {
-                            result |= 1 << bitI;
+                            for (int currentVoxelX = 0; currentVoxelX < 2; ++currentVoxelX)
+                            {
+                                bool isOccupied = false;
+
+                                for (int previousCellZ = 0; !isOccupied && previousCellZ < 2; ++previousCellZ)
+                                {
+                                    for (int previousCellY = 0; !isOccupied && previousCellY < 2; ++previousCellY)
+                                    {
+                                        for (int previousCellX = 0; !isOccupied && previousCellX < 2; ++previousCellX)
+                                        {
+                                            auto previousCellOffset = glm::ivec3(previousCellX, previousCellY, previousCellZ);
+                                            auto previousCellPosition = currentCellPosition * 2 + previousCellOffset;
+                                            auto previousCellIndex = previousCellPosition.x + previousCellCount.x * (previousCellPosition.y + previousCellCount.y * previousCellPosition.z) + data.occupancyMapIndices.at(i - 1);
+                                            Assert::isTrue(previousCellIndex >= data.occupancyMapIndices.at(i - 1) && previousCellIndex < data.occupancyMapIndices.at(i), "previousCellIndex is out of bounds");
+
+                                            isOccupied = data.occupancyMap.at(previousCellIndex) != 0;
+                                        }
+                                    }
+                                }
+
+                                if (isOccupied)
+                                {
+                                    result |= bit;
+                                }
+
+                                bit <<= 1;
+                            }
                         }
                     }
 

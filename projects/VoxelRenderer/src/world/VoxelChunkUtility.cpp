@@ -14,6 +14,7 @@ std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3
     Assert::isTrue((size.y != 0) && ((size.y & (size.y - 1)) == 0), "size.y must be a power of 2");
     Assert::isTrue((size.z != 0) && ((size.z & (size.z - 1)) == 0), "size.z must be a power of 2");
 
+    // Each mipmap layer is 4x smaller than the previous
     // The division inside the log2 call is a 4, not 2, because the mipmap generation will break if the top level mipmap has side length 2. This prevents that from occurring.
     // The mipmap generation breaks when the side length is 2 because the top level mipmap will be less than a full uint32 in size.
     // A minimum side length makes the top level mipmap be at least 1 uint32 in size.
