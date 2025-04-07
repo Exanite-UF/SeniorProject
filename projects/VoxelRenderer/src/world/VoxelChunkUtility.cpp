@@ -15,7 +15,7 @@ std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3
     Assert::isTrue((size.z != 0) && ((size.z & (size.z - 1)) == 0), "size.z must be a power of 2");
 
     auto smallestSide = std::min(std::min(size.x, size.y), size.z);
-    int mipmapLayerCount = std::max(0, static_cast<int>(std::floor(std::log2(smallestSide / 2) / 2)));
+    int mipmapLayerCount = std::max(0, static_cast<int>(std::floor(std::log2(smallestSide / 2))));
     int layerCount = 1 + mipmapLayerCount;
     layerCount = glm::min(layerCount, static_cast<int>(Constants::VoxelChunk::maxOccupancyMapLayerCount)); // Limit the max number of mip maps
 
@@ -27,7 +27,7 @@ std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3
     uint64_t totalBitCount = 0;
     for (int i = 0; i < layerCount; i++)
     {
-        totalBitCount += size.x * size.y * size.z;
+        totalBitCount += currentSize.x * currentSize.y * currentSize.z;
         totalBitCount = ((totalBitCount + 8 - 1) / 8) * 8; // Round to next multiple of 8
         indices.push_back(totalBitCount / 8);
 
