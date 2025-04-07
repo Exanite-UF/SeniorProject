@@ -30,7 +30,7 @@ public:
 
     [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(const glm::ivec3& size);
-    void setSize(const glm::ivec3& size, bool includeMipmaps);
+    void setSize(glm::ivec3 size, bool includeMipmaps);
 
     bool getHasMipmaps() const;
     void setHasMipmaps(bool hasMipmaps);
@@ -59,6 +59,6 @@ public:
     void copyFrom(VoxelChunk& chunk);
     void copyTo(VoxelChunk& chunk);
 
-    void copyFrom(VoxelChunkData& data);
-    void copyTo(VoxelChunkData& data);
+    void copyFrom(const VoxelChunkData& data);
+    void copyTo(VoxelChunkData& data) const;
 };
