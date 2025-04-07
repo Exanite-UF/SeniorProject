@@ -228,20 +228,18 @@ void VoxelChunkData::clearMaterialMap()
 
 void VoxelChunkData::updateMipmaps()
 {
-    // Calculate cell count
-    auto cellCount = data.size >> 1;
-
     // Skip first layer since that's the ground truth
     for (int i = 1; i < data.occupancyMapIndices.size(); ++i)
     {
-        // Update cell count
-        cellCount = cellCount >> 1;
+        // Calculate cell count
+        auto previousCellCount = data.size >> (i + 1);
+        auto currentCellCount = data.size >> i;
 
-        for (int z = 0; z < cellCount.z; ++z)
+        for (int z = 0; z < currentCellCount.z; ++z)
         {
-            for (int y = 0; y < cellCount.y; ++y)
+            for (int y = 0; y < currentCellCount.y; ++y)
             {
-                for (int x = 0; x < cellCount.x; ++x)
+                for (int x = 0; x < currentCellCount.x; ++x)
                 {
                     // This is the cell position in the current mipmap
                     auto currentCellPosition = glm::ivec3(x, y, z);
@@ -250,10 +248,10 @@ void VoxelChunkData::updateMipmaps()
                     uint8_t result = 0;
                     for (int bitI = 0; bitI < 8; ++bitI)
                     {
-                        auto previousCellOffset = glm::ivec3(((bitI & 0b100) >> 2), ((bitI & 0b010) >> 1), ((bitI & 0b001) >> 0));
+                        auto previousCellOffset = glm::ivec3(((bitI & 0b001) >> 0), ((bitI & 0b010) >> 1), ((bitI & 0b100) >> 2));
                         auto previousCellPosition = currentCellPosition * 2 + previousCellOffset;
 
-                        auto previousCellIndex = previousCellPosition.x + cellCount.x * (previousCellPosition.y + cellCount.y * previousCellPosition.z) + data.occupancyMapIndices[i - 1];
+                        auto previousCellIndex = previousCellPosition.x + previousCellCount.x * (previousCellPosition.y + previousCellCount.y * previousCellPosition.z) + data.occupancyMapIndices[i - 1];
 
                         if (data.occupancyMap[previousCellIndex] != 0)
                         {
@@ -262,7 +260,7 @@ void VoxelChunkData::updateMipmaps()
                     }
 
                     // Now set the value for the current mipmap
-                    auto currentCellIndex = currentCellPosition.x + cellCount.x * (currentCellPosition.y + cellCount.y * currentCellPosition.z) + data.occupancyMapIndices[i];
+                    auto currentCellIndex = currentCellPosition.x + previousCellCount.x * (currentCellPosition.y + previousCellCount.y * currentCellPosition.z) + data.occupancyMapIndices[i];
                     data.occupancyMap[currentCellIndex] = result;
                 }
             }
