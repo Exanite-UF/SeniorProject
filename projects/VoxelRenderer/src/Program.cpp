@@ -952,4 +952,21 @@ void Program::runLateStartupTests()
 
         Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
     }
+
+    {
+        {
+            // Verify that size 0 works
+            VoxelChunkData data(glm::ivec3(0, 0, 0));
+            Assert::isTrue(data.getRawOccupancyMap().size() == 0, "Expected size to be 0");
+        }
+
+        // Verify VoxelChunkData works at non-power of 2 sizes
+        {
+            VoxelChunkData data(glm::ivec3(1, 1, 1));
+            Assert::isTrue(data.getRawOccupancyMap().size() == 1, "Expected size to be 1");
+
+            data.setVoxelOccupancy(glm::ivec3(0, 0, 0), true);
+            Assert::isTrue(data.getRawOccupancyMap().at(0) == 0b1, "Expected occupancyMap[0] to equal 0b00000001");
+        }
+    }
 }

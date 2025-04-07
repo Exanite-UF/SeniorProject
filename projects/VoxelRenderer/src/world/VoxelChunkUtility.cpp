@@ -4,10 +4,16 @@
 #include <string>
 
 #include "VoxelChunkUtility.h"
+
+#include <src/utilities/Assert.h>
 #include <src/world/VoxelChunk.h>
 
 std::vector<uint32_t> VoxelChunkUtility::getOccupancyMapIndices(const glm::ivec3& size)
 {
+    Assert::isTrue((size.x != 0) && ((size.x & (size.x - 1)) == 0), "size.x must be a power of 2");
+    Assert::isTrue((size.y != 0) && ((size.y & (size.y - 1)) == 0), "size.y must be a power of 2");
+    Assert::isTrue((size.z != 0) && ((size.z & (size.z - 1)) == 0), "size.z must be a power of 2");
+
     // The division inside the log2 call is a 4, not 2, because the mipmap generation will break if the top level mipmap has side length 1. This prevents that from occurring.
     // The mipmap generation breaks when the side length is 1 because the top level mipmap will only be represented by 1 bit instead of a full byte.
     // A minimum side length makes the top level mipmap be at least 1 byte in size.

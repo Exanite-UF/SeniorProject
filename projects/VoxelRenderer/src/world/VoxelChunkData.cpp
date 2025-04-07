@@ -8,15 +8,11 @@
 #include <thread>
 #include <tracy/Tracy.hpp>
 
-VoxelChunkData::VoxelChunkData()
-{
-}
-
-VoxelChunkData::VoxelChunkData(const glm::ivec3& size)
+VoxelChunkData::VoxelChunkData(const glm::ivec3& size, bool includeMipmaps)
 {
     ZoneScoped;
 
-    setSize(size);
+    setSize(size, includeMipmaps);
 }
 
 const glm::ivec3& VoxelChunkData::getSize() const
@@ -26,14 +22,50 @@ const glm::ivec3& VoxelChunkData::getSize() const
 
 void VoxelChunkData::setSize(const glm::ivec3& size)
 {
+    setSize(size, data.hasMipmaps);
+}
+
+void VoxelChunkData::setSize(const glm::ivec3& size, bool includeMipmaps)
+{
     ZoneScoped;
 
+    auto previousSize = this->data.size;
     this->data.size = size;
+    this->data.hasMipmaps = includeMipmaps;
 
-    data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
-    data.occupancyMap.resize(data.occupancyMapIndices.at(1));
+    if (includeMipmaps)
+    {
+        data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
+        data.occupancyMap.resize(data.occupancyMapIndices.at(data.occupancyMapIndices.size() - 1));
+
+        if (previousSize != glm::ivec3(0))
+        {
+            updateMipmaps();
+        }
+    }
+    else
+    {
+        data.occupancyMapIndices = { 0 };
+
+        uint64_t byteCount = (size.x * size.y * size.z + 8 - 1) / 8; // Ceiling divide by 8
+        if (byteCount != 0)
+        {
+            data.occupancyMapIndices.push_back(byteCount);
+            data.occupancyMap.resize(byteCount);
+        }
+    }
 
     data.materialMap.resize(size.x * size.y * size.z);
+}
+
+bool VoxelChunkData::getHasMipmaps() const
+{
+    return data.hasMipmaps;
+}
+
+void VoxelChunkData::setHasMipmaps(bool hasMipmaps)
+{
+    setSize(data.size, data.hasMipmaps);
 }
 
 bool VoxelChunkData::getVoxelOccupancy(const glm::ivec3& position) const
@@ -124,6 +156,11 @@ std::vector<uint8_t>& VoxelChunkData::getRawOccupancyMap()
     return data.occupancyMap;
 }
 
+std::vector<uint32_t>& VoxelChunkData::getRawOccupancyMapIndices()
+{
+    return data.occupancyMapIndices;
+}
+
 std::vector<uint16_t>& VoxelChunkData::getRawMaterialMap()
 {
     return data.materialMap;
@@ -137,6 +174,11 @@ void VoxelChunkData::clearOccupancyMap()
 void VoxelChunkData::clearMaterialMap()
 {
     std::fill(data.materialMap.begin(), data.materialMap.end(), 0);
+}
+
+void VoxelChunkData::updateMipmaps()
+{
+    // TODO
 }
 
 void VoxelChunkData::copyFrom(VoxelChunk& chunk)

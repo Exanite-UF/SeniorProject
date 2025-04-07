@@ -13,6 +13,7 @@ private:
     {
     public:
         glm::ivec3 size = glm::ivec3(0);
+        bool hasMipmaps = false;
 
         // Same format as on the GPU
         std::vector<uint8_t> occupancyMap {};
@@ -25,11 +26,14 @@ private:
     Data data;
 
 public:
-    VoxelChunkData();
-    explicit VoxelChunkData(const glm::ivec3& size);
+    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
 
     [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(const glm::ivec3& size);
+    void setSize(const glm::ivec3& size, bool includeMipmaps);
+
+    bool getHasMipmaps() const;
+    void setHasMipmaps(bool hasMipmaps);
 
     [[nodiscard]] bool getVoxelOccupancy(const glm::ivec3& position) const;
     void setVoxelOccupancy(const glm::ivec3& position, bool isOccupied);
@@ -43,10 +47,14 @@ public:
     [[nodiscard]] bool isValidPosition(const glm::ivec3& position) const;
 
     std::vector<uint8_t>& getRawOccupancyMap();
+    std::vector<uint32_t>& getRawOccupancyMapIndices();
+
     std::vector<uint16_t>& getRawMaterialMap();
 
     void clearOccupancyMap();
     void clearMaterialMap();
+
+    void updateMipmaps();
 
     void copyFrom(VoxelChunk& chunk);
     void copyTo(VoxelChunk& chunk);
