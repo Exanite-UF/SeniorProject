@@ -389,22 +389,16 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 
                     // We now need to get the 8 cells corresponding to this cell from the original data
                     uint8_t result = 0;
-                    for (int z = 0; z < 2; ++z)
+                    for (int bitI = 0; bitI < 8; ++bitI)
                     {
-                        for (int y = 0; y < 2; ++y)
+                        auto selfCellOffset = glm::ivec3(((bitI & 0b001) >> 0), ((bitI & 0b010) >> 1), ((bitI & 0b100) >> 2));
+                        auto selfCellPosition = lodCellPosition * 2 + selfCellOffset;
+
+                        auto selfCellIndex = selfCellPosition.x + selfCellCount.x * (selfCellPosition.y + selfCellCount.y * selfCellPosition.z);
+
+                        if (data.occupancyMap[selfCellIndex] != 0)
                         {
-                            for (int x = 0; x < 2; ++x)
-                            {
-                                auto selfCellPosition = lodCellPosition * 2 + glm::ivec3(x, y, z);
-                                auto selfCellIndex = selfCellPosition.x + selfCellCount.x * (selfCellPosition.y + selfCellCount.y * selfCellPosition.z);
-
-                                if (data.occupancyMap[selfCellIndex] != 0)
-                                {
-                                    result |= 1;
-                                }
-
-                                result <<= 1;
-                            }
+                            result |= 1 << bitI;
                         }
                     }
 
