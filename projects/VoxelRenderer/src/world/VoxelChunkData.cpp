@@ -84,7 +84,7 @@ bool VoxelChunkData::getHasMipmaps() const
 
 void VoxelChunkData::setHasMipmaps(bool hasMipmaps)
 {
-    setSize(data.size, data.hasMipmaps);
+    setSize(data.size, hasMipmaps);
 }
 
 int VoxelChunkData::getMipmapCount() const
