@@ -962,11 +962,32 @@ void Program::runLateStartupTests()
 
         // Verify VoxelChunkData works at non-power of 2 sizes
         {
-            VoxelChunkData data(glm::ivec3(1, 1, 1));
-            Assert::isTrue(data.getRawOccupancyMap().size() == 1, "Expected size to be 1");
+            {
+                // Simple
+                VoxelChunkData data(glm::ivec3(1, 1, 1));
+                Assert::isTrue(data.getRawOccupancyMap().size() == 1, "Expected size to be 1");
 
-            data.setVoxelOccupancy(glm::ivec3(0, 0, 0), true);
-            Assert::isTrue(data.getRawOccupancyMap().at(0) == 0b1, "Expected occupancyMap[0] to equal 0b00000001");
+                data.setVoxelOccupancy(glm::ivec3(0, 0, 0), true);
+                Assert::isTrue(data.getRawOccupancyMap().at(0) == 0b1, "Expected occupancyMap[0] to equal 0b00000001");
+            }
+
+            {
+                // More thorough
+                VoxelChunkData data(glm::ivec3(7, 7, 7));
+
+                for (int z = 0; z < data.getSize().z; ++z)
+                {
+                    for (int y = 0; y < data.getSize().y; ++y)
+                    {
+                        for (int x = 0; x < data.getSize().x; ++x)
+                        {
+                            Assert::isTrue(!data.getVoxelOccupancy(glm::ivec3(x, y, z)), "Expected occupancy to be set to false");
+                            data.setVoxelOccupancy(glm::ivec3(x, y, z), true);
+                            Assert::isTrue(data.getVoxelOccupancy(glm::ivec3(x, y, z)), "Expected occupancy to be set to true");
+                        }
+                    }
+                }
+            }
         }
     }
 }
