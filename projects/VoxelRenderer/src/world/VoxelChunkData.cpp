@@ -30,10 +30,21 @@ void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
 {
     ZoneScoped;
 
+    // Allow for size 0
+    if (size == glm::ivec3(0))
+    {
+        data.occupancyMapIndices = { 0 };
+        data.occupancyMap.resize(0);
+        data.materialMap.resize(0);
+
+        return;
+    }
+
+    // Get next power of 2
     size = {
-        1 << glm::log2(size.x - 1) + 1,
-        1 << glm::log2(size.y - 1) + 1,
-        1 << glm::log2(size.z - 1) + 1
+        glm::min(2, 1 << glm::log2(size.x - 1) + 1),
+        glm::min(2, 1 << glm::log2(size.y - 1) + 1),
+        glm::min(2, 1 << glm::log2(size.z - 1) + 1),
     };
 
     auto previousSize = this->data.size;
