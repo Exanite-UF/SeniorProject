@@ -952,4 +952,16 @@ void Program::runLateStartupTests()
 
         Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
     }
+
+    {
+        VoxelChunkData original(glm::ivec3(4, 4, 4));
+        original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
+        original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
+
+        VoxelChunkData lod {};
+
+        original.copyToLod(lod);
+        Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
+        Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
+    }
 }

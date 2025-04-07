@@ -422,7 +422,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                 {
                     // This is the voxel position in the LOD
                     auto lodPosition = glm::ivec3(lodX, lodY, lodZ);
-                    if (lod.getVoxelOccupancy(lodPosition))
+                    if (!lod.getVoxelOccupancy(lodPosition))
                     {
                         // Skip air
                         continue;
@@ -441,7 +441,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 
                                 if (getVoxelOccupancy(selfPosition))
                                 {
-                                    auto materialIndex = getVoxelMaterialIndex(lodPosition * 2);
+                                    auto materialIndex = getVoxelMaterialIndex(selfPosition);
                                     lod.setVoxelMaterialIndex(lodPosition, materialIndex);
 
                                     foundMaterial = true;
