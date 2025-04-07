@@ -83,6 +83,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     auto& chunkData = component->getRawChunkData();
 
     // TODO: Track exact changes for optimized CPU -> GPU copies
+    // TODO: Note that change tracking also needs to consider the active LOD
     // Change tracking
     bool isGpuUpToDate = true;
 
