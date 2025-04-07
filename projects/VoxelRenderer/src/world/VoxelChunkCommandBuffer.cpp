@@ -100,6 +100,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 isGpuUpToDate = false;
 
+                // TODO: Update LODs
+
                 break;
             }
             case SetOccupancy:
@@ -110,6 +112,9 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 chunkData.setVoxelOccupancy(command.position, command.isOccupied);
 
                 isGpuUpToDate = false;
+
+                // TODO: Update mipmaps
+                // TODO: Update LODs
 
                 break;
             }
@@ -122,6 +127,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 isGpuUpToDate = false;
 
+                // TODO: Update LODs
+
                 break;
             }
             case ClearOccupancy:
@@ -132,6 +139,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 isGpuUpToDate = false;
 
+                // TODO: Update LODs
+
                 break;
             }
             case ClearMaterial:
@@ -141,6 +150,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 chunkData.clearMaterialMap();
 
                 isGpuUpToDate = false;
+
+                // TODO: Update LODs
 
                 break;
             }
@@ -153,11 +164,15 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 isGpuUpToDate = false;
 
+                // TODO: Update LODs
+
                 break;
             }
             case SetExistsOnGpu:
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
+
+                // TODO: Properly handle LODs
 
                 auto command = setExistsOnGpuCommands.at(entry.index);
                 if (command.existsOnGpu != component->getExistsOnGpu())
@@ -234,6 +249,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
         ZoneScopedN("VoxelChunkCommandBuffer::apply - Write to GPU");
 
         {
+            // TODO: Properly handle LODs
+
             std::lock_guard lockGpuUpload(gpuUploadMutex);
             chunkData.copyTo(*component->getChunk());
         }

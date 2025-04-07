@@ -234,6 +234,9 @@ void VoxelChunkData::updateMipmaps()
     // Skip first layer since that's the ground truth
     for (int i = 1; i < data.occupancyMapIndices.size(); ++i)
     {
+        // Update cell count
+        cellCount = cellCount >> 1;
+
         for (int z = 0; z < cellCount.z; ++z)
         {
             for (int y = 0; y < cellCount.y; ++y)
@@ -264,38 +267,35 @@ void VoxelChunkData::updateMipmaps()
                 }
             }
         }
-
-        // Update cell count
-        cellCount = cellCount >> 1;
     }
 }
 
-void VoxelChunkData::copyFrom(VoxelChunk& chunk)
+void VoxelChunkData::copyFrom(VoxelChunk& other)
 {
     ZoneScoped;
 
-    if (data.size != chunk.getSize())
+    if (data.size != other.getSize())
     {
-        setSize(chunk.getSize());
+        setSize(other.getSize());
     }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getMaterialMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.materialMap.size() * 2, data.materialMap.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void VoxelChunkData::copyTo(VoxelChunk& chunk)
+void VoxelChunkData::copyTo(VoxelChunk& other)
 {
     ZoneScoped;
 
     constexpr int sleepTime = Constants::VoxelChunk::chunkUploadSleepTimeMs;
     constexpr uint64_t uploadChunkSize = Constants::VoxelChunk::maxChunkUploadSizeBytes;
 
-    if (chunk.getSize() != data.size)
+    if (other.getSize() != data.size)
     {
         throw std::runtime_error("Target chunk does not have the same size");
     }
@@ -311,7 +311,7 @@ void VoxelChunkData::copyTo(VoxelChunk& chunk)
             uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
             int offset = i * uploadChunkSize;
 
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getOccupancyMap().bufferId);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
             glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.occupancyMap.data()) + offset);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -326,7 +326,7 @@ void VoxelChunkData::copyTo(VoxelChunk& chunk)
 
     // Update mipmaps
     // This doesn't block the OpenGL
-    chunk.updateMipMaps();
+    other.updateMipMaps();
 
     // Upload in chunks to prevent blocking the OpenGL driver
     {
@@ -339,7 +339,7 @@ void VoxelChunkData::copyTo(VoxelChunk& chunk)
             uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
             int offset = i * uploadChunkSize;
 
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk.getMaterialMap().bufferId);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getMaterialMap().bufferId);
             glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.materialMap.data()) + offset);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -353,16 +353,81 @@ void VoxelChunkData::copyTo(VoxelChunk& chunk)
     }
 }
 
-void VoxelChunkData::copyFrom(const VoxelChunkData& data)
+void VoxelChunkData::copyFrom(const VoxelChunkData& other)
 {
     ZoneScoped;
 
-    this->data = data.data;
+    data = other.data;
 }
 
-void VoxelChunkData::copyTo(VoxelChunkData& data) const
+void VoxelChunkData::copyTo(VoxelChunkData& other) const
 {
     ZoneScoped;
 
-    data.data = this->data;
+    other.data = data;
+}
+
+void VoxelChunkData::copyToAsLod(VoxelChunkData& other) const
+{
+    // Update other's size
+    other.setSize(data.size >> 1, false);
+
+    // Generate occupancy mipmap
+    {
+        // Calculate cell count
+        auto cellCount = data.size >> 2;
+
+        for (int z = 0; z < cellCount.z; ++z)
+        {
+            for (int y = 0; y < cellCount.y; ++y)
+            {
+                for (int x = 0; x < cellCount.x; ++x)
+                {
+                    // This is the cell position in the LOD
+                    auto lodCellPosition = glm::ivec3(x, y, z);
+
+                    // We now need to get the 8 cells corresponding to this cell from the previous mipmap
+                    uint8_t result = 0;
+                    for (int bitI = 0; bitI < 8; ++bitI)
+                    {
+                        auto selfCellOffset = glm::ivec3((bitI & 4 >> 2), (bitI & 2 >> 1), (bitI & 2 >> 0));
+                        auto selfCellPosition = lodCellPosition * 2 + selfCellOffset;
+
+                        auto selfCellIndex = selfCellPosition.x + cellCount.x * (selfCellPosition.y + cellCount.y * selfCellPosition.z);
+
+                        if (data.occupancyMap[selfCellIndex] != 0)
+                        {
+                            result |= 1 << bitI;
+                        }
+                    }
+
+                    // Now set the value for the current mipmap
+                    auto lodCellIndex = lodCellPosition.x + cellCount.x * (lodCellPosition.y + cellCount.y * lodCellPosition.z);
+                    other.data.occupancyMap[lodCellIndex] = result;
+                }
+            }
+        }
+    }
+
+    // Generate material mipmap
+    {
+        auto lodSize = data.size >> 1;
+
+        for (int z = 0; z < lodSize.z; ++z)
+        {
+            for (int y = 0; y < lodSize.y; ++y)
+            {
+                for (int x = 0; x < lodSize.x; ++x)
+                {
+                    // This is the voxel position in the LOD
+                    auto lodPosition = glm::ivec3(x, y, z);
+
+                    // We now need to get 1 of the 8 original materials to show in the LOD
+                    // TODO: Use proper implementation. This is currently a placeholder that does nearest neighbor sampling
+                    auto materialIndex = getVoxelMaterialIndex(lodPosition * 2);
+                    other.setVoxelMaterialIndex(lodPosition, materialIndex);
+                }
+            }
+        }
+    }
 }
