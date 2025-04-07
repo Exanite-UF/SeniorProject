@@ -111,7 +111,7 @@ bool VoxelChunkData::getVoxelOccupancy(const glm::ivec3& position) const
     auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
     auto bit = 1 << bitsShifted;
 
-    return (data.occupancyMap[cellIndex] & bit) != 0;
+    return (data.occupancyMap.at(cellIndex) & bit) != 0;
 }
 
 void VoxelChunkData::setVoxelOccupancy(const glm::ivec3& position, bool isOccupied)
@@ -130,11 +130,11 @@ void VoxelChunkData::setVoxelOccupancy(const glm::ivec3& position, bool isOccupi
 
     if (isOccupied)
     {
-        data.occupancyMap[cellIndex] |= bit;
+        data.occupancyMap.at(cellIndex) |= bit;
     }
     else
     {
-        data.occupancyMap[cellIndex] &= ~bit;
+        data.occupancyMap.at(cellIndex) &= ~bit;
     }
 }
 
@@ -145,14 +145,14 @@ bool VoxelChunkData::getMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, 
     auto cellCount = data.size >> (1 + level);
 
     // Calculate byte index of cell
-    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices[level];
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices.at(level);
 
     // Calculate which bit to set
     auto isOddPos = positionInLevel & 1;
     auto bitsShifted = (isOddPos.z << 2) | (isOddPos.y << 1) | (isOddPos.x << 0);
     auto bit = 1 << bitsShifted;
 
-    return (data.occupancyMap[cellIndex] & bit) != 0;
+    return (data.occupancyMap.at(cellIndex) & bit) != 0;
 }
 
 void VoxelChunkData::setMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, int level, bool isOccupied)
@@ -162,7 +162,7 @@ void VoxelChunkData::setMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, 
     auto cellCount = data.size >> (1 + level);
 
     // Calculate byte index of cell
-    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices[level];
+    auto cellIndex = cellPosition.x + cellCount.x * (cellPosition.y + cellCount.y * cellPosition.z) + data.occupancyMapIndices.at(level);
 
     // Calculate which bit to set
     auto isOddPos = positionInLevel & 1;
@@ -171,11 +171,11 @@ void VoxelChunkData::setMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, 
 
     if (isOccupied)
     {
-        data.occupancyMap[cellIndex] |= bit;
+        data.occupancyMap.at(cellIndex) |= bit;
     }
     else
     {
-        data.occupancyMap[cellIndex] &= ~bit;
+        data.occupancyMap.at(cellIndex) &= ~bit;
     }
 }
 
@@ -184,7 +184,7 @@ const std::shared_ptr<Material>& VoxelChunkData::getVoxelMaterial(const glm::ive
     auto& materialManager = MaterialManager::getInstance();
     auto voxelIndex = position.x + data.size.x * (position.y + data.size.y * position.z);
 
-    return materialManager.getMaterialByIndex(data.materialMap[voxelIndex]);
+    return materialManager.getMaterialByIndex(data.materialMap.at(voxelIndex));
 }
 
 void VoxelChunkData::setVoxelMaterial(const glm::ivec3& position, const std::shared_ptr<Material>& material)
@@ -196,14 +196,14 @@ uint16_t VoxelChunkData::getVoxelMaterialIndex(const glm::ivec3& position) const
 {
     // Each material ID is 16 bits, but we only use the lower 12 bits
     auto voxelIndex = position.x + data.size.x * (position.y + data.size.y * position.z);
-    return data.materialMap[voxelIndex];
+    return data.materialMap.at(voxelIndex);
 }
 
 void VoxelChunkData::setVoxelMaterialIndex(const glm::ivec3& position, const uint16_t materialIndex)
 {
     // Each material ID is 16 bits, but we only use the lower 12 bits
     auto voxelIndex = position.x + data.size.x * (position.y + data.size.y * position.z);
-    data.materialMap[voxelIndex] = materialIndex;
+    data.materialMap.at(voxelIndex) = materialIndex;
 }
 
 std::vector<uint8_t>& VoxelChunkData::getRawOccupancyMap()
@@ -262,17 +262,17 @@ void VoxelChunkData::updateMipmaps()
                         auto previousCellOffset = glm::ivec3(((bitI & 0b001) >> 0), ((bitI & 0b010) >> 1), ((bitI & 0b100) >> 2));
                         auto previousCellPosition = currentCellPosition * 2 + previousCellOffset;
 
-                        auto previousCellIndex = previousCellPosition.x + previousCellCount.x * (previousCellPosition.y + previousCellCount.y * previousCellPosition.z) + data.occupancyMapIndices[i - 1];
+                        auto previousCellIndex = previousCellPosition.x + previousCellCount.x * (previousCellPosition.y + previousCellCount.y * previousCellPosition.z) + data.occupancyMapIndices.at(i - 1);
 
-                        if (data.occupancyMap[previousCellIndex] != 0)
+                        if (data.occupancyMap.at(previousCellIndex) != 0)
                         {
                             result |= 1 << bitI;
                         }
                     }
 
                     // Now set the value for the current mipmap
-                    auto currentCellIndex = currentCellPosition.x + previousCellCount.x * (currentCellPosition.y + previousCellCount.y * currentCellPosition.z) + data.occupancyMapIndices[i];
-                    data.occupancyMap[currentCellIndex] = result;
+                    auto currentCellIndex = currentCellPosition.x + previousCellCount.x * (currentCellPosition.y + previousCellCount.y * currentCellPosition.z) + data.occupancyMapIndices.at(i);
+                    data.occupancyMap.at(currentCellIndex) = result;
                 }
             }
         }
@@ -409,7 +409,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 
                         auto selfCellIndex = selfCellPosition.x + selfCellCount.x * (selfCellPosition.y + selfCellCount.y * selfCellPosition.z);
 
-                        if (data.occupancyMap[selfCellIndex] != 0)
+                        if (data.occupancyMap.at(selfCellIndex) != 0)
                         {
                             result |= 1 << bitI;
                         }
@@ -417,7 +417,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 
                     // Now set the value in the LOD
                     auto lodCellIndex = lodCellPosition.x + lodCellCount.x * (lodCellPosition.y + lodCellCount.y * lodCellPosition.z);
-                    lod.data.occupancyMap[lodCellIndex] = result;
+                    lod.data.occupancyMap.at(lodCellIndex) = result;
                 }
             }
         }
