@@ -145,7 +145,7 @@ public:
 
     void copyFrom(const std::shared_ptr<VoxelChunkData>& data);
 
-    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
+    void setExistsOnGpu(bool existsOnGpu);
 
     void setEnableCpuMipmaps(bool enableCpuMipmaps);
 

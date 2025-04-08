@@ -44,9 +44,10 @@ void VoxelChunkCommandBuffer::copyFrom(const std::shared_ptr<VoxelChunkData>& da
     copyCommands.emplace_back(data);
 }
 
-void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
+void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu)
 {
     commands.emplace_back(SetExistsOnGpu, setExistsOnGpuCommands.size());
+    setExistsOnGpuCommands.emplace_back(existsOnGpu);
 }
 
 void VoxelChunkCommandBuffer::setEnableCpuMipmaps(bool enableCpuMipmaps)
@@ -232,17 +233,14 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 // We don't have enough LODs
                 // We need to generate them
-                while (lods.size() < command.maxLod)
+                auto newLodsRequired = command.maxLod - lods.size();
+                for (int i = 0; i < newLodsRequired; ++i)
                 {
-                    lods.push_back(std::make_shared<VoxelChunkData>());
-                }
+                    auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
+                    auto newLod = std::make_shared<VoxelChunkData>();
+                    lods.push_back(newLod);
 
-                for (int i = lods.size() + 1; i <= command.maxLod; ++i)
-                {
-                    auto& previousLod = (i - 1) == 0 ? component->chunkData : *lods.at(i - 2);
-                    auto& currentLod = *lods.at(i - 1);
-
-                    previousLod.copyToLod(currentLod);
+                    previousLod.copyToLod(*newLod);
                 }
 
                 break;
