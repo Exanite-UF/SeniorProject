@@ -113,10 +113,12 @@ private:
     struct SetMaxLodCommand
     {
         int maxLod;
+        bool trim;
 
-        explicit SetMaxLodCommand(const int maxLod)
+        explicit SetMaxLodCommand(const int maxLod, const bool trim)
         {
             this->maxLod = maxLod;
+            this->trim = trim;
         }
     };
 
@@ -148,7 +150,7 @@ public:
     void setEnableCpuMipmaps(bool enableCpuMipmaps);
 
     void setActiveLod(int activeLod);
-    void setMaxLod(int maxLod);
+    void setMaxLod(int maxLod, bool trim = false);
 
     void clear();
 

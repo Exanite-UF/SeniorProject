@@ -445,6 +445,9 @@ void VoxelChunkManager::update(const float deltaTime)
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
+                    commandBuffer.setEnableCpuMipmaps(true);
+                    commandBuffer.setMaxLod(1);
+                    commandBuffer.setActiveLod(1);
                     commandBuffer.setExistsOnGpu(true);
 
                     submitCommandBuffer(chunk->component, commandBuffer);

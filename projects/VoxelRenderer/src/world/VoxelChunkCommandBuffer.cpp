@@ -60,10 +60,10 @@ void VoxelChunkCommandBuffer::setActiveLod(int activeLod)
     setActiveLodCommands.emplace_back(activeLod);
 }
 
-void VoxelChunkCommandBuffer::setMaxLod(int maxLod)
+void VoxelChunkCommandBuffer::setMaxLod(int maxLod, bool trim)
 {
     commands.emplace_back(SetMaxLod, setMaxLodCommands.size());
-    setMaxLodCommands.emplace_back(maxLod);
+    setMaxLodCommands.emplace_back(maxLod, trim);
 }
 
 void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
@@ -194,6 +194,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     break;
                 }
 
+                // TODO: Don't even bother writing to the GPU here, move this to the end of the function
                 // Write to the GPU
                 {
                     ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Write to GPU");
@@ -201,10 +202,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     // Find active LOD and upload it to the GPU
                     // We don't generate the LOD here
                     auto activeLodIndex = component->getChunkManagerData().activeLod;
-                    VoxelChunkData* lod = activeLodIndex == 0 ? &component->chunkData : &component->getChunkManagerData().lods.at(activeLodIndex - 1);
+                    VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : component->getChunkManagerData().lods.at(activeLodIndex - 1);
 
                     // allocateGpuData is idempotent so we can just call it
-                    component->allocateGpuData(lod->getSize());
+                    component->allocateGpuData(lod.getSize());
 
                     // We only need shared access because we are modifying a GPU resource
                     // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
@@ -221,7 +222,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                         {
                             std::lock_guard lockGpuUpload(gpuUploadMutex);
                             auto& test = *component->getChunk();
-                            lod->copyTo(test);
+                            lod.copyTo(test);
                         }
 
                         isGpuUpToDate = true;
@@ -240,19 +241,61 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             }
             case SetEnableCpuMipmaps:
             {
-                // TODO
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetEnableCpuMipmaps");
+
+                auto command = setEnableCpuMipmapsCommands.at(entry.index);
+                chunkData.setHasMipmaps(command.enableCpuMipmaps);
 
                 break;
             }
             case SetActiveLod:
             {
-                // TODO
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
+
+                auto command = setActiveLodCommands.at(entry.index);
+
+                auto previousActiveLod = component->getChunkManagerData().activeLod;
+                component->getChunkManagerData().activeLod = command.activeLod;
+                component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, command.activeLod)));
+
+                if (previousActiveLod != command.activeLod)
+                {
+                    isGpuUpToDate = false;
+                }
 
                 break;
             }
             case SetMaxLod:
             {
-                // TODO
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
+
+                auto command = setMaxLodCommands.at(entry.index);
+                if (component->getChunkManagerData().lods.size() >= command.maxLod)
+                {
+                    // We already have enough LODs
+
+                    // Trim if needed
+                    if (command.trim)
+                    {
+                        component->getChunkManagerData().lods.resize(command.maxLod);
+                    }
+
+                    // Early exit
+                    break;
+                }
+
+                // We don't have enough LODs
+                // We need to generate them
+                auto& lods = component->getChunkManagerData().lods;
+                lods.resize(command.maxLod);
+
+                for (int i = lods.size() + 1; i <= command.maxLod; ++i)
+                {
+                    auto& previousLod = (i - 1) == 0 ? component->chunkData : lods.at(i - 2);
+                    auto& currentLod = lods.at(i - 1);
+
+                    previousLod.copyToLod(currentLod);
+                }
 
                 break;
             }
