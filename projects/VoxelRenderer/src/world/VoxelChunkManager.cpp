@@ -830,6 +830,10 @@ void VoxelChunkManager::showDebugMenu()
                             {
                                 cellColor = loadingCellColor;
                             }
+                            else if (chunk->component->getChunkManagerData().activeLod != 0)
+                            {
+                                cellColor = loddedCellColor;
+                            }
                             else if (chunk->isUnloading)
                             {
                                 cellColor = unloadingCellColor;
