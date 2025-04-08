@@ -61,9 +61,9 @@ private:
 
     // These are primary ray info
     bool whichDepth = false;
-    GraphicsBuffer<glm::vec3> normalBuffer; // world space //convert to half?
-    GraphicsBuffer<glm::vec3> positionBuffer; // world space
-    GraphicsBuffer<glm::vec4> miscBuffer; //(roughness, motion x, motion y, hue) This carries the output motion vectors //convert to half
+    GraphicsBuffer<glm::vec4> normalBuffer; // (x, y, z, depth 1) world space
+    GraphicsBuffer<glm::vec4> positionBuffer; // (x, y, z, depth 2) world space
+    GraphicsBuffer<glm::u16vec2> materialUVBuffer; //(u, v)
     GraphicsBuffer<std::int32_t> materialBuffer; //(materialID)
     GraphicsBuffer<glm::vec3> primaryDirection; //(x, y, z) //convert to half
     GraphicsBuffer<glm::vec4> secondaryDirection; //(x, y, z, w) w is the scaling needed from the pdf of sampling distribution //convert to half
