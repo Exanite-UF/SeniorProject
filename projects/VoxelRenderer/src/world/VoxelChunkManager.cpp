@@ -484,7 +484,7 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
     constexpr bool isDebugging = false;
 #endif
 
-    auto size = glm::vec3(chunk->getChunkData().getSize());
+    auto size = glm::vec3(chunk->getChunkData().getSize()) * static_cast<float>(glm::pow(0.5f, chunk->getChunkManagerData().activeLod));
     if (size.x == 0 || size.y == 0 || size.z == 0)
     {
         return false;
