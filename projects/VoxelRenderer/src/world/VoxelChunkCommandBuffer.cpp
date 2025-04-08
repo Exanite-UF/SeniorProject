@@ -1,5 +1,6 @@
 #include "VoxelChunkCommandBuffer.h"
 
+#include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
 
@@ -192,6 +193,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
                 auto command = setActiveLodCommands.at(entry.index);
+                Assert::isTrue(component->getChunkManagerData().lods.size() >= command.activeLod, "Requested LOD has not been generated");
 
                 auto previousActiveLod = component->getChunkManagerData().activeLod;
                 component->getChunkManagerData().activeLod = command.activeLod;
@@ -216,6 +218,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     // Trim if needed
                     if (command.trim)
                     {
+                        Assert::isTrue(component->getChunkManagerData().activeLod <= command.maxLod, "LOD is being used, cannot trim");
                         component->getChunkManagerData().lods.resize(command.maxLod);
                     }
 
