@@ -474,25 +474,76 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                     }
 
                     // We now need to get 1 of the 8 original materials to show in the LOD
-                    // TODO: Use proper implementation. This is currently a placeholder implementation
-                    bool foundMaterial = false;
-                    for (int z = 0; !foundMaterial && z < 2; ++z)
+                    // We will prefer materials from air-exposed voxels to make sure materials that are not exposed are not exposed in the LOD
+                    uint8_t airMask = 0; // Tracks voxels that are invalid for material selection. Note that at least 1 voxel is always valid due to how LOD occupancy is generated.
+                    uint8_t airExposedMask = 0; // Tracks voxels that are preferred for material selection
+                    for (int z = 0; z < 2; ++z)
                     {
-                        for (int y = 0; !foundMaterial && y < 2; ++y)
+                        for (int y = 0; y < 2; ++y)
                         {
-                            for (int x = 0; !foundMaterial && x < 2; ++x)
+                            for (int x = 0; x < 2; ++x)
                             {
                                 auto selfPosition = lodPosition * 2 + glm::ivec3(x, y, z);
 
-                                if (getVoxelOccupancy(selfPosition))
+                                // Check if voxel itself is air
+                                if (!getVoxelOccupancy(selfPosition))
                                 {
-                                    auto materialIndex = getVoxelMaterialIndex(selfPosition);
-                                    lod.setVoxelMaterialIndex(lodPosition, materialIndex);
+                                    airMask |= (z << 2) | (y << 1) | (x << 0);
 
-                                    foundMaterial = true;
+                                    return;
+                                }
+
+                                // Check if voxel is air exposed
+                                // We only check the 3 outer directions
+                                // If the voxel is outside the chunk, then it is treated as non-air
+                                auto outerPositionX = selfPosition + glm::ivec3(x * 2 - 1, 0, 0);
+                                bool isAirX = VoxelChunkUtility::isValidPosition(outerPositionX, data.size) && !getVoxelOccupancy(outerPositionX);
+
+                                auto outerPositionY = selfPosition + glm::ivec3(0, y * 2 - 1, 0);
+                                bool isAirY = VoxelChunkUtility::isValidPosition(outerPositionY, data.size) && !getVoxelOccupancy(outerPositionY);
+
+                                auto outerPositionZ = selfPosition + glm::ivec3(0, 0, z * 2 - 1);
+                                bool isAirZ = VoxelChunkUtility::isValidPosition(outerPositionZ, data.size) && !getVoxelOccupancy(outerPositionZ);
+
+                                if (isAirX || isAirY || isAirZ)
+                                {
+                                    airExposedMask |= (z << 2) | (y << 1) | (x << 0);
                                 }
                             }
                         }
+                    }
+
+                    // If no voxels are air exposed, then use the inverse of the air mask
+                    // The inverse of the air mask refers to any voxel that is occupied
+                    uint8_t validMask = airExposedMask == 0 ? ~airMask : airExposedMask;
+
+                    // This will determine which of the valid materials we will take
+                    // Ideally, we want the valid material selected to be uniformly selected and deterministic
+                    // The selection process also needs to be fast
+                    uint8_t index = ((lodZ & 1) << 2) | ((lodY & 1) << 1) | ((lodX & 1) << 0);
+
+                    uint8_t currentBitI = 0;
+                    uint8_t matchedCount = 0;
+                    while (true)
+                    {
+                        if (validMask & (1 << currentBitI) != 0)
+                        {
+                            matchedCount++;
+                        }
+
+                        if (matchedCount == index)
+                        {
+                            // We found our material
+                            // Set it as the result and exit
+
+                            auto voxelPosition = lodPosition * 2 + glm::ivec3(((currentBitI & 0b001) >> 0), ((currentBitI & 0b010) >> 1), ((currentBitI & 0b100) >> 2));
+                            auto materialIndex = getVoxelMaterialIndex(voxelPosition);
+                            lod.setVoxelMaterialIndex(lodPosition, materialIndex);
+
+                            break;
+                        }
+
+                        currentBitI = (currentBitI + 1) % 8;
                     }
                 }
             }
