@@ -221,7 +221,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         accumulatedLightBuffer2.bind(10);
     }
 
-    //Put bindless textures on 13
+    // Put bindless textures on 13
 
     {
         int divisor = 8 * shadingRate;
@@ -567,7 +567,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     secondaryDirection.bind(12);
     motionVectors.bind(13);
 
-    //Put bindless textures on 14
+    // Put bindless textures on 14
 
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
@@ -729,7 +729,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     motionVectors.bind(14);
 
-    //Put bindless textures on 15
+    // Put bindless textures on 15
 
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 

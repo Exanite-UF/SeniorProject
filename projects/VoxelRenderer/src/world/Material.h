@@ -42,9 +42,9 @@
 struct MaterialDefinition
 {
     glm::vec3 emission;
-    float textureScaleX = 1;//How many voxels large is the texture
+    float textureScaleX = 1; // How many voxels large is the texture
     glm::vec3 albedo;
-    float textureScaleY = 1;//How many voxels large is the texture
+    float textureScaleY = 1; // How many voxels large is the texture
     glm::vec3 metallicAlbedo;
     std::int32_t albedoTextureID = -1;
     float roughness;

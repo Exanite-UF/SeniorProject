@@ -196,17 +196,16 @@ vec2 getMotionVectors(ivec3 coord)
     }
 }
 
-
-//Bindless textures SSBO
+// Bindless textures SSBO
 layout(std430, binding = 15) buffer MaterialTextures
 {
     uint64_t materialTextures[];
 };
 
-sampler2D getMaterialTexture(int textureID){
+sampler2D getMaterialTexture(int textureID)
+{
     return sampler2D(materialTextures[textureID]);
 }
-
 
 vec3 getLight(ivec3 coord)
 {
@@ -229,7 +228,8 @@ vec3 getPosition(ivec3 coord)
     return vec3(firstHitPosition[0 + index], firstHitPosition[1 + index], firstHitPosition[2 + index]);
 }
 
-float getDepthDifference(ivec3 coord){
+float getDepthDifference(ivec3 coord)
+{
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
 
     return abs(firstHitNormal[index + 3] - firstHitPosition[index + 3]);
@@ -456,10 +456,7 @@ void main()
 
     float depthDifference = getDepthDifference(texelCoord);
 
-
-
-    vec4 miscOutput;//(roughness, motion x, motion y, hue)
-
+    vec4 miscOutput; //(roughness, motion x, motion y, hue)
 
     vec2 motionVectors = getMotionVectors(texelCoord);
     miscOutput.yz = motionVectors / resolution.xy; // Set the output motion vectors
@@ -467,38 +464,37 @@ void main()
     ivec3 previousTexelCoord = ivec3(texelCoord.xy - pixelOffset, 0);
     setMotionVectors(previousTexelCoord, motionVectors - pixelOffset);
 
-
     vec3 light = vec3(0);
     float samples = 0;
     int materialID = getFirstHitMaterial(texelCoord);
     MaterialDefinition voxelMaterial = materialDefinitions[materialID]; // Get the material index of the hit, and map it to an actual material
 
-    //Modify material data with textures
+    // Modify material data with textures
     vec2 uv = getFirstHitMaterialUV(texelCoord);
     {
-        //Get the uv coord
-        if(voxelMaterial.albedoTextureID >= 0){
+        // Get the uv coord
+        if (voxelMaterial.albedoTextureID >= 0)
+        {
             sampler2D albedoTexture = getMaterialTexture(voxelMaterial.albedoTextureID);
             voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
         }
-        
-        if(voxelMaterial.roughnessTextureID >= 0){
+
+        if (voxelMaterial.roughnessTextureID >= 0)
+        {
             sampler2D roughnessTexture = getMaterialTexture(voxelMaterial.roughnessTextureID);
             voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
         }
-        
 
-        if(voxelMaterial.emissionTextureID >= 0){
+        if (voxelMaterial.emissionTextureID >= 0)
+        {
             sampler2D emissionTexture = getMaterialTexture(voxelMaterial.emissionTextureID);
             voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
         }
-        
     }
-    
 
-    //voxelMaterial.albedo *= texture(albedoTexture, hit.voxelHitLocation);
+    // voxelMaterial.albedo *= texture(albedoTexture, hit.voxelHitLocation);
 
-    //Set the roughness and hue of the output misc
+    // Set the roughness and hue of the output misc
     miscOutput.x = voxelMaterial.roughness;
     miscOutput.w = rgbToHue(voxelMaterial.albedo);
 
@@ -521,9 +517,8 @@ void main()
         temporalResevoirWeights *= 0;
     }
 
-
-    //Update ReSTIR resevoir
-    //Also uses the samples directly for this pixel
+    // Update ReSTIR resevoir
+    // Also uses the samples directly for this pixel
     {
         int radius = 1;
         if (voxelMaterial.roughness < 0.01)
@@ -553,9 +548,9 @@ void main()
                     continue;
                 }
                 ///
-                
+
                 // If this pixel didn't have a secondary ray
-                //Or if the secondary ray goes behind the normal direction
+                // Or if the secondary ray goes behind the normal direction
                 vec3 sampleNormal = getNormal(coord); // worldspace
                 if (dot(sampleNormal, normal) < 0.9)
                 {
@@ -586,9 +581,8 @@ void main()
             }
         }
     }
-    
 
-    //Sample from ReSTIR resevoir
+    // Sample from ReSTIR resevoir
     {
         vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
         vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
@@ -598,14 +592,13 @@ void main()
             samples++;
         }
     }
-    
-    //Saves values of ReSTIR resevoir
+
+    // Saves values of ReSTIR resevoir
     {
         setSampleRadiance(texelCoord, temporalResevoirRadiance);
         setSampleDirection(texelCoord, temporalResevoirDirection);
         setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
     }
-    
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
 
@@ -628,7 +621,7 @@ void main()
     }
 
     fragColor = vec4(light / samples + firstHitEmission, 1);
-    //fragColor = vec4(vec3(length(position - cameraPosition) / 1000), 1);
+    // fragColor = vec4(vec3(length(position - cameraPosition) / 1000), 1);
     posBuffer = position;
     miscBuffer = miscOutput;
     normalBuffer = normal;

@@ -23,8 +23,6 @@ layout(std430, binding = 2) buffer RayMaterialUV
     coherent restrict float rayMaterialUV[];
 };
 
-
-
 layout(std430, binding = 5) buffer RayStartPosition
 {
     float rayStartPosition[];
