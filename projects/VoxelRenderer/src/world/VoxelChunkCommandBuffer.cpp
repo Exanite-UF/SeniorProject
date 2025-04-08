@@ -46,7 +46,6 @@ void VoxelChunkCommandBuffer::copyFrom(const std::shared_ptr<VoxelChunkData>& da
 void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
 {
     commands.emplace_back(SetExistsOnGpu, setExistsOnGpuCommands.size());
-    setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
 }
 
 void VoxelChunkCommandBuffer::setEnableCpuMipmaps(bool enableCpuMipmaps)
@@ -172,28 +171,40 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
 
-                // TODO: Properly handle LODs
-
-                VoxelChunkData lod {};
-                chunkData.copyToLod(lod);
-
                 auto command = setExistsOnGpuCommands.at(entry.index);
-                if (command.existsOnGpu != component->getExistsOnGpu())
+                if (command.existsOnGpu == component->getExistsOnGpu())
                 {
-                    if (command.existsOnGpu)
-                    {
-                        component->allocateGpuData(lod.getSize());
-                    }
-                    else
-                    {
-                        component->deallocateGpuData();
-                    }
+                    // Already at desired state, exit
+                    break;
                 }
 
-                // Write if needed
-                if (command.existsOnGpu && command.writeToGpu)
+                if (!command.existsOnGpu)
+                {
+                    // Deallocate and exit
+                    component->deallocateGpuData();
+
+                    isGpuUpToDate = false;
+
+                    break;
+                }
+
+                if (isGpuUpToDate)
+                {
+                    // GPU is already up to date, skip writing to the GPU
+                    break;
+                }
+
+                // Write to the GPU
                 {
                     ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Write to GPU");
+
+                    // Find active LOD and upload it to the GPU
+                    // We don't generate the LOD here
+                    auto activeLodIndex = component->getChunkManagerData().activeLod;
+                    VoxelChunkData* lod = activeLodIndex == 0 ? &component->chunkData : &component->getChunkManagerData().lods.at(activeLodIndex - 1);
+
+                    // allocateGpuData is idempotent so we can just call it
+                    component->allocateGpuData(lod->getSize());
 
                     // We only need shared access because we are modifying a GPU resource
                     // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
@@ -209,7 +220,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                         {
                             std::lock_guard lockGpuUpload(gpuUploadMutex);
-                            lod.copyTo(*component->getChunk());
+                            auto& test = *component->getChunk();
+                            lod->copyTo(test);
                         }
 
                         isGpuUpToDate = true;

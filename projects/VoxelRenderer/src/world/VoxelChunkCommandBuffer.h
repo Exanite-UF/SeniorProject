@@ -83,12 +83,10 @@ private:
     struct SetExistsOnGpuCommand
     {
         bool existsOnGpu;
-        bool writeToGpu;
 
-        explicit SetExistsOnGpuCommand(const bool existsOnGpu, const bool writeToGpu)
+        explicit SetExistsOnGpuCommand(const bool existsOnGpu)
         {
             this->existsOnGpu = existsOnGpu;
-            this->writeToGpu = writeToGpu;
         }
     };
 

@@ -63,7 +63,15 @@ void VoxelChunkComponent::allocateGpuData(const glm::ivec3& size)
     assertIsPartOfWorld();
 
     existsOnGpu = true;
-    chunk = std::make_unique<VoxelChunk>(size, false);
+
+    if (!chunk.has_value())
+    {
+        chunk = std::make_unique<VoxelChunk>(size, false);
+    }
+    else
+    {
+        chunk.value()->setSize(size);
+    }
 }
 
 void VoxelChunkComponent::deallocateGpuData()
