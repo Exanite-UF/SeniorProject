@@ -158,8 +158,6 @@ void setRayDepth(ivec3 coord, float value)
     rayMisc[index + 0] = value;
 }
 
-
-
 layout(std430, binding = 8) buffer FirstHitNormal
 {
     writeonly float firstHitNormal[];
@@ -200,7 +198,6 @@ void setFirstHitOldDepth(ivec3 coord, float value)
     }
 }
 
-
 layout(std430, binding = 10) buffer FirstHitMaterialUV
 {
     writeonly float16_t firstHitMaterialUV[];
@@ -212,7 +209,6 @@ void setFirstHitMaterialUV(ivec3 coord, vec2 value)
     firstHitMaterialUV[index + 0] = float16_t(value.x);
     firstHitMaterialUV[index + 1] = float16_t(value.y);
 }
-
 
 layout(std430, binding = 11) buffer FirstHitMaterial
 {
@@ -279,13 +275,14 @@ void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
     }
 }
 
-//Bindless textures SSBO
+// Bindless textures SSBO
 layout(std430, binding = 14) buffer MaterialTextures
 {
     uint64_t materialTextures[];
 };
 
-sampler2D getMaterialTexture(int textureID){
+sampler2D getMaterialTexture(int textureID)
+{
     return sampler2D(materialTextures[textureID]);
 }
 
@@ -299,7 +296,7 @@ struct RayHit
     uint material;
     vec3 voxelHitLocation;
     bool isNearest;
-    vec2 uv;//voxel hit position relevant to finding texture coords
+    vec2 uv; // voxel hit position relevant to finding texture coords
 };
 
 float rayboxintersect(vec3 raypos, vec3 raydir, vec3 boxmin, vec3 boxmax)
@@ -379,10 +376,10 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
     bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
     bool hasEntered = false;
-    //hit.wasHit = true;
-    //hit.hitLocation = rayPos;
-    //hit.dist = length(rayStart - hit.hitLocation);
-    //return hit;
+    // hit.wasHit = true;
+    // hit.hitLocation = rayPos;
+    // hit.dist = length(rayStart - hit.hitLocation);
+    // return hit;
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -394,7 +391,8 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         bool isOutsideVolume = (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0))));
-        if(!isOutsideVolume){
+        if (!isOutsideVolume)
+        {
             hasEntered = true;
         }
 
@@ -406,10 +404,13 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         int count = 0;
         // The <= is correct
-        //iterate by 1 until it enters the voxel volume
-        if(isOutsideVolume){
+        // iterate by 1 until it enters the voxel volume
+        if (isOutsideVolume)
+        {
             count = 1;
-        }else{
+        }
+        else
+        {
             for (int i = 0; i <= occupancyMapLayerCount; i++)
             {
                 ivec3 p2 = (p >> (2 * i)) & 1;
@@ -418,7 +419,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
                 count += int((l & k) == 0) + int(l == 0);
             }
         }
-        
 
         if (count <= 0)
         {
@@ -493,12 +493,17 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
     hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
 
-    //Calculate the hit uv
-    if(abs(dot(hit.normal, vec3(1, 0, 0))) > 0.1){
+    // Calculate the hit uv
+    if (abs(dot(hit.normal, vec3(1, 0, 0))) > 0.1)
+    {
         hit.uv = hit.voxelHitLocation.yz;
-    }else if(abs(dot(hit.normal, vec3(0, 1, 0))) > 0.1){
+    }
+    else if (abs(dot(hit.normal, vec3(0, 1, 0))) > 0.1)
+    {
         hit.uv = hit.voxelHitLocation.xz;
-    }else{
+    }
+    else
+    {
         hit.uv = hit.voxelHitLocation.xy;
     }
 
@@ -663,7 +668,6 @@ float rgbToHue(vec3 rgb)
     return hue / 360.;
 }
 
-
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
@@ -699,10 +703,6 @@ void main()
     setFirstHitOldDepth(texelCoord, hit.dist);
     setFirstHitPosition(texelCoord, hit.hitLocation);
     setFirstHitNormal(texelCoord, normalize(hit.normal));
-
-
-
-    
 
     // Calculate motion vectors
     {
@@ -746,21 +746,23 @@ void main()
 
     setFirstHitMaterial(texelCoord, int(hit.material));
 
-    //Modify material data with textures
+    // Modify material data with textures
     {
-        //Get the uv coord
-        if(voxelMaterial.albedoTextureID >= 0){
+        // Get the uv coord
+        if (voxelMaterial.albedoTextureID >= 0)
+        {
             sampler2D albedoTexture = getMaterialTexture(voxelMaterial.albedoTextureID);
             voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
         }
-        
-        if(voxelMaterial.roughnessTextureID >= 0){
+
+        if (voxelMaterial.roughnessTextureID >= 0)
+        {
             sampler2D roughnessTexture = getMaterialTexture(voxelMaterial.roughnessTextureID);
             voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
         }
-        
 
-        if(voxelMaterial.emissionTextureID >= 0){
+        if (voxelMaterial.emissionTextureID >= 0)
+        {
             sampler2D emissionTexture = getMaterialTexture(voxelMaterial.emissionTextureID);
             voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
         }

@@ -2,7 +2,6 @@
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_ARB_bindless_texture : require
 
-
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 // layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
@@ -186,13 +185,14 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
-//Bindless textures SSBO
+// Bindless textures SSBO
 layout(std430, binding = 13) buffer MaterialTextures
 {
     uint64_t materialTextures[];
 };
 
-sampler2D getMaterialTexture(int textureID){
+sampler2D getMaterialTexture(int textureID)
+{
     return sampler2D(materialTextures[textureID]);
 }
 
@@ -206,7 +206,7 @@ struct RayHit
     uint material;
     vec3 voxelHitLocation;
     bool isNearest;
-    vec2 uv;//voxel hit position relevant to finding texture coords
+    vec2 uv; // voxel hit position relevant to finding texture coords
 };
 
 float rayboxintersect(vec3 raypos, vec3 raydir, vec3 boxmin, vec3 boxmax)
@@ -286,10 +286,10 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
     bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
     bool hasEntered = false;
-    //hit.wasHit = true;
-    //hit.hitLocation = rayPos;
-    //hit.dist = length(rayStart - hit.hitLocation);
-    //return hit;
+    // hit.wasHit = true;
+    // hit.hitLocation = rayPos;
+    // hit.dist = length(rayStart - hit.hitLocation);
+    // return hit;
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -301,7 +301,8 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         bool isOutsideVolume = (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0))));
-        if(!isOutsideVolume){
+        if (!isOutsideVolume)
+        {
             hasEntered = true;
         }
 
@@ -313,10 +314,13 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         int count = 0;
         // The <= is correct
-        //iterate by 1 until it enters the voxel volume
-        if(isOutsideVolume){
+        // iterate by 1 until it enters the voxel volume
+        if (isOutsideVolume)
+        {
             count = 1;
-        }else{
+        }
+        else
+        {
             for (int i = 0; i <= occupancyMapLayerCount; i++)
             {
                 ivec3 p2 = (p >> (2 * i)) & 1;
@@ -325,7 +329,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
                 count += int((l & k) == 0) + int(l == 0);
             }
         }
-        
 
         if (count <= 0)
         {
@@ -400,12 +403,17 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
     hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
 
-    //Calculate the hit uv
-    if(abs(dot(hit.normal, vec3(1, 0, 0))) > 0.1){
+    // Calculate the hit uv
+    if (abs(dot(hit.normal, vec3(1, 0, 0))) > 0.1)
+    {
         hit.uv = hit.voxelHitLocation.yz;
-    }else if(abs(dot(hit.normal, vec3(0, 1, 0))) > 0.1){
+    }
+    else if (abs(dot(hit.normal, vec3(0, 1, 0))) > 0.1)
+    {
         hit.uv = hit.voxelHitLocation.xz;
-    }else{
+    }
+    else
+    {
         hit.uv = hit.voxelHitLocation.xy;
     }
 
@@ -621,7 +629,6 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     // float dist = getHitDist(texelCoord); // Distance that the ray cast covered
     vec3 normal = hit.normal; // The normal direction of the hit
 
-    
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
     MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
@@ -629,20 +636,23 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     // Find the uv coordinate for the texture
     vec2 uv = mod(hit.uv / vec2(voxelMaterial.textureScaleX, voxelMaterial.textureScaleY), 1);
 
-    //Modify material data with textures
+    // Modify material data with textures
     {
-        //Get the uv coord
-        if(voxelMaterial.albedoTextureID >= 0){
+        // Get the uv coord
+        if (voxelMaterial.albedoTextureID >= 0)
+        {
             sampler2D albedoTexture = getMaterialTexture(voxelMaterial.albedoTextureID);
             voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
         }
-        
-        if(voxelMaterial.roughnessTextureID >= 0){
+
+        if (voxelMaterial.roughnessTextureID >= 0)
+        {
             sampler2D roughnessTexture = getMaterialTexture(voxelMaterial.roughnessTextureID);
             voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
         }
-        
-        if(voxelMaterial.emissionTextureID >= 0){
+
+        if (voxelMaterial.emissionTextureID >= 0)
+        {
             sampler2D emissionTexture = getMaterialTexture(voxelMaterial.emissionTextureID);
             voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
         }
