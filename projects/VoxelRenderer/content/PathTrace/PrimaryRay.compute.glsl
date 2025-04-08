@@ -5,6 +5,15 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
+vec4 safeVec4(vec4 v, vec4 fallback)
+{
+    return vec4(
+        isnan(v.r) || isinf(v.r) ? fallback.r : v.r,
+        isnan(v.g) || isinf(v.g) ? fallback.g : v.g,
+        isnan(v.b) || isinf(v.b) ? fallback.b : v.b,
+        isnan(v.a) || isinf(v.a) ? fallback.a : v.a);
+}
+
 // Padded to 32 bytes long (alignment of 16)
 struct MaterialDefinition
 {
@@ -237,13 +246,36 @@ void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     if (whichAccumulatingVector)
     {
-        accumulatingMotionVectors[index + 0] = accumulatingMotionVectors[index + 2] + float16_t(value.x);
-        accumulatingMotionVectors[index + 1] = accumulatingMotionVectors[index + 3] + float16_t(value.y);
+
+        float temp = accumulatingMotionVectors[index + 2] + (value.x);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 0] = float16_t(temp);
+
+        temp = accumulatingMotionVectors[index + 3] + (value.y);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 1] = float16_t(temp);
     }
     else
     {
-        accumulatingMotionVectors[index + 2] = accumulatingMotionVectors[index + 0] + float16_t(value.x);
-        accumulatingMotionVectors[index + 3] = accumulatingMotionVectors[index + 1] + float16_t(value.y);
+        float temp = accumulatingMotionVectors[index + 0] + (value.x);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 2] = float16_t(temp);
+
+        temp = accumulatingMotionVectors[index + 1] + (value.y);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 3] = float16_t(temp);
     }
 }
 
@@ -674,7 +706,7 @@ void main()
     setRayDepth(texelCoord, hit.dist); // Update the nearest distance
     setFirstHitOldDepth(texelCoord, hit.dist);
     setFirstHitPosition(texelCoord, hit.hitLocation);
-    setFirstHitNormal(texelCoord, hit.normal);
+    setFirstHitNormal(texelCoord, normalize(hit.normal));
 
     // Calculate motion vectors
     {
