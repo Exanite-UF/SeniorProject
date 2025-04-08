@@ -211,7 +211,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
 
                 auto command = setMaxLodCommands.at(entry.index);
-                if (component->getChunkManagerData().lods.size() >= command.maxLod)
+                auto& lods = component->getChunkManagerData().lods;
+                if (lods.size() >= command.maxLod)
                 {
                     // We already have enough LODs
 
@@ -219,7 +220,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     if (command.trim)
                     {
                         Assert::isTrue(component->getChunkManagerData().activeLod <= command.maxLod, "LOD is being used, cannot trim");
-                        component->getChunkManagerData().lods.resize(command.maxLod);
+                        while (lods.size() > command.maxLod)
+                        {
+                            lods.pop_back();
+                        }
                     }
 
                     // Early exit
@@ -228,13 +232,15 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 // We don't have enough LODs
                 // We need to generate them
-                auto& lods = component->getChunkManagerData().lods;
-                lods.resize(command.maxLod);
+                while (lods.size() < command.maxLod)
+                {
+                    lods.push_back(std::make_shared<VoxelChunkData>());
+                }
 
                 for (int i = lods.size() + 1; i <= command.maxLod; ++i)
                 {
-                    auto& previousLod = (i - 1) == 0 ? component->chunkData : lods.at(i - 2);
-                    auto& currentLod = lods.at(i - 1);
+                    auto& previousLod = (i - 1) == 0 ? component->chunkData : *lods.at(i - 2);
+                    auto& currentLod = *lods.at(i - 1);
 
                     previousLod.copyToLod(currentLod);
                 }
@@ -244,7 +250,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
         }
     }
 
-    if (!isGpuUpToDate && component->getExistsOnGpu())
     {
         ZoneScopedN("VoxelChunkCommandBuffer::apply - Check if GPU is up to date");
 
@@ -275,7 +280,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 // Find active LOD and upload it to the GPU
                 // We don't generate the LOD here
                 auto activeLodIndex = component->getChunkManagerData().activeLod;
-                VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : component->getChunkManagerData().lods.at(activeLodIndex - 1);
+                VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *component->getChunkManagerData().lods.at(activeLodIndex - 1);
 
                 // allocateGpuData is idempotent so we can just call it
                 component->allocateGpuData(lod.getSize());

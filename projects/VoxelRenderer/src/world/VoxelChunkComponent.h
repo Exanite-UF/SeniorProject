@@ -38,7 +38,7 @@ public:
 
         // Used by LODing system
         int activeLod = 0;
-        std::vector<VoxelChunkData> lods {};
+        std::vector<std::shared_ptr<VoxelChunkData>> lods {};
     };
 
 private:
