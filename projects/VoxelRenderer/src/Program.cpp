@@ -144,7 +144,7 @@ void Program::run()
     scene->setSkybox(skybox);
 
     // Generate static, noise-based chunks for testing purposes
-    if (false)
+    if (true)
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         voxelChunkManager.settings.enableCulling = false;
@@ -156,6 +156,8 @@ void Program::run()
 
                 auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                 voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
+                //voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
+                voxelChunk->getTransform()->setLocalScale(glm::vec3(2, 2, 2));
 
                 scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
             }

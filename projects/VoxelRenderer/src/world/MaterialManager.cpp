@@ -92,7 +92,7 @@ MaterialManager::MaterialManager()
     for (size_t i = materials.size(); i < Constants::VoxelChunk::maxMaterialCount; i++)
     {
         auto& material = createMaterial("generated_" + std::to_string(i), "Generated Material (Index " + std::to_string(i) + ") ");
-        if ((rand() % 10000) / 10000.0 <= 0.1)
+        if ((rand() % 10000) / 10000.0 <= 0.1 * 0)
         {
             material->emission = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
             material->albedo = material->emission;
@@ -111,7 +111,7 @@ MaterialManager::MaterialManager()
             material->metallicAlbedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
         }
 
-        material->roughness = std::pow((rand() % 1000) / 1000.0, 2);
+        material->roughness = 1;//std::pow((rand() % 1000) / 1000.0, 2);
     }
 
     updateGpuMaterialData();
