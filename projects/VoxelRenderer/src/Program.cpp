@@ -148,9 +148,9 @@ void Program::run()
     {
         voxelChunkManager.settings.isChunkLoadingEnabled = false;
         voxelChunkManager.settings.enableCulling = false;
-        for (int x = 0; x < 3; x++)
+        for (int x = 0; x < 1; x++)
         {
-            for (int y = 0; y < 3; ++y)
+            for (int y = 0; y < 1; ++y)
             {
                 auto voxelChunkObject = sceneObject->createChildObject(std::format("Chunk ({}, {})", x, y));
 

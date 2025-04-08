@@ -1,20 +1,21 @@
 #version 460 core
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : require
 
 struct MaterialDefinition
 {
     vec3 emission;
-    float padding0;
+    float textureScaleX;
     vec3 albedo;
-    float padding1;
+    float textureScaleY;
     vec3 metallicAlbedo;
-    float padding2;
+    int albedoTextureID;
     float roughness;
     float metallic;
 
-    float padding3;
-    float padding4;
+    int roughnessTextureID;
+    int emissionTextureID;
 };
 
 uniform ivec3 resolution; //(xSize, ySize, 1)
@@ -38,10 +39,16 @@ layout(std430, binding = 2) buffer FirstHitPosition
     float firstHitPosition[];
 };
 
-layout(std430, binding = 3) buffer FirstHitMisc
+layout(std430, binding = 3) buffer FirstHitMaterialUV
 {
-    float firstHitMisc[];
+    readonly float16_t firstHitMaterialUV[];
 };
+
+vec2 getFirstHitMaterialUV(ivec3 coord)
+{
+    int index = 2 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec2(firstHitMaterialUV[index + 0], firstHitMaterialUV[index + 1]);
+}
 
 layout(std430, binding = 4) buffer FirstHitMaterial
 {
@@ -189,6 +196,18 @@ vec2 getMotionVectors(ivec3 coord)
     }
 }
 
+
+//Bindless textures SSBO
+layout(std430, binding = 15) buffer MaterialTextures
+{
+    uint64_t materialTextures[];
+};
+
+sampler2D getMaterialTexture(int textureID){
+    return sampler2D(materialTextures[textureID]);
+}
+
+
 vec3 getLight(ivec3 coord)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y
@@ -198,23 +217,22 @@ vec3 getLight(ivec3 coord)
 
 vec3 getNormal(ivec3 coord)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
 
     return vec3(firstHitNormal[0 + index], firstHitNormal[1 + index], firstHitNormal[2 + index]);
 }
 
 vec3 getPosition(ivec3 coord)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
 
     return vec3(firstHitPosition[0 + index], firstHitPosition[1 + index], firstHitPosition[2 + index]);
 }
 
-vec4 getMisc(ivec3 coord)
-{
+float getDepthDifference(ivec3 coord){
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
 
-    return vec4(firstHitMisc[0 + index], firstHitMisc[1 + index], firstHitMisc[2 + index], firstHitMisc[3 + index]);
+    return abs(firstHitNormal[index + 3] - firstHitPosition[index + 3]);
 }
 
 vec3 qtransform(vec4 q, vec3 v)
@@ -395,6 +413,36 @@ void addSample(ivec3 coord, float seed, vec3 normal, vec3 primaryDirection, vec3
     }
 }
 
+float rgbToHue(vec3 rgb)
+{
+    float minC = min(rgb.r, min(rgb.g, rgb.b));
+    float maxC = max(rgb.r, max(rgb.g, rgb.b));
+    float delta = maxC - minC;
+
+    float hue = 0.0;
+
+    if (delta > 0.0)
+    {
+        if (maxC == rgb.r)
+        {
+            hue = mod((rgb.g - rgb.b) / delta, 6.0);
+        }
+        else if (maxC == rgb.g)
+        {
+            hue = ((rgb.b - rgb.r) / delta) + 2.0;
+        }
+        else
+        { // maxC == rgb.b
+            hue = ((rgb.r - rgb.g) / delta) + 4.0;
+        }
+        hue *= 60.0;
+        if (hue < 0.0)
+            hue += 360.0;
+    }
+
+    return hue / 360.;
+}
+
 void main()
 {
     ivec3 texelCoord = ivec3(gl_FragCoord.xy, 0);
@@ -405,32 +453,54 @@ void main()
 
     vec3 normal = getNormal(texelCoord); // worldspace
     vec3 position = getPosition(texelCoord); // worldspace
-    vec4 misc = getMisc(texelCoord);
 
-    float oldDepth;
-    float currentDepth;
+    float depthDifference = getDepthDifference(texelCoord);
 
-    if (whichDepth)
-    {
-        currentDepth = misc.z;
-        oldDepth = misc.y;
-    }
-    else
-    {
-        currentDepth = misc.y;
-        oldDepth = misc.z;
-    }
+
+
+    vec4 miscOutput;//(roughness, motion x, motion y, hue)
+
 
     vec2 motionVectors = getMotionVectors(texelCoord);
-    misc.yz = motionVectors / resolution.xy; // Set the output motion vectors
+    miscOutput.yz = motionVectors / resolution.xy; // Set the output motion vectors
     ivec2 pixelOffset = ivec2(floor(motionVectors + 0.5));
     ivec3 previousTexelCoord = ivec3(texelCoord.xy - pixelOffset, 0);
     setMotionVectors(previousTexelCoord, motionVectors - pixelOffset);
+
 
     vec3 light = vec3(0);
     float samples = 0;
     int materialID = getFirstHitMaterial(texelCoord);
     MaterialDefinition voxelMaterial = materialDefinitions[materialID]; // Get the material index of the hit, and map it to an actual material
+
+    //Modify material data with textures
+    vec2 uv = getFirstHitMaterialUV(texelCoord);
+    {
+        //Get the uv coord
+        if(voxelMaterial.albedoTextureID >= 0){
+            sampler2D albedoTexture = getMaterialTexture(voxelMaterial.albedoTextureID);
+            voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
+        }
+        
+        if(voxelMaterial.roughnessTextureID >= 0){
+            sampler2D roughnessTexture = getMaterialTexture(voxelMaterial.roughnessTextureID);
+            voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
+        }
+        
+
+        if(voxelMaterial.emissionTextureID >= 0){
+            sampler2D emissionTexture = getMaterialTexture(voxelMaterial.emissionTextureID);
+            voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
+        }
+        
+    }
+    
+
+    //voxelMaterial.albedo *= texture(albedoTexture, hit.voxelHitLocation);
+
+    //Set the roughness and hue of the output misc
+    miscOutput.x = voxelMaterial.roughness;
+    miscOutput.w = rgbToHue(voxelMaterial.albedo);
 
     vec3 direction = getPrimaryDirection(texelCoord);
 
@@ -444,88 +514,98 @@ void main()
     temporalResevoirDirection = getSampleDirection(previousTexelCoord);
     temporalResevoirWeights = getSampleWeights(previousTexelCoord);
 
-    if (any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || abs(currentDepth - oldDepth) > 1)
+    if (any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || depthDifference > 1)
     {
         temporalResevoirRadiance *= 0;
         temporalResevoirDirection *= 0;
         temporalResevoirWeights *= 0;
     }
 
-    int radius = 1;
-    if (misc.x < 0.01)
-    {
-        radius = 0;
 
-        temporalResevoirRadiance *= 0;
-        temporalResevoirDirection *= 0;
-        temporalResevoirWeights *= 0;
-    }
-    // radius = 0;
-
-    const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
-    for (int i = -radius; i <= radius; i++)
+    //Update ReSTIR resevoir
+    //Also uses the samples directly for this pixel
     {
-        for (int j = -radius; j <= radius; j++)
+        int radius = 1;
+        if (voxelMaterial.roughness < 0.01)
         {
-            ivec3 coord = texelCoord + ivec3(i, j, 0); // * abs(ivec3(i, j, 0));
-            ///
-            // if(i == j && i == 0){
-            //     continue;
-            // }
+            radius = 0;
 
-            // If this is offscreen
-            if (coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y)
-            {
-                continue;
-            }
-            ///
-            // If this pixel didn't have a secondary ray
-            if (getMisc(coord).x < 0)
-            {
-                continue;
-            }
-            ///
-            vec3 sampleNormal = getNormal(coord); // worldspace
-            if (dot(sampleNormal, normal) < 0.9)
-            {
-                continue;
-            }
-            ///
-            // Materials of different roughnesses have different bounce distributions, so they cannot be combined
-            vec4 sampleMisc = getMisc(coord);
-            if (abs(sampleMisc.x - misc.x) > 0.1)
-            {
-                continue;
-            }
+            temporalResevoirRadiance *= 0;
+            temporalResevoirDirection *= 0;
+            temporalResevoirWeights *= 0;
+        }
+        // radius = 0;
 
-            vec3 samplePosition = getPosition(coord);
-            if (length(samplePosition - position) > 1)
+        const float kernel[3] = float[3](1.0 / 4.0, 4.0 / 8.0, 1.0 / 4.0);
+        for (int i = -radius; i <= radius; i++)
+        {
+            for (int j = -radius; j <= radius; j++)
             {
-                continue;
+                ivec3 coord = texelCoord + ivec3(i, j, 0); // * abs(ivec3(i, j, 0));
+                ///
+                // if(i == j && i == 0){
+                //     continue;
+                // }
+
+                // If this is offscreen
+                if (coord.x < 0 || coord.x >= resolution.x || coord.y < 0 || coord.y >= resolution.y)
+                {
+                    continue;
+                }
+                ///
+                
+                // If this pixel didn't have a secondary ray
+                //Or if the secondary ray goes behind the normal direction
+                vec3 sampleNormal = getNormal(coord); // worldspace
+                if (dot(sampleNormal, normal) < 0.9)
+                {
+                    continue;
+                }
+                ///
+                // Materials of different roughnesses have different bounce distributions, so they cannot be combined
+                int sampleMaterial = getFirstHitMaterial(coord);
+                if (sampleMaterial != materialID)
+                {
+                    continue;
+                }
+
+                vec3 samplePosition = getPosition(coord);
+                if (length(samplePosition - position) > 1)
+                {
+                    continue;
+                }
+
+                vec3 newLight = getLight(coord);
+                vec4 newSecondaryDirection = getSecondaryDirection(coord);
+
+                float multiplier = kernel[i + 1] * kernel[j + 1];
+                light += newLight * brdf2(normal, direction, newSecondaryDirection.xyz, voxelMaterial) * newSecondaryDirection.w * multiplier;
+                samples += multiplier;
+
+                addSample(coord, seed + (i + 2) + 3 * (j + 2), normal, direction, newLight, newSecondaryDirection);
             }
-
-            vec3 newLight = getLight(coord);
-            vec4 newSecondaryDirection = getSecondaryDirection(coord);
-
-            float multiplier = kernel[i + 1] * kernel[j + 1];
-            light += newLight * brdf2(normal, direction, newSecondaryDirection.xyz, voxelMaterial) * newSecondaryDirection.w * multiplier;
-            samples += multiplier;
-
-            addSample(coord, seed + (i + 2) + 3 * (j + 2), normal, direction, newLight, newSecondaryDirection);
         }
     }
+    
 
-    vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
-    vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
-    if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
+    //Sample from ReSTIR resevoir
     {
-        light += sampleOutgoingLight;
-        samples++;
+        vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
+        vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
+        if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
+        {
+            light += sampleOutgoingLight;
+            samples++;
+        }
     }
-
-    setSampleRadiance(texelCoord, temporalResevoirRadiance);
-    setSampleDirection(texelCoord, temporalResevoirDirection);
-    setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
+    
+    //Saves values of ReSTIR resevoir
+    {
+        setSampleRadiance(texelCoord, temporalResevoirRadiance);
+        setSampleDirection(texelCoord, temporalResevoirDirection);
+        setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
+    }
+    
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
 
@@ -535,7 +615,7 @@ void main()
     //(0, 0, 1) up
 
     vec3 firstHitEmission = vec3(0);
-    if (misc.x >= 0)
+    if (length(normal) >= 0.5)
     {
         firstHitEmission = voxelMaterial.emission;
     }
@@ -544,10 +624,12 @@ void main()
         light *= 0;
         samples = 1;
         firstHitEmission = skyBox(direction);
+        miscOutput.x = -1;
     }
 
     fragColor = vec4(light / samples + firstHitEmission, 1);
+    //fragColor = vec4(vec3(length(position - cameraPosition) / 1000), 1);
     posBuffer = position;
-    miscBuffer = misc;
+    miscBuffer = miscOutput;
     normalBuffer = normal;
 }

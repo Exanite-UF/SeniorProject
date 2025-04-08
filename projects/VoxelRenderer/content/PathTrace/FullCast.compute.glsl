@@ -1,4 +1,7 @@
 #version 460 core
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : require
+
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 // layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
@@ -7,16 +10,16 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 struct MaterialDefinition
 {
     vec3 emission;
-    float padding0;
+    float textureScaleX;
     vec3 albedo;
-    float padding1;
+    float textureScaleY;
     vec3 metallicAlbedo;
-    float padding2;
+    int albedoTextureID;
     float roughness;
     float metallic;
 
-    float padding3;
-    float padding4;
+    int roughnessTextureID;
+    int emissionTextureID;
 };
 
 uniform ivec3 cellCount;
@@ -183,6 +186,16 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
+//Bindless textures SSBO
+layout(std430, binding = 13) buffer MaterialTextures
+{
+    uint64_t materialTextures[];
+};
+
+sampler2D getMaterialTexture(int textureID){
+    return sampler2D(materialTextures[textureID]);
+}
+
 struct RayHit
 {
     bool wasHit;
@@ -193,6 +206,7 @@ struct RayHit
     uint material;
     vec3 voxelHitLocation;
     bool isNearest;
+    vec2 uv;//voxel hit position relevant to finding texture coords
 };
 
 float rayboxintersect(vec3 raypos, vec3 raydir, vec3 boxmin, vec3 boxmax)
@@ -252,7 +266,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
     // Put the ray at the surface of the cube
     float distToCube = rayboxintersect(rayStart, rayDir, vec3(0), vec3(size));
-    rayPos += rayDir * max(0.0, distToCube - 0.001); // The -0.001 is for numerical stability when entering the volume (This is the aformentioned correction)
+    rayPos += rayDir * max(0.0, distToCube - 0.1); // The -0.001 is for numerical stability when entering the volume (This is the aformentioned correction)
 
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
@@ -271,6 +285,11 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     }
 
     bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
+    bool hasEntered = false;
+    //hit.wasHit = true;
+    //hit.hitLocation = rayPos;
+    //hit.dist = length(rayStart - hit.hitLocation);
+    //return hit;
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -282,7 +301,11 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         bool isOutsideVolume = (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0))));
-        if ((i > 0) && isOutsideVolume)
+        if(!isOutsideVolume){
+            hasEntered = true;
+        }
+
+        if ((i > 0) && isOutsideVolume && hasEntered)
         {
             // No voxel was hit
             break;
@@ -290,13 +313,19 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         int count = 0;
         // The <= is correct
-        for (int i = 0; i <= occupancyMapLayerCount; i++)
-        {
-            ivec3 p2 = (p >> (2 * i)) & 1;
-            uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
-            uint l = getOccupancyByte((p >> (1 + 2 * i)), i);
-            count += int((l & k) == 0) + int(l == 0);
+        //iterate by 1 until it enters the voxel volume
+        if(isOutsideVolume){
+            count = 1;
+        }else{
+            for (int i = 0; i <= occupancyMapLayerCount; i++)
+            {
+                ivec3 p2 = (p >> (2 * i)) & 1;
+                uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+                uint l = getOccupancyByte((p >> (1 + 2 * i)), i);
+                count += int((l & k) == 0) + int(l == 0);
+            }
         }
+        
 
         if (count <= 0)
         {
@@ -370,6 +399,15 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     hit.hitLocation *= voxelWorldScale; // Apply the scale of the voxel world
     hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
     hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
+
+    //Calculate the hit uv
+    if(abs(dot(hit.normal, vec3(1, 0, 0))) > 0.1){
+        hit.uv = hit.voxelHitLocation.yz;
+    }else if(abs(dot(hit.normal, vec3(0, 1, 0))) > 0.1){
+        hit.uv = hit.voxelHitLocation.xz;
+    }else{
+        hit.uv = hit.voxelHitLocation.xy;
+    }
 
     // Transform the hit normal from
     hit.normal *= voxelWorldScale;
@@ -583,40 +621,32 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     // float dist = getHitDist(texelCoord); // Distance that the ray cast covered
     vec3 normal = hit.normal; // The normal direction of the hit
 
-    // Find the uv coordinate for the texture
-    // It is based on the hit location in voxel space
-    // vec3 voxelPosition = hit.voxelHitLocation;
-    // vec2 hitUV;
-    // if (abs(normal.x) > 0)
-    //{
-    //    // yz
-    //    hitUV = voxelPosition.yz;
-    //}
-    // else if (abs(normal.y) > 0)
-    //{
-    //    // xz
-    //    hitUV = voxelPosition.xz;
-    //}
-    // else if (abs(normal.z) > 0)
-    //{
-    //    // xy
-    //    hitUV = voxelPosition.xy;
-    //}
-    // vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
-
+    
     // Format the voxel material into a struct
     // Load the correct material values from the array of material textures
     MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
 
-    // Multiply in the texture values
-    /*
-    voxelMaterial.emission *= texture(sampler2d(materialTextures[materialID].emission), uv).xyz;
-    voxelMaterial.albedo *= texture(sampler2d(materialTextures[materialID].albedo), uv).xyz;
-    voxelMaterial.metallicAlbedo *= texture(sampler2d(materialTextures[materialID].metallicAlbedo), uv).xyz;
-    vec4 rmTexture = texture(sampler2d(materialTextures[materialID].rmTexture), uv);
-    voxelMaterial.roughness *= rmTexture.r;
-    voxelMaterial.metallic *= rmTexture.g;
-    */
+    // Find the uv coordinate for the texture
+    vec2 uv = mod(hit.uv / vec2(voxelMaterial.textureScaleX, voxelMaterial.textureScaleY), 1);
+
+    //Modify material data with textures
+    {
+        //Get the uv coord
+        if(voxelMaterial.albedoTextureID >= 0){
+            sampler2D albedoTexture = getMaterialTexture(voxelMaterial.albedoTextureID);
+            voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
+        }
+        
+        if(voxelMaterial.roughnessTextureID >= 0){
+            sampler2D roughnessTexture = getMaterialTexture(voxelMaterial.roughnessTextureID);
+            voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
+        }
+        
+        if(voxelMaterial.emissionTextureID >= 0){
+            sampler2D emissionTexture = getMaterialTexture(voxelMaterial.emissionTextureID);
+            voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
+        }
+    }
 
     normal = normalize(normal);
     direction = normalize(direction);
