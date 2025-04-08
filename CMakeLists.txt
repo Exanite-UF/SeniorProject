@@ -23,11 +23,11 @@ cmake_policy(SET CMP0069 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 
 # Enable Inter-Procedural Optimization (IPO) if supported by the compiler
-include(CheckIPOSupported)
-check_ipo_supported(RESULT IS_IPO_SUPPORTED)
-if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
+#include(CheckIPOSupported)
+#check_ipo_supported(RESULT IS_IPO_SUPPORTED)
+#if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
+#    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+#endif()
 
 # Enable architecture specific optimizations
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
