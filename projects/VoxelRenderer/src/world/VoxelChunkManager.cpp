@@ -442,12 +442,14 @@ void VoxelChunkManager::update(const float deltaTime)
                 {
                     ZoneScopedN("Chunk modification task creation - Command buffer creation");
 
+                    auto desiredLod = rand() % 4;
+
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
                     commandBuffer.setEnableCpuMipmaps(true);
-                    commandBuffer.setMaxLod(1);
-                    commandBuffer.setActiveLod(1);
+                    commandBuffer.setMaxLod(desiredLod);
+                    commandBuffer.setActiveLod(desiredLod);
                     commandBuffer.setExistsOnGpu(true);
 
                     submitCommandBuffer(chunk->component, commandBuffer);
