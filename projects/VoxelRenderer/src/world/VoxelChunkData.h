@@ -2,10 +2,11 @@
 
 #include <memory>
 
+#include <src/utilities/Moveable.h>
 #include <src/world/Material.h>
 #include <src/world/VoxelChunk.h>
 
-class VoxelChunkData : public NonCopyable
+class VoxelChunkData : public NonCopyable, public Moveable
 {
 private:
     // This allows for easier copies without allowing automatic copies
@@ -26,7 +27,8 @@ private:
     Data data;
 
 public:
-    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
+    explicit VoxelChunkData();
+    explicit VoxelChunkData(const glm::ivec3& size, bool includeMipmaps = false);
 
     [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(const glm::ivec3& size);
