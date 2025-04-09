@@ -274,7 +274,7 @@ void Program::run()
                 auto showOther = renderer.addPostProcessEffect(PostProcessEffect::getEffect("ShowOther", ShaderManager::getInstance().getPostProcessProgram(Content::showOtherFragmentShader)->programId, GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3));
                 showOther->setUniforms = [&renderer](GLuint program)
                 {
-                    glUniform1i(glGetUniformLocation(program, "whichTexture"), 3);
+                    glUniform1i(glGetUniformLocation(program, "whichTexture"), 1);
                 };
             }
 
