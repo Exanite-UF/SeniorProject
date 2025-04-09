@@ -1,41 +1,40 @@
 #pragma once
 
-#include <src/world/VoxelChunkData.h>
 #include <memory>
+#include <src/world/VoxelChunkData.h>
 
 class TreeStructure
 {
-private:	
-	glm::vec3 originVoxel;
-	std::shared_ptr<Material> logMaterial;
-	std::shared_ptr<Material> leafMaterial;
-	int treeHeightVoxels;
-	int treeWidthVoxels;
-	int leafWidthX;
-	int leafWidthY;
-	int leafExtentBelowZ;
-	int leafExtentAboveZ;
-	float leafProbabilityToFill;
+private:
+    glm::vec3 originVoxel;
+    std::shared_ptr<Material> logMaterial;
+    std::shared_ptr<Material> leafMaterial;
+    int treeHeightVoxels;
+    int treeWidthVoxels;
+    int leafWidthX;
+    int leafWidthY;
+    int leafExtentBelowZ;
+    int leafExtentAboveZ;
+    float leafProbabilityToFill;
 
-	int maxDistanceFromOrigin;
+    int maxDistanceFromOrigin;
 
-	void generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height);
-	void generateAbsPyramid(VoxelChunkData& chunkData,  glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int extentAboveZ, int extentBelowZ, float probabilityToFill);
+    void generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height);
+    void generateAbsPyramid(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int extentAboveZ, int extentBelowZ, float probabilityToFill);
 
 public:
-	TreeStructure(
-		glm::vec3 originVoxel,
-		std::shared_ptr<Material> logMaterial,
-		std::shared_ptr<Material> leafMaterial,
-		int treeHeightVoxels,
-		int treeWidthVoxels,
-		int leafWidthX,
-		int leafWidthY,
-		int leafExtentBelowZ,
-		int leafExtentAboveZ,
-		float leafProbabilityToFill
-	);
+    TreeStructure(
+        glm::vec3 originVoxel,
+        std::shared_ptr<Material> logMaterial,
+        std::shared_ptr<Material> leafMaterial,
+        int treeHeightVoxels,
+        int treeWidthVoxels,
+        int leafWidthX,
+        int leafWidthY,
+        int leafExtentBelowZ,
+        int leafExtentAboveZ,
+        float leafProbabilityToFill);
 
-	void generate(VoxelChunkData& chunkData);
-	int getMaxDistanceFromOrigin();
+    void generate(VoxelChunkData& chunkData);
+    int getMaxDistanceFromOrigin();
 };

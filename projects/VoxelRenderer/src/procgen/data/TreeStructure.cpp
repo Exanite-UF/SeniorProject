@@ -1,67 +1,65 @@
 #include <src/procgen/data/TreeStructure.h>
 
+#include <algorithm>
 #include <src/world/VoxelChunkData.h>
 #include <tracy/Tracy.hpp>
-#include <algorithm>
 
 TreeStructure::TreeStructure(
-	glm::vec3 originVoxel,
-	std::shared_ptr<Material> logMaterial,
-	std::shared_ptr<Material> leafMaterial,
-	int treeHeightVoxels,
-	int treeWidthVoxels,
-	int leafWidthX,
-	int leafWidthY,
-	int leafExtentBelowZ,
-	int leafExtentAboveZ,
-	float leafProbabilityToFill
-) : logMaterial(logMaterial), leafMaterial(leafMaterial)
+    glm::vec3 originVoxel,
+    std::shared_ptr<Material> logMaterial,
+    std::shared_ptr<Material> leafMaterial,
+    int treeHeightVoxels,
+    int treeWidthVoxels,
+    int leafWidthX,
+    int leafWidthY,
+    int leafExtentBelowZ,
+    int leafExtentAboveZ,
+    float leafProbabilityToFill)
+    : logMaterial(logMaterial)
+    , leafMaterial(leafMaterial)
 {
-	this->originVoxel = originVoxel;
-	this->treeHeightVoxels = treeHeightVoxels;
-	this->treeWidthVoxels = treeWidthVoxels;
-	this->leafWidthX = leafWidthX;
-	this->leafWidthY = leafWidthY;
-	this->leafExtentBelowZ = leafExtentBelowZ;
-	this->leafExtentAboveZ = leafExtentAboveZ;
-	this->leafProbabilityToFill = leafProbabilityToFill;
+    this->originVoxel = originVoxel;
+    this->treeHeightVoxels = treeHeightVoxels;
+    this->treeWidthVoxels = treeWidthVoxels;
+    this->leafWidthX = leafWidthX;
+    this->leafWidthY = leafWidthY;
+    this->leafExtentBelowZ = leafExtentBelowZ;
+    this->leafExtentAboveZ = leafExtentAboveZ;
+    this->leafProbabilityToFill = leafProbabilityToFill;
 }
 
 void TreeStructure::generate(VoxelChunkData& chunkData)
 {
-	ZoneScoped;
+    ZoneScoped;
 
     // Tree Trunk
     generateRectangle(
-		chunkData,
-		originVoxel, 
-		logMaterial,
-		treeWidthVoxels, 
-		treeWidthVoxels, 
-		treeHeightVoxels
-	);
+        chunkData,
+        originVoxel,
+        logMaterial,
+        treeWidthVoxels,
+        treeWidthVoxels,
+        treeHeightVoxels);
 
     glm::vec3 originOffset = { 0, 0, treeHeightVoxels + 1 };
     originVoxel += originOffset;
 
     generateAbsPyramid(
-		chunkData, 
-		originVoxel, 
-		leafMaterial, 
-		leafWidthX, 
-		leafWidthY, 
-		leafExtentAboveZ, 
-		leafExtentBelowZ, 
-		leafProbabilityToFill
-	);
+        chunkData,
+        originVoxel,
+        leafMaterial,
+        leafWidthX,
+        leafWidthY,
+        leafExtentAboveZ,
+        leafExtentBelowZ,
+        leafProbabilityToFill);
 
-	maxDistanceFromOrigin = (int) std::ceil(std::max(treeWidthVoxels, leafWidthX) / 2.0f);
+    maxDistanceFromOrigin = (int)std::ceil(std::max(treeWidthVoxels, leafWidthX) / 2.0f);
 }
-
 
 int TreeStructure::getMaxDistanceFromOrigin()
 {
-	return maxDistanceFromOrigin;
+    return maxDistanceFromOrigin;
 }
 
 void TreeStructure::generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height)
@@ -77,10 +75,10 @@ void TreeStructure::generateRectangle(VoxelChunkData& chunkData, glm::vec3 origi
             {
                 glm::vec3 localVoxel = { originVoxel.x + localX - widthXOffset, originVoxel.y + localY - widthYOffset, originVoxel.z + localZ };
 
-				if(!chunkData.isValidPosition(localVoxel)) 
-				{
-					continue;
-				}
+                if (!chunkData.isValidPosition(localVoxel))
+                {
+                    continue;
+                }
 
                 chunkData.setVoxelOccupancy(localVoxel, true);
                 chunkData.setVoxelMaterial(localVoxel, material);
@@ -108,10 +106,10 @@ void TreeStructure::generateAbsPyramid(VoxelChunkData& chunkData, glm::vec3 orig
                 glm::vec3 localVoxel = { originVoxel.x + localX, originVoxel.y + localY, originVoxel.z + localZ };
 
                 // Fall through
-				if(!chunkData.isValidPosition(localVoxel)) 
-				{
-					continue;
-				}
+                if (!chunkData.isValidPosition(localVoxel))
+                {
+                    continue;
+                }
 
                 int treeFunctionSample = heightZ - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY);
                 // Simple random function. Probably better to clump and also add so it looks more organic.

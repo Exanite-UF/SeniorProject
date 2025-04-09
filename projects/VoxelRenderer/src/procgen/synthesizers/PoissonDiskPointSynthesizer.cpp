@@ -2,12 +2,12 @@
 
 #include <PoissonDiskGenerator/PoissonGenerator.h>
 #include <algorithm>
+#include <format>
 #include <glm/vec3.hpp>
 #include <imgui/imgui.h>
 #include <iostream>
-#include <typeinfo>
 #include <src/utilities/Log.h>
-#include <format>
+#include <typeinfo>
 
 void PoissonDiskPointSynthesizer::generatePoints(std::vector<glm::vec3>& outPoints, uint32_t numPoints)
 {

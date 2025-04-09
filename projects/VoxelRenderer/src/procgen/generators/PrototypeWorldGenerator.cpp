@@ -4,12 +4,14 @@
 
 #include <FastNoiseLite/FastNoiseLite.h>
 #include <cstdlib>
+#include <format>
+#include <src/procgen/ChunkHierarchyManager.h>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/WorldUtility.h>
 #include <src/procgen/data/FlatArrayData.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
-#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/GridPointSynthesizer.h>
+#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
@@ -17,9 +19,6 @@
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
 #include <tracy/Tracy.hpp>
-#include <format>
-#include <src/utilities/Log.h>
-#include <src/procgen/ChunkHierarchyManager.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
@@ -38,7 +37,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
         WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
         WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
-        WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);    
+        WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
     }
 
     // Fill texture data with random noise, each block evaluated once
@@ -60,7 +59,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         int numPoints = 20;
         pointSynthesizer.generatePoints(treeLocations, numPoints);
         pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
-    
+
         // Lexicographic sort
         VectorUtility::lexicographicSort(treeLocations);
     }
@@ -70,7 +69,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     float probabilityToFill = 0.6;
 
     // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
-    
+
     {
         ZoneScopedN("Generate terrain");
 
@@ -134,7 +133,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
             auto structures = chunkHierarchyManager.getStructuresFromChunk(chunkPosition);
 
-            for(auto& structure : structures)
+            for (auto& structure : structures)
             {
                 structure->structure.generate(data);
             }
@@ -151,16 +150,16 @@ TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& 
 {
     std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
 
-	int treeHeightVoxels = randomBetween(treeHeightRangeMeters.x * voxelsPerMeter, treeHeightRangeMeters.y * voxelsPerMeter);
+    int treeHeightVoxels = randomBetween(treeHeightRangeMeters.x * voxelsPerMeter, treeHeightRangeMeters.y * voxelsPerMeter);
     int treeWidthVoxels = randomBetween(treeWidthRangeMeters.x * voxelsPerMeter, treeWidthRangeMeters.y * voxelsPerMeter);
     int leafWidthX = randomBetween(leafWidthXRangeMeters.x * voxelsPerMeter, leafWidthXRangeMeters.y * voxelsPerMeter);
     int leafWidthY = randomBetween(leafWidthYRangeMeters.x * voxelsPerMeter, leafWidthYRangeMeters.y * voxelsPerMeter);
     int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
     int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
-	TreeStructure tree(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
+    TreeStructure tree(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
 
-	return tree;
+    return tree;
 }
 
 PrototypeWorldGenerator::PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)

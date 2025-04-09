@@ -1,8 +1,8 @@
 #pragma once
 
+#include <src/procgen/data/TreeStructure.h>
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/procgen/synthesizers/TextureDataSynthesizer.h>
-#include <src/procgen/data/TreeStructure.h>
 
 // TODO: Idea: Reduce octaves for farther away positions ~ level of detail
 class PrototypeWorldGenerator : public WorldGenerator
@@ -40,6 +40,7 @@ private:
     void generateData(VoxelChunkData& data) override;
 
     int randomBetween(int min, int max);
+
 public:
     explicit PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);
 
