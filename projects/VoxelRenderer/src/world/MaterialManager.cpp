@@ -111,7 +111,7 @@ MaterialManager::MaterialManager()
             material->metallicAlbedo = glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
         }
 
-        material->roughness = 1;//std::pow((rand() % 1000) / 1000.0, 2);
+        material->roughness = 1; // std::pow((rand() % 1000) / 1000.0, 2);
     }
 
     updateGpuMaterialData();

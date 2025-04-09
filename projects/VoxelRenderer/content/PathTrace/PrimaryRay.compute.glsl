@@ -248,13 +248,15 @@ void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
     {
 
         float temp = accumulatingMotionVectors[index + 2] + (value.x);
-        if(isnan(temp) || isinf(temp)){
+        if (isnan(temp) || isinf(temp))
+        {
             temp = 0;
         }
         accumulatingMotionVectors[index + 0] = float16_t(temp);
 
         temp = accumulatingMotionVectors[index + 3] + (value.y);
-        if(isnan(temp) || isinf(temp)){
+        if (isnan(temp) || isinf(temp))
+        {
             temp = 0;
         }
         accumulatingMotionVectors[index + 1] = float16_t(temp);
@@ -262,13 +264,15 @@ void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
     else
     {
         float temp = accumulatingMotionVectors[index + 0] + (value.x);
-        if(isnan(temp) || isinf(temp)){
+        if (isnan(temp) || isinf(temp))
+        {
             temp = 0;
         }
         accumulatingMotionVectors[index + 2] = float16_t(temp);
 
         temp = accumulatingMotionVectors[index + 1] + (value.y);
-        if(isnan(temp) || isinf(temp)){
+        if (isnan(temp) || isinf(temp))
+        {
             temp = 0;
         }
         accumulatingMotionVectors[index + 3] = float16_t(temp);

@@ -296,7 +296,7 @@ void Renderer::_render()
             voxelRenderer->executePathTrace(scene->getAllChunks(), bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, scene);
         }
 
-        // Thqis need SVGF's framebuffer
+        // This need SVGF's framebuffer
         // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
         voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
 
