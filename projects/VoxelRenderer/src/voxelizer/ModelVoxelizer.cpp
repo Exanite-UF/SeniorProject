@@ -33,14 +33,13 @@ void ModelVoxelizer::setupBoundingBox()
     }
 
     // Centering
-    //glm::vec3 boundingBoxCenter = (minBounds + maxBounds) * 0.5f;
-    //minBounds -= boundingBoxCenter;
-    //maxBounds -= boundingBoxCenter;
+    // glm::vec3 boundingBoxCenter = (minBounds + maxBounds) * 0.5f;
+    // minBounds -= boundingBoxCenter;
+    // maxBounds -= boundingBoxCenter;
 
     // Padding
     minBounds -= glm::vec3(1.0f);
     maxBounds += glm::vec3(1.0f);
-
 
     gridResolution = 64;
     gridSize = glm::ivec3(gridResolution);
@@ -156,8 +155,8 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
             {
                 // std::cout << z << " " << y << " " << x << std::endl;
                 glm::vec3 voxelMin = minBounds + glm::vec3(x, y, z) * voxelSize;
-                //glm::vec3 voxelCenter = voxelMin + voxelSize * 0.5f;
-                //std::cout << "Voxel Center: " << voxelCenter.x << ", " << voxelCenter.y << ", " << voxelCenter.z << std::endl;
+                // glm::vec3 voxelCenter = voxelMin + voxelSize * 0.5f;
+                // std::cout << "Voxel Center: " << voxelCenter.x << ", " << voxelCenter.y << ", " << voxelCenter.z << std::endl;
                 glm::ivec3 gridCell = worldToGrid(voxelMin); //
 
                 // for (const Triangle& tri : loadedModel->getTriangles())
@@ -301,23 +300,25 @@ void ModelVoxelizer::generateVoxelMesh()
         glVertexAttribDivisor(1, 1); // Tell OpenGL this is per-instance data
     }
     glBindVertexArray(0);
-    
+
     activeVoxels.clear();
     glm::vec3 gridCenter = minBounds + (glm::vec3(gridSize) * 0.5f);
 
-    //VoxelChunkData
+    // VoxelChunkData
     chunkData = std::make_shared<VoxelChunkData>();
     chunkData->setSize(glm::vec3(gridSize));
     chunkData->setHasMipmaps(false);
 
-
-
-    for (int z = 0; z < gridSize.z; ++z) {
-        for (int y = 0; y < gridSize.y; ++y) {
-            for (int x = 0; x < gridSize.x; ++x) {
+    for (int z = 0; z < gridSize.z; ++z)
+    {
+        for (int y = 0; y < gridSize.y; ++y)
+        {
+            for (int x = 0; x < gridSize.x; ++x)
+            {
                 chunkData->setVoxelOccupancy(glm::ivec3(x, y, z), voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]);
                 chunkData->setVoxelMaterialIndex(glm::ivec3(x, y, z), 0); // Set default material index (0)
-                if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
+                if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
+                {
                     glm::vec3 voxelWorldPosition = minBounds + glm::vec3(x, y, z);
                     glm::vec3 centeredVoxelPosition = voxelWorldPosition - gridCenter;
                     activeVoxels.emplace_back(centeredVoxelPosition);
