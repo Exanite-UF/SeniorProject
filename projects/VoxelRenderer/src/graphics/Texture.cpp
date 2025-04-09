@@ -5,7 +5,7 @@ Texture::Texture(GLuint textureId, TextureType type, glm::ivec2 size, bool isCub
 {
     this->textureId = textureId;
     bindlessHandle = glGetTextureHandleARB(textureId);
-    glMakeTextureHandleResidentARB(bindlessHandle);
+    //glMakeTextureHandleResidentARB(bindlessHandle);
 
     this->type = type;
     _isCubemap = isCubemap;
@@ -18,6 +18,7 @@ GLuint Texture::getTextureId()
 
 uint64_t Texture::getBindlessHandle()
 {
+    
     return bindlessHandle;
 }
 
@@ -34,4 +35,10 @@ TextureType Texture::getType()
 bool Texture::isCubemap() const
 {
     return _isCubemap;
+}
+
+void Texture::makeBindlessHandle()
+{
+    //bindlessHandle = glGetTextureHandleARB(textureId);
+    glMakeTextureHandleResidentARB(bindlessHandle);
 }

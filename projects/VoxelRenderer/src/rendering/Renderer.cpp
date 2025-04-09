@@ -10,6 +10,7 @@
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/windowing/Window.h>
+#include <src/graphics/TextureManager.h>
 
 GLuint Renderer::drawTextureProgram {};
 
@@ -18,6 +19,8 @@ void Renderer::offscreenRenderingFunc()
     tracy::SetThreadName("Offscreen rendering");
 
     offscreenContext->makeContextCurrent();
+
+    TextureManager::getInstance().makeBindlessTextureHandles();
 
     while (_isRenderingOffscreen)
     {
@@ -255,6 +258,7 @@ void Renderer::render(float fov)
 
     if (!_isRenderingOffscreen)
     {
+        TextureManager::getInstance().makeBindlessTextureHandles();
         _render();
     }
 
@@ -490,6 +494,7 @@ void Renderer::startAsynchronousReprojection()
     _isRenderingOffscreen = true;
     isSizeDirtyThread = true;
     offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
+    TextureManager::getInstance().scheduleRemakeBindlessTextureHandles();
 }
 
 void Renderer::stopAsynchronousReprojection()
@@ -500,6 +505,8 @@ void Renderer::stopAsynchronousReprojection()
         offscreenThread.join();
     }
     isSizeDirtyThread = true;
+
+    TextureManager::getInstance().scheduleRemakeBindlessTextureHandles();
 }
 
 void Renderer::toggleAsynchronousReprojection()

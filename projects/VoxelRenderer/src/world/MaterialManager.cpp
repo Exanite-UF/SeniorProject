@@ -153,7 +153,6 @@ GraphicsBuffer<MaterialDefinition>& MaterialManager::getMaterialDefinitionsBuffe
     return materialDefinitionsBuffer;
 }
 
-
 void MaterialManager::updateGpuMaterialData()
 {
     // Convert CPU material format to GPU material format

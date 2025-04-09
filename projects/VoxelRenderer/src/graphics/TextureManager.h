@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <mutex>
 
 #include <src/graphics/Texture.h>
 #include <src/graphics/TextureType.h>
@@ -17,7 +19,10 @@
 class TextureManager : public Singleton<TextureManager>
 {
 private:
+    std::mutex dataMtx;//Prevents difference threads from accessing texturesWithoutBindlessHandles and textures simultaneously
+
     // (path, format) -> texture
+    std::unordered_set<std::shared_ptr<Texture>> texturesWithoutBindlessHandles;
     std::unordered_map<std::tuple<std::string_view, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string_view, GLenum>>> textures;
 
     static GLenum getOpenGlStorageFormat(TextureType type);
@@ -48,4 +53,10 @@ public:
 
     // Loads a texture with the specified format and colorspace
     std::shared_ptr<Texture> loadCubemapTexture(std::string_view path, GLenum storageFormat);
+
+    //Makes bindless handles for textures that do not already have handles
+    void makeBindlessTextureHandles();
+
+    //Remakes all bindless texture handles, must be done when switching on and off asynchronous reprojection
+    void scheduleRemakeBindlessTextureHandles();
 };

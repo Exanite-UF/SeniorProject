@@ -30,4 +30,7 @@ public:
     TextureType getType();
 
     bool isCubemap() const;
+
+    //This needs to be run on the offscreen context
+    void makeBindlessHandle();
 };

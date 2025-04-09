@@ -7,6 +7,7 @@
 #include <src/utilities/Assert.h>
 #include <stb_image.h>
 #include <stdexcept>
+#include <src/world/MaterialManager.h>
 
 #include <iostream>
 
@@ -48,10 +49,14 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
 {
     // Use cached texture if available
     auto cacheKey = std::make_tuple(std::string(path), storageFormat);
-    if (textures.contains(cacheKey))
     {
-        return textures[cacheKey];
+        std::scoped_lock lock(dataMtx);
+        if (textures.contains(cacheKey))
+        {
+            return textures[cacheKey];
+        }
     }
+    
 
     // Load texture data
     int width, height, rawChannelCount;
@@ -82,7 +87,9 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
         auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height), false);
 
         // Insert texture into cache
+        std::scoped_lock lock(dataMtx);
         textures[cacheKey] = texture;
+        texturesWithoutBindlessHandles.insert(texture);
         stbi_image_free(rawTextureData);
 
         return texture;
@@ -99,9 +106,12 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
 {
     // Use cached texture if available
     auto cacheKey = std::make_tuple(std::string(path), storageFormat);
-    if (textures.contains(cacheKey))
     {
-        return textures[cacheKey];
+        std::scoped_lock lock(dataMtx);
+        if (textures.contains(cacheKey))
+        {
+            return textures[cacheKey];
+        }
     }
 
     // Load texture data
@@ -171,7 +181,9 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
     auto texture = std::make_shared<Texture>(textureId, type, glm::ivec2(width, height), true);
 
     // Insert texture into cache
+    std::scoped_lock lock(dataMtx);
     textures[cacheKey] = texture;
+    texturesWithoutBindlessHandles.insert(texture);
 
     return texture;
 }
@@ -194,4 +206,31 @@ std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view pat
 std::shared_ptr<Texture> TextureManager::loadCubemapTexture(std::string_view path, GLenum storageFormat)
 {
     return loadCubemapTexture(path, Unknown, storageFormat);
+}
+
+void TextureManager::makeBindlessTextureHandles()
+{
+    std::scoped_lock lock(dataMtx);
+
+    for(auto& texture : texturesWithoutBindlessHandles){
+        texture->makeBindlessHandle();
+    }
+    
+    //If new bindless handles were made, update the gpu material data
+    if(texturesWithoutBindlessHandles.size() > 0){
+        MaterialManager::getInstance().updateGpuMaterialData();
+    }
+
+    texturesWithoutBindlessHandles.clear();
+}
+
+void TextureManager::scheduleRemakeBindlessTextureHandles()
+{
+    std::scoped_lock lock(dataMtx);
+
+    texturesWithoutBindlessHandles.clear();
+
+    for(auto& entry : textures){
+        texturesWithoutBindlessHandles.insert(entry.second);
+    }
 }
