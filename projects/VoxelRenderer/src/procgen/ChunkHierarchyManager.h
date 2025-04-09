@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtx/hash.hpp>
 #include <src/utilities/Singleton.h>
 #include <unordered_map>
 #include <vector>
@@ -45,7 +46,7 @@ public:
 
 			for(auto& mappedChunkPosition : quad)
 			{
-				auto& levelStructures = level.find((glm::ivec2)mappedChunkPosition);
+				auto levelStructures = level.find((glm::ivec2)mappedChunkPosition);
 
 				if(levelStructures != level.end())
 				{
