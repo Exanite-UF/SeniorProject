@@ -212,6 +212,10 @@ void TextureManager::makeBindlessTextureHandles()
 {
     std::scoped_lock lock(dataMtx);
 
+    if(!_areBindlessTexturesEnabled){
+        return;
+    }
+
     for(auto& texture : texturesWithoutBindlessHandles){
         texture->makeBindlessHandle();
     }
@@ -233,4 +237,14 @@ void TextureManager::scheduleRemakeBindlessTextureHandles()
     for(auto& entry : textures){
         texturesWithoutBindlessHandles.insert(entry.second);
     }
+}
+
+bool TextureManager::areBindlessTexturesEnabled() const
+{
+    return _areBindlessTexturesEnabled;
+}
+
+void TextureManager::enableBindlessTextures()
+{
+    _areBindlessTexturesEnabled = true;
 }

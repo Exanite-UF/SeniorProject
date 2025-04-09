@@ -1,11 +1,14 @@
 #include "Texture.h"
 
+#include <src/graphics/TextureManager.h>
+
 Texture::Texture(GLuint textureId, TextureType type, glm::ivec2 size, bool isCubemap)
     : size(size)
 {
     this->textureId = textureId;
-    bindlessHandle = glGetTextureHandleARB(textureId);
-    //glMakeTextureHandleResidentARB(bindlessHandle);
+    if(TextureManager::getInstance().areBindlessTexturesEnabled()){
+        bindlessHandle = glGetTextureHandleARB(textureId);
+    }
 
     this->type = type;
     _isCubemap = isCubemap;
@@ -39,6 +42,10 @@ bool Texture::isCubemap() const
 
 void Texture::makeBindlessHandle()
 {
-    //bindlessHandle = glGetTextureHandleARB(textureId);
+    //Make the bindles handle if needed
+    if(bindlessHandle == 0){
+        bindlessHandle = glGetTextureHandleARB(textureId);
+    }
+    //Make the handle resident on whatever thread is calling this function
     glMakeTextureHandleResidentARB(bindlessHandle);
 }

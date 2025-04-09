@@ -125,6 +125,8 @@ void Program::run()
         auto& voxelChunkManager = VoxelChunkManager::getInstance();
         auto& input = inputManager->input;
 
+        //TextureManager::getInstance().enableBindlessTextures();
+
         // Configure OpenGL
         glEnable(GL_FRAMEBUFFER_SRGB);
         glClearColor(0, 0, 0, 0);

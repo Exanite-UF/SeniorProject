@@ -22,6 +22,7 @@ private:
     std::mutex dataMtx;//Prevents difference threads from accessing texturesWithoutBindlessHandles and textures simultaneously
 
     // (path, format) -> texture
+    bool _areBindlessTexturesEnabled = false;
     std::unordered_set<std::shared_ptr<Texture>> texturesWithoutBindlessHandles;
     std::unordered_map<std::tuple<std::string_view, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string_view, GLenum>>> textures;
 
@@ -59,4 +60,10 @@ public:
 
     //Remakes all bindless texture handles, must be done when switching on and off asynchronous reprojection
     void scheduleRemakeBindlessTextureHandles();
+
+    bool areBindlessTexturesEnabled() const;
+
+    //This exists so that bindless textures can be disabled by default
+    //If this is not run, then RenderDoc will work
+    void enableBindlessTextures();
 };
