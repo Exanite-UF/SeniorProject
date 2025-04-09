@@ -2,6 +2,7 @@
 
 #include <src/world/VoxelChunkData.h>
 #include <tracy/Tracy.hpp>
+#include <algorithm>
 
 class TreeStructure
 {
@@ -16,11 +17,12 @@ private:
 	int leafExtentAboveZ;
 	float leafProbabilityToFill;
 
+	int maxDistanceFromOrigin;
+
 	void generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height);
 	void generateAbsPyramid(VoxelChunkData& chunkData,  glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int extentAboveZ, int extentBelowZ, float probabilityToFill);
 
 public:
-	// Ugly. Ideally pass in via single data object, but materials are references. 
 	TreeStructure(
 		std::shared_ptr<Material> logMaterial,
 		std::shared_ptr<Material> leafMaterial,
@@ -33,6 +35,7 @@ public:
 		float leafProbabilityToFill
 	);
 	void generate(VoxelChunkData& chunkData, glm::vec3 originVoxel);
+	int getMaxDistanceFromOrigin();
 };
 
 TreeStructure::TreeStructure(
@@ -83,6 +86,14 @@ void TreeStructure::generate(VoxelChunkData& chunkData, glm::vec3 originVoxel)
 		leafExtentBelowZ, 
 		leafProbabilityToFill
 	);
+
+	maxDistanceFromOrigin = (int) std::ceil(std::max(treeWidthVoxels, leafWidthX) / 2.0f);
+}
+
+
+int TreeStructure::getMaxDistanceFromOrigin()
+{
+	return maxDistanceFromOrigin;
 }
 
 void TreeStructure::generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height)
