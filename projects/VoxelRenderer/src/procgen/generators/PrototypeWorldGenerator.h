@@ -36,7 +36,7 @@ private:
     glm::vec2 leafExtentBelowZRangeMeters = { 0, 0 };
     float leafProbabilityToFill = 0.6;
 
-    TreeStructure generateInstanceTree(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::vec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial);
+    TreeStructure createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::vec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial);
     void generateData(VoxelChunkData& data) override;
 
     int randomBetween(int min, int max);

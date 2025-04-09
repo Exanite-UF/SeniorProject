@@ -5,6 +5,7 @@
 #include <algorithm>
 
 TreeStructure::TreeStructure(
+	glm::vec3 originVoxel,
 	std::shared_ptr<Material> logMaterial,
 	std::shared_ptr<Material> leafMaterial,
 	int treeHeightVoxels,
@@ -16,6 +17,7 @@ TreeStructure::TreeStructure(
 	float leafProbabilityToFill
 ) : logMaterial(logMaterial), leafMaterial(leafMaterial)
 {
+	this->originVoxel = originVoxel;
 	this->treeHeightVoxels = treeHeightVoxels;
 	this->treeWidthVoxels = treeWidthVoxels;
 	this->leafWidthX = leafWidthX;
@@ -25,7 +27,7 @@ TreeStructure::TreeStructure(
 	this->leafProbabilityToFill = leafProbabilityToFill;
 }
 
-void TreeStructure::generate(VoxelChunkData& chunkData, glm::vec3 originVoxel)
+void TreeStructure::generate(VoxelChunkData& chunkData)
 {
 	ZoneScoped;
 

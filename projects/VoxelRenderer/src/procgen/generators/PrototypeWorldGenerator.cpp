@@ -19,9 +19,11 @@
 #include <tracy/Tracy.hpp>
 #include <format>
 #include <src/utilities/Log.h>
+#include <src/procgen/ChunkHierarchyManager.h>
 
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
+    auto& chunkHierarchyManager = ChunkHierarchyManager::getInstance();
     auto& materialManager = MaterialManager::getInstance();
 
     std::shared_ptr<Material> stoneMaterial;
@@ -111,7 +113,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                     Log::verbose(std::format("Tree Origin Voxel:({:.2f}, {:.2f})", originVoxel.x, originVoxel.y));
 
                     // Naive seeding. Is there a better way?
-                    TreeStructure tree = generateInstanceTree(data, chunkPosition, originVoxel, seed, oakLogMaterial, oakLeafMaterial);
+                    TreeStructure tree = createRandomTreeInstance(data, chunkPosition, originVoxel, seed, oakLogMaterial, oakLeafMaterial);
+                    chunkHierarchyManager.addStructure(chunkPosition, data, originVoxel, tree);
 
                     treeIndex++;
                     if (treeIndex < treeLocations.size())
@@ -125,6 +128,17 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 }
             }
         }
+
+        {
+            ZoneScopedN("Chunk Heirarchy Draw Structures");
+
+            auto structures = chunkHierarchyManager.getStructuresFromChunk(chunkPosition);
+
+            for(auto& structure : structures)
+            {
+                structure->structure.generate(data);
+            }
+        }
     }
 }
 
@@ -133,7 +147,7 @@ int PrototypeWorldGenerator::randomBetween(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
-TreeStructure PrototypeWorldGenerator::generateInstanceTree(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::vec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
+TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::vec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
 {
     std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
 
@@ -144,8 +158,7 @@ TreeStructure PrototypeWorldGenerator::generateInstanceTree(VoxelChunkData& chun
     int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
     int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
-	TreeStructure tree(logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
-	tree.generate(chunkData, originVoxel);
+	TreeStructure tree(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
 
 	return tree;
 }
