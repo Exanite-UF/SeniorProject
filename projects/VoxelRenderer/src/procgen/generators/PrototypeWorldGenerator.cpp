@@ -7,7 +7,6 @@
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/WorldUtility.h>
 #include <src/procgen/data/FlatArrayData.h>
-#include <src/procgen/data/TreeStructure.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/GridPointSynthesizer.h>
@@ -112,18 +111,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                     Log::verbose(std::format("Tree Origin Voxel:({:.2f}, {:.2f})", originVoxel.x, originVoxel.y));
 
                     // Naive seeding. Is there a better way?
-                    std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
-
-                    int treeHeightVoxels = randomBetween(treeHeightRangeMeters.x * voxelsPerMeter, treeHeightRangeMeters.y * voxelsPerMeter);
-                    int treeWidthVoxels = randomBetween(treeWidthRangeMeters.x * voxelsPerMeter, treeWidthRangeMeters.y * voxelsPerMeter);
-                    int leafWidthX = randomBetween(leafWidthXRangeMeters.x * voxelsPerMeter, leafWidthXRangeMeters.y * voxelsPerMeter);
-                    int leafWidthY = randomBetween(leafWidthYRangeMeters.x * voxelsPerMeter, leafWidthYRangeMeters.y * voxelsPerMeter);
-                    int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
-                    int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
-
-                    
-                    TreeStructure tree(oakLogMaterial, oakLeafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
-                    tree.generate(data, originVoxel);
+                    TreeStructure tree = generateInstanceTree(data, chunkPosition, originVoxel, seed, oakLogMaterial, oakLeafMaterial);
 
                     treeIndex++;
                     if (treeIndex < treeLocations.size())
@@ -143,6 +131,23 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 int PrototypeWorldGenerator::randomBetween(int min, int max)
 {
     return min + rand() % (max - min + 1);
+}
+
+TreeStructure PrototypeWorldGenerator::generateInstanceTree(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::vec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
+{
+    std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
+
+	int treeHeightVoxels = randomBetween(treeHeightRangeMeters.x * voxelsPerMeter, treeHeightRangeMeters.y * voxelsPerMeter);
+    int treeWidthVoxels = randomBetween(treeWidthRangeMeters.x * voxelsPerMeter, treeWidthRangeMeters.y * voxelsPerMeter);
+    int leafWidthX = randomBetween(leafWidthXRangeMeters.x * voxelsPerMeter, leafWidthXRangeMeters.y * voxelsPerMeter);
+    int leafWidthY = randomBetween(leafWidthYRangeMeters.x * voxelsPerMeter, leafWidthYRangeMeters.y * voxelsPerMeter);
+    int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
+    int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
+
+	TreeStructure tree(logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
+	tree.generate(chunkData, originVoxel);
+
+	return tree;
 }
 
 PrototypeWorldGenerator::PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer)
