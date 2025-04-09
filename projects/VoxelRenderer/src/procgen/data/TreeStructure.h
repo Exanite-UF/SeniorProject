@@ -6,8 +6,8 @@
 class TreeStructure
 {
 private:	
-	std::shared_ptr<Material>& logMaterial;
-	std::shared_ptr<Material>& leafMaterial;
+	std::shared_ptr<Material> logMaterial;
+	std::shared_ptr<Material> leafMaterial;
 	int treeHeightVoxels;
 	int treeWidthVoxels;
 	int leafWidthX;
@@ -22,8 +22,8 @@ private:
 public:
 	// Ugly. Ideally pass in via single data object, but materials are references. 
 	TreeStructure(
-		std::shared_ptr<Material>& logMaterial,
-		std::shared_ptr<Material>& leafMaterial,
+		std::shared_ptr<Material> logMaterial,
+		std::shared_ptr<Material> leafMaterial,
 		int treeHeightVoxels,
 		int treeWidthVoxels,
 		int leafWidthX,
@@ -36,8 +36,8 @@ public:
 };
 
 TreeStructure::TreeStructure(
-	std::shared_ptr<Material>& logMaterial,
-	std::shared_ptr<Material>& leafMaterial,
+	std::shared_ptr<Material> logMaterial,
+	std::shared_ptr<Material> leafMaterial,
 	int treeHeightVoxels,
 	int treeWidthVoxels,
 	int leafWidthX,
@@ -98,16 +98,10 @@ void TreeStructure::generateRectangle(VoxelChunkData& chunkData, glm::vec3 origi
             {
                 glm::vec3 localVoxel = { originVoxel.x + localX - widthXOffset, originVoxel.y + localY - widthYOffset, originVoxel.z + localZ };
 
-                // Fall through
-                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
-                {
-                    continue;
-                }
-
-                if (localVoxel.x > chunkData.getSize().x || localVoxel.y > chunkData.getSize().y || localVoxel.z > chunkData.getSize().z)
-                {
-                    continue;
-                }
+				if(!chunkData.isValidPosition(localVoxel)) 
+				{
+					continue;
+				}
 
                 chunkData.setVoxelOccupancy(localVoxel, true);
                 chunkData.setVoxelMaterial(localVoxel, material);
@@ -135,15 +129,10 @@ void TreeStructure::generateAbsPyramid(VoxelChunkData& chunkData, glm::vec3 orig
                 glm::vec3 localVoxel = { originVoxel.x + localX, originVoxel.y + localY, originVoxel.z + localZ };
 
                 // Fall through
-                if (localVoxel.x <= 0 || localVoxel.y <= 0 || localVoxel.z <= 0)
-                {
-                    continue;
-                }
-
-                if (localVoxel.x > chunkData.getSize().x || localVoxel.y > chunkData.getSize().y || localVoxel.z > chunkData.getSize().z)
-                {
-                    continue;
-                }
+				if(!chunkData.isValidPosition(localVoxel)) 
+				{
+					continue;
+				}
 
                 int treeFunctionSample = heightZ - heightToWidthXRatio * abs(localX) - heightToWidthYRatio * abs(localY);
                 // Simple random function. Probably better to clump and also add so it looks more organic.
