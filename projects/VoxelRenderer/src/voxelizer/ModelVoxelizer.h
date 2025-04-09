@@ -54,7 +54,7 @@ private:
     unsigned int instanceVBO {};
     std::vector<glm::vec3> activeVoxels {};
 
-    //Chunk Data
+    // Chunk Data
     std::shared_ptr<VoxelChunkData> chunkData {};
 
     void setupBoundingBox();
@@ -118,7 +118,7 @@ public:
 
     void loadModel(char* path);
     std::shared_ptr<Model> getModel();
-    std::shared_ptr<VoxelChunkData> getChunkData(); 
+    std::shared_ptr<VoxelChunkData> getChunkData();
     void voxelizeModel(int option = 0);
 
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
