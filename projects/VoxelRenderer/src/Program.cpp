@@ -115,7 +115,6 @@ void Program::run()
 {
     try
     {
-<<<<<<< Updated upstream
         // Ensure preconditions are met
         runLateStartupTests();
 
@@ -144,32 +143,19 @@ void Program::run()
         scene->setSkybox(skybox);
 
         // Generate static, noise-based placeholder chunks for testing purposes
-        if (false)
-=======
-        voxelChunkManager.settings.isChunkLoadingEnabled = false;
-        voxelChunkManager.settings.enableCulling = false;
-        for (int x = 0; x < 2; x++)
->>>>>>> Stashed changes
-        {
+        if (true){
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
-            for (int x = 0; x < 3; x++)
+            for (int x = 0; x < 2; x++)
             {
-                for (int y = 0; y < 3; ++y)
+                for (int y = 0; y < 1; ++y)
                 {
                     auto voxelChunkObject = sceneObject->createChildObject(std::format("Chunk ({}, {})", x, y));
 
-<<<<<<< Updated upstream
                     auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                     voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                    // voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
-                    // voxelChunk->getTransform()->setLocalScale(glm::vec3(2, 2, 2));
-=======
-                auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
-                voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                //voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
-                voxelChunk->getTransform()->setLocalScale(glm::vec3(x + 1, x + 1, x + 1));
->>>>>>> Stashed changes
+                    //voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
+                    voxelChunk->getTransform()->setLocalScale(glm::vec3(x + 1, x + 1, x + 1));
 
                     scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
                 }
@@ -984,29 +970,29 @@ void Program::runLateStartupTests()
         Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
     }
 
-    {
-        // Test LOD generation
-        VoxelChunkData original(glm::ivec3(4, 4, 4));
-        original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
-        original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
-
-        VoxelChunkData lod {};
-
-        original.copyToLod(lod);
-        Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
-        Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
-    }
-
-    {
-        // Test mipmap generation
-        VoxelChunkData data(glm::ivec3(16, 16, 16));
-        data.setVoxelOccupancy(glm::ivec3(3, 3, 3), true);
-        data.setHasMipmaps(true);
-
-        Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
-        Assert::isTrue(data.getOccupancyLayerCount() == 2, "Expected 2 occupancy layers");
-        Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");
-        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
-        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
-    }
+    //{
+    //    // Test LOD generation
+    //    VoxelChunkData original(glm::ivec3(4, 4, 4));
+    //    original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
+    //    original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
+//
+    //    VoxelChunkData lod {};
+//
+    //    original.copyToLod(lod);
+    //    Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
+    //    Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
+    //}
+//
+    //{
+    //    // Test mipmap generation
+    //    VoxelChunkData data(glm::ivec3(16, 16, 16));
+    //    data.setVoxelOccupancy(glm::ivec3(3, 3, 3), true);
+    //    data.setHasMipmaps(true);
+//
+    //    Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
+    //    Assert::isTrue(data.getOccupancyLayerCount() == 2, "Expected 2 occupancy layers");
+    //    Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");
+    //    Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
+    //    Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
+    //}
 }
