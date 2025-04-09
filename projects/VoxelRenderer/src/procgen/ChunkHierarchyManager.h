@@ -26,6 +26,8 @@ public:
 
 class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
 {
+    friend class Singleton;
+
 private:
     std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
 
