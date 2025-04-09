@@ -32,12 +32,12 @@ private:
     std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
 
     // Singleton needs default constructor
-    ChunkHierarchyManager()
+    explicit ChunkHierarchyManager()
         : ChunkHierarchyManager(3)
     {
     }
 
-    ChunkHierarchyManager(uint32_t levelCount)
+    explicit ChunkHierarchyManager(uint32_t levelCount)
     {
         for (int i = 0; i < levelCount; i++)
         {
