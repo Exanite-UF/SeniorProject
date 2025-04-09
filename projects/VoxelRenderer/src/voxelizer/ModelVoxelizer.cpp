@@ -8,6 +8,11 @@ std::shared_ptr<Model> ModelVoxelizer::getModel()
     return loadedModel;
 }
 
+std::shared_ptr<VoxelChunkData> ModelVoxelizer::getChunkData()
+{
+    return chunkData;
+}
+
 void ModelVoxelizer::loadModel(char* path)
 {
     loadedModel = std::make_shared<Model>(path);
@@ -300,9 +305,18 @@ void ModelVoxelizer::generateVoxelMesh()
     activeVoxels.clear();
     glm::vec3 gridCenter = minBounds + (glm::vec3(gridSize) * 0.5f);
 
+    //VoxelChunkData
+    chunkData = std::make_shared<VoxelChunkData>();
+    chunkData->setSize(glm::vec3(gridSize));
+    chunkData->setHasMipmaps(false);
+
+
+
     for (int z = 0; z < gridSize.z; ++z) {
         for (int y = 0; y < gridSize.y; ++y) {
             for (int x = 0; x < gridSize.x; ++x) {
+                chunkData->setVoxelOccupancy(glm::ivec3(x, y, z), voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]);
+                chunkData->setVoxelMaterialIndex(glm::ivec3(x, y, z), 0); // Set default material index (0)
                 if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
                     glm::vec3 voxelWorldPosition = minBounds + glm::vec3(x, y, z);
                     glm::vec3 centeredVoxelPosition = voxelWorldPosition - gridCenter;
