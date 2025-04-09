@@ -115,6 +115,7 @@ void Program::run()
 {
     try
     {
+<<<<<<< Updated upstream
         // Ensure preconditions are met
         runLateStartupTests();
 
@@ -144,6 +145,11 @@ void Program::run()
 
         // Generate static, noise-based placeholder chunks for testing purposes
         if (false)
+=======
+        voxelChunkManager.settings.isChunkLoadingEnabled = false;
+        voxelChunkManager.settings.enableCulling = false;
+        for (int x = 0; x < 2; x++)
+>>>>>>> Stashed changes
         {
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
@@ -153,10 +159,17 @@ void Program::run()
                 {
                     auto voxelChunkObject = sceneObject->createChildObject(std::format("Chunk ({}, {})", x, y));
 
+<<<<<<< Updated upstream
                     auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                     voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
                     // voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
                     // voxelChunk->getTransform()->setLocalScale(glm::vec3(2, 2, 2));
+=======
+                auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
+                voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
+                //voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
+                voxelChunk->getTransform()->setLocalScale(glm::vec3(x + 1, x + 1, x + 1));
+>>>>>>> Stashed changes
 
                     scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
                 }

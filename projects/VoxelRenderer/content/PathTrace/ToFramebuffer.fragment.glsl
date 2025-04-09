@@ -2,6 +2,7 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_ARB_bindless_texture : require
+#extension GL_ARB_gpu_shader_int64 : enable
 
 struct MaterialDefinition
 {
@@ -10,12 +11,13 @@ struct MaterialDefinition
     vec3 albedo;
     float textureScaleY;
     vec3 metallicAlbedo;
-    int albedoTextureID;
+    float padding;
     float roughness;
     float metallic;
 
-    int roughnessTextureID;
-    int emissionTextureID;
+    uint64_t albedoTextureID;
+    uint64_t roughnessTextureID;
+    uint64_t emissionTextureID;
 };
 
 uniform ivec3 resolution; //(xSize, ySize, 1)
@@ -194,17 +196,6 @@ vec2 getMotionVectors(ivec3 coord)
     {
         return vec2(motionVectors[index + 0], motionVectors[index + 1]);
     }
-}
-
-// Bindless textures SSBO
-layout(std430, binding = 15) buffer MaterialTextures
-{
-    uint64_t materialTextures[];
-};
-
-sampler2D getMaterialTexture(int textureID)
-{
-    return sampler2D(materialTextures[textureID]);
 }
 
 vec3 getLight(ivec3 coord)
@@ -473,21 +464,21 @@ void main()
     vec2 uv = getFirstHitMaterialUV(texelCoord);
     {
         // Get the uv coord
-        if (voxelMaterial.albedoTextureID >= 0)
+        if (voxelMaterial.albedoTextureID != 0)
         {
-            sampler2D albedoTexture = getMaterialTexture(voxelMaterial.albedoTextureID);
+            sampler2D albedoTexture = sampler2D(voxelMaterial.albedoTextureID);
             voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
         }
 
-        if (voxelMaterial.roughnessTextureID >= 0)
+        if (voxelMaterial.roughnessTextureID != 0)
         {
-            sampler2D roughnessTexture = getMaterialTexture(voxelMaterial.roughnessTextureID);
+            sampler2D roughnessTexture = sampler2D(voxelMaterial.roughnessTextureID);
             voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
         }
 
-        if (voxelMaterial.emissionTextureID >= 0)
+        if (voxelMaterial.emissionTextureID != 0)
         {
-            sampler2D emissionTexture = getMaterialTexture(voxelMaterial.emissionTextureID);
+            sampler2D emissionTexture = sampler2D(voxelMaterial.emissionTextureID);
             voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
         }
     }

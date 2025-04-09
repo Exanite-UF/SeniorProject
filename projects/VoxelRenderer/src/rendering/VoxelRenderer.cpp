@@ -221,8 +221,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         accumulatedLightBuffer2.bind(10);
     }
 
-    // Put bindless textures on 13
-
     {
         int divisor = 8 * shadingRate;
         GLuint workGroupsX = (size.x + divisor - 1) / divisor; // Ceiling division
@@ -299,6 +297,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
     normalBuffer.unbind();
     positionBuffer.unbind();
+
 
     glUseProgram(0);
 
@@ -567,7 +566,6 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     secondaryDirection.bind(12);
     motionVectors.bind(13);
 
-    // Put bindless textures on 14
 
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
@@ -666,7 +664,6 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     materialBuffer.unbind();
     secondaryDirection.unbind();
     motionVectors.unbind();
-    // sampleDirection.unbind();
 
     afterCast(maxDepth);
 
@@ -729,7 +726,6 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     motionVectors.bind(14);
 
-    // Put bindless textures on 15
 
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
@@ -789,6 +785,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     sampleWeights1.unbind();
     sampleWeights2.unbind();
     motionVectors.unbind();
+
 
     whichMotionVectors = !whichMotionVectors;
     whichSampleRadiance = !whichSampleRadiance;

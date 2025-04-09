@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <unordered_set>
 
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>
@@ -30,6 +31,7 @@ private:
     // ----- GPU data -----
     GraphicsBuffer<MaterialDefinition> materialDefinitionsBuffer = GraphicsBuffer<MaterialDefinition>(Constants::VoxelChunk::maxMaterialCount);
 
+
     MaterialManager();
 
 public:
@@ -38,7 +40,7 @@ public:
     bool tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& outMaterial);
 
     GraphicsBuffer<MaterialDefinition>& getMaterialDefinitionsBuffer();
-
+    
     void updateGpuMaterialData();
 
 private:
