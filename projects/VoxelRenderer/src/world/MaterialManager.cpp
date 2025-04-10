@@ -98,14 +98,6 @@ MaterialManager::MaterialManager()
         material->roughness = 1;
     }
 
-    //Generate greyscale materials
-    for(int i = 0; i < 256; i++){
-        auto& material = createMaterial("greyscale_" + std::to_string(i), "Greyscale Material " + std::to_string(i));
-        material->albedo = glm::vec3(i / 256.0);
-        material->emission = glm::vec3(i / 256.0);
-        material->roughness = 1;
-    }
-
     // Generate placeholder materials
     for (size_t i = materials.size(); i < Constants::VoxelChunk::maxMaterialCount; i++)
     {
