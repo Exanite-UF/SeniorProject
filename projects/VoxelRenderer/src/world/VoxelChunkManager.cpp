@@ -839,7 +839,7 @@ void VoxelChunkManager::showDebugMenu()
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
-        ImGui::Checkbox("Enable chunk CPU mipmaps", &settings.areChunkCpuMipmapsEnabled);
+        ImGui::Checkbox("Enable CPU mipmaps", &settings.areChunkCpuMipmapsEnabled);
 
         ImGui::Text("%s", std::format("GPU uploaded chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
