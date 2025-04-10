@@ -35,6 +35,9 @@ public:
         // False prevents chunks from having their LODs generated and used
         bool isChunkLoddingEnabled = true;
 
+        // False prevents chunks from having their CPU-side mipmaps generated
+        bool areChunkCpuMipmapsEnabled = true;
+
         // Delay before a chunk marked for unloading is actually unloaded
         float chunkUnloadTime = 1;
 
