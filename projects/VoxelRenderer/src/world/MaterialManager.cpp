@@ -36,8 +36,8 @@ MaterialManager::MaterialManager()
         material->roughness = 1;
 
 
-        material->textureScale = glm::vec2(1, 1);
-        material->albedoTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/10464.jpg", TextureType::ColorOnly);
+        material->textureScale = glm::vec2(16, 16);
+        material->albedoTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/11635-v7.jpg", TextureType::ColorOnly);
 
         //std::cout << material->albedoTexture->getBindlessHandle() << std::endl;
     }
@@ -53,11 +53,14 @@ MaterialManager::MaterialManager()
 
     {
         auto& material = createMaterial("oak_leaf", "oak_leaf");
-        material->albedo = ColorUtility::htmlToLinear("#434F1E");
+        material->albedo = ColorUtility::htmlToLinear("#8BE78B");//ColorUtility::htmlToLinear("#434F1E");
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
+
+        material->textureScale = glm::vec2(16, 16);
+        material->albedoTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/11635-v7.jpg", TextureType::ColorOnly);
     }
 
     {

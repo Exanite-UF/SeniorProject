@@ -125,7 +125,7 @@ void Program::run()
         auto& voxelChunkManager = VoxelChunkManager::getInstance();
         auto& input = inputManager->input;
 
-        //TextureManager::getInstance().enableBindlessTextures();
+        TextureManager::getInstance().enableBindlessTextures();
 
         // Configure OpenGL
         glEnable(GL_FRAMEBUFFER_SRGB);
@@ -142,10 +142,11 @@ void Program::run()
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
         auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
+        //auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
         scene->setSkybox(skybox);
 
         // Generate static, noise-based placeholder chunks for testing purposes
-        if (true){
+        if (false){
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
             for (int x = 0; x < 2; x++)
