@@ -11,20 +11,17 @@
 MaterialManager::MaterialManager()
 {
 
-    
-    //auto tempTex = TextureData<float>::makeTextureData(2, 2, GL_RGB16F);
-    //tempTex->setPixel(0, 0, glm::vec3(1, 0, 0) * 10.f);
-    //tempTex->setPixel(1, 0, glm::vec3(0, 1, 0) * 10.f);
-    //tempTex->setPixel(0, 1, glm::vec3(0, 0, 1) * 10.f);
-    //tempTex->setPixel(1, 1, glm::vec3(1, 1, 1) * 10.f);
-    
+    // auto tempTex = TextureData<float>::makeTextureData(2, 2, GL_RGB16F);
+    // tempTex->setPixel(0, 0, glm::vec3(1, 0, 0) * 10.f);
+    // tempTex->setPixel(1, 0, glm::vec3(0, 1, 0) * 10.f);
+    // tempTex->setPixel(0, 1, glm::vec3(0, 0, 1) * 10.f);
+    // tempTex->setPixel(1, 1, glm::vec3(1, 1, 1) * 10.f);
 
     auto tempTex = TextureData<std::uint8_t>::makeTextureData(2, 2, GL_RGB);
     tempTex->setPixel(0, 0, glm::ivec3(255, 0, 0));
     tempTex->setPixel(1, 0, glm::ivec3(0, 255, 0));
     tempTex->setPixel(0, 1, glm::ivec3(0, 0, 255));
     tempTex->setPixel(1, 1, glm::ivec3(255, 255, 255));
-
 
     // Define custom materials
     {
@@ -55,7 +52,7 @@ MaterialManager::MaterialManager()
 
         material->textureScale = glm::vec2(16, 16);
         material->albedoTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/11635-v7.jpg", TextureType::ColorOnly);
-        
+
         // std::cout << material->albedoTexture->getBindlessHandle() << std::endl;
     }
 
@@ -124,8 +121,8 @@ MaterialManager::MaterialManager()
         {
             material->emission = glm::vec3(1); // glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
             material->albedo = material->emission;
-            //material->emission *= 0.5;
-            //material->emissionTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/10464.jpg", TextureType::ColorOnly);            
+            // material->emission *= 0.5;
+            // material->emissionTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/10464.jpg", TextureType::ColorOnly);
             material->emissionTexture = TextureManager::getInstance().loadTexture("tempTexture", tempTex);
 
             // material->emission = glm::vec3(1, 1, 1);

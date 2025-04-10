@@ -2,7 +2,6 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_NV_gpu_shader5 : enable
 
-
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 uniform ivec3 resolution; //(xSize, ySize, 1)
