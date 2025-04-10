@@ -60,6 +60,7 @@
 #include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
+#include <src/graphics/TextureData.h>
 
 Program::Program()
 {
@@ -140,6 +141,8 @@ void Program::run()
         sceneObject = GameObject::createRootObject("Scene");
         scene = sceneObject->addComponent<SceneComponent>();
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
+
+        
 
         auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
         // auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
