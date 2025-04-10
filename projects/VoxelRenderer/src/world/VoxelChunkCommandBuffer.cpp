@@ -300,9 +300,16 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 // We don't generate the LOD here
                 auto activeLodIndex = glm::min(component->getChunkManagerData().activeLod, static_cast<int>(component->getChunkManagerData().lods.size()));
                 VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *component->getChunkManagerData().lods.at(activeLodIndex - 1);
+                auto lodSize = lod.getSize();
 
-                // allocateGpuData is idempotent so we can just call it
-                component->allocateGpuData(lod.getSize());
+                // Only upload if size is not 0
+                if (lodSize.x != 0 && lodSize.y != 0 && lodSize.z != 0)
+                {
+                    // allocateGpuData is idempotent so we can just call it
+                    component->allocateGpuData(lod.getSize());
+
+                    break;
+                }
 
                 // We only need shared access because we are modifying a GPU resource
                 // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
