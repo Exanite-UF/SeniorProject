@@ -318,6 +318,17 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                         return;
                     }
 
+                    if (!component->getExistsOnGpu())
+                    {
+                        // Note that this case cannot happen when the VoxelChunkComponent is only modified
+                        // by the chunk modification threads.
+                        //
+                        // This is because the chunk modification threads respect command buffer submission order.
+                        Log::error("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer uploaded to the GPU. This usually indicates a synchronization error.");
+
+                        return;
+                    }
+
                     {
                         std::lock_guard lockGpuUpload(gpuUploadMutex);
                         auto& test = *component->getChunk();
