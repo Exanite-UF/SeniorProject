@@ -1,7 +1,6 @@
 #include "VoxelChunkComponent.h"
 
 #include <src/Constants.h>
-#include <src/utilities/MeasureElapsedTimeScope.h>
 #include <tracy/Tracy.hpp>
 
 VoxelChunkComponent::VoxelChunkComponent()
@@ -15,7 +14,6 @@ VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderDat
 
     if (shouldGeneratePlaceholderData)
     {
-        existsOnGpu = true;
         chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, shouldGeneratePlaceholderData);
         chunkData.copyFrom(*chunk.value());
     }
@@ -53,7 +51,7 @@ VoxelChunkComponent::ChunkManagerData& VoxelChunkComponent::getChunkManagerData(
 
 bool VoxelChunkComponent::getExistsOnGpu() const
 {
-    return existsOnGpu;
+    return chunk.has_value();
 }
 
 void VoxelChunkComponent::allocateGpuData(const glm::ivec3& size)
@@ -61,8 +59,6 @@ void VoxelChunkComponent::allocateGpuData(const glm::ivec3& size)
     ZoneScoped;
 
     assertIsPartOfWorld();
-
-    existsOnGpu = true;
 
     if (!chunk.has_value())
     {
@@ -78,10 +74,9 @@ void VoxelChunkComponent::deallocateGpuData()
 {
     ZoneScoped;
 
-    existsOnGpu = false;
     if (chunk.has_value())
     {
-        chunk.value().reset();
+        chunk.reset();
     }
 }
 

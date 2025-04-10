@@ -38,14 +38,19 @@ public:
 
         // Used by LODing system
         int activeLod = 0;
+        int maxRequestedLod = 0; // Tracks what LOD levels have been requested before. See VoxelChunkCommandBuffer::apply()'s SetMaxLod case for more info.
         std::vector<std::shared_ptr<VoxelChunkData>> lods {};
+
+        // For caching
+        bool isPendingDestroy = false;
+        bool isUploadDesired = false;
+        int desiredLod = 0;
     };
 
 private:
     std::optional<std::unique_ptr<VoxelChunk>> chunk; // Primarily accessed by render and chunk modification thread
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
-    std::atomic<bool> existsOnGpu = false;
     RendererData rendererData {};
     ChunkManagerData modificationData {};
 

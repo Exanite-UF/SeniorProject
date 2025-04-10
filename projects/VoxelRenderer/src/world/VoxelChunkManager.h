@@ -24,18 +24,22 @@ public:
 
         // The distance at which chunks begin to be loaded on a separate thread
         int loadDistance = 1;
-
-        // This defines the number of full size chunked that can be uploaded
-        // This is a float because LODed chunks take up less memory
-        float chunkUploadBudget = 9;
+        float lodBaseDistance = 512;
+        float lodDistanceScalingFactor = 2;
 
         // ----- Chunks -----
 
         // False prevents chunks from loading and unloading
         bool isChunkLoadingEnabled = true;
 
+        // False prevents chunks from having their LODs generated and used
+        bool isChunkLoddingEnabled = true;
+
+        // False prevents chunks from having their CPU-side mipmaps generated
+        bool areChunkCpuMipmapsEnabled = true;
+
         // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+        float chunkUnloadTime = 1;
 
         glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
@@ -79,7 +83,7 @@ private:
 
         bool isLoading = true;
 
-        bool isUnloading = false;
+        bool isUnloading = false; // TODO: This variable does the same thing as VoxelChunkComponent's isPendingDestroy
         float timeSpentWaitingForUnload = 0;
 
         std::shared_ptr<SceneComponent> scene {};

@@ -516,6 +516,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                     // If no voxels are air exposed, then use the inverse of the air mask
                     // The inverse of the air mask refers to any voxel that is occupied
                     uint8_t validMask = airExposedMask == 0 ? ~airMask : airExposedMask;
+                    Assert::isTrue(validMask != 0, "validMask should never be zero. This means this algorithm was implemented incorrectly");
 
                     // This will determine which of the valid materials we will take
                     // Ideally, we want the valid material selected to be uniformly selected and deterministic

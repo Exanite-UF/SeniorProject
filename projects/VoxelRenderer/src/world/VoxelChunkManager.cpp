@@ -1,5 +1,7 @@
 #include "VoxelChunkManager.h"
 
+#include "glm/gtx/norm.hpp"
+
 #include <tracy/Tracy.hpp>
 
 #include <algorithm>
@@ -332,6 +334,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
             // Mark the chunk to be unloaded
             loadedChunk->isUnloading = true;
+            loadedChunk->component->getChunkManagerData().isPendingDestroy = true;
             state.isChunkUnloadingDirty = true;
 
             Log::information(std::format("Preparing to unload chunk at ({}, {})", loadedChunk->chunkPosition.x, loadedChunk->chunkPosition.y));
@@ -351,6 +354,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 {
                     // Keep the chunk alive if necessary
                     chunk->second->isUnloading = false;
+                    chunk->second->component->getChunkManagerData().isPendingDestroy = false;
 
                     // Chunk is already loaded, we don't need to load
                     continue;
@@ -440,17 +444,16 @@ void VoxelChunkManager::update(const float deltaTime)
                 chunk->isLoading = false;
 
                 {
-                    ZoneScopedN("Chunk modification task creation - Command buffer creation");
-
-                    auto desiredLod = rand() % 4;
-
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
-                    // commandBuffer.setEnableCpuMipmaps(true);
-                    // commandBuffer.setMaxLod(desiredLod);
-                    // commandBuffer.setActiveLod(desiredLod);
-                    commandBuffer.setExistsOnGpu(true);
+
+                    submitCommandBuffer(chunk->component, commandBuffer);
+                }
+
+                {
+                    VoxelChunkCommandBuffer commandBuffer {};
+                    commandBuffer.setEnableCpuMipmaps(settings.areChunkCpuMipmapsEnabled);
 
                     submitCommandBuffer(chunk->component, commandBuffer);
                 }
@@ -460,10 +463,85 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Chunk visibility
     {
+        ZoneScopedN("Chunk visibility");
+
         auto camera = state.scene->camera;
         for (auto chunk : state.scene->allChunks)
         {
             chunk->getRendererData().isVisible = isChunkVisible(chunk, camera);
+        }
+    }
+
+    // Chunk uploading and LOD generation
+    {
+        ZoneScopedN("Chunk uploading and LOD generation");
+
+        auto worldChunks = state.scene->worldChunks;
+
+        // Sort by distance to camera
+        // Index 0 is the closest
+        std::sort(worldChunks.begin(), worldChunks.end(), [this](const std::shared_ptr<VoxelChunkComponent>& a, const std::shared_ptr<VoxelChunkComponent>& b)
+            {
+                auto distanceSquaredA = glm::length2(a->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+                auto distanceSquaredB = glm::length2(b->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+
+                return distanceSquaredA < distanceSquaredB;
+            });
+
+        if (settings.isChunkLoddingEnabled)
+        {
+            ZoneScopedN("Chunk LOD generation");
+
+            // Calculate LOD level for each chunk
+            for (int i = 0; i < worldChunks.size(); ++i)
+            {
+                auto& chunk = worldChunks.at(i);
+                float chunkDistance = glm::length(chunk->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+
+                // Calculate desired LOD level
+                int lod = static_cast<int>(glm::log2(chunkDistance / settings.lodBaseDistance) / glm::log2(settings.lodDistanceScalingFactor));
+
+                int minLod = i < 4 ? 0 : 1; // Only allow the closest 4 chunks to use LOD 0
+                int maxLod = 4; // Clamp max lod to 4. Beyond this, we lose too much detail
+                lod = glm::clamp(lod, minLod, maxLod);
+
+                if (chunk->getChunkManagerData().desiredLod == lod)
+                {
+                    // LOD is already the same as desired OR we already have a pending command buffer submitted
+                    continue;
+                }
+
+                // Submit command buffer
+                VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.setMaxLod(lod);
+                commandBuffer.setActiveLod(lod);
+
+                submitCommandBuffer(chunk, commandBuffer);
+                chunk->getChunkManagerData().desiredLod = lod;
+            }
+        }
+
+        {
+            ZoneScopedN("Chunk uploading");
+
+            for (int i = 0; i < worldChunks.size(); ++i)
+            {
+                auto& chunk = worldChunks.at(i);
+                bool shouldUpload = (chunk->getRendererData().isVisible || i < 4) && !chunk->getChunkManagerData().isPendingDestroy;
+
+                if (shouldUpload == chunk->getChunkManagerData().isUploadDesired)
+                {
+                    // Upload state is already the same as desired OR we already have a pending command buffer submitted
+                    continue;
+                }
+
+                // Submit command buffer
+                VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.setExistsOnGpu(shouldUpload);
+
+                submitCommandBuffer(chunk, commandBuffer);
+                chunk->getChunkManagerData().isUploadDesired = shouldUpload;
+            }
         }
     }
 }
@@ -484,7 +562,8 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
     constexpr bool isDebugging = false;
 #endif
 
-    auto size = glm::vec3(chunk->getChunkData().getSize()) * static_cast<float>(glm::pow(0.5f, chunk->getChunkManagerData().activeLod));
+    auto currentLod = glm::min(chunk->getChunkManagerData().activeLod, static_cast<int>(chunk->getChunkManagerData().lods.size()));
+    auto size = glm::vec3(chunk->getChunkData().getSize()) * static_cast<float>(glm::pow(0.5f, currentLod));
     if (size.x == 0 || size.y == 0 || size.z == 0)
     {
         return false;
@@ -742,18 +821,21 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        if (ImGui::SliderInt("Load distance", &settings.loadDistance, 0, 3))
+        if (ImGui::SliderInt("Load distance", &settings.loadDistance, 0, 5))
         {
             state.isChunkLoadingDirty = true;
         }
 
-        ImGui::SliderFloat("Chunk upload budget", &settings.chunkUploadBudget, 4, 20);
+        ImGui::Checkbox("Enable chunk LODing", &settings.isChunkLoddingEnabled);
+
+        ImGui::SliderFloat("LOD base distance", &settings.lodBaseDistance, 256, 2048);
+        ImGui::SliderFloat("LOD distance scaling factor", &settings.lodDistanceScalingFactor, 1, 3);
 
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
-        ImGui::Text("%s", std::format("Load distance: {}", settings.loadDistance).c_str());
-        ImGui::Text("%s", std::format("GPU chunk upload budget (full size chunks): {}", settings.chunkUploadBudget).c_str());
+        ImGui::Checkbox("Enable chunk CPU mipmaps", &settings.areChunkCpuMipmapsEnabled);
+
         ImGui::Text("%s", std::format("GPU uploaded chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
@@ -865,6 +947,8 @@ void VoxelChunkManager::showDebugMenu()
 
 std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
     auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
@@ -875,6 +959,8 @@ std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::share
 
     modificationThreadState.pendingTasks.emplace(task);
     modificationThreadState.pendingTasksCondition.notify_one();
+
+    Log::verbose("Submitted voxel chunk command buffer");
 
     return sharedFuture;
 }
