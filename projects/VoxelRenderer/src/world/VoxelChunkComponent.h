@@ -51,7 +51,6 @@ private:
     std::optional<std::unique_ptr<VoxelChunk>> chunk; // Primarily accessed by render and chunk modification thread
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
-    std::atomic<bool> existsOnGpu = false;
     RendererData rendererData {};
     ChunkManagerData modificationData {};
 
