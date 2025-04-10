@@ -487,9 +487,7 @@ void VoxelChunkManager::update(const float deltaTime)
             ZoneScopedN("Chunk LOD generation");
 
             // Calculate LOD level for each chunk
-            auto distancePerLodLevelSquared = settings.distancePerLodLevelBase * settings.distancePerLodLevelMultiplier;
-            distancePerLodLevelSquared = distancePerLodLevelSquared * distancePerLodLevelSquared;
-
+            auto distancePerLodLevelSquared = settings.distancePerLodLevel * settings.distancePerLodLevel;
             for (int i = 0; i < worldChunks.size(); ++i)
             {
                 auto& chunk = worldChunks.at(i);
@@ -819,13 +817,13 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        ImGui::SliderFloat("LOD distance multiplier", &settings.distancePerLodLevelMultiplier, 0.5f, 2);
+        ImGui::SliderFloat("Distance per LOD level", &settings.distancePerLodLevel, 32, 8192);
 
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
         ImGui::Text("%s", std::format("Load distance: {}", settings.loadDistance).c_str());
-        ImGui::Text("%s", std::format("LOD distance multiplier: {}", settings.distancePerLodLevelMultiplier).c_str());
+        ImGui::Text("%s", std::format("Distance per LOD level: {}", settings.distancePerLodLevel).c_str());
         ImGui::Text("%s", std::format("GPU uploaded chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
