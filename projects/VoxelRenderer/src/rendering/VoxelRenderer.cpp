@@ -298,7 +298,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     normalBuffer.unbind();
     positionBuffer.unbind();
 
-
     glUseProgram(0);
 
     afterCast(maxDepth);
@@ -566,7 +565,6 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
     secondaryDirection.bind(12);
     motionVectors.bind(13);
 
-
     std::unordered_set<std::shared_ptr<VoxelChunkComponent>> renderedChunks;
     {
         GLuint workGroupsX = (size.x + 8 - 1) / 8; // Ceiling division
@@ -726,7 +724,6 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     motionVectors.bind(14);
 
-
     glUniform3i(glGetUniformLocation(pathTraceToFramebufferProgram, "resolution"), size.x, size.y, 1);
 
     glUniform4fv(glGetUniformLocation(pathTraceToFramebufferProgram, "cameraRotation"), 1, glm::value_ptr(cameraRotation));
@@ -785,7 +782,6 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
     sampleWeights1.unbind();
     sampleWeights2.unbind();
     motionVectors.unbind();
-
 
     whichMotionVectors = !whichMotionVectors;
     whichSampleRadiance = !whichSampleRadiance;

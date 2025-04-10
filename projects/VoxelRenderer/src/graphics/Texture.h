@@ -31,6 +31,6 @@ public:
 
     bool isCubemap() const;
 
-    //This needs to be run on the offscreen context
+    // This needs to be run on the offscreen context
     void makeBindlessHandle();
 };

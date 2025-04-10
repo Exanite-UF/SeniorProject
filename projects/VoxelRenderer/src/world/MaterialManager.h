@@ -31,7 +31,6 @@ private:
     // ----- GPU data -----
     GraphicsBuffer<MaterialDefinition> materialDefinitionsBuffer = GraphicsBuffer<MaterialDefinition>(Constants::VoxelChunk::maxMaterialCount);
 
-
     MaterialManager();
 
 public:
@@ -40,7 +39,7 @@ public:
     bool tryGetMaterialByKey(const std::string& key, std::shared_ptr<Material>& outMaterial);
 
     GraphicsBuffer<MaterialDefinition>& getMaterialDefinitionsBuffer();
-    
+
     void updateGpuMaterialData();
 
 private:

@@ -109,7 +109,8 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
             float weightN = pow(max(0, dot(normal, otherNormal)), paramNormalRejection);
             float weightL = exp(-abs(dot(otherColor, luminanceVector) - dot(color, luminanceVector)) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
             float weightM = 1;
-            if(!all(equal(otherMaterial, tempMaterial))){
+            if (!all(equal(otherMaterial, tempMaterial)))
+            {
                 weightM = 0;
             }
             float weight = (weightZ * weightN * weightL * weightM);

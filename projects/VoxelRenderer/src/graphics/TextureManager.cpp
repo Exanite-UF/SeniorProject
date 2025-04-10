@@ -5,9 +5,9 @@
 #include <fstream>
 #include <src/Program.h>
 #include <src/utilities/Assert.h>
+#include <src/world/MaterialManager.h>
 #include <stb_image.h>
 #include <stdexcept>
-#include <src/world/MaterialManager.h>
 
 #include <iostream>
 
@@ -56,7 +56,6 @@ std::shared_ptr<Texture> TextureManager::loadTexture(std::string_view path, Text
             return textures[cacheKey];
         }
     }
-    
 
     // Load texture data
     int width, height, rawChannelCount;
@@ -212,16 +211,19 @@ void TextureManager::makeBindlessTextureHandles()
 {
     std::scoped_lock lock(dataMtx);
 
-    if(!_areBindlessTexturesEnabled){
+    if (!_areBindlessTexturesEnabled)
+    {
         return;
     }
 
-    for(auto& texture : texturesWithoutBindlessHandles){
+    for (auto& texture : texturesWithoutBindlessHandles)
+    {
         texture->makeBindlessHandle();
     }
-    
-    //If new bindless handles were made, update the gpu material data
-    if(texturesWithoutBindlessHandles.size() > 0){
+
+    // If new bindless handles were made, update the gpu material data
+    if (texturesWithoutBindlessHandles.size() > 0)
+    {
         MaterialManager::getInstance().updateGpuMaterialData();
     }
 
@@ -234,7 +236,8 @@ void TextureManager::scheduleRemakeBindlessTextureHandles()
 
     texturesWithoutBindlessHandles.clear();
 
-    for(auto& entry : textures){
+    for (auto& entry : textures)
+    {
         texturesWithoutBindlessHandles.insert(entry.second);
     }
 }

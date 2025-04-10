@@ -187,7 +187,6 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
 }
 
-
 struct RayHit
 {
     bool wasHit;

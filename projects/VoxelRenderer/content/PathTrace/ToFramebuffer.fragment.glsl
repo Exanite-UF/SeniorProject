@@ -487,7 +487,7 @@ void main()
 
     // Set the roughness and hue of the output misc
     miscOutput.x = voxelMaterial.roughness * (length(voxelMaterial.albedo) + length(voxelMaterial.emission));
-    miscOutput.w = rgbToHue(voxelMaterial.albedo) + rgbToHue(voxelMaterial.emission);// * length(voxelMaterial.albedo);
+    miscOutput.w = rgbToHue(voxelMaterial.albedo) + rgbToHue(voxelMaterial.emission); // * length(voxelMaterial.albedo);
 
     vec3 direction = getPrimaryDirection(texelCoord);
 

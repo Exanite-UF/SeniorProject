@@ -142,11 +142,12 @@ void Program::run()
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
         auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
-        //auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
+        // auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
         scene->setSkybox(skybox);
 
         // Generate static, noise-based placeholder chunks for testing purposes
-        if (false){
+        if (false)
+        {
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
             for (int x = 0; x < 2; x++)
@@ -157,7 +158,7 @@ void Program::run()
 
                     auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                     voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                    //voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
+                    // voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
                     voxelChunk->getTransform()->setLocalScale(glm::vec3(x + 1, x + 1, x + 1));
 
                     scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
@@ -978,20 +979,20 @@ void Program::runLateStartupTests()
     //    VoxelChunkData original(glm::ivec3(4, 4, 4));
     //    original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
     //    original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
-//
+    //
     //    VoxelChunkData lod {};
-//
+    //
     //    original.copyToLod(lod);
     //    Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
     //    Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
     //}
-//
+    //
     //{
     //    // Test mipmap generation
     //    VoxelChunkData data(glm::ivec3(16, 16, 16));
     //    data.setVoxelOccupancy(glm::ivec3(3, 3, 3), true);
     //    data.setHasMipmaps(true);
-//
+    //
     //    Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
     //    Assert::isTrue(data.getOccupancyLayerCount() == 2, "Expected 2 occupancy layers");
     //    Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");

@@ -99,7 +99,7 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
     {
         for (int j = 0; j < 5; j++)
         {
-            //if(i != 2 || j != 2) continue;
+            // if(i != 2 || j != 2) continue;
 
             vec2 offset = vec2(i - 2, j - 2);
             vec2 coord = (uv * resolution + offset) / resolution;
@@ -114,7 +114,8 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
             float weightN = pow(max(0, dot(normal, otherNormal)), paramNormalRejection);
             float weightL = exp(-abs(dot(otherColor, luminanceVector) - dot(color, luminanceVector)) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
             float weightM = 1;
-            if(!all(equal(otherMaterial, tempMaterial))){
+            if (!all(equal(otherMaterial, tempMaterial)))
+            {
                 weightM = 0;
             }
             float weight = weightZ * weightN * weightL * weightM;

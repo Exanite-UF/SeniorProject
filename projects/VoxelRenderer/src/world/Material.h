@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -89,7 +89,6 @@ public:
     std::shared_ptr<Texture> albedoTexture = nullptr;
     std::shared_ptr<Texture> roughnessTexture = nullptr;
     std::shared_ptr<Texture> emissionTexture = nullptr;
-
 
     Material();
     Material(uint16_t index, const std::string& key, const std::string& name = "UNNAMED");

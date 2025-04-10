@@ -2,10 +2,10 @@
 
 #include <array>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <mutex>
 
 #include <src/graphics/Texture.h>
 #include <src/graphics/TextureType.h>
@@ -19,7 +19,7 @@
 class TextureManager : public Singleton<TextureManager>
 {
 private:
-    std::mutex dataMtx;//Prevents difference threads from accessing texturesWithoutBindlessHandles and textures simultaneously
+    std::mutex dataMtx; // Prevents difference threads from accessing texturesWithoutBindlessHandles and textures simultaneously
 
     // (path, format) -> texture
     bool _areBindlessTexturesEnabled = false;
@@ -55,15 +55,15 @@ public:
     // Loads a texture with the specified format and colorspace
     std::shared_ptr<Texture> loadCubemapTexture(std::string_view path, GLenum storageFormat);
 
-    //Makes bindless handles for textures that do not already have handles
+    // Makes bindless handles for textures that do not already have handles
     void makeBindlessTextureHandles();
 
-    //Remakes all bindless texture handles, must be done when switching on and off asynchronous reprojection
+    // Remakes all bindless texture handles, must be done when switching on and off asynchronous reprojection
     void scheduleRemakeBindlessTextureHandles();
 
     bool areBindlessTexturesEnabled() const;
 
-    //This exists so that bindless textures can be disabled by default
-    //If this is not run, then RenderDoc will work
+    // This exists so that bindless textures can be disabled by default
+    // If this is not run, then RenderDoc will work
     void enableBindlessTextures();
 };
