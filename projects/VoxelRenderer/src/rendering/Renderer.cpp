@@ -9,6 +9,7 @@
 #include <src/Content.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/graphics/TextureManager.h>
 #include <src/windowing/Window.h>
 
 GLuint Renderer::drawTextureProgram {};
@@ -18,6 +19,8 @@ void Renderer::offscreenRenderingFunc()
     tracy::SetThreadName("Offscreen rendering");
 
     offscreenContext->makeContextCurrent();
+
+    TextureManager::getInstance().makeBindlessTextureHandles();
 
     while (_isRenderingOffscreen)
     {
@@ -166,7 +169,7 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -200,7 +203,7 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -217,7 +220,7 @@ void Renderer::setRenderResolution(glm::ivec2 renderResolution)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -255,6 +258,7 @@ void Renderer::render(float fov)
 
     if (!_isRenderingOffscreen)
     {
+        TextureManager::getInstance().makeBindlessTextureHandles();
         _render();
     }
 
@@ -420,7 +424,7 @@ void Renderer::makeOutputTextures()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -448,7 +452,7 @@ void Renderer::makeOutputTextures()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -476,7 +480,7 @@ void Renderer::makeOutputTextures()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->outputResolution.x, this->outputResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -491,6 +495,7 @@ void Renderer::startAsynchronousReprojection()
     _isRenderingOffscreen = true;
     isSizeDirtyThread = true;
     offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
+    TextureManager::getInstance().scheduleRemakeBindlessTextureHandles();
 }
 
 void Renderer::stopAsynchronousReprojection()
@@ -501,6 +506,8 @@ void Renderer::stopAsynchronousReprojection()
         offscreenThread.join();
     }
     isSizeDirtyThread = true;
+
+    TextureManager::getInstance().scheduleRemakeBindlessTextureHandles();
 }
 
 void Renderer::toggleAsynchronousReprojection()

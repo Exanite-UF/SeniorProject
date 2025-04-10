@@ -2,6 +2,7 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_ARB_bindless_texture : require
+#extension GL_ARB_gpu_shader_int64 : enable
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -22,12 +23,13 @@ struct MaterialDefinition
     vec3 albedo;
     float textureScaleY;
     vec3 metallicAlbedo;
-    int albedoTextureID;
+    float padding;
     float roughness;
     float metallic;
 
-    int roughnessTextureID;
-    int emissionTextureID;
+    uint64_t albedoTextureID;
+    uint64_t roughnessTextureID;
+    uint64_t emissionTextureID;
 };
 
 uniform vec3 pastCameraPosition;
@@ -80,12 +82,12 @@ void setRayPosition(ivec3 coord, vec3 value)
 
 layout(std430, binding = 2) buffer RayDirection
 {
-    float rayDirection[];
+    float16_t rayDirection[];
 };
 
 layout(std430, binding = 3) buffer RayDirectionOut
 {
-    float rayDirectionOut[];
+    float16_t rayDirectionOut[];
 };
 
 vec3 getRayDirection(ivec3 coord)
@@ -98,9 +100,9 @@ vec3 getRayDirection(ivec3 coord)
 void setRayDirection(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    rayDirectionOut[0 + index] = value.x;
-    rayDirectionOut[1 + index] = value.y;
-    rayDirectionOut[2 + index] = value.z;
+    rayDirectionOut[0 + index] = float16_t(value.x);
+    rayDirectionOut[1 + index] = float16_t(value.y);
+    rayDirectionOut[2 + index] = float16_t(value.z);
 }
 
 layout(std430, binding = 4) buffer OccupancyMap
@@ -223,16 +225,16 @@ void setFirstHitMaterial(ivec3 coord, int value)
 
 layout(std430, binding = 12) buffer SecondaryDirection
 {
-    writeonly float secondaryDirection[];
+    writeonly float16_t secondaryDirection[];
 };
 
 void setSecondaryDirection(ivec3 coord, vec4 value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
-    secondaryDirection[index + 0] = value.x;
-    secondaryDirection[index + 1] = value.y;
-    secondaryDirection[index + 2] = value.z;
-    secondaryDirection[index + 3] = value.w;
+    secondaryDirection[index + 0] = float16_t(value.x);
+    secondaryDirection[index + 1] = float16_t(value.y);
+    secondaryDirection[index + 2] = float16_t(value.z);
+    secondaryDirection[index + 3] = float16_t(value.w);
 }
 
 uniform bool whichAccumulatingVector;
@@ -277,17 +279,6 @@ void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
         }
         accumulatingMotionVectors[index + 3] = float16_t(temp);
     }
-}
-
-// Bindless textures SSBO
-layout(std430, binding = 14) buffer MaterialTextures
-{
-    uint64_t materialTextures[];
-};
-
-sampler2D getMaterialTexture(int textureID)
-{
-    return sampler2D(materialTextures[textureID]);
 }
 
 struct RayHit
@@ -753,21 +744,21 @@ void main()
     // Modify material data with textures
     {
         // Get the uv coord
-        if (voxelMaterial.albedoTextureID >= 0)
+        if (voxelMaterial.albedoTextureID != 0)
         {
-            sampler2D albedoTexture = getMaterialTexture(voxelMaterial.albedoTextureID);
+            sampler2D albedoTexture = sampler2D(voxelMaterial.albedoTextureID);
             voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
         }
 
-        if (voxelMaterial.roughnessTextureID >= 0)
+        if (voxelMaterial.roughnessTextureID != 0)
         {
-            sampler2D roughnessTexture = getMaterialTexture(voxelMaterial.roughnessTextureID);
+            sampler2D roughnessTexture = sampler2D(voxelMaterial.roughnessTextureID);
             voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
         }
 
-        if (voxelMaterial.emissionTextureID >= 0)
+        if (voxelMaterial.emissionTextureID != 0)
         {
-            sampler2D emissionTexture = getMaterialTexture(voxelMaterial.emissionTextureID);
+            sampler2D emissionTexture = sampler2D(voxelMaterial.emissionTextureID);
             voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
         }
     }

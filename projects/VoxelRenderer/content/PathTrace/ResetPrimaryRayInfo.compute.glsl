@@ -1,4 +1,7 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+#extension GL_NV_gpu_shader5 : enable
+
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -36,7 +39,7 @@ vec3 getRayPosition(ivec3 coord)
 
 layout(std430, binding = 6) buffer RayDirection
 {
-    float rayDirection[];
+    float16_t rayDirection[];
 };
 
 vec3 getRayDirection(ivec3 coord)

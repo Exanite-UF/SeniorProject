@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <glm/vec2.hpp>
@@ -8,6 +9,8 @@
 
 #include <src/utilities/NonCopyable.h>
 #include <src/utilities/OpenGl.h>
+
+#include <src/graphics/Texture.h>
 
 // Materials are a property of voxels, however, they are also used heavily by the VoxelChunk and VoxelRenderer
 // This means we need to account for how they are used before deciding how they should be stored
@@ -46,12 +49,13 @@ struct MaterialDefinition
     glm::vec3 albedo;
     float textureScaleY = 1; // How many voxels large is the texture
     glm::vec3 metallicAlbedo;
-    std::int32_t albedoTextureID = -1;
+    float padding1;
     float roughness;
     float metallic;
 
-    std::int32_t roughnessTextureID = -1;
-    std::int32_t emissionTextureID = -1;
+    std::uint64_t albedoTextureID = 0;
+    std::uint64_t roughnessTextureID = 0;
+    std::uint64_t emissionTextureID = 0;
 
     // glm::vec3 color;
     //
@@ -78,8 +82,13 @@ public:
     glm::vec3 emission = glm::vec3(0);
     glm::vec3 albedo = glm::vec3(1);
     glm::vec3 metallicAlbedo = glm::vec3(1);
+    glm::vec2 textureScale = glm::vec2(1);
     float roughness = 1;
     float metallic = 0;
+
+    std::shared_ptr<Texture> albedoTexture = nullptr;
+    std::shared_ptr<Texture> roughnessTexture = nullptr;
+    std::shared_ptr<Texture> emissionTexture = nullptr;
 
     Material();
     Material(uint16_t index, const std::string& key, const std::string& name = "UNNAMED");

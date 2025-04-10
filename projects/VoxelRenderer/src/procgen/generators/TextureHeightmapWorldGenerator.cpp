@@ -9,7 +9,7 @@
 void TextureHeightmapWorldGenerator::generateData(VoxelChunkData& data)
 {
     glm::ivec3 size = { data.getSize().x, data.getSize().y, 1 };
-    this->textureData = std::make_shared<TextureData>(size);
+    this->textureData = std::make_shared<TextureDataA>(size);
     textureDataSynthesizer->generate(textureData);
 
     for (int x = 0; x < data.getSize().x; ++x)

@@ -8,7 +8,7 @@ TextureOpenSimplexNoiseSynthesizer::TextureOpenSimplexNoiseSynthesizer(int seed)
     this->seed = seed;
 }
 
-void TextureOpenSimplexNoiseSynthesizer::generate(std::shared_ptr<TextureData>& textureData)
+void TextureOpenSimplexNoiseSynthesizer::generate(std::shared_ptr<TextureDataA>& textureData)
 {
     FastNoiseLite simplexNoise;
     simplexNoise.SetSeed(seed);

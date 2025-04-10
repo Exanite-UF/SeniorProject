@@ -11,6 +11,7 @@ git submodule update --init --recursive
 ```
 
 3. Open the root repo folder (or CMakeLists.txt) file as a project in your IDE or use CMake through the command line.
+   - Optionally, use your IDE's CMakePresets integration to select a preset. We support MSVC on Windows and GCC on Linux.
 
 ## Project organization
 
@@ -25,7 +26,9 @@ git submodule update --init --recursive
       - /input - Input management code. Can be related to windowing, but usually higher level.
       - /procgen - Code related to generating voxel worlds.
       - /rendering - Renderers and other specialized rendering code.
+      - /threading - Code used for threading.
       - /utilities - Misc code that currently don't belong anywhere else.
+      - /voxelizer - Code for converting meshes into voxel prefabs.
       - /windowing - GLFW window management code.
       - /world - World state, world objects, scenes, transforms, etc.
 
