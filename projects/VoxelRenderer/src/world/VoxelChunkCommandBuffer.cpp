@@ -329,6 +329,14 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     break;
                 }
 
+                // TODO: This check shouldn't be needed, but for some reason it is. This hints towards a synchronization issue.
+                if (!component->getIsPartOfWorld())
+                {
+                    Log::error("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This case is unexpected.");
+
+                    return;
+                }
+
                 // allocateGpuData is idempotent so we can just call it
                 component->allocateGpuData(lod.getSize());
 
