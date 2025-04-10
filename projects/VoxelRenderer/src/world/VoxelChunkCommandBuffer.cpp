@@ -188,7 +188,28 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetEnableCpuMipmaps");
 
                 auto command = setEnableCpuMipmapsCommands.at(entry.index);
-                chunkData.setHasMipmaps(command.enableCpuMipmaps);
+
+                // We only need shared access since only one command buffer is applied at a time per chunk
+                // This allows the renderer and other code to keep using the chunk as normal
+                lockComponent.unlock();
+                {
+                    std::shared_lock sharedLockComponent(component->getMutex());
+                    if (!component->getIsPartOfWorld())
+                    {
+                        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                        return;
+                    }
+
+                    chunkData.setHasMipmaps(command.enableCpuMipmaps);
+                }
+                lockComponent.lock();
+                if (!component->getIsPartOfWorld())
+                {
+                    Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                    return;
+                }
 
                 break;
             }
@@ -242,7 +263,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 // We need to generate them
                 auto newLodsRequired = command.maxLod - lods.size();
                 {
-                    // We only need shared access since LOD generation is read heavy until the final write where we copy the data into the component
+                    // We only need shared access since only one command buffer is applied at a time per chunk
+                    // This allows the renderer and other code to keep using the chunk as normal
                     lockComponent.unlock();
                     {
                         std::shared_lock sharedLockComponent(component->getMutex());
@@ -263,8 +285,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                                 break;
                             }
 
-                            // Technically we need exclusive access here, but the command buffer dependencies guarantee that
-                            // only one thread is allowed to modify the LODs at a time.
                             auto newLod = std::make_shared<VoxelChunkData>();
                             lods.push_back(newLod);
 
@@ -371,7 +391,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                     isGpuUpToDate = true;
                 }
-
                 lockComponent.lock();
                 if (!component->getIsPartOfWorld())
                 {
