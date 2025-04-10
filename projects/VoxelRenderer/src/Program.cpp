@@ -146,7 +146,7 @@ void Program::run()
         scene->setSkybox(skybox);
 
         // Generate static, noise-based placeholder chunks for testing purposes
-        if (false)
+        if (true)
         {
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
