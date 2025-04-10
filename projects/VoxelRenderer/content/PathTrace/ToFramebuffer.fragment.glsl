@@ -65,7 +65,7 @@ int getFirstHitMaterial(ivec3 coord)
 
 layout(std430, binding = 5) buffer PrimaryDirection
 {
-    readonly float primaryDirection[];
+    readonly float16_t primaryDirection[];
 };
 
 vec3 getPrimaryDirection(ivec3 coord)
@@ -76,7 +76,7 @@ vec3 getPrimaryDirection(ivec3 coord)
 
 layout(std430, binding = 6) buffer SecondaryDirection
 {
-    readonly float secondaryDirection[];
+    readonly float16_t secondaryDirection[];
 };
 
 vec4 getSecondaryDirection(ivec3 coord)

@@ -28,7 +28,7 @@ float getRayDepth(ivec3 coord)
 
 layout(std430, binding = 1) buffer RayDirection
 {
-    float rayDirection[];
+    float16_t rayDirection[];
 };
 
 vec3 getRayDirection(ivec3 coord)

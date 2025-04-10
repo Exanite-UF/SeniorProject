@@ -67,12 +67,12 @@ void setRayPosition(ivec3 coord, vec3 value)
 
 layout(std430, binding = 2) buffer RayDirection
 {
-    float rayDirection[];
+    float16_t rayDirection[];
 };
 
 layout(std430, binding = 3) buffer RayDirectionOut
 {
-    float rayDirectionOut[];
+    float16_t rayDirectionOut[];
 };
 
 vec3 getRayDirection(ivec3 coord)
@@ -85,9 +85,9 @@ vec3 getRayDirection(ivec3 coord)
 void setRayDirection(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    rayDirectionOut[0 + index] = value.x;
-    rayDirectionOut[1 + index] = value.y;
-    rayDirectionOut[2 + index] = value.z;
+    rayDirectionOut[0 + index] = float16_t(value.x);
+    rayDirectionOut[1 + index] = float16_t(value.y);
+    rayDirectionOut[2 + index] = float16_t(value.z);
 }
 
 layout(std430, binding = 5) buffer OccupancyMap
