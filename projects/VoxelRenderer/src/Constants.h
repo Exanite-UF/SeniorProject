@@ -34,7 +34,7 @@ public:
     class VoxelChunkManager
     {
     public:
-        static constexpr int maxChunkModificationThreads = 2;
+        static constexpr int maxChunkModificationThreads = 4;
     };
 
     class GameObject
