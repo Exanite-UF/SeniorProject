@@ -24,10 +24,8 @@ public:
 
         // The distance at which chunks begin to be loaded on a separate thread
         int loadDistance = 1;
-
-        // This defines the number of full size chunked that can be uploaded
-        // This is a float because LODed chunks take up less memory
-        float chunkUploadBudget = 9;
+        float distancePerLodLevelMultiplier = 2;
+        static constexpr float distancePerLodLevelBase = (Constants::VoxelChunkComponent::chunkSize.x + Constants::VoxelChunkComponent::chunkSize.y + Constants::VoxelChunkComponent::chunkSize.z) / 3;
 
         // ----- Chunks -----
 
@@ -79,7 +77,7 @@ private:
 
         bool isLoading = true;
 
-        bool isUnloading = false;
+        bool isUnloading = false; // TODO: This variable does the same thing as VoxelChunkComponent's isPendingDestroy
         float timeSpentWaitingForUnload = 0;
 
         std::shared_ptr<SceneComponent> scene {};

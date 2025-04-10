@@ -1,5 +1,7 @@
 #include "VoxelChunkManager.h"
 
+#include "glm/gtx/norm.hpp"
+
 #include <tracy/Tracy.hpp>
 
 #include <algorithm>
@@ -332,6 +334,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
             // Mark the chunk to be unloaded
             loadedChunk->isUnloading = true;
+            loadedChunk->component->getChunkManagerData().isPendingDestroy = true;
             state.isChunkUnloadingDirty = true;
 
             Log::information(std::format("Preparing to unload chunk at ({}, {})", loadedChunk->chunkPosition.x, loadedChunk->chunkPosition.y));
@@ -351,6 +354,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 {
                     // Keep the chunk alive if necessary
                     chunk->second->isUnloading = false;
+                    chunk->second->component->getChunkManagerData().isPendingDestroy = false;
 
                     // Chunk is already loaded, we don't need to load
                     continue;
@@ -442,15 +446,9 @@ void VoxelChunkManager::update(const float deltaTime)
                 {
                     ZoneScopedN("Chunk modification task creation - Command buffer creation");
 
-                    auto desiredLod = rand() % 4;
-
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
-                    // commandBuffer.setEnableCpuMipmaps(true);
-                    // commandBuffer.setMaxLod(desiredLod);
-                    // commandBuffer.setActiveLod(desiredLod);
-                    commandBuffer.setExistsOnGpu(true);
 
                     submitCommandBuffer(chunk->component, commandBuffer);
                 }
@@ -460,10 +458,84 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Chunk visibility
     {
+        ZoneScopedN("Chunk visibility");
+
         auto camera = state.scene->camera;
         for (auto chunk : state.scene->allChunks)
         {
             chunk->getRendererData().isVisible = isChunkVisible(chunk, camera);
+        }
+    }
+
+    // Chunk uploading and LOD generation
+    {
+        ZoneScopedN("Chunk uploading and LOD generation");
+
+        auto worldChunks = state.scene->worldChunks;
+
+        // Sort by distance to camera
+        // Index 0 is the closest
+        std::sort(worldChunks.begin(), worldChunks.end(), [this](const std::shared_ptr<VoxelChunkComponent>& a, const std::shared_ptr<VoxelChunkComponent>& b)
+            {
+                auto distanceSquaredA = glm::length2(a->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+                auto distanceSquaredB = glm::length2(b->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+
+                return distanceSquaredA < distanceSquaredB;
+            });
+
+        {
+            ZoneScopedN("Chunk LOD generation");
+
+            // Calculate LOD level for each chunk
+            auto distancePerLodLevelSquared = settings.distancePerLodLevelBase * settings.distancePerLodLevelMultiplier;
+            distancePerLodLevelSquared = distancePerLodLevelSquared * distancePerLodLevelSquared;
+
+            for (int i = 0; i < worldChunks.size(); ++i)
+            {
+                auto& chunk = worldChunks.at(i);
+                auto chunkDistanceSquared = glm::length2(chunk->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+
+                // Only the closest 4 can use LOD 0; however, the closest 4 aren't necessarily required to be LOD 0
+                float minLod = i < 4 ? 0 : 1;
+                auto lod = glm::max(minLod, chunkDistanceSquared / distancePerLodLevelSquared);
+
+                if (chunk->getChunkManagerData().desiredLod == lod)
+                {
+                    // LOD is already the same as desired OR we already have a pending command buffer submitted
+                    continue;
+                }
+
+                // Submit command buffer
+                VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.setMaxLod(lod);
+                commandBuffer.setActiveLod(lod);
+
+                submitCommandBuffer(chunk, commandBuffer);
+                chunk->getChunkManagerData().desiredLod = lod;
+            }
+        }
+
+        {
+            ZoneScopedN("Chunk uploading");
+
+            for (int i = 0; i < worldChunks.size(); ++i)
+            {
+                auto& chunk = worldChunks.at(i);
+                bool shouldUpload = (chunk->getRendererData().isVisible || i < 4) && !chunk->getChunkManagerData().isPendingDestroy;
+
+                if (shouldUpload == chunk->getChunkManagerData().isUploadDesired)
+                {
+                    // Upload state is already the same as desired OR we already have a pending command buffer submitted
+                    continue;
+                }
+
+                // Submit command buffer
+                VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.setExistsOnGpu(shouldUpload);
+
+                submitCommandBuffer(chunk, commandBuffer);
+                chunk->getChunkManagerData().isUploadDesired = shouldUpload;
+            }
         }
     }
 }
@@ -747,13 +819,13 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        ImGui::SliderFloat("Chunk upload budget", &settings.chunkUploadBudget, 4, 20);
+        ImGui::SliderFloat("LOD distance multiplier", &settings.distancePerLodLevelMultiplier, 0.5f, 2);
 
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
         ImGui::Text("%s", std::format("Load distance: {}", settings.loadDistance).c_str());
-        ImGui::Text("%s", std::format("GPU chunk upload budget (full size chunks): {}", settings.chunkUploadBudget).c_str());
+        ImGui::Text("%s", std::format("LOD distance multiplier: {}", settings.distancePerLodLevelMultiplier).c_str());
         ImGui::Text("%s", std::format("GPU uploaded chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());

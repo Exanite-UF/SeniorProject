@@ -39,6 +39,11 @@ public:
         // Used by LODing system
         int activeLod = 0;
         std::vector<std::shared_ptr<VoxelChunkData>> lods {};
+
+        // For caching
+        bool isPendingDestroy = false;
+        bool isUploadDesired = false;
+        int desiredLod = 0;
     };
 
 private:
