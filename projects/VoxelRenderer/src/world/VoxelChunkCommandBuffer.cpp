@@ -179,6 +179,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 auto command = setExistsOnGpuCommands.at(entry.index);
                 shouldExistOnGpu = command.existsOnGpu;
 
+                isGpuUpToDate = false;
+
                 break;
             }
             case SetEnableCpuMipmaps:
