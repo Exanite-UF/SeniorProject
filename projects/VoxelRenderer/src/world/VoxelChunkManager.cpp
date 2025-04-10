@@ -937,6 +937,8 @@ void VoxelChunkManager::showDebugMenu()
 
 std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
     auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
