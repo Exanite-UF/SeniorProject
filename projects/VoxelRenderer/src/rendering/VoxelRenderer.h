@@ -51,10 +51,10 @@ private:
 
     // These buffers are used to store the result of a path trace
     bool whichAccumulationBuffer = false;
-    GraphicsBuffer<glm::vec3> attentuationBuffer1; //(r, g, b) //convert to half
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer1; //(r, g, b) //convert to half
-    GraphicsBuffer<glm::vec3> attentuationBuffer2; //(r, g, b) //convert to half
-    GraphicsBuffer<glm::vec3> accumulatedLightBuffer2; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::u16vec3> attentuationBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::u16vec3> accumulatedLightBuffer1; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::u16vec3> attentuationBuffer2; //(r, g, b) //convert to half
+    GraphicsBuffer<glm::u16vec3> accumulatedLightBuffer2; //(r, g, b) //convert to half
 
     // This is reset before every cast
     GraphicsBuffer<float> rayMisc; //(depth)

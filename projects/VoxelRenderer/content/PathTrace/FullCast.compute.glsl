@@ -1,4 +1,5 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_ARB_bindless_texture : require
 #extension GL_ARB_gpu_shader_int64 : enable
@@ -145,7 +146,7 @@ layout(std430, binding = 8) buffer MaterialDefinitions
 
 layout(std430, binding = 9) buffer AttenuationIn
 {
-    restrict float attenuationIn[];
+    restrict float16_t attenuationIn[];
 };
 
 vec3 getPriorAttenuation(ivec3 coord)
@@ -157,34 +158,34 @@ vec3 getPriorAttenuation(ivec3 coord)
 
 layout(std430, binding = 10) buffer AccumulatedLightIn
 {
-    restrict float accumulatedLightIn[];
+    restrict float16_t accumulatedLightIn[];
 };
 
 layout(std430, binding = 11) buffer AttenuationOut
 {
-    restrict float attenuationOut[];
+    restrict float16_t attenuationOut[];
 };
 
 layout(std430, binding = 12) buffer AccumulatedLightOut
 {
-    restrict float accumulatedLightOut[];
+    restrict float16_t accumulatedLightOut[];
 };
 
 void setAttenuation(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride is 3, axis order is x y z
 
-    attenuationOut[0 + index] = value.x;
-    attenuationOut[1 + index] = value.y;
-    attenuationOut[2 + index] = value.z;
+    attenuationOut[0 + index] = float16_t(value.x);
+    attenuationOut[1 + index] = float16_t(value.y);
+    attenuationOut[2 + index] = float16_t(value.z);
 }
 
 void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    accumulatedLightOut[0 + index] = accumulatedLightIn[0 + index] + deltaValue.x;
-    accumulatedLightOut[1 + index] = accumulatedLightIn[1 + index] + deltaValue.y;
-    accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
+    accumulatedLightOut[0 + index] = float16_t(accumulatedLightIn[0 + index] + deltaValue.x);
+    accumulatedLightOut[1 + index] = float16_t(accumulatedLightIn[1 + index] + deltaValue.y);
+    accumulatedLightOut[2 + index] = float16_t(accumulatedLightIn[2 + index] + deltaValue.z);
 }
 
 struct RayHit

@@ -1,4 +1,7 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+#extension GL_NV_gpu_shader5 : enable
+
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -37,17 +40,17 @@ vec3 getRayDirection(ivec3 coord)
 
 layout(std430, binding = 2) buffer AccumulatedLightIn
 {
-    readonly restrict float accumulatedLightIn[];
+    readonly restrict float16_t accumulatedLightIn[];
 };
 
 layout(std430, binding = 3) buffer AccumulatedLightOut
 {
-    writeonly float accumulatedLightOut[];
+    writeonly float16_t accumulatedLightOut[];
 };
 
 layout(std430, binding = 4) buffer AttenuationIn
 {
-    restrict float attenuationIn[];
+    restrict float16_t attenuationIn[];
 };
 
 vec3 getPriorAttenuation(ivec3 coord)
@@ -60,9 +63,9 @@ vec3 getPriorAttenuation(ivec3 coord)
 void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
 {
     int index = 3 * (coord.x + resolution.x * (coord.y + resolution.y * coord.z)); // Stride of 3, axis order is x y z
-    accumulatedLightOut[0 + index] = accumulatedLightIn[0 + index] + deltaValue.x;
-    accumulatedLightOut[1 + index] = accumulatedLightIn[1 + index] + deltaValue.y;
-    accumulatedLightOut[2 + index] = accumulatedLightIn[2 + index] + deltaValue.z;
+    accumulatedLightOut[0 + index] = float16_t(accumulatedLightIn[0 + index] + deltaValue.x);
+    accumulatedLightOut[1 + index] = float16_t(accumulatedLightIn[1 + index] + deltaValue.y);
+    accumulatedLightOut[2 + index] = float16_t(accumulatedLightIn[2 + index] + deltaValue.z);
 }
 
 uniform bool shouldDrawSkybox;

@@ -28,7 +28,7 @@ uniform bool whichDepth;
 
 layout(std430, binding = 0) buffer AccumulatedLight
 {
-    float accumulatedLight[];
+    float16_t accumulatedLight[];
 };
 
 layout(std430, binding = 1) buffer FirstHitNormal
