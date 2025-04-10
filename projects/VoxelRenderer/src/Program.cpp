@@ -181,7 +181,7 @@ void Program::run()
 
         // Create the renderer
         Renderer renderer(window, offscreenContext);
-        float renderRatio = 1.f;//0.5f; // Used to control the render resolution relative to the window resolution
+        float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
 
         renderer.setRenderResolution(window->size);
         // Render resolution can be set separately from display resolution
