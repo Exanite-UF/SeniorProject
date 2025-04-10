@@ -406,7 +406,18 @@ void Program::run()
                         frameTimePerPixel = weight * frameTimePerPixel + (1-weight) * newSample;
                     }
                     
-                    float pixels = window->size.x * window->size.y;
+                    //The performace is unusable, update the fps
+                    if(currentRenderFps < 10){
+                        float pixels = window->size.x * window->size.y;
+                        if(frameTimePerPixel > 0){
+                            renderRatio = std::sqrt((1.0/targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                        }
+                        
+                        if(renderRatio > 1){
+                            renderRatio = 1;
+                        }
+                    }
+                    
                 }
                 
 
