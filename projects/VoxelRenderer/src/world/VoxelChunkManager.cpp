@@ -812,7 +812,7 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        if (ImGui::SliderInt("Load distance", &settings.loadDistance, 0, 3))
+        if (ImGui::SliderInt("Load distance", &settings.loadDistance, 0, 5))
         {
             state.isChunkLoadingDirty = true;
         }
@@ -947,6 +947,8 @@ std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::share
 
     modificationThreadState.pendingTasks.emplace(task);
     modificationThreadState.pendingTasksCondition.notify_one();
+
+    Log::debug("Submitted voxel chunk command buffer");
 
     return sharedFuture;
 }

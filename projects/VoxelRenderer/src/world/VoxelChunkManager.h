@@ -32,7 +32,7 @@ public:
         bool isChunkLoadingEnabled = true;
 
         // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+        float chunkUnloadTime = 1;
 
         glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
