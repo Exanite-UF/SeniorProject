@@ -68,25 +68,26 @@ public:
     // If this is not run, then RenderDoc will work
     void enableBindlessTextures();
 
-    template<class T>
-    std::shared_ptr<Texture> loadTexture(std::string_view name, std::shared_ptr<TextureData<T>> data){
+    template <class T>
+    std::shared_ptr<Texture> loadTexture(std::string_view name, std::shared_ptr<TextureData<T>> data)
+    {
         std::scoped_lock lock(dataMtx);
         // Use cached texture if available
         auto cacheKey = std::make_tuple(std::string(name), data->getInternalFormat());
         if (textures.contains(cacheKey))
         {
-            //If the Texture data is not dirty, then use the cached texture
-            if(!data->isDirty){
+            // If the Texture data is not dirty, then use the cached texture
+            if (!data->isDirty)
+            {
                 return textures[cacheKey];
             }
-            //Else, remake the texture
+            // Else, remake the texture
 
-            //First delete the existing texture
-            //Get the texture id of the existing texture
+            // First delete the existing texture
+            // Get the texture id of the existing texture
             GLuint textureID = textures[cacheKey]->getTextureId();
-            glDeleteTextures(1, &textureID);//Delete that texture
+            glDeleteTextures(1, &textureID); // Delete that texture
         }
-
 
         // Create OpenGL texture
         GLuint textureId;
@@ -98,33 +99,35 @@ public:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);//The cpu data is tightly packed, if this is normally expecting a byte alignment of 4
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // The cpu data is tightly packed, if this is normally expecting a byte alignment of 4
 
             // internalFormat (called storageFormat here) is the format of the texture stored on the GPU
             // format is the input format, as loaded from the texture file
             glTexImage2D(GL_TEXTURE_2D, 0, data->getInternalFormat(), data->getWidth(), data->getHeight(), 0, data->getDataFormat(), data->getDataType(), data->data());
-            //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data->getWidth(), data->getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, data->data());
+            // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data->getWidth(), data->getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, data->data());
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Wrap OpenGL handle with the Texture class
-        
+
         data->isDirty = false;
         // Insert texture into cache
         if (textures.contains(cacheKey))
         {
-            //Since we already have a Texture in the cache, we need to modify the existing Texture
-            //Otherwise we will break the materials that use this Texture
+            // Since we already have a Texture in the cache, we need to modify the existing Texture
+            // Otherwise we will break the materials that use this Texture
             auto& texture = textures[cacheKey];
-            texture->textureId = textureId;//Replace the texture id
+            texture->textureId = textureId; // Replace the texture id
             texture->bindlessHandle = 0;
             texture->size = glm::ivec2(data->getWidth(), data->getHeight());
             texture->type = Unknown;
             texture->_isCubemap = false;
             texturesWithoutBindlessHandles.insert(texture);
             return texture;
-        }else{
+        }
+        else
+        {
             auto texture = std::make_shared<Texture>(textureId, Unknown, glm::ivec2(data->getWidth(), data->getHeight()), false);
             textures[cacheKey] = texture;
             texturesWithoutBindlessHandles.insert(texture);
