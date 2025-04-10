@@ -241,20 +241,43 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 // We don't have enough LODs
                 // We need to generate them
                 auto newLodsRequired = command.maxLod - lods.size();
-                for (int i = 0; i < newLodsRequired; ++i)
                 {
-                    auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
-                    auto previousLodSize = previousLod.getSize();
-                    if (previousLodSize.x < 2 || previousLodSize.y < 2 || previousLodSize.z < 2)
+                    // We only need shared access since LOD generation is read heavy until the final write where we copy the data into the component
+                    lockComponent.unlock();
                     {
-                        // Previous LOD is too small to make another LOD level
-                        break;
+                        std::shared_lock sharedLockComponent(component->getMutex());
+                        if (!component->getIsPartOfWorld())
+                        {
+                            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                            return;
+                        }
+
+                        for (int i = 0; i < newLodsRequired; ++i)
+                        {
+                            auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
+                            auto previousLodSize = previousLod.getSize();
+                            if (previousLodSize.x < 2 || previousLodSize.y < 2 || previousLodSize.z < 2)
+                            {
+                                // Previous LOD is too small to make another LOD level
+                                break;
+                            }
+
+                            // Technically we need exclusive access here, but the command buffer dependencies guarantee that
+                            // only one thread is allowed to modify the LODs at a time.
+                            auto newLod = std::make_shared<VoxelChunkData>();
+                            lods.push_back(newLod);
+
+                            previousLod.copyToLod(*newLod);
+                        }
                     }
+                    lockComponent.lock();
+                    if (!component->getIsPartOfWorld())
+                    {
+                        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
-                    auto newLod = std::make_shared<VoxelChunkData>();
-                    lods.push_back(newLod);
-
-                    previousLod.copyToLod(*newLod);
+                        return;
+                    }
                 }
 
                 // Track the max requested LOD even if we don't generate that many
@@ -316,7 +339,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     std::shared_lock sharedLockComponent(component->getMutex());
                     if (!component->getIsPartOfWorld())
                     {
-                        Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+                        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
                         return;
                     }
@@ -344,7 +367,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 lockComponent.lock();
                 if (!component->getIsPartOfWorld())
                 {
-                    Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+                    Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
                     return;
                 }
