@@ -496,7 +496,7 @@ void Renderer::startAsynchronousReprojection()
     isSizeDirtyThread = true;
     TextureManager::getInstance().scheduleRemakeBindlessTextureHandles();
 
-    //Remake the bindings
+    // Remake the bindings
     GLFWwindow* currentContext = glfwGetCurrentContext();
     offscreenContext->makeContextCurrent();
     TextureManager::getInstance().makeBindlessTextureHandles();
