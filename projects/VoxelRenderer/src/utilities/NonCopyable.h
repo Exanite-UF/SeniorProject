@@ -4,10 +4,9 @@
 class NonCopyable
 {
 public:
-    virtual ~NonCopyable() = default;
-
-    // Allow creation
+    // Allow creation and destruction
     NonCopyable() = default;
+    virtual ~NonCopyable() = default;
 
     // Deny copies
     NonCopyable(const NonCopyable&) = delete;

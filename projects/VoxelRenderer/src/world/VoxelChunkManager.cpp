@@ -251,13 +251,29 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
         // Unlock the mutex
         pendingRequestsLock.unlock();
 
-        // Apply the chunk command buffer
+        try
         {
-            ZoneScopedN("Chunk modification");
+            // Wait for any dependencies to finish
+            task->dependencies.waitForPending();
 
-            MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
-            Log::verbose("Applying chunk command buffer");
-            task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
+            // Apply the chunk command buffer
+            {
+                ZoneScopedN("Chunk modification");
+
+                MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
+                Log::verbose("Applying chunk command buffer");
+                task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
+            }
+
+            // Complete the promise
+            task->promise.set_value();
+        }
+        catch (...)
+        {
+            // Complete the promise
+            task->promise.set_exception(std::current_exception());
+
+            throw;
         }
     }
 
@@ -290,9 +306,9 @@ void VoxelChunkManager::update(const float deltaTime)
 
         // Calculate which chunks should be loaded
         std::unordered_set<glm::ivec2> chunksToLoad {};
-        for (int x = -settings.renderDistance; x <= settings.renderDistance; ++x)
+        for (int x = -settings.loadDistance; x <= settings.loadDistance; ++x)
         {
-            for (int y = -settings.renderDistance; y <= settings.renderDistance; ++y)
+            for (int y = -settings.loadDistance; y <= settings.loadDistance; ++y)
             {
                 auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y);
                 chunksToLoad.emplace(chunkPosition);
@@ -362,7 +378,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
         // Check for chunks to unload
         int chunksUpdated = 0;
-        std::vector<glm::ivec2> chunksToUnload {};
+        std::vector<glm::ivec2> chunkPositionsToUnload {};
         for (auto& chunk : std::ranges::views::values(state.activeChunks))
         {
             if (chunk->isUnloading)
@@ -372,17 +388,22 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 if (chunk->timeSpentWaitingForUnload > settings.chunkUnloadTime)
                 {
-                    chunksToUnload.push_back(chunk->chunkPosition);
+                    chunkPositionsToUnload.push_back(chunk->chunkPosition);
                 }
             }
         }
 
-        for (auto chunkToUnload : chunksToUnload)
+        for (auto chunkPositionToUnload : chunkPositionsToUnload)
         {
-            ZoneScopedN("Chunk unload");
+            // Get chunk and wait until it has no pending tasks before unloading
+            auto chunkToUnloadIterator = state.activeChunks.find(chunkPositionToUnload);
+            if (chunkToUnloadIterator != state.activeChunks.end() && chunkToUnloadIterator->second->component->getChunkManagerData().pendingTasks.getPending().empty())
+            {
+                ZoneScopedN("Chunk unload");
 
-            Log::information(std::format("Unloaded chunk at ({}, {})", chunkToUnload.x, chunkToUnload.y));
-            state.activeChunks.erase(chunkToUnload);
+                Log::information(std::format("Unloaded chunk at ({}, {})", chunkPositionToUnload.x, chunkPositionToUnload.y));
+                state.activeChunks.erase(chunkPositionToUnload);
+            }
         }
 
         if (chunksUpdated == 0)
@@ -421,9 +442,14 @@ void VoxelChunkManager::update(const float deltaTime)
                 {
                     ZoneScopedN("Chunk modification task creation - Command buffer creation");
 
+                    auto desiredLod = rand() % 4;
+
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
+                    // commandBuffer.setEnableCpuMipmaps(true);
+                    // commandBuffer.setMaxLod(desiredLod);
+                    // commandBuffer.setActiveLod(desiredLod);
                     commandBuffer.setExistsOnGpu(true);
 
                     submitCommandBuffer(chunk->component, commandBuffer);
@@ -458,7 +484,7 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
     constexpr bool isDebugging = false;
 #endif
 
-    auto size = glm::vec3(chunk->getChunkData().getSize());
+    auto size = glm::vec3(chunk->getChunkData().getSize()) * static_cast<float>(glm::pow(0.5f, chunk->getChunkManagerData().activeLod));
     if (size.x == 0 || size.y == 0 || size.z == 0)
     {
         return false;
@@ -716,30 +742,34 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        if (ImGui::SliderInt("Render distance", &settings.renderDistance, 0, 1))
+        if (ImGui::SliderInt("Load distance", &settings.loadDistance, 0, 3))
         {
             state.isChunkLoadingDirty = true;
         }
 
+        ImGui::SliderFloat("Chunk upload budget", &settings.chunkUploadBudget, 4, 20);
+
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
-        ImGui::Text("%s", std::format("Render distance: {}", settings.renderDistance).c_str());
-        ImGui::Text("%s", std::format("GPU uploaded voxel chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
+        ImGui::Text("%s", std::format("Load distance: {}", settings.loadDistance).c_str());
+        ImGui::Text("%s", std::format("GPU chunk upload budget (full size chunks): {}", settings.chunkUploadBudget).c_str());
+        ImGui::Text("%s", std::format("GPU uploaded chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
         ImGui::Text("%s", std::format("Chunk generation threads: {}", loadingThreadState.threads.size()).c_str());
 
         {
             // Chunk display distance parameters
-            int displayDistance = settings.renderDistance + 1;
+            int displayDistance = settings.loadDistance + 1;
 
             glm::ivec2 displaySize = glm::ivec2(displayDistance * 2 + 1);
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
 
             // Drawing parameters
-            float cellSize = 10;
-            float dotSize = 6;
+            float cellSize = 16;
+            float dotSize = 12;
+            float speckSize = 8;
             float spacing = 2;
 
             ImGuiStyle& style = ImGui::GetStyle();
@@ -757,11 +787,13 @@ void VoxelChunkManager::showDebugMenu()
                 auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
                 auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
                 auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
-                auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
+                auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ffff")));
 
                 auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
                 auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
-                auto visibleDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
+
+                auto defaultSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+                auto visibleSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
 
                 auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
 
@@ -782,6 +814,12 @@ void VoxelChunkManager::showDebugMenu()
                         auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
                         auto dotColor = defaultDotColor;
 
+                        // Speck
+                        auto speckPadding = (cellSize - speckSize) / 2;
+                        auto speckTopLeft = cellTopLeft + glm::vec2(speckPadding);
+                        auto speckBottomRight = cellBottomRight - glm::vec2(speckPadding);
+                        auto speckColor = defaultSpeckColor;
+
                         auto chunkIterator = state.activeChunks.find(chunkPosition);
                         if (chunkIterator != state.activeChunks.end())
                         {
@@ -792,37 +830,51 @@ void VoxelChunkManager::showDebugMenu()
                             {
                                 cellColor = loadingCellColor;
                             }
+                            else if (chunk->component->getChunkManagerData().activeLod != 0)
+                            {
+                                cellColor = loddedCellColor;
+                            }
                             else if (chunk->isUnloading)
                             {
                                 cellColor = unloadingCellColor;
                             }
 
-                            if (chunk->component->getRendererData().isVisible)
-                            {
-                                dotColor = visibleDotColor;
-                            }
-                            else if (chunk->component->getExistsOnGpu())
+                            if (chunk->component->getExistsOnGpu())
                             {
                                 dotColor = uploadedDotColor;
+                            }
+
+                            if (chunk->component->getRendererData().isVisible)
+                            {
+                                speckColor = visibleSpeckColor;
                             }
                         }
 
                         drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
                         drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(speckTopLeft), ImGuiUtility::toImGui(speckBottomRight), speckColor);
                     }
                 }
+                ImGui::EndChild();
+                ImGui::PopStyleColor(2);
+                ImGui::PopStyleVar();
             }
-            ImGui::EndChild();
-            ImGui::PopStyleColor(2);
-            ImGui::PopStyleVar();
         }
     }
 }
 
-void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
 {
-    std::lock_guard lock(modificationThreadState.pendingTasksMutex);
+    std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
-    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer));
+    auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
+    task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());
+
+    auto sharedFuture = task->promise.get_future().share();
+    component->getChunkManagerData().pendingTasks.addPending(sharedFuture);
+
+    modificationThreadState.pendingTasks.emplace(task);
     modificationThreadState.pendingTasksCondition.notify_one();
+
+    return sharedFuture;
 }
