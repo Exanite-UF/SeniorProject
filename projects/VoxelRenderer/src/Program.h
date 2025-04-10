@@ -42,6 +42,8 @@ public:
     float currentRenderFps = 0;
     float averagedRenderDeltaTime = 0;
 
+    float frameTimePerPixel = -1;
+
     Program();
     ~Program() override;
 

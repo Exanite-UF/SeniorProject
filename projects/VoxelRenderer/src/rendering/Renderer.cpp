@@ -496,6 +496,12 @@ void Renderer::startAsynchronousReprojection()
     isSizeDirtyThread = true;
     TextureManager::getInstance().scheduleRemakeBindlessTextureHandles();
 
+    // Remake the bindings
+    GLFWwindow* currentContext = glfwGetCurrentContext();
+    offscreenContext->makeContextCurrent();
+    TextureManager::getInstance().makeBindlessTextureHandles();
+    glfwMakeContextCurrent(currentContext);
+
     offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
 }
 
