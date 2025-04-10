@@ -24,7 +24,7 @@ private:
     // (path, format) -> texture
     bool _areBindlessTexturesEnabled = false;
     std::unordered_set<std::shared_ptr<Texture>> texturesWithoutBindlessHandles;
-    std::unordered_map<std::tuple<std::string_view, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string_view, GLenum>>> textures;
+    std::unordered_map<std::tuple<std::string, GLenum>, std::shared_ptr<Texture>, TupleHasher<std::tuple<std::string, GLenum>>> textures;
 
     static GLenum getOpenGlStorageFormat(TextureType type);
     static int getFormatChannelCount(GLenum storageFormat);
