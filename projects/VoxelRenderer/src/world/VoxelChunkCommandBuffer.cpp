@@ -350,8 +350,13 @@ void VoxelChunkCommandBuffer::clear()
 {
     ZoneScoped;
 
+    commands.clear();
     setSizeCommands.clear();
     setOccupancyCommands.clear();
     setMaterialCommands.clear();
     copyCommands.clear();
+    setExistsOnGpuCommands.clear();
+    setEnableCpuMipmapsCommands.clear();
+    setActiveLodCommands.clear();
+    setMaxLodCommands.clear();
 }
