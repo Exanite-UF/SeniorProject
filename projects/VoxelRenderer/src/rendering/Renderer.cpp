@@ -494,8 +494,9 @@ void Renderer::startAsynchronousReprojection()
 {
     _isRenderingOffscreen = true;
     isSizeDirtyThread = true;
-    offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
     TextureManager::getInstance().scheduleRemakeBindlessTextureHandles();
+
+    offscreenThread = std::thread(&Renderer::offscreenRenderingFunc, this);
 }
 
 void Renderer::stopAsynchronousReprojection()

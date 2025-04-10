@@ -32,6 +32,7 @@
 #include <src/gameobjects/GameObject.h>
 #include <src/graphics/GraphicsUtility.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/graphics/TextureData.h>
 #include <src/graphics/TextureManager.h>
 #include <src/procgen/generators/ExampleWorldGenerator.h>
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
@@ -60,7 +61,6 @@
 #include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
-#include <src/graphics/TextureData.h>
 
 Program::Program()
 {
@@ -142,14 +142,12 @@ void Program::run()
         scene = sceneObject->addComponent<SceneComponent>();
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
-        
-
         auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
         // auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
         scene->setSkybox(skybox);
 
         // Generate static, noise-based placeholder chunks for testing purposes
-        if (true)
+        if (false)
         {
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
@@ -181,7 +179,7 @@ void Program::run()
 
         // Create the renderer
         Renderer renderer(window, offscreenContext);
-        float renderRatio = 1.f;//0.5f; // Used to control the render resolution relative to the window resolution
+        float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
 
         renderer.setRenderResolution(window->size);
         // Render resolution can be set separately from display resolution

@@ -48,6 +48,10 @@ void Texture::makeBindlessHandle()
     {
         bindlessHandle = glGetTextureHandleARB(textureId);
     }
+
     // Make the handle resident on whatever thread is calling this function
-    glMakeTextureHandleResidentARB(bindlessHandle);
+    if (!glIsTextureHandleResidentARB(bindlessHandle))
+    {
+        glMakeTextureHandleResidentARB(bindlessHandle);
+    }
 }
