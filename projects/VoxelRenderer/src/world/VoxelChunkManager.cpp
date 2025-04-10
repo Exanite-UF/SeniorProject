@@ -953,7 +953,7 @@ std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::share
     modificationThreadState.pendingTasks.emplace(task);
     modificationThreadState.pendingTasksCondition.notify_one();
 
-    Log::debug("Submitted voxel chunk command buffer");
+    Log::verbose("Submitted voxel chunk command buffer");
 
     return sharedFuture;
 }
