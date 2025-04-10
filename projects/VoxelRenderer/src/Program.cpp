@@ -27,6 +27,8 @@
 #include <string>
 #include <thread>
 
+#include <fstream>
+
 #include <src/Content.h>
 #include <src/Program.h>
 #include <src/gameobjects/GameObject.h>
@@ -89,6 +91,14 @@ Program::Program()
 
     window->makeContextCurrent();
 
+    //load the recorded performace of the program
+    std::ifstream performanceFile("performanceFile.txt");
+    if(performanceFile.is_open()){
+        performanceFile.read(reinterpret_cast<char*>(&frameTimePerPixel), sizeof(float));
+    }
+    
+
+
     inputManager = std::make_shared<InputManager>(window);
 }
 
@@ -106,6 +116,12 @@ Program::~Program()
         ZoneScopedN("Cleanup singletons");
 
         SingletonManager::destroyAllSingletons();
+    }
+
+    //save the recorded performace of the program
+    std::ofstream performanceFile("performanceFile.txt", std::ios::binary);
+    if(performanceFile.is_open()){
+        performanceFile.write(reinterpret_cast<const char*>(&frameTimePerPixel), sizeof(float));
     }
 
     // Shutdown GLFW
@@ -181,9 +197,11 @@ void Program::run()
 
         // Create the renderer
         Renderer renderer(window, offscreenContext);
-        float renderRatio = 0.5f; // Used to control the render resolution relative to the window resolution
+        
 
-        renderer.setRenderResolution(window->size);
+
+        float renderRatio = 1.f;
+        float targetReprojectionFPS = 18;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
@@ -343,6 +361,18 @@ void Program::run()
         renderer.setScene(scene);
         renderer.startAsynchronousReprojection();
 
+        //Adjust render ratio to meet performance target
+        window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS](Window* window, int a, int b){
+            float pixels = window->size.x * window->size.y;
+            if(frameTimePerPixel > 0){
+                renderRatio = std::sqrt((1.0/targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+            }
+            
+            if(renderRatio > 1){
+                renderRatio = 1;
+            }
+        });
+
         while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
         {
             const char* frameId = "Main Loop";
@@ -367,6 +397,22 @@ void Program::run()
                 renderer.resetRenderCounter();
                 currentRenderFps = rendersThisCycle / fpsCycleTimer;
                 averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
+                
+                {
+                    auto temp = renderer.getRenderResolution();
+                    float newSample = averagedRenderDeltaTime / (temp.x * temp.y);
+                    if(frameTimePerPixel < 0){
+                        frameTimePerPixel = newSample;
+                    }else{
+                        float weight = pow(0.9, rendersThisCycle);
+                        frameTimePerPixel = weight * frameTimePerPixel + (1-weight) * newSample;
+                    }
+                    
+                    float pixels = window->size.x * window->size.y;
+                }
+                
+
+
 
                 // This lets you find the resolution at which 30fps is possible
                 // if(currentRenderFps - 30 > 10){
@@ -539,6 +585,8 @@ void Program::run()
                     useRandomNoise = !useRandomNoise;
                     isRemakeNoiseRequested = true;
                 }
+
+                
 
                 // Scroll
                 if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL) && input->getMouseScroll().y != 0)
@@ -736,6 +784,7 @@ void Program::run()
 
             // Render
             {
+                
                 renderer.setRenderResolution(glm::ivec2(window->size.x * renderRatio, window->size.y * renderRatio));
 
                 renderer.pollCamera(camera);
