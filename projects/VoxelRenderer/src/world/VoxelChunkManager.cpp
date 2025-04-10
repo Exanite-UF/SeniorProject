@@ -483,6 +483,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 return distanceSquaredA < distanceSquaredB;
             });
 
+        if (settings.isChunkLoddingEnabled)
         {
             ZoneScopedN("Chunk LOD generation");
 
@@ -819,6 +820,8 @@ void VoxelChunkManager::showDebugMenu()
         {
             state.isChunkLoadingDirty = true;
         }
+
+        ImGui::Checkbox("Enable chunk LODing", &settings.isChunkLoddingEnabled);
 
         ImGui::SliderFloat("LOD base distance", &settings.lodBaseDistance, 256, 2048);
         ImGui::SliderFloat("LOD distance scaling factor", &settings.lodDistanceScalingFactor, 1, 3);

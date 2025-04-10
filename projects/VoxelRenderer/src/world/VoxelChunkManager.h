@@ -32,6 +32,9 @@ public:
         // False prevents chunks from loading and unloading
         bool isChunkLoadingEnabled = true;
 
+        // False prevents chunks from having their LODs generated and used
+        bool isChunkLoddingEnabled = true;
+
         // Delay before a chunk marked for unloading is actually unloaded
         float chunkUnloadTime = 1;
 
