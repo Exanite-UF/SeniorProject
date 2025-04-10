@@ -82,6 +82,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     }
 
     auto& chunkData = component->getRawChunkData();
+    auto& chunkManagerData = component->getChunkManagerData();
 
     // TODO: Track exact changes for optimized CPU -> GPU copies
     // TODO: Note that change tracking also needs to consider the active LOD
@@ -194,12 +195,12 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
                 auto command = setActiveLodCommands.at(entry.index);
-                Assert::isTrue(component->getChunkManagerData().maxRequestedLod >= command.activeLod, "Requested LOD has not been generated");
+                Assert::isTrue(chunkManagerData.maxRequestedLod >= command.activeLod, "Requested LOD has not been generated");
 
-                auto previousActiveLod = component->getChunkManagerData().activeLod;
-                auto lodToActivate = glm::min(command.activeLod, static_cast<int>(component->getChunkManagerData().lods.size()));
+                auto previousActiveLod = chunkManagerData.activeLod;
+                auto lodToActivate = glm::min(command.activeLod, static_cast<int>(chunkManagerData.lods.size()));
 
-                component->getChunkManagerData().activeLod = lodToActivate;
+                chunkManagerData.activeLod = lodToActivate;
                 component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
 
                 if (previousActiveLod != command.activeLod)
@@ -214,7 +215,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
 
                 auto command = setMaxLodCommands.at(entry.index);
-                auto& lods = component->getChunkManagerData().lods;
+                auto& lods = chunkManagerData.lods;
                 if (lods.size() >= command.maxLod)
                 {
                     // We already have enough LODs
@@ -222,13 +223,13 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     // Trim if needed
                     if (command.trim)
                     {
-                        Assert::isTrue(component->getChunkManagerData().activeLod <= command.maxLod, "LOD is being used, cannot trim");
+                        Assert::isTrue(chunkManagerData.activeLod <= command.maxLod, "LOD is being used, cannot trim");
                         while (lods.size() > command.maxLod)
                         {
                             lods.pop_back();
                         }
 
-                        component->getChunkManagerData().maxRequestedLod = command.maxLod;
+                        chunkManagerData.maxRequestedLod = command.maxLod;
                     }
 
                     // Early exit
@@ -257,7 +258,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 // Track the max requested LOD even if we don't generate that many
                 // This means we "virtually" generate the LOD when the size of the chunk is too small to allow for that many LODs
                 // This is to allow users of the command buffer API to ignore the size of the voxel chunk when setting the max and active LODs
-                component->getChunkManagerData().maxRequestedLod = command.maxLod;
+                chunkManagerData.maxRequestedLod = command.maxLod;
 
                 break;
             }
@@ -293,8 +294,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 // Find active LOD and upload it to the GPU
                 // We don't generate the LOD here
-                auto activeLodIndex = glm::min(component->getChunkManagerData().activeLod, static_cast<int>(component->getChunkManagerData().lods.size()));
-                VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *component->getChunkManagerData().lods.at(activeLodIndex - 1);
+                auto activeLodIndex = glm::min(chunkManagerData.activeLod, static_cast<int>(chunkManagerData.lods.size()));
+                VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *chunkManagerData.lods.at(activeLodIndex - 1);
                 auto lodSize = lod.getSize();
 
                 // Break if size is not 0
