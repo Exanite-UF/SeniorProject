@@ -12,11 +12,11 @@ MaterialManager::MaterialManager()
 {
 
     
-    //auto tempTex = TextureData<float>::makeTextureData(2, 2, 3, GL_RGB);
-    //tempTex->setPixel(0, 0, glm::vec3(1, 0, 0));
-    //tempTex->setPixel(1, 0, glm::vec3(0, 1, 0));
-    //tempTex->setPixel(0, 1, glm::vec3(0, 0, 1));
-    //tempTex->setPixel(1, 1, glm::vec3(1, 1, 1));
+    //auto tempTex = TextureData<float>::makeTextureData(2, 2, GL_RGB16F);
+    //tempTex->setPixel(0, 0, glm::vec3(1, 0, 0) * 10.f);
+    //tempTex->setPixel(1, 0, glm::vec3(0, 1, 0) * 10.f);
+    //tempTex->setPixel(0, 1, glm::vec3(0, 0, 1) * 10.f);
+    //tempTex->setPixel(1, 1, glm::vec3(1, 1, 1) * 10.f);
     
 
     auto tempTex = TextureData<std::uint8_t>::makeTextureData(2, 2, GL_RGB);
