@@ -1,7 +1,5 @@
 #include "TextureManager.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-
 #include <fstream>
 #include <src/Program.h>
 #include <src/utilities/Assert.h>
