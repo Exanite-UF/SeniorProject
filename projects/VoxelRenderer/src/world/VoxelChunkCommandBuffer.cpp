@@ -193,7 +193,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
-                // TODO: Allow active LOD to be greater than available LODs
                 auto command = setActiveLodCommands.at(entry.index);
                 Assert::isTrue(component->getChunkManagerData().maxRequestedLod >= command.activeLod, "Requested LOD has not been generated");
 
@@ -214,10 +213,6 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
 
-                // TODO: Clamp max LOD based on smallest edge, but still set max LOD to the requested value
-                // Goal is to act as if the LOD was generated as long as it was requested
-                // This is to simplify LOD generation and active LOD setting since it allows the user to ignore the chunk size
-                // This is because we handle edge cases related to the chunk size here
                 auto command = setMaxLodCommands.at(entry.index);
                 auto& lods = component->getChunkManagerData().lods;
                 if (lods.size() >= command.maxLod)
@@ -302,14 +297,14 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *component->getChunkManagerData().lods.at(activeLodIndex - 1);
                 auto lodSize = lod.getSize();
 
-                // Only upload if size is not 0
-                if (lodSize.x != 0 && lodSize.y != 0 && lodSize.z != 0)
+                // Break if size is not 0
+                if (lodSize.x == 0 || lodSize.y == 0 || lodSize.z == 0)
                 {
-                    // allocateGpuData is idempotent so we can just call it
-                    component->allocateGpuData(lod.getSize());
-
                     break;
                 }
+
+                // allocateGpuData is idempotent so we can just call it
+                component->allocateGpuData(lod.getSize());
 
                 // We only need shared access because we are modifying a GPU resource
                 // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
