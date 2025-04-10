@@ -24,7 +24,7 @@ public:
 
         // The distance at which chunks begin to be loaded on a separate thread
         int loadDistance = 1;
-        float distancePerLodLevelMultiplier = 2;
+        float distancePerLodLevelMultiplier = 1;
         static constexpr float distancePerLodLevelBase = (Constants::VoxelChunkComponent::chunkSize.x + Constants::VoxelChunkComponent::chunkSize.y + Constants::VoxelChunkComponent::chunkSize.z) / 3;
 
         // ----- Chunks -----
