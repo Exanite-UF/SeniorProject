@@ -193,6 +193,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
+                // TODO: Allow active LOD to be greater than available LODs
                 auto command = setActiveLodCommands.at(entry.index);
                 Assert::isTrue(component->getChunkManagerData().lods.size() >= command.activeLod, "Requested LOD has not been generated");
 
@@ -211,6 +212,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
 
+                // TODO: Clamp max LOD based on smallest edge, but still set max LOD to the requested value
+                // Goal is to act as if the LOD was generated as long as it was requested
+                // This is to simplify LOD generation and active LOD setting since it allows the user to ignore the chunk size
+                // This is because we handle edge cases related to the chunk size here
                 auto command = setMaxLodCommands.at(entry.index);
                 auto& lods = component->getChunkManagerData().lods;
                 if (lods.size() >= command.maxLod)
