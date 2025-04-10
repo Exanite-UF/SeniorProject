@@ -199,7 +199,7 @@ void Program::run()
 
 
         float renderRatio = 1.f;
-        float targetReprojectionFPS = 18;
+        float targetReprojectionFPS = 20;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
@@ -407,7 +407,7 @@ void Program::run()
                     }
                     
                     //The performace is unusable, update the fps
-                    if(currentRenderFps < 10){
+                    if(currentRenderFps < 15){
                         float pixels = window->size.x * window->size.y;
                         if(frameTimePerPixel > 0){
                             renderRatio = std::sqrt((1.0/targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
