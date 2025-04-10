@@ -24,7 +24,8 @@ public:
 
         // The distance at which chunks begin to be loaded on a separate thread
         int loadDistance = 1;
-        float distancePerLodLevel = 1024;
+        float lodBaseDistance = 512;
+        float lodDistanceScalingFactor = 2;
 
         // ----- Chunks -----
 
