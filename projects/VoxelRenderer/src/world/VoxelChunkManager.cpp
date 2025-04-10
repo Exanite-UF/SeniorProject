@@ -505,6 +505,11 @@ void VoxelChunkManager::update(const float deltaTime)
                 int maxLod = 4; // Clamp max lod to 4. Beyond this, we lose too much detail
                 lod = glm::clamp(lod, minLod, maxLod);
 
+                if (settings.lodDistanceScalingFactor <= 1)
+                {
+                    lod = maxLod;
+                }
+
                 if (chunk->getChunkManagerData().desiredLod == lod)
                 {
                     // LOD is already the same as desired OR we already have a pending command buffer submitted
