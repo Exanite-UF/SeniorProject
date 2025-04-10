@@ -497,7 +497,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 // Only the closest 4 can use LOD 0; however, the closest 4 aren't necessarily required to be LOD 0
                 float minLod = i < 4 ? 0 : 1;
-                auto lod = glm::max(minLod, chunkDistanceSquared / distancePerLodLevelSquared);
+                int lod = static_cast<int>(glm::max(minLod, chunkDistanceSquared / distancePerLodLevelSquared));
 
                 if (chunk->getChunkManagerData().desiredLod == lod)
                 {
