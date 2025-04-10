@@ -38,6 +38,7 @@ public:
 
         // Used by LODing system
         int activeLod = 0;
+        int maxRequestedLod = 0; // Tracks what LOD levels have been requested before. See VoxelChunkCommandBuffer::apply()'s SetMaxLod case for more info.
         std::vector<std::shared_ptr<VoxelChunkData>> lods {};
 
         // For caching

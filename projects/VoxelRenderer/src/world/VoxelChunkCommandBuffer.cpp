@@ -195,11 +195,13 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 // TODO: Allow active LOD to be greater than available LODs
                 auto command = setActiveLodCommands.at(entry.index);
-                Assert::isTrue(component->getChunkManagerData().lods.size() >= command.activeLod, "Requested LOD has not been generated");
+                Assert::isTrue(component->getChunkManagerData().maxRequestedLod >= command.activeLod, "Requested LOD has not been generated");
 
                 auto previousActiveLod = component->getChunkManagerData().activeLod;
-                component->getChunkManagerData().activeLod = command.activeLod;
-                component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, command.activeLod)));
+                auto lodToActivate = glm::min(command.activeLod, static_cast<int>(component->getChunkManagerData().lods.size()));
+
+                component->getChunkManagerData().activeLod = lodToActivate;
+                component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
 
                 if (previousActiveLod != command.activeLod)
                 {
@@ -230,6 +232,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                         {
                             lods.pop_back();
                         }
+
+                        component->getChunkManagerData().maxRequestedLod = command.maxLod;
                     }
 
                     // Early exit
@@ -242,11 +246,23 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 for (int i = 0; i < newLodsRequired; ++i)
                 {
                     auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
+                    auto previousLodSize = previousLod.getSize();
+                    if (previousLodSize.x < 2 || previousLodSize.y < 2 || previousLodSize.z < 2)
+                    {
+                        // Previous LOD is too small to make another LOD level
+                        break;
+                    }
+
                     auto newLod = std::make_shared<VoxelChunkData>();
                     lods.push_back(newLod);
 
                     previousLod.copyToLod(*newLod);
                 }
+
+                // Track the max requested LOD even if we don't generate that many
+                // This means we "virtually" generate the LOD when the size of the chunk is too small to allow for that many LODs
+                // This is to allow users of the command buffer API to ignore the size of the voxel chunk when setting the max and active LODs
+                component->getChunkManagerData().maxRequestedLod = command.maxLod;
 
                 break;
             }
@@ -282,7 +298,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 // Find active LOD and upload it to the GPU
                 // We don't generate the LOD here
-                auto activeLodIndex = component->getChunkManagerData().activeLod;
+                auto activeLodIndex = glm::min(component->getChunkManagerData().activeLod, static_cast<int>(component->getChunkManagerData().lods.size()));
                 VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *component->getChunkManagerData().lods.at(activeLodIndex - 1);
 
                 // allocateGpuData is idempotent so we can just call it
