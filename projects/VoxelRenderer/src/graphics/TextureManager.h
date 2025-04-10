@@ -70,14 +70,21 @@ public:
 
     template<class T>
     std::shared_ptr<Texture> loadTexture(std::string_view name, std::shared_ptr<TextureData<T>> data){
+        std::scoped_lock lock(dataMtx);
         // Use cached texture if available
         auto cacheKey = std::make_tuple(std::string(name), data->getInternalFormat());
+        if (textures.contains(cacheKey))
         {
-            std::scoped_lock lock(dataMtx);
-            if (textures.contains(cacheKey))
-            {
+            //If the Texture data is not dirty, then use the cached texture
+            if(!data->isDirty){
                 return textures[cacheKey];
             }
+            //Else, remake the texture
+
+            //First delete the existing texture
+            //Get the texture id of the existing texture
+            GLuint textureID = textures[cacheKey]->getTextureId();
+            glDeleteTextures(1, &textureID);//Delete that texture
         }
 
 
@@ -102,13 +109,26 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Wrap OpenGL handle with the Texture class
-        auto texture = std::make_shared<Texture>(textureId, Unknown, glm::ivec2(data->getWidth(), data->getHeight()), false);
-
+        
+        data->isDirty = false;
         // Insert texture into cache
-        std::scoped_lock lock(dataMtx);
-        textures[cacheKey] = texture;
-        texturesWithoutBindlessHandles.insert(texture);
-
-        return texture;
+        if (textures.contains(cacheKey))
+        {
+            //Since we already have a Texture in the cache, we need to modify the existing Texture
+            //Otherwise we will break the materials that use this Texture
+            auto& texture = textures[cacheKey];
+            texture->textureId = textureId;//Replace the texture id
+            texture->bindlessHandle = 0;
+            texture->size = glm::ivec2(data->getWidth(), data->getHeight());
+            texture->type = Unknown;
+            texture->_isCubemap = false;
+            texturesWithoutBindlessHandles.insert(texture);
+            return texture;
+        }else{
+            auto texture = std::make_shared<Texture>(textureId, Unknown, glm::ivec2(data->getWidth(), data->getHeight()), false);
+            textures[cacheKey] = texture;
+            texturesWithoutBindlessHandles.insert(texture);
+            return texture;
+        }
     }
 };

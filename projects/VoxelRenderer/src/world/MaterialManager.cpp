@@ -125,8 +125,9 @@ MaterialManager::MaterialManager()
             material->emission = glm::vec3(1); // glm::vec3((rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0, (rand() % 1000) / 1000.0);
             material->albedo = material->emission;
             //material->emission *= 0.5;
-            //material->emissionTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/10464.jpg", TextureType::ColorOnly);
+            //material->emissionTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/10464.jpg", TextureType::ColorOnly);            
             material->emissionTexture = TextureManager::getInstance().loadTexture("tempTexture", tempTex);
+
             // material->emission = glm::vec3(1, 1, 1);
             // material->emission *= glm::vec3(0.1, 0.1, 0.1);
 

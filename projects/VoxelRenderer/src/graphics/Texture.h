@@ -19,6 +19,8 @@ private:
 
     bool _isCubemap;
 
+    friend class TextureManager;
+
 public:
     explicit Texture(GLuint textureId, TextureType type, glm::ivec2 size, bool isCubemap);
 

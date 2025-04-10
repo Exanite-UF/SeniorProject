@@ -12,6 +12,8 @@
 
 #include <glm/glm.hpp>
 
+
+    
 extern std::unordered_map<GLenum, int> internalFormatToChannels;
 
 template<typename T>
@@ -20,6 +22,8 @@ private:
     static_assert(std::is_arithmetic<T>::value, "TextureData<T>: T must be a numeric type");
     static_assert(!std::is_same<T, double>::value, "TextureData<T>: T must not be a double");
 
+
+    bool isDirty = true;
     std::vector<T> pixelData;
 
     int width = -1;
@@ -29,6 +33,7 @@ private:
 
     TextureData(int width, int height, GLenum internalFormat);
 
+    friend class TextureManager;
 public:
 
     static std::shared_ptr<TextureData<T>> makeTextureData(int width, int height, GLenum internalFormat);
@@ -183,6 +188,8 @@ inline void TextureData<T>::setPixel(int x, int y, T r, T g, T b, T a)
     for(int i = 0; i < channels; i++){
         pixelData[index + i] = data[i];
     }
+
+    isDirty = true;
 }
 
 template <typename T>
@@ -194,7 +201,7 @@ inline std::vector<T> TextureData<T>::getPixel(int x, int y)
 
     std::vector<T> output;
     output.reserve(channels);
-    
+
     int index = channels * (x + width * y);
     for(int i = 0; i < channels; i++){
         output.push_back(pixelData[index + i]);
