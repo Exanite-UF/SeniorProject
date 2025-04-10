@@ -20,7 +20,10 @@ template<typename T>
 class TextureData : public NonCopyable, public std::enable_shared_from_this<TextureData<T>> {
 private:
     static_assert(std::is_arithmetic<T>::value, "TextureData<T>: T must be a numeric type");
-    static_assert(!std::is_same<T, double>::value, "TextureData<T>: T must not be a double");
+    static_assert(!std::is_same<T, double>::value && 
+        !std::is_same<T, std::int64_t>::value &&
+        !std::is_same<T, std::uint64_t>::value, 
+        "TextureData<T>: T must not be a double or 64-bit integer type");
 
 
     bool isDirty = true;
