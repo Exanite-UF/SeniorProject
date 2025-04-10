@@ -488,14 +488,14 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                                 // Check if voxel itself is air
                                 if (!getVoxelOccupancy(selfPosition))
                                 {
-                                    airMask |= (z << 2) | (y << 1) | (x << 0);
+                                    airMask |= 1 << ((z << 2) | (y << 1) | (x << 0));
 
-                                    return;
+                                    continue;
                                 }
 
                                 // Check if voxel is air exposed
                                 // We only check the 3 outer directions
-                                // If the voxel is outside the chunk, then it is treated as non-air
+                                // If the voxel checked is outside the chunk, then it is treated as non-air
                                 auto outerPositionX = selfPosition + glm::ivec3(x * 2 - 1, 0, 0);
                                 bool isAirX = VoxelChunkUtility::isValidPosition(outerPositionX, data.size) && !getVoxelOccupancy(outerPositionX);
 
@@ -507,7 +507,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
 
                                 if (isAirX || isAirY || isAirZ)
                                 {
-                                    airExposedMask |= (z << 2) | (y << 1) | (x << 0);
+                                    airExposedMask |= 1 << ((z << 2) | (y << 1) | (x << 0));
                                 }
                             }
                         }
@@ -527,12 +527,12 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                     uint8_t matchedCount = 0;
                     while (true)
                     {
-                        if (validMask & (1 << currentBitI) != 0)
+                        if ((validMask & (1 << currentBitI)) != 0)
                         {
                             matchedCount++;
                         }
 
-                        if (matchedCount == index)
+                        if (matchedCount > index)
                         {
                             // We found our material
                             // Set it as the result and exit

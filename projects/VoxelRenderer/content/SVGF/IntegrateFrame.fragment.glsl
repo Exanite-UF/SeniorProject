@@ -25,10 +25,10 @@ layout(location = 4) out vec4 out_clip_position; // clipPositionTexture
 vec4 safeVec4(vec4 v, vec4 fallback)
 {
     return vec4(
-        isnan(v.r) ? fallback.r : v.r,
-        isnan(v.g) ? fallback.g : v.g,
-        isnan(v.b) ? fallback.b : v.b,
-        isnan(v.a) ? fallback.a : v.a);
+        isnan(v.r) || isinf(v.r) ? fallback.r : v.r,
+        isnan(v.g) || isinf(v.g) ? fallback.g : v.g,
+        isnan(v.b) || isinf(v.b) ? fallback.b : v.b,
+        isnan(v.a) || isinf(v.a) ? fallback.a : v.a);
 }
 
 vec3 qtransform(vec4 q, vec3 v)
@@ -51,6 +51,7 @@ void main()
 
     // Alpha is how much of the old data to carry into the rolling average
     float alpha = (misc.x < 0) ? 0 : 0.8; // If the material has a negative roughness then it is part of the skybox
+
     if (oldColor.w == 0)
     { // If the old color value failed to sample, then do not use the old data
         alpha = 0;

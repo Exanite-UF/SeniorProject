@@ -22,10 +22,10 @@ layout(location = 4) out vec4 out_position; // positionHistoryTexture
 vec4 safeVec4(vec4 v, vec4 fallback)
 {
     return vec4(
-        isnan(v.r) ? fallback.r : v.r,
-        isnan(v.g) ? fallback.g : v.g,
-        isnan(v.b) ? fallback.b : v.b,
-        isnan(v.a) ? fallback.a : v.a);
+        isnan(v.r) || isinf(v.r) ? fallback.r : v.r,
+        isnan(v.g) || isinf(v.g) ? fallback.g : v.g,
+        isnan(v.b) || isinf(v.b) ? fallback.b : v.b,
+        isnan(v.a) || isinf(v.a) ? fallback.a : v.a);
 }
 
 vec3 hueToRGB(float hue)
