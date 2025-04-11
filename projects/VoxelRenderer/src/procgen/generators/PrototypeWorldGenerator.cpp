@@ -52,8 +52,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
         siv::BasicPerlinNoise<float> perlinNoise(seed);
 
-        // TODO: Decorate with grass. Data dependency: terrain z-value, grass spawns on surface. Extra computation. 
-        // Intended solution: store surface to texture. Modify update texture. Caching step. 
+        // TODO: Decorate with grass. Data dependency: terrain z-value, grass spawns on surface. Extra computation.
+        // Intended solution: store surface to texture. Modify update texture. Caching step.
         glm::vec2 offset = chunkSize * chunkPosition;
         for (int x = 0; x < data.getSize().x; ++x)
         {
@@ -91,10 +91,10 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
         {
             ZoneScopedN("Generate trees");
-            
+
             // Decoration: Create trees by searching points. 20 trees vs 512^3 checks + caching
             // TODO: Find precise lock locations
-            if(!chunkHierarchyManager.isChunkGenerated(chunkPosition, 0))
+            if (!chunkHierarchyManager.isChunkGenerated(chunkPosition, 0))
             {
                 // GridPointSynthesizer pointSynthesizer(seed);
                 PoissonDiskPointSynthesizer pointSynthesizer(seed);
@@ -112,7 +112,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                     // VectorUtility::lexicographicSort(treeLocations);
                 }
 
-                for(int i = 0; i < treeLocations.size(); i++)
+                for (int i = 0; i < treeLocations.size(); i++)
                 {
                     glm::ivec2 originVoxel(treeLocations[i].x, treeLocations[i].y);
                     TreeStructure tree = createRandomTreeInstance(data, chunkPosition, originVoxel, seed, oakLogMaterial, oakLeafMaterial);
@@ -126,25 +126,25 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         {
             ZoneScopedN("Chunk Hierarchy Draw Structures");
 
-            // Chunk hierarchy manager is a 'cache'. 
+            // Chunk hierarchy manager is a 'cache'.
             auto structures = chunkHierarchyManager.getStructuresFromChunk(chunkPosition);
 
-            // Raycast down, place on surface. 
+            // Raycast down, place on surface.
             for (auto& structure : structures)
             {
                 const glm::ivec2& originXY = structure->structure.getOriginVoxel();
 
                 int finalZ = 1;
-                for(int z = data.getSize().z - 1; z > 0; z--)
+                for (int z = data.getSize().z - 1; z > 0; z--)
                 {
                     glm::ivec3 position(originXY.x, originXY.y, z);
-                    if(data.getVoxelOccupancy(position))
+                    if (data.getVoxelOccupancy(position))
                     {
                         finalZ = z;
                         break;
                     }
                 }
-                
+
                 // TODO: Raycast here
                 structure->structure.generate(data, finalZ);
             }

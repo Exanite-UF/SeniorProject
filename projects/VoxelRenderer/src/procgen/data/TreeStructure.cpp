@@ -33,7 +33,7 @@ void TreeStructure::generate(VoxelChunkData& chunkData, int z)
 {
     ZoneScoped;
 
-    glm::ivec3 transformPosition = { originVoxel.x, originVoxel.y, z};
+    glm::ivec3 transformPosition = { originVoxel.x, originVoxel.y, z };
 
     // Tree Trunk
     generateRectangle(

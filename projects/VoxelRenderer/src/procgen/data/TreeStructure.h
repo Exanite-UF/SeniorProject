@@ -19,7 +19,7 @@ private:
 
     int maxDistanceFromOrigin;
 
-    //TODO: Fix vec3 to ivec3
+    // TODO: Fix vec3 to ivec3
     void generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height);
     void generateAbsPyramid(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int extentAboveZ, int extentBelowZ, float probabilityToFill);
 

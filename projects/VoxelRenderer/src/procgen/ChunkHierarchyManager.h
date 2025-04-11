@@ -11,7 +11,6 @@
 #include <unordered_set>
 #include <vector>
 
-
 #include <src/procgen/data/TreeStructure.h>
 #include <src/world/VoxelChunkData.h>
 
@@ -46,9 +45,9 @@ private:
         {
             std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>> level;
             levels.push_back(level);
-			
-			std::unordered_map<glm::ivec2, bool> isLevelGenerated;
-			isGenerated.push_back(isLevelGenerated);
+
+            std::unordered_map<glm::ivec2, bool> isLevelGenerated;
+            isGenerated.push_back(isLevelGenerated);
         }
     }
 
@@ -57,36 +56,35 @@ public:
 
     bool isChunkGenerated(glm::ivec2 chunkPosition, int level)
     {
-		if(level < 0 || level >= isGenerated.size()) 
-		{
+        if (level < 0 || level >= isGenerated.size())
+        {
             throw std::runtime_error("Chunk level does not exist");
-			return false; 
-		}
+            return false;
+        }
 
-		auto& isLevelGenerated = isGenerated[level];
-		auto isChunkGenerated = isLevelGenerated.find(chunkPosition);
+        auto& isLevelGenerated = isGenerated[level];
+        auto isChunkGenerated = isLevelGenerated.find(chunkPosition);
 
-		if(isChunkGenerated != isLevelGenerated.end())
-		{
-			return isChunkGenerated->second;
-		} 
-		else 
-		{
-			return false;
-		}
+        if (isChunkGenerated != isLevelGenerated.end())
+        {
+            return isChunkGenerated->second;
+        }
+        else
+        {
+            return false;
+        }
     }
 
-	
     void setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag)
     {
-		if(level < 0 || level >= isGenerated.size()) 
-		{
+        if (level < 0 || level >= isGenerated.size())
+        {
             throw std::runtime_error("Chunk level does not exist");
-			return;
-		}
+            return;
+        }
 
-		auto& isLevelGenerated = isGenerated[level];
-		isLevelGenerated[chunkPosition] = flag;
+        auto& isLevelGenerated = isGenerated[level];
+        isLevelGenerated[chunkPosition] = flag;
     }
 
     void addStructure(glm::ivec2 chunkPosition, VoxelChunkData& chunkData, glm::ivec2 structureOrigin, TreeStructure structure)
@@ -129,7 +127,7 @@ public:
             for (int j = 0; j < boundingBoxCorner.size(); j++)
             {
                 glm::vec2& corner = boundingBoxCorner[j];
-				glm::ivec2 cornerOffset = glm::ivec2(structureRadius * corner.x, structureRadius * corner.y);
+                glm::ivec2 cornerOffset = glm::ivec2(structureRadius * corner.x, structureRadius * corner.y);
                 glm::ivec2 cornerVoxel = structureOrigin + cornerOffset;
                 // Log::verbose(std::format("Corner Voxel:({:.2f}, {:.2f})", cornerVoxel.x, cornerVoxel.y));
 
