@@ -37,10 +37,12 @@ private:
     
 
     // Replace surface with dirt
-    int dirtDepth = 5;
+    int dirtDepth = 3;
 
     // Replace surface with grass
     int grassDepth = 1;
+
+    int noMoreGrassDepth = 10;
 
     // Trees
     int voxelsPerMeter = 8;

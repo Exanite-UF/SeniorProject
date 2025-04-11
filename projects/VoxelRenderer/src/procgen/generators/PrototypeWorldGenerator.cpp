@@ -330,18 +330,25 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     }
 
                     //Now we set the material of the voxels based on the description above
-                    if(depth <= 1 && maxThick <= 10){
-                        data.setVoxelMaterial({ x, y, z }, grassMaterial);
-                    }else if(depth <= 3 && maxThick <= 10) {
-                        data.setVoxelMaterial({ x, y, z }, dirtMaterial);
-                    }else{
-                        //This is stone, I put lights in it for the caves
-                        if((rand() % 1000) / 1000.0 < 0.1){
-                            data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5));//Candy lights!
-                        }else{
-                            data.setVoxelMaterial({ x, y, z }, plasterMaterial);//I use a plaster material because stone is very dark
+                    if(maxThick <= noMoreGrassDepth){
+                        if(depth <= grassDepth){
+                            data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                            continue;
+                        }else if(depth <= dirtDepth) {
+                            data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                            continue;
                         }
                     }
+
+                    //This is stone, I put lights in it for the caves
+                    if((rand() % 1000) / 1000.0 < 0.1){
+                        data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5));//Candy lights!
+                        continue;
+                    }else{
+                        data.setVoxelMaterial({ x, y, z }, plasterMaterial);//I use a plaster material because stone is very dark
+                        continue;
+                    }
+
                 }else{
                     lastAir = z;//track the last height at which we saw air
                     tempThick = 0;//Reset the consecutive non-air counter
