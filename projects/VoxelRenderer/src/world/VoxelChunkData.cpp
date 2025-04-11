@@ -326,7 +326,7 @@ void VoxelChunkData::copyFrom(VoxelChunk& other)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void VoxelChunkData::copyTo(VoxelChunk& other)
+void VoxelChunkData::copyTo(VoxelChunk& other) const
 {
     ZoneScoped;
 
@@ -350,7 +350,7 @@ void VoxelChunkData::copyTo(VoxelChunk& other)
             int offset = i * uploadChunkSize;
 
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.occupancyMap.data()) + offset);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), const_cast<uint8_t*>(data.occupancyMap.data()) + offset);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
             {
@@ -378,7 +378,7 @@ void VoxelChunkData::copyTo(VoxelChunk& other)
             int offset = i * uploadChunkSize;
 
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getMaterialMap().bufferId);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<uint8_t*>(data.materialMap.data()) + offset);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, std::min(uploadChunkSize, remainingByteCount), reinterpret_cast<const uint8_t*>(data.materialMap.data()) + offset);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
             {
