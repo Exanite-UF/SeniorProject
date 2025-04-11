@@ -333,10 +333,10 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
                     //Now we set the material of the voxels based on the description above
 
-                    if(z == baseHeight){
-                        data.setVoxelMaterial({ x, y, z }, stoneMaterial);
-                        continue;
-                    }
+                    //if(z == baseHeight){
+                    //    data.setVoxelMaterial({ x, y, z }, stoneMaterial);
+                    //    continue;
+                    //}
 
                     //Check if grass is enabled
                     if(maxThick <= noMoreGrassDepth){
