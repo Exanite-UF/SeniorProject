@@ -19,9 +19,7 @@ private:
     // Stone Terrain
     int octaves = 3;
     float persistence = 0.5;
-    int baseHeight = 100;//The base height in voxels
     
-    int terrainMaxAmplitude = 200;//Terrain amplitude in voxels
 
     int stride = 8;//This is how sparsely it samples perlin noise
 
@@ -30,6 +28,8 @@ private:
     float verticalStride = 1;//Reduces noise checks by resuing occupancy result vertically
 
     //These could all change continuously with space
+    int terrainMaxAmplitude = 200;//Terrain amplitude in voxels
+    int baseHeight = 100;//The base height in voxels
     float surfaceProbability = 0.6;//Probablility of a voxel at the surface
     float airProbability = 0.2;//The probablity of a voxel at the maximum height
     float surfaceToBottomFalloffRate = 1;//Fall off from the bottom (higher numbers mean deeper caves)
