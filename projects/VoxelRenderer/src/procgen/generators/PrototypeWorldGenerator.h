@@ -16,9 +16,15 @@ private:
     // Stone Terrain
     int octaves = 3;
     float persistence = 0.5;
-    int baseHeightBlocks = 20;
+    int baseHeight = 100;//The base height in voxels
     float frequency = 0.002;
-    int terrainMaxAmplitudeBlocks = 20;
+    int terrainMaxAmplitude = 200;//Terrain amplitude in voxels
+
+    float frequency3D = 0.01;
+    float surfaceProbability = 0.6;//Probablility of occupancy at the surface
+    float airProbability = 0.1;//Highest probability of occupancy above the surface
+    float surfaceToBottomFalloffRate = 1;//Fall off from the bottom (higher numbers mean deeper caves)
+    float verticalStride = 1;//Reduces noise checks by resuing occupancy result vertically
 
     // Replace surface with dirt
     int dirtDepth = 5;
@@ -40,6 +46,10 @@ private:
     void generateData(VoxelChunkData& data) override;
 
     int randomBetween(int min, int max);
+
+
+    void generate3DSplit(VoxelChunkData& data, glm::ivec4 pos, glm::ivec3 size);
+    void generate3DEnd(VoxelChunkData& data, glm::ivec3 pos);
 
 public:
     explicit PrototypeWorldGenerator(const std::shared_ptr<TextureDataSynthesizer>& textureDataSynthesizer);

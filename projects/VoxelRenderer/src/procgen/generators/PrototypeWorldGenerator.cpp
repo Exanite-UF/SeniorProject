@@ -1,4 +1,7 @@
+#include "PrototypeWorldGenerator.h"
+
 #include <memory>
+#include <algorithm>
 
 #include <PerlinNoise/PerlinNoise.hpp>
 
@@ -20,6 +23,8 @@
 #include <src/world/VoxelChunkData.h>
 #include <tracy/Tracy.hpp>
 
+#include <glm/glm.hpp>
+
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
     auto& chunkHierarchyManager = ChunkHierarchyManager::getInstance();
@@ -30,6 +35,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     std::shared_ptr<Material> grassMaterial;
     std::shared_ptr<Material> oakLogMaterial;
     std::shared_ptr<Material> oakLeafMaterial;
+    std::shared_ptr<Material> plasterMaterial;
+    std::vector<std::shared_ptr<Material>> lights;
 
     {
         ZoneScopedN("Get Materials");
@@ -38,6 +45,19 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
         WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
         WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
+
+        WorldUtility::tryGetMaterial("plaster", materialManager, plasterMaterial);
+
+        lights.emplace_back();
+        WorldUtility::tryGetMaterial("white_light", materialManager, lights.back());
+        lights.emplace_back();
+        WorldUtility::tryGetMaterial("blue_light", materialManager, lights.back());
+        lights.emplace_back();
+        WorldUtility::tryGetMaterial("red_light", materialManager, lights.back());
+        lights.emplace_back();
+        WorldUtility::tryGetMaterial("yellow_light", materialManager, lights.back());
+        lights.emplace_back();
+        WorldUtility::tryGetMaterial("green_light", materialManager, lights.back());
     }
 
     // Fill texture data with random noise, each block evaluated once
@@ -47,49 +67,164 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     float stoneFrequency = 0.01;
     // float noise = simplexNoise.GetNoise(localX * stoneFrequency, localY * stoneFrequency, localZ * stoneFrequency);
 
+    //parameters that control how fast the density falls off below the surface
+    float a = 1 - std::exp(-surfaceToBottomFalloffRate);
+    float b = -surfaceProbability / (surfaceProbability - 1) * a;
+    float c = std::log(surfaceProbability * (1 - a));
+
+    //Used to calcualted probability above the surface
+    float d = std::log(airProbability / surfaceProbability);
+
     {
         ZoneScopedN("Generate terrain");
 
         siv::BasicPerlinNoise<float> perlinNoise(seed);
+        siv::BasicPerlinNoise<float> perlinNoise2(seed + 1);
 
         // TODO: Decorate with grass. Data dependency: terrain z-value, grass spawns on surface. Extra computation.
         // Intended solution: store surface to texture. Modify update texture. Caching step.
         glm::vec2 offset = chunkSize * chunkPosition;
+
+        //generate3DSplit(data, glm::ivec4(0), data.getSize());
+
+
+        /*
+        for(int ix = 0; ix < data.getSize().x / stride; ix++){
+            for(int iy = 0; iy < data.getSize().y / stride; iy++){
+                for(int iz = 0; iz < data.getSize().z / stride; iz++){
+
+                    float random3D1 = perlinNoise.octave3D_01((stride * ix + offset.x) * frequency3D, (stride * iy + offset.y) * frequency3D, (stride * iz) * frequency3D, octaves, persistence);
+
+
+                    for(int jx = 0; jx < stride; jx++){
+                        int x = stride * ix + jx;
+                        for(int jy = 0; jy < stride; jy++){
+                            int y = stride * iy + jy;
+                            float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
+                            float height = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
+                   
+                            for(int jz = 0; jz < stride; jz++){
+                                int z = stride * iz + jz;
+
+                                float p = std::min(0.8f, std::exp(-4 * (float)(z - height) / height));
+
+                                if(random3D1 < p + 0.25){
+    
+                                    float random3D2 = perlinNoise.octave3D_01((x + offset.x) * frequency3D, (y + offset.y) * frequency3D, (z) * frequency3D, octaves, persistence);
+                                    if(random3D2 < p){
+                                        data.setVoxelOccupancy({ x, y, z }, true);
+
+                                        
+                                    }
+                                    
+                                    
+                                }
+                                
+                            }
+                        }
+                    }
+
+
+
+                }
+            }
+        }
+
+        */
+
+        for(int x = 0; x < data.getSize().x; x++){
+            for(int y = 0; y < data.getSize().y; y++){
+                float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
+                float perlinNoiseSample2 = perlinNoise2.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
+                float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
+                float surfaceHeight = baseHeight + perlinNoiseSample * perlinNoiseSample2 * terrainMaxAmplitude;
+
+
+                for(int z = std::floor((std::min(data.getSize().z - 1, (int)maxHeight)) / verticalStride) * verticalStride; z >= 0; z -= verticalStride){
+
+                    float random3D = perlinNoise.octave3D_01((x + offset.x) * frequency3D, (y + offset.y) * frequency3D, (z) * frequency3D, octaves, persistence);
+
+
+                    float p = std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));
+                    if(surfaceProbability < 1){
+                        p *= (std::exp(c * z / surfaceHeight) + b) / (1 + b);
+                    }
+
+                    if(random3D < p){
+                        for(int i = 0; i < verticalStride; i++){
+                            data.setVoxelOccupancy({ x, y, z + i }, true);
+                        }
+                    }
+                }
+            }
+        }
+        
+
         for (int x = 0; x < data.getSize().x; ++x)
         {
             for (int y = 0; y < data.getSize().y; ++y)
             {
+                int lastAir = data.getSize().z;
+                int maxThick = 0;
+                int tempThick = 0;
+                for(int z = data.getSize().z - 1; z >= 0; z--){
+                    int depth = lastAir - z;
+
+                    bool isUnderground = data.getVoxelOccupancy({ x, y, z });
+
+                    if(isUnderground){
+                        tempThick++;
+                        if(tempThick > maxThick){
+                            maxThick = tempThick;
+                        }
+                        if(depth <= 3 && maxThick <= 10){
+                            data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                        }else{
+                            if((rand() % 1000) / 1000.0 < 0.25){
+                                data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5));
+                            }else{
+                                data.setVoxelMaterial({ x, y, z }, plasterMaterial);
+                            }
+                        }
+                    }else{
+                        lastAir = z;
+                        tempThick = 0;
+                    }
+                    
+                }
+
                 // Stone Terrain, retain same shape as using voxels of blockLength 1
-                float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
-                int offsetVoxels = (int)(baseHeightBlocks + (perlinNoiseSample * terrainMaxAmplitudeBlocks));
-                int heightVoxels = glm::min(data.getSize().z, offsetVoxels);
-
-                for (int z = 0; z < heightVoxels; ++z)
-                {
-                    data.setVoxelOccupancy({ x, y, z }, true);
-                    data.setVoxelMaterial({ x, y, z }, stoneMaterial);
-                }
-
-                // Replace surface with grass
-                int lastHeightBlocks = heightVoxels - 1;
-                for (int z = lastHeightBlocks; z >= lastHeightBlocks - grassDepth && z >= 0; --z)
-                {
-                    data.setVoxelOccupancy({ x, y, z }, true);
-                    data.setVoxelMaterial({ x, y, z }, grassMaterial);
-                }
-                lastHeightBlocks -= grassDepth;
-
-                // Replace surface with dirt
-                for (int z = lastHeightBlocks; z >= lastHeightBlocks - dirtDepth && z >= 0; --z)
-                {
-                    data.setVoxelOccupancy({ x, y, z }, true);
-                    data.setVoxelMaterial({ x, y, z }, dirtMaterial);
-                }
-                lastHeightBlocks -= dirtDepth;
+                //float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
+                //int offsetVoxels = (int)(baseHeight + (perlinNoiseSample * terrainMaxAmplitude));
+                //
+                //int heightVoxels = glm::min(data.getSize().z, offsetVoxels);
+////
+                //for (int z = 0; z < heightVoxels; ++z)
+                //{
+                //    data.setVoxelOccupancy({ x, y, z }, true);
+                //    data.setVoxelMaterial({ x, y, z }, stoneMaterial);
+                //}
+////
+                //// Replace surface with grass
+                //int lastHeightBlocks = heightVoxels - 1;
+                //for (int z = lastHeightBlocks; z >= lastHeightBlocks - grassDepth && z >= 0; --z)
+                //{
+                //    data.setVoxelOccupancy({ x, y, z }, true);
+                //    data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                //}
+                //lastHeightBlocks -= grassDepth;
+////
+                //// Replace surface with dirt
+                //for (int z = lastHeightBlocks; z >= lastHeightBlocks - dirtDepth && z >= 0; --z)
+                //{
+                //    data.setVoxelOccupancy({ x, y, z }, true);
+                //    data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                //}
+                //lastHeightBlocks -= dirtDepth;
             }
         }
 
-        {
+        if(false){
             ZoneScopedN("Generate trees");
 
             std::lock_guard lock(chunkHierarchyManager.mutex);
@@ -125,7 +260,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             }
         }
 
-        {
+        if(false){
             ZoneScopedN("Chunk Hierarchy Draw Structures");
 
             std::lock_guard lock(chunkHierarchyManager.mutex);
@@ -161,6 +296,35 @@ int PrototypeWorldGenerator::randomBetween(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
+void PrototypeWorldGenerator::generate3DSplit(VoxelChunkData& data, glm::ivec4 pos, glm::ivec3 size)
+{
+    if((1 << pos.w) < std::min({size.x, size.y, size.z})){
+        //Not ready yet
+        for(int x = 0; x < 2; x++){
+            for(int y = 0; y < 2; y++){
+                for(int z = 0; z < 2; z++){
+                    if((rand() % 1000) / 1000.0 < 0.8){
+                        generate3DSplit(data, glm::vec4(2 * pos.x + x, 2 * pos.y + y, 2 * pos.z + z, pos.w + 1), size);
+                    }
+                }
+            }
+        }
+    }else{
+        glm::ivec3 finalPos = glm::ivec3(pos.x, pos.y, pos.z);
+        if(glm::all(glm::lessThan(finalPos, size)) && glm::all(glm::greaterThanEqual(finalPos, glm::ivec3(0)))){
+            generate3DEnd(data, finalPos);
+        }
+    }
+}
+
+void PrototypeWorldGenerator::generate3DEnd(VoxelChunkData & data, glm::ivec3 pos)
+{
+    if((rand() % 1000) / 1000.0 < 0.8){
+        data.setVoxelOccupancy(pos, true);
+        data.setVoxelMaterial(pos, MaterialManager::getInstance().getMaterialByKey("plaster"));
+    }
+}
+
 TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::ivec2 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
 {
     std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
@@ -191,11 +355,11 @@ void PrototypeWorldGenerator::showDebugMenu()
         {
             if (ImGui::BeginMenu("Stone Terrain"))
             {
-                ImGui::SliderInt("Base Height", &baseHeightBlocks, 0, chunkSize.z);
+                ImGui::SliderInt("Base Height", &baseHeight, 0, chunkSize.z);
                 ImGui::SliderInt("Octaves", &octaves, 1, 5);
                 ImGui::SliderFloat("Persistence", &persistence, 0, 1);
                 ImGui::SliderFloat("Frequency", &frequency, 0, 1);
-                ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitudeBlocks, 0, chunkSize.z);
+                ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitude, 0, chunkSize.z);
 
                 ImGui::EndMenu();
             }

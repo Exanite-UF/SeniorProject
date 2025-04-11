@@ -198,7 +198,7 @@ void Program::run()
         // Create the renderer
         Renderer renderer(window, offscreenContext);
 
-        float renderRatio = 1.f;
+        float renderRatio = 0.5f;
         float targetReprojectionFPS = 20;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
