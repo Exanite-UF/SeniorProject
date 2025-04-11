@@ -2,9 +2,12 @@
 
 #include <src/windowing/Window.h>
 
-Window::Window(GlfwContext* shareWith)
-    : GlfwContext(true, shareWith)
+Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enableImGui, bool isMainWindow)
+    : GlfwContext(contextName, true, shareWith)
 {
+    this->enableImGui = enableImGui;
+    this->isMainWindow = isMainWindow;
+
     // Register GLFW callbacks
     registerGlfwCallbacks();
 
@@ -19,35 +22,56 @@ Window::Window(GlfwContext* shareWith)
         glfwSetInputMode(glfwWindowHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
 
-    glfwSwapInterval(1); // Enable vsync
+    // Enable vsync
+    glfwSwapInterval(1);
 
-    // Init IMGUI
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-    ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
-    ImGui_ImplOpenGL3_Init();
+    if (enableImGui)
+    {
+        // Init IMGUI
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+        ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
+        ImGui_ImplOpenGL3_Init();
+    }
+
+    // Add callbacks
+    windowSizeEvent.subscribePermanently([](Window* window, int width, int height)
+        {
+            glViewport(0, 0, width, height); // Adjusts the render target size for the window (ie. the render will resize to take up the full window)
+        });
 }
 
 Window::~Window()
 {
-    // Shutdown IMGUI
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    if (enableImGui)
+    {
+        // Shutdown IMGUI
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
 }
 
 void Window::update()
 {
-    // Update IMGUI
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    if (enableImGui)
+    {
+        // Update IMGUI
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
 
-    glfwPollEvents();
+    if (isMainWindow)
+    {
+        // We can only poll events on the main thread
+        glfwPollEvents();
+    }
+
     glfwGetWindowSize(glfwWindowHandle, &size.x, &size.y);
 
     windowSizeEvent.flush();
@@ -60,8 +84,11 @@ void Window::update()
 
 void Window::present()
 {
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (enableImGui)
+    {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 
     glfwSwapBuffers(glfwWindowHandle);
 }
@@ -78,8 +105,6 @@ void Window::onWindowSize(GLFWwindow* window, int width, int height)
     {
         return;
     }
-
-    glViewport(0, 0, width, height); // Adjusts the render target size for the window (ie. the render will resize to take up the full window)
 
     self->windowSizeEvent.raise(self, width, height);
 }

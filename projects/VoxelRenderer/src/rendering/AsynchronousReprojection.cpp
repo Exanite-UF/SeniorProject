@@ -66,8 +66,8 @@ void AsyncReprojectionRenderer::generateMesh(const glm::ivec2& size)
 
 AsyncReprojectionRenderer::AsyncReprojectionRenderer()
 {
-    renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader);
-    bypassProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::bypassReprojectionFragmentShader);
+    renderProgram = ShaderManager::getInstance().getGraphicsProgram(Content::renderReprojectionVertexShader, Content::renderReprojectionFragmentShader)->programId;
+    bypassProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::bypassReprojectionFragmentShader)->programId;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);

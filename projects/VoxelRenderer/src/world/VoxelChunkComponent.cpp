@@ -1,7 +1,6 @@
 #include "VoxelChunkComponent.h"
 
 #include <src/Constants.h>
-#include <src/utilities/MeasureElapsedTimeScope.h>
 #include <tracy/Tracy.hpp>
 
 VoxelChunkComponent::VoxelChunkComponent()
@@ -15,7 +14,6 @@ VoxelChunkComponent::VoxelChunkComponent(const bool shouldGeneratePlaceholderDat
 
     if (shouldGeneratePlaceholderData)
     {
-        existsOnGpu = true;
         chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, shouldGeneratePlaceholderData);
         chunkData.copyFrom(*chunk.value());
     }
@@ -46,39 +44,39 @@ VoxelChunkComponent::RendererData& VoxelChunkComponent::getRendererData()
     return rendererData;
 }
 
-bool VoxelChunkComponent::getExistsOnGpu() const
+VoxelChunkComponent::ChunkManagerData& VoxelChunkComponent::getChunkManagerData()
 {
-    return existsOnGpu;
+    return modificationData;
 }
 
-void VoxelChunkComponent::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
+bool VoxelChunkComponent::getExistsOnGpu() const
+{
+    return chunk.has_value();
+}
+
+void VoxelChunkComponent::allocateGpuData(const glm::ivec3& size)
 {
     ZoneScoped;
 
     assertIsPartOfWorld();
 
-    if (this->existsOnGpu == existsOnGpu)
+    if (!chunk.has_value())
     {
-        return;
-    }
-
-    this->existsOnGpu = existsOnGpu;
-
-    if (existsOnGpu)
-    {
-        chunk = std::make_unique<VoxelChunk>(Constants::VoxelChunkComponent::chunkSize, false);
-
-        if (writeToGpu)
-        {
-            chunkData.writeTo(*chunk.value());
-        }
+        chunk = std::make_unique<VoxelChunk>(size, false);
     }
     else
     {
-        if (chunk.has_value())
-        {
-            chunk.value().reset();
-        }
+        chunk.value()->setSize(size);
+    }
+}
+
+void VoxelChunkComponent::deallocateGpuData()
+{
+    ZoneScoped;
+
+    if (chunk.has_value())
+    {
+        chunk.reset();
     }
 }
 
@@ -88,7 +86,7 @@ void VoxelChunkComponent::onRemovingFromWorld()
 
     std::lock_guard lock(getMutex());
 
-    setExistsOnGpu(false);
+    deallocateGpuData();
 
     Component::onRemovingFromWorld();
 }

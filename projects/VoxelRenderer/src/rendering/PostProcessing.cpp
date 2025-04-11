@@ -231,7 +231,7 @@ void PostProcessRenderer::makeTextures()
 
 PostProcessRenderer::PostProcessRenderer()
 {
-    drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader);
+    drawTextureProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::drawTextureFragmentShader)->programId;
 }
 
 void PostProcessRenderer::applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture)

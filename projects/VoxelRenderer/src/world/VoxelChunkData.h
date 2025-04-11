@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include <src/utilities/Moveable.h>
 #include <src/world/Material.h>
 #include <src/world/VoxelChunk.h>
 
@@ -13,6 +14,7 @@ private:
     {
     public:
         glm::ivec3 size = glm::ivec3(0);
+        bool hasMipmaps = false;
 
         // Same format as on the GPU
         std::vector<uint8_t> occupancyMap {};
@@ -25,14 +27,23 @@ private:
     Data data;
 
 public:
-    VoxelChunkData();
-    explicit VoxelChunkData(const glm::ivec3& size);
+    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
 
     [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(const glm::ivec3& size);
+    void setSize(glm::ivec3 size, bool includeMipmaps);
+
+    bool getHasMipmaps() const;
+    void setHasMipmaps(bool hasMipmaps);
+
+    int getOccupancyMipmapCount() const;
+    int getOccupancyLayerCount() const;
 
     [[nodiscard]] bool getVoxelOccupancy(const glm::ivec3& position) const;
     void setVoxelOccupancy(const glm::ivec3& position, bool isOccupied);
+
+    [[nodiscard]] bool getMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, int level) const;
+    void setMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, int level, bool isOccupied);
 
     [[nodiscard]] const std::shared_ptr<Material>& getVoxelMaterial(const glm::ivec3& position) const;
     void setVoxelMaterial(const glm::ivec3& position, const std::shared_ptr<Material>& material);
@@ -40,14 +51,21 @@ public:
     [[nodiscard]] uint16_t getVoxelMaterialIndex(const glm::ivec3& position) const;
     void setVoxelMaterialIndex(const glm::ivec3& position, uint16_t materialIndex);
 
-    [[nodiscard]] bool isValidPosition(const glm::ivec3 position) const;
+    std::vector<uint8_t>& getRawOccupancyMap();
+    std::vector<uint32_t>& getRawOccupancyMapIndices();
+
+    std::vector<uint16_t>& getRawMaterialMap();
 
     void clearOccupancyMap();
     void clearMaterialMap();
 
-    void copyFrom(VoxelChunk& chunk);
-    void writeTo(VoxelChunk& chunk);
+    void updateMipmaps();
 
-    void copyFrom(VoxelChunkData& data);
-    void writeTo(VoxelChunkData& data);
+    void copyFrom(VoxelChunk& other);
+    void copyTo(VoxelChunk& other);
+
+    void copyFrom(const VoxelChunkData& other);
+    void copyTo(VoxelChunkData& other) const;
+
+    void copyToLod(VoxelChunkData& lod) const;
 };

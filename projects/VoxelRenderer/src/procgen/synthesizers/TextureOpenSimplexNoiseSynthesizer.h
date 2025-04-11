@@ -9,7 +9,7 @@ private:
 
 public:
     TextureOpenSimplexNoiseSynthesizer(int seed);
-    void generate(std::shared_ptr<TextureData>& textureData) override;
+    void generate(std::shared_ptr<TextureDataA>& textureData) override;
     void showDebugMenu() override;
     std::function<float(float)> mapperTo01() override;
 };

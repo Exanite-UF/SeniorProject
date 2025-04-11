@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <unordered_set>
 
 #include <src/Constants.h>
 #include <src/graphics/GraphicsBuffer.h>

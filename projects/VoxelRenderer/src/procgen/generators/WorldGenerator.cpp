@@ -36,7 +36,7 @@ void WorldGenerator::generate(VoxelChunkComponent& chunk)
 
     if (chunk.getExistsOnGpu())
     {
-        data.writeTo(*chunk.getChunk());
+        data.copyTo(*chunk.getChunk());
     }
 }
 

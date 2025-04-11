@@ -9,7 +9,7 @@ class PrototypeWorldGenerator : public WorldGenerator
 {
 private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
-    std::shared_ptr<TextureData> textureData;
+    std::shared_ptr<TextureDataA> textureData;
 
     int seed = 1;
 

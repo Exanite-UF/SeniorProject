@@ -1,12 +1,13 @@
 #pragma once
 
 #include <atomic>
+#include <future>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <shared_mutex>
 
 #include <src/gameobjects/Component.h>
+#include <src/threading/PendingTasks.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
 
@@ -18,6 +19,7 @@ class VoxelChunkComponent : public Component
     friend class VoxelChunkCommandBuffer;
 
 public:
+    // Used primarily by the renderer
     struct RendererData
     {
         std::atomic<bool> isVisible = false;
@@ -28,12 +30,29 @@ public:
         glm::vec3 previousScale;
     };
 
+    // Used primarily by the chunk manager
+    struct ChunkManagerData
+    {
+        // Used by chunk modification threads
+        PendingTasks<void> pendingTasks {};
+
+        // Used by LODing system
+        int activeLod = 0;
+        int maxRequestedLod = 0; // Tracks what LOD levels have been requested before. See VoxelChunkCommandBuffer::apply()'s SetMaxLod case for more info.
+        std::vector<std::shared_ptr<VoxelChunkData>> lods {};
+
+        // For caching
+        bool isPendingDestroy = false;
+        bool isUploadDesired = false;
+        int desiredLod = 0;
+    };
+
 private:
     std::optional<std::unique_ptr<VoxelChunk>> chunk; // Primarily accessed by render and chunk modification thread
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
-    std::atomic<bool> existsOnGpu = false;
     RendererData rendererData {};
+    ChunkManagerData modificationData {};
 
     std::shared_mutex mutex {};
 
@@ -54,8 +73,13 @@ public:
     // Prefer using a command buffer instead
     VoxelChunkData& getRawChunkData();
 
-    // Unsynchronized
+    // This method itself is unsynchronized
+    // See struct declaration for additional rules
     RendererData& getRendererData();
+
+    // This method itself is unsynchronized
+    // See struct declaration for additional rules
+    ChunkManagerData& getChunkManagerData();
 
     bool getExistsOnGpu() const;
 
@@ -63,5 +87,6 @@ protected:
     void onRemovingFromWorld() override;
 
 private:
-    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
+    void allocateGpuData(const glm::ivec3& size);
+    void deallocateGpuData();
 };

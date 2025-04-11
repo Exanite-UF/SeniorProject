@@ -32,8 +32,8 @@ public:
 
     void setSize(std::uint64_t elementCount);
 
-    void readFrom(std::span<const T> data, uint32_t elementOffset = 0);
-    void writeTo(std::span<T> data, uint32_t elementOffset);
+    void copyFrom(std::span<const T> data, uint32_t elementOffset = 0);
+    void copyTo(std::span<T> data, uint32_t elementOffset);
 
     // Binds to a specific location
     void bind(int location);
@@ -90,7 +90,7 @@ void GraphicsBuffer<T>::setSize(std::uint64_t elementCount)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind the buffer
 }
 template <typename T>
-void GraphicsBuffer<T>::readFrom(std::span<const T> data, uint32_t elementOffset)
+void GraphicsBuffer<T>::copyFrom(std::span<const T> data, uint32_t elementOffset)
 {
     if (data.size() + elementOffset > elementCount)
     {
@@ -103,7 +103,7 @@ void GraphicsBuffer<T>::readFrom(std::span<const T> data, uint32_t elementOffset
 }
 
 template <typename T>
-void GraphicsBuffer<T>::writeTo(std::span<T> data, uint32_t elementOffset)
+void GraphicsBuffer<T>::copyTo(std::span<T> data, uint32_t elementOffset)
 {
     if (data.size() + elementOffset > elementCount)
     {

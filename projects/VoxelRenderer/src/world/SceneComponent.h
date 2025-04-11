@@ -52,9 +52,12 @@ public:
     bool tryGetWorldChunkAtPosition(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& outResult);
     bool tryGetClosestWorldChunk(std::shared_ptr<VoxelChunkComponent>& outResult);
 
+    void addObjectChunk(const std::shared_ptr<VoxelChunkComponent>& chunk);
+    void removeObjectChunk(const std::shared_ptr<VoxelChunkComponent>& chunk);
+
     void addWorldChunk(const glm::ivec3& chunkPosition, std::shared_ptr<VoxelChunkComponent>& chunk);
     void removeWorldChunk(const glm::ivec3& chunkPosition);
 
-    void setSkybox(std::shared_ptr<SkyboxComponent>& skybox);
+    void setSkybox(const std::shared_ptr<SkyboxComponent>& skybox);
     std::shared_ptr<SkyboxComponent> getSkybox();
 };

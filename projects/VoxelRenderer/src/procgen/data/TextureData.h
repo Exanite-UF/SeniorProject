@@ -2,6 +2,6 @@
 
 #include <src/procgen/data/FlatArrayData.h>
 
-class TextureData : public FlatArrayData<float>
+class TextureDataA : public FlatArrayData<float>
 {
 };

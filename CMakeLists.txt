@@ -1,12 +1,49 @@
 cmake_minimum_required(VERSION 3.28)
 project(SeniorProject LANGUAGES C CXX)
 
+# ----- Project wide configuration -----
+
+# --- CMake options ---
+
+# Set option variable policy
+# The NEW policy enables the use of the option() function
+cmake_policy(SET CMP0077 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+# --- Build configurations ---
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(DEBUG)
 endif()
 
+# --- Compilation options ---
+
+# Enable architecture specific optimizations
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-march=native)
+endif()
+
+# --- Linking options ---
+
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+    # Set IPO policy
+    # The NEW policy enables IPO flags for all compilers if possible and to error if not
+    # We check for compatibility below so using the new policy is safe
+    cmake_policy(SET CMP0069 NEW)
+    set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+
+    # Enable Inter-Procedural Optimization (IPO) if supported by the compiler
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT IS_IPO_SUPPORTED)
+    if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+    endif()
+endif()
+
+# --- Output options ---
 
 # This postfixes a "d" to shared library names in DEBUG mode
 set(CMAKE_DEBUG_POSTFIX d)
@@ -16,23 +53,7 @@ if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
-# Set IPO policy
-# The NEW policy enables IPO flags for all compilers if possible and to error if not
-# We check for compatibility below so using the new policy is safe
-cmake_policy(SET CMP0069 NEW)
-set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
-
-# Enable Inter-Procedural Optimization (IPO) if supported by the compiler
-include(CheckIPOSupported)
-check_ipo_supported(RESULT IS_IPO_SUPPORTED)
-if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
-# Enable architecture specific optimizations
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_compile_options(-march=native)
-endif()
+# --- Windows ---
 
 # Support Windows 10 or later
 # See: https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt
@@ -40,10 +61,26 @@ if (WIN32)
     add_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
 
-# Set option variable policy
-# The NEW policy enables the use of the option() function
-cmake_policy(SET CMP0077 NEW)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+# --- Linux ---
+
+# Use ccache when possible to reduce compilation times
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    message(STATUS "Ccache found: ${CCACHE_PROGRAM}")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+endif()
+
+# Use mold linker when possible to reduce linking times
+find_program(MOLD_LINKER mold)
+if (MOLD_LINKER)
+    message(STATUS "Mold linker found: ${MOLD_LINKER}")
+    set(CMAKE_CXX_LINKER_FLAGS "${CMAKE_CXX_LINKER_FLAGS} -fuse-ld=mold")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=mold")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=mold")
+endif()
+
+# --- Debug ---
 
 # Hardcoded AddressSanitizer toggle
 if (OFF)
@@ -51,7 +88,7 @@ if (OFF)
     add_link_options(-fsanitize=address)
 endif()
 
-# --- Third party ---
+# ----- Third party -----
 
 # OpenGL
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
@@ -166,6 +203,14 @@ target_sources(extra PRIVATE ${sources})
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS ./external/extra/src/*.c)
 target_sources(extra PRIVATE ${sources})
 
-# --- First party ---
+# ----- First party -----
 
 add_subdirectory(./projects/VoxelRenderer)
+
+# ----- Packaging -----
+
+set(CPACK_DEB_COMPONENT_INSTALL YES)
+set(CPACK_COMPONENTS_ALL "VoxelRenderer")
+include(CPack)
+message(STATUS "CPack components to pack: ${CPACK_COMPONENTS_ALL}")
+

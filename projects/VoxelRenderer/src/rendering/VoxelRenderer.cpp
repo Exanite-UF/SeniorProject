@@ -51,7 +51,7 @@ void VoxelRenderer::remakeTextures()
 
     normalBuffer.setSize(size1D);
     positionBuffer.setSize(size1D);
-    miscBuffer.setSize(size1D);
+    materialUVBuffer.setSize(size1D);
     materialBuffer.setSize(size1D);
     primaryDirection.setSize(size1D);
     secondaryDirection.setSize(size1D);
@@ -90,18 +90,18 @@ void VoxelRenderer::handleDirtySizing()
 
 VoxelRenderer::VoxelRenderer()
 {
-    prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader);
-    resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader);
-    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader);
-    fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader);
-    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader);
+    prepareRayTraceFromCameraProgram = ShaderManager::getInstance().getComputeProgram(Content::prepareRayTraceFromCameraComputeShader)->programId;
+    resetHitInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetHitInfoComputeShader)->programId;
+    resetVisualInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetVisualInfoComputeShader)->programId;
+    fullCastProgram = ShaderManager::getInstance().getComputeProgram(Content::fullCastComputeShader)->programId;
+    afterCastProgram = ShaderManager::getInstance().getComputeProgram(Content::afterCastComputerShader)->programId;
 
-    resetPrimaryRayInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetPrimaryRayInfoComputeShader);
-    beforeCastProgram = ShaderManager::getInstance().getComputeProgram(Content::beforeCastComputeShader);
-    primaryRayProgram = ShaderManager::getInstance().getComputeProgram(Content::castPrimaryRayComputeShader);
-    groupPixelsProgram = ShaderManager::getInstance().getComputeProgram(Content::groupPixelsComputeShader);
+    resetPrimaryRayInfoProgram = ShaderManager::getInstance().getComputeProgram(Content::resetPrimaryRayInfoComputeShader)->programId;
+    beforeCastProgram = ShaderManager::getInstance().getComputeProgram(Content::beforeCastComputeShader)->programId;
+    primaryRayProgram = ShaderManager::getInstance().getComputeProgram(Content::castPrimaryRayComputeShader)->programId;
+    groupPixelsProgram = ShaderManager::getInstance().getComputeProgram(Content::groupPixelsComputeShader)->programId;
 
-    pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader);
+    pathTraceToFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::pathTraceToFramebufferShader)->programId;
 
     glGenBuffers(1, &materialTexturesBuffer); // Generate the buffer that will store the material textures
 }
@@ -297,7 +297,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
 
     glUseProgram(0);
 
@@ -336,7 +335,8 @@ void VoxelRenderer::resetPrimaryRayInfo()
 
     normalBuffer.bind(0);
     positionBuffer.bind(1);
-    miscBuffer.bind(2);
+    materialUVBuffer.bind(2);
+
     if (whichStartBuffer)
     {
         rayStartBuffer1.bind(5);
@@ -360,7 +360,8 @@ void VoxelRenderer::resetPrimaryRayInfo()
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
+    materialUVBuffer.unbind();
+
     if (whichStartBuffer)
     {
         rayStartBuffer1.unbind();
@@ -558,7 +559,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     normalBuffer.bind(8);
     positionBuffer.bind(9);
-    miscBuffer.bind(10);
+    materialUVBuffer.bind(10);
 
     materialBuffer.bind(11);
     secondaryDirection.bind(12);
@@ -656,12 +657,11 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
+    materialUVBuffer.unbind();
 
     materialBuffer.unbind();
     secondaryDirection.unbind();
     motionVectors.unbind();
-    // sampleDirection.unbind();
 
     afterCast(maxDepth);
 
@@ -690,7 +690,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     normalBuffer.bind(1);
     positionBuffer.bind(2);
-    miscBuffer.bind(3);
+    materialUVBuffer.bind(3);
 
     materialBuffer.bind(4);
     primaryDirection.bind(5);
@@ -768,7 +768,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
+    materialUVBuffer.unbind();
 
     materialBuffer.unbind();
     primaryDirection.unbind();

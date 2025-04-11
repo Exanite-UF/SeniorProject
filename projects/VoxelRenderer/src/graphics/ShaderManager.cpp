@@ -8,24 +8,7 @@
 #include <src/Content.h>
 
 #include <iostream>
-
-ShaderManager::~ShaderManager()
-{
-    for (const auto& computeProgram : computePrograms)
-    {
-        glDeleteProgram(computeProgram.second);
-    }
-
-    for (const auto& graphicsProgram : graphicsPrograms)
-    {
-        glDeleteProgram(graphicsProgram.second);
-    }
-
-    for (const auto& shaderModule : shaderModules)
-    {
-        glDeleteShader(shaderModule.second);
-    }
-}
+#include <memory>
 
 GLuint ShaderManager::getShaderModule(const std::string_view& shaderPath, GLenum shaderType)
 {
@@ -84,7 +67,7 @@ GLuint ShaderManager::getShaderModule(const std::string_view& shaderPath, GLenum
     return shader;
 }
 
-GLuint ShaderManager::getGraphicsProgram(const std::string_view& vertexShaderPath, const std::string_view& fragmentShaderPath)
+std::shared_ptr<ShaderProgram> ShaderManager::getGraphicsProgram(const std::string_view& vertexShaderPath, const std::string_view& fragmentShaderPath)
 {
     // Use cached program if available
     auto cacheKey = std::make_tuple(std::string(vertexShaderPath), std::string(fragmentShaderPath));
@@ -125,18 +108,21 @@ GLuint ShaderManager::getGraphicsProgram(const std::string_view& vertexShaderPat
     glDetachShader(program, vertexModule);
     glDetachShader(program, fragmentModule);
 
-    // Insert program into cache
-    graphicsPrograms[cacheKey] = program;
+    // Create shared pointer
+    auto shaderProgram = std::make_shared<ShaderProgram>(program);
 
-    return program;
+    // Insert program into cache
+    graphicsPrograms[cacheKey] = shaderProgram;
+
+    return shaderProgram;
 }
 
-GLuint ShaderManager::getPostProcessProgram(const std::string_view& fragmentShaderPath)
+std::shared_ptr<ShaderProgram> ShaderManager::getPostProcessProgram(const std::string_view& fragmentShaderPath)
 {
     return getGraphicsProgram(Content::screenTriVertexShader, fragmentShaderPath);
 }
 
-GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPath)
+std::shared_ptr<ShaderProgram> ShaderManager::getComputeProgram(const std::string_view& computeShaderPath)
 {
     // Use cached program if available
     auto cacheKey = std::string(computeShaderPath);
@@ -174,8 +160,11 @@ GLuint ShaderManager::getComputeProgram(const std::string_view& computeShaderPat
     }
     glDetachShader(program, module);
 
-    // Insert program into cache
-    computePrograms[cacheKey] = program;
+    // Create shared pointer
+    auto shaderProgram = std::make_shared<ShaderProgram>(program);
 
-    return program;
+    // Insert program into cache
+    computePrograms[cacheKey] = shaderProgram;
+
+    return shaderProgram;
 }

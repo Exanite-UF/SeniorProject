@@ -1,5 +1,7 @@
 #include "VoxelChunkManager.h"
 
+#include "glm/gtx/norm.hpp"
+
 #include <tracy/Tracy.hpp>
 
 #include <algorithm>
@@ -251,13 +253,29 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
         // Unlock the mutex
         pendingRequestsLock.unlock();
 
-        // Apply the chunk command buffer
+        try
         {
-            ZoneScopedN("Chunk modification");
+            // Wait for any dependencies to finish
+            task->dependencies.waitForPending();
 
-            MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
-            Log::verbose("Applying chunk command buffer");
-            task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
+            // Apply the chunk command buffer
+            {
+                ZoneScopedN("Chunk modification");
+
+                MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
+                Log::verbose("Applying chunk command buffer");
+                task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
+            }
+
+            // Complete the promise
+            task->promise.set_value();
+        }
+        catch (...)
+        {
+            // Complete the promise
+            task->promise.set_exception(std::current_exception());
+
+            throw;
         }
     }
 
@@ -290,9 +308,9 @@ void VoxelChunkManager::update(const float deltaTime)
 
         // Calculate which chunks should be loaded
         std::unordered_set<glm::ivec2> chunksToLoad {};
-        for (int x = -settings.renderDistance; x <= settings.renderDistance; ++x)
+        for (int x = -settings.loadDistance; x <= settings.loadDistance; ++x)
         {
-            for (int y = -settings.renderDistance; y <= settings.renderDistance; ++y)
+            for (int y = -settings.loadDistance; y <= settings.loadDistance; ++y)
             {
                 auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y);
                 chunksToLoad.emplace(chunkPosition);
@@ -316,6 +334,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
             // Mark the chunk to be unloaded
             loadedChunk->isUnloading = true;
+            loadedChunk->component->getChunkManagerData().isPendingDestroy = true;
             state.isChunkUnloadingDirty = true;
 
             Log::information(std::format("Preparing to unload chunk at ({}, {})", loadedChunk->chunkPosition.x, loadedChunk->chunkPosition.y));
@@ -335,6 +354,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 {
                     // Keep the chunk alive if necessary
                     chunk->second->isUnloading = false;
+                    chunk->second->component->getChunkManagerData().isPendingDestroy = false;
 
                     // Chunk is already loaded, we don't need to load
                     continue;
@@ -362,7 +382,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
         // Check for chunks to unload
         int chunksUpdated = 0;
-        std::vector<glm::ivec2> chunksToUnload {};
+        std::vector<glm::ivec2> chunkPositionsToUnload {};
         for (auto& chunk : std::ranges::views::values(state.activeChunks))
         {
             if (chunk->isUnloading)
@@ -372,17 +392,22 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 if (chunk->timeSpentWaitingForUnload > settings.chunkUnloadTime)
                 {
-                    chunksToUnload.push_back(chunk->chunkPosition);
+                    chunkPositionsToUnload.push_back(chunk->chunkPosition);
                 }
             }
         }
 
-        for (auto chunkToUnload : chunksToUnload)
+        for (auto chunkPositionToUnload : chunkPositionsToUnload)
         {
-            ZoneScopedN("Chunk unload");
+            // Get chunk and wait until it has no pending tasks before unloading
+            auto chunkToUnloadIterator = state.activeChunks.find(chunkPositionToUnload);
+            if (chunkToUnloadIterator != state.activeChunks.end() && chunkToUnloadIterator->second->component->getChunkManagerData().pendingTasks.getPending().empty())
+            {
+                ZoneScopedN("Chunk unload");
 
-            Log::information(std::format("Unloaded chunk at ({}, {})", chunkToUnload.x, chunkToUnload.y));
-            state.activeChunks.erase(chunkToUnload);
+                Log::information(std::format("Unloaded chunk at ({}, {})", chunkPositionToUnload.x, chunkPositionToUnload.y));
+                state.activeChunks.erase(chunkPositionToUnload);
+            }
         }
 
         if (chunksUpdated == 0)
@@ -419,12 +444,16 @@ void VoxelChunkManager::update(const float deltaTime)
                 chunk->isLoading = false;
 
                 {
-                    ZoneScopedN("Chunk modification task creation - Command buffer creation");
-
                     VoxelChunkCommandBuffer commandBuffer {};
                     commandBuffer.setSize(settings.chunkSize);
                     commandBuffer.copyFrom(task->chunkData);
-                    commandBuffer.setExistsOnGpu(true);
+
+                    submitCommandBuffer(chunk->component, commandBuffer);
+                }
+
+                {
+                    VoxelChunkCommandBuffer commandBuffer {};
+                    commandBuffer.setEnableCpuMipmaps(settings.areChunkCpuMipmapsEnabled);
 
                     submitCommandBuffer(chunk->component, commandBuffer);
                 }
@@ -434,10 +463,90 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Chunk visibility
     {
+        ZoneScopedN("Chunk visibility");
+
         auto camera = state.scene->camera;
         for (auto chunk : state.scene->allChunks)
         {
             chunk->getRendererData().isVisible = isChunkVisible(chunk, camera);
+        }
+    }
+
+    // Chunk uploading and LOD generation
+    {
+        ZoneScopedN("Chunk uploading and LOD generation");
+
+        auto worldChunks = state.scene->worldChunks;
+
+        // Sort by distance to camera
+        // Index 0 is the closest
+        std::sort(worldChunks.begin(), worldChunks.end(), [this](const std::shared_ptr<VoxelChunkComponent>& a, const std::shared_ptr<VoxelChunkComponent>& b)
+            {
+                auto distanceSquaredA = glm::length2(a->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+                auto distanceSquaredB = glm::length2(b->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+
+                return distanceSquaredA < distanceSquaredB;
+            });
+
+        if (settings.isChunkLoddingEnabled)
+        {
+            ZoneScopedN("Chunk LOD generation");
+
+            // Calculate LOD level for each chunk
+            for (int i = 0; i < worldChunks.size(); ++i)
+            {
+                auto& chunk = worldChunks.at(i);
+                float chunkDistance = glm::length(chunk->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+
+                // Calculate desired LOD level
+                int lod = static_cast<int>(glm::log2(chunkDistance / settings.lodBaseDistance) / glm::log2(settings.lodDistanceScalingFactor));
+
+                int minLod = i < 4 ? 0 : 1; // Only allow the closest 4 chunks to use LOD 0
+                int maxLod = 4; // Clamp max lod to 4. Beyond this, we lose too much detail
+                lod = glm::clamp(lod, minLod, maxLod);
+
+                if (settings.lodDistanceScalingFactor <= 1)
+                {
+                    lod = maxLod;
+                }
+
+                if (chunk->getChunkManagerData().desiredLod == lod)
+                {
+                    // LOD is already the same as desired OR we already have a pending command buffer submitted
+                    continue;
+                }
+
+                // Submit command buffer
+                VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.setMaxLod(lod);
+                commandBuffer.setActiveLod(lod);
+
+                submitCommandBuffer(chunk, commandBuffer);
+                chunk->getChunkManagerData().desiredLod = lod;
+            }
+        }
+
+        {
+            ZoneScopedN("Chunk uploading");
+
+            for (int i = 0; i < worldChunks.size(); ++i)
+            {
+                auto& chunk = worldChunks.at(i);
+                bool shouldUpload = (chunk->getRendererData().isVisible || i < 4) && !chunk->getChunkManagerData().isPendingDestroy;
+
+                if (shouldUpload == chunk->getChunkManagerData().isUploadDesired)
+                {
+                    // Upload state is already the same as desired OR we already have a pending command buffer submitted
+                    continue;
+                }
+
+                // Submit command buffer
+                VoxelChunkCommandBuffer commandBuffer {};
+                commandBuffer.setExistsOnGpu(shouldUpload);
+
+                submitCommandBuffer(chunk, commandBuffer);
+                chunk->getChunkManagerData().isUploadDesired = shouldUpload;
+            }
         }
     }
 }
@@ -458,7 +567,8 @@ bool VoxelChunkManager::isChunkVisible(const std::shared_ptr<VoxelChunkComponent
     constexpr bool isDebugging = false;
 #endif
 
-    auto size = glm::vec3(chunk->getChunkData().getSize());
+    auto currentLod = glm::min(chunk->getChunkManagerData().activeLod, static_cast<int>(chunk->getChunkManagerData().lods.size()));
+    auto size = glm::vec3(chunk->getChunkData().getSize()) * static_cast<float>(glm::pow(0.5f, currentLod));
     if (size.x == 0 || size.y == 0 || size.z == 0)
     {
         return false;
@@ -716,102 +826,146 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        if (ImGui::SliderInt("Render distance", &settings.renderDistance, 0, 1))
+        if (ImGui::SliderInt("Load distance", &settings.loadDistance, 0, 5))
         {
             state.isChunkLoadingDirty = true;
         }
 
+        ImGui::Checkbox("Enable chunk LODing", &settings.isChunkLoddingEnabled);
+
+        ImGui::SliderFloat("LOD base distance", &settings.lodBaseDistance, 256, 2048);
+        ImGui::SliderFloat("LOD distance scaling factor", &settings.lodDistanceScalingFactor, 1, 3);
+
         ImGui::Checkbox("Enable culling", &settings.enableCulling);
         ImGui::Checkbox("Enable culling visualizations (debug builds only)", &settings.showDebugVisualizations);
 
-        ImGui::Text("%s", std::format("Render distance: {}", settings.renderDistance).c_str());
-        ImGui::Text("%s", std::format("GPU uploaded voxel chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
+        ImGui::Checkbox("Enable CPU mipmaps", &settings.areChunkCpuMipmapsEnabled);
+
+        ImGui::Text("%s", std::format("GPU uploaded chunk count: {}", VoxelChunk::getInstanceCount()).c_str());
         ImGui::Text("%s", std::format("Loaded world chunk count: {}", state.activeChunks.size()).c_str());
         ImGui::Text("%s", std::format("Camera world chunk position: ({}, {})", state.cameraChunkPosition.x, state.cameraChunkPosition.y).c_str());
         ImGui::Text("%s", std::format("Chunk generation threads: {}", loadingThreadState.threads.size()).c_str());
 
         {
             // Chunk display distance parameters
-            int displayDistance = settings.renderDistance + 1;
+            int displayDistance = settings.loadDistance + 1;
 
             glm::ivec2 displaySize = glm::ivec2(displayDistance * 2 + 1);
             glm::ivec2 displayCenter = glm::ivec2(displayDistance);
 
             // Drawing parameters
-            float cellSize = 10;
-            float dotSize = 6;
+            float cellSize = 16;
+            float dotSize = 12;
+            float speckSize = 8;
             float spacing = 2;
 
-            auto* drawList = ImGui::GetWindowDrawList();
-            auto windowPosition = ImGui::GetWindowPos();
-            auto drawPosition = ImGui::GetCursorPos();
-
-            auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
-            auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
-            auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
-            auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
-            auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#0000ff")));
-
-            auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
-            auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
-            auto visibleDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
-
-            auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
-
-            for (int x = 0; x < displaySize.x; ++x)
+            ImGuiStyle& style = ImGui::GetStyle();
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+            auto gridContainerSize = ImVec2(cellSize * displaySize.x + (displaySize.x + 1) * spacing, cellSize * displaySize.y + (displaySize.y + 1) * spacing);
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::BeginChild("GridContainer", gridContainerSize, true);
             {
-                for (int y = 0; y < displaySize.y; ++y)
+                auto* drawList = ImGui::GetWindowDrawList();
+                auto windowPosition = ImGui::GetWindowPos();
+                auto drawPosition = ImGui::GetCursorPos();
+
+                auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000")));
+                auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00")));
+                auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333")));
+                auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00")));
+                auto loddedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ffff")));
+
+                auto defaultDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+                auto uploadedDotColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#000000")));
+
+                auto defaultSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00000000")));
+                auto visibleSpeckColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffffff")));
+
+                auto baseDrawPosition = glm::vec2(windowPosition.x + drawPosition.x, windowPosition.y + drawPosition.y);
+
+                for (int x = 0; x < displaySize.x; ++x)
                 {
-                    auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
-
-                    // Cell
-                    auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
-                    auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
-                    auto cellColor = unloadedCellColor;
-
-                    // Dot
-                    auto dotPadding = (cellSize - dotSize) / 2;
-                    auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
-                    auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
-                    auto dotColor = defaultDotColor;
-
-                    auto chunkIterator = state.activeChunks.find(chunkPosition);
-                    if (chunkIterator != state.activeChunks.end())
+                    for (int y = 0; y < displaySize.y; ++y)
                     {
-                        auto& chunk = chunkIterator->second;
-                        cellColor = loadedCellColor;
+                        auto chunkPosition = state.cameraChunkPosition + glm::ivec2(x, y) - displayCenter;
 
-                        if (chunk->isLoading)
+                        // Cell
+                        auto cellTopLeft = baseDrawPosition + (cellSize + spacing) * glm::vec2(x, y);
+                        auto cellBottomRight = cellTopLeft + glm::vec2(cellSize);
+                        auto cellColor = unloadedCellColor;
+
+                        // Dot
+                        auto dotPadding = (cellSize - dotSize) / 2;
+                        auto dotTopLeft = cellTopLeft + glm::vec2(dotPadding);
+                        auto dotBottomRight = cellBottomRight - glm::vec2(dotPadding);
+                        auto dotColor = defaultDotColor;
+
+                        // Speck
+                        auto speckPadding = (cellSize - speckSize) / 2;
+                        auto speckTopLeft = cellTopLeft + glm::vec2(speckPadding);
+                        auto speckBottomRight = cellBottomRight - glm::vec2(speckPadding);
+                        auto speckColor = defaultSpeckColor;
+
+                        auto chunkIterator = state.activeChunks.find(chunkPosition);
+                        if (chunkIterator != state.activeChunks.end())
                         {
-                            cellColor = loadingCellColor;
-                        }
-                        else if (chunk->isUnloading)
-                        {
-                            cellColor = unloadingCellColor;
+                            auto& chunk = chunkIterator->second;
+                            cellColor = loadedCellColor;
+
+                            if (chunk->isLoading)
+                            {
+                                cellColor = loadingCellColor;
+                            }
+                            else if (chunk->component->getChunkManagerData().activeLod != 0)
+                            {
+                                cellColor = loddedCellColor;
+                            }
+                            else if (chunk->isUnloading)
+                            {
+                                cellColor = unloadingCellColor;
+                            }
+
+                            if (chunk->component->getExistsOnGpu())
+                            {
+                                dotColor = uploadedDotColor;
+                            }
+
+                            if (chunk->component->getRendererData().isVisible)
+                            {
+                                speckColor = visibleSpeckColor;
+                            }
                         }
 
-                        if (chunk->component->getRendererData().isVisible)
-                        {
-                            dotColor = visibleDotColor;
-                        }
-                        else if (chunk->component->getExistsOnGpu())
-                        {
-                            dotColor = uploadedDotColor;
-                        }
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
+                        drawList->AddRectFilled(ImGuiUtility::toImGui(speckTopLeft), ImGuiUtility::toImGui(speckBottomRight), speckColor);
                     }
-
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(cellTopLeft), ImGuiUtility::toImGui(cellBottomRight), cellColor);
-                    drawList->AddRectFilled(ImGuiUtility::toImGui(dotTopLeft), ImGuiUtility::toImGui(dotBottomRight), dotColor);
                 }
+                ImGui::EndChild();
+                ImGui::PopStyleColor(2);
+                ImGui::PopStyleVar();
             }
         }
     }
 }
 
-void VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
 {
-    std::lock_guard lock(modificationThreadState.pendingTasksMutex);
+    ZoneScoped;
 
-    modificationThreadState.pendingTasks.emplace(std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer));
+    std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
+
+    auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
+    task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());
+
+    auto sharedFuture = task->promise.get_future().share();
+    component->getChunkManagerData().pendingTasks.addPending(sharedFuture);
+
+    modificationThreadState.pendingTasks.emplace(task);
     modificationThreadState.pendingTasksCondition.notify_one();
+
+    Log::verbose("Submitted voxel chunk command buffer");
+
+    return sharedFuture;
 }

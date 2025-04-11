@@ -19,6 +19,9 @@ private:
         ClearMaterial,
         Copy,
         SetExistsOnGpu,
+        SetEnableCpuMipmaps,
+        SetActiveLod,
+        SetMaxLod,
     };
 
     struct Command
@@ -80,12 +83,42 @@ private:
     struct SetExistsOnGpuCommand
     {
         bool existsOnGpu;
-        bool writeToGpu;
 
-        explicit SetExistsOnGpuCommand(const bool existsOnGpu, const bool writeToGpu)
+        explicit SetExistsOnGpuCommand(const bool existsOnGpu)
         {
             this->existsOnGpu = existsOnGpu;
-            this->writeToGpu = writeToGpu;
+        }
+    };
+
+    struct SetEnableCpuMipmapsCommand
+    {
+        bool enableCpuMipmaps;
+
+        explicit SetEnableCpuMipmapsCommand(const bool enableCpuMipmaps)
+        {
+            this->enableCpuMipmaps = enableCpuMipmaps;
+        }
+    };
+
+    struct SetActiveLodCommand
+    {
+        int activeLod;
+
+        explicit SetActiveLodCommand(const int activeLod)
+        {
+            this->activeLod = activeLod;
+        }
+    };
+
+    struct SetMaxLodCommand
+    {
+        int maxLod;
+        bool trim;
+
+        explicit SetMaxLodCommand(const int maxLod, const bool trim)
+        {
+            this->maxLod = maxLod;
+            this->trim = trim;
         }
     };
 
@@ -96,6 +129,9 @@ private:
     std::vector<SetMaterialCommand> setMaterialCommands {};
     std::vector<CopyCommand> copyCommands {};
     std::vector<SetExistsOnGpuCommand> setExistsOnGpuCommands {};
+    std::vector<SetEnableCpuMipmapsCommand> setEnableCpuMipmapsCommands {};
+    std::vector<SetActiveLodCommand> setActiveLodCommands {};
+    std::vector<SetMaxLodCommand> setMaxLodCommands {};
 
 public:
     void setSize(const glm::ivec3& size);
@@ -109,7 +145,12 @@ public:
 
     void copyFrom(const std::shared_ptr<VoxelChunkData>& data);
 
-    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
+    void setExistsOnGpu(bool existsOnGpu);
+
+    void setEnableCpuMipmaps(bool enableCpuMipmaps);
+
+    void setActiveLod(int activeLod);
+    void setMaxLod(int maxLod, bool trim = false);
 
     void clear();
 

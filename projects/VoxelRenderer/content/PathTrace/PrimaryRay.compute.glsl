@@ -1,23 +1,35 @@
 #version 460 core
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : require
+#extension GL_ARB_gpu_shader_int64 : enable
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+vec4 safeVec4(vec4 v, vec4 fallback)
+{
+    return vec4(
+        isnan(v.r) || isinf(v.r) ? fallback.r : v.r,
+        isnan(v.g) || isinf(v.g) ? fallback.g : v.g,
+        isnan(v.b) || isinf(v.b) ? fallback.b : v.b,
+        isnan(v.a) || isinf(v.a) ? fallback.a : v.a);
+}
 
 // Padded to 32 bytes long (alignment of 16)
 struct MaterialDefinition
 {
     vec3 emission;
-    float padding0;
+    float textureScaleX;
     vec3 albedo;
-    float padding1;
+    float textureScaleY;
     vec3 metallicAlbedo;
-    float padding2;
+    float padding;
     float roughness;
     float metallic;
 
-    float padding3;
-    float padding4;
+    uint64_t albedoTextureID;
+    uint64_t roughnessTextureID;
+    uint64_t emissionTextureID;
 };
 
 uniform vec3 pastCameraPosition;
@@ -70,12 +82,12 @@ void setRayPosition(ivec3 coord, vec3 value)
 
 layout(std430, binding = 2) buffer RayDirection
 {
-    float rayDirection[];
+    float16_t rayDirection[];
 };
 
 layout(std430, binding = 3) buffer RayDirectionOut
 {
-    float rayDirectionOut[];
+    float16_t rayDirectionOut[];
 };
 
 vec3 getRayDirection(ivec3 coord)
@@ -88,9 +100,9 @@ vec3 getRayDirection(ivec3 coord)
 void setRayDirection(ivec3 coord, vec3 value)
 {
     int index = 3 * (coord.x + resolution.x * coord.y); // Stride of 3, axis order is x y z
-    rayDirectionOut[0 + index] = value.x;
-    rayDirectionOut[1 + index] = value.y;
-    rayDirectionOut[2 + index] = value.z;
+    rayDirectionOut[0 + index] = float16_t(value.x);
+    rayDirectionOut[1 + index] = float16_t(value.y);
+    rayDirectionOut[2 + index] = float16_t(value.z);
 }
 
 layout(std430, binding = 4) buffer OccupancyMap
@@ -155,7 +167,7 @@ layout(std430, binding = 8) buffer FirstHitNormal
 
 void setFirstHitNormal(ivec3 coord, vec3 value)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
     firstHitNormal[0 + index] = value.x;
     firstHitNormal[1 + index] = value.y;
     firstHitNormal[2 + index] = value.z;
@@ -168,21 +180,10 @@ layout(std430, binding = 9) buffer FirstHitPosition
 
 void setFirstHitPosition(ivec3 coord, vec3 value)
 {
-    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y z
     firstHitPosition[0 + index] = value.x;
     firstHitPosition[1 + index] = value.y;
     firstHitPosition[2 + index] = value.z;
-}
-
-layout(std430, binding = 10) buffer FirstHitMisc
-{
-    writeonly float firstHitMisc[];
-};
-
-void setFirstHitRoughness(ivec3 coord, float value)
-{
-    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
-    firstHitMisc[0 + index] = value.x;
 }
 
 uniform bool whichDepth;
@@ -191,18 +192,24 @@ void setFirstHitOldDepth(ivec3 coord, float value)
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y z
     if (whichDepth)
     {
-        firstHitMisc[1 + index] = value;
+        firstHitNormal[3 + index] = value;
     }
     else
     {
-        firstHitMisc[2 + index] = value;
+        firstHitPosition[3 + index] = value;
     }
 }
 
-void setFirstHitHue(ivec3 coord, float value)
+layout(std430, binding = 10) buffer FirstHitMaterialUV
 {
-    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 4, axis order is x y
-    firstHitMisc[3 + index] = value.x;
+    writeonly float16_t firstHitMaterialUV[];
+};
+
+void setFirstHitMaterialUV(ivec3 coord, vec2 value)
+{
+    int index = 2 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    firstHitMaterialUV[index + 0] = float16_t(value.x);
+    firstHitMaterialUV[index + 1] = float16_t(value.y);
 }
 
 layout(std430, binding = 11) buffer FirstHitMaterial
@@ -218,16 +225,16 @@ void setFirstHitMaterial(ivec3 coord, int value)
 
 layout(std430, binding = 12) buffer SecondaryDirection
 {
-    writeonly float secondaryDirection[];
+    writeonly float16_t secondaryDirection[];
 };
 
 void setSecondaryDirection(ivec3 coord, vec4 value)
 {
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
-    secondaryDirection[index + 0] = value.x;
-    secondaryDirection[index + 1] = value.y;
-    secondaryDirection[index + 2] = value.z;
-    secondaryDirection[index + 3] = value.w;
+    secondaryDirection[index + 0] = float16_t(value.x);
+    secondaryDirection[index + 1] = float16_t(value.y);
+    secondaryDirection[index + 2] = float16_t(value.z);
+    secondaryDirection[index + 3] = float16_t(value.w);
 }
 
 uniform bool whichAccumulatingVector;
@@ -241,13 +248,36 @@ void changeAccumulatingMotionVectors(ivec3 coord, vec2 value)
     int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     if (whichAccumulatingVector)
     {
-        accumulatingMotionVectors[index + 0] = accumulatingMotionVectors[index + 2] + float16_t(value.x);
-        accumulatingMotionVectors[index + 1] = accumulatingMotionVectors[index + 3] + float16_t(value.y);
+
+        float temp = accumulatingMotionVectors[index + 2] + (value.x);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 0] = float16_t(temp);
+
+        temp = accumulatingMotionVectors[index + 3] + (value.y);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 1] = float16_t(temp);
     }
     else
     {
-        accumulatingMotionVectors[index + 2] = accumulatingMotionVectors[index + 0] + float16_t(value.x);
-        accumulatingMotionVectors[index + 3] = accumulatingMotionVectors[index + 1] + float16_t(value.y);
+        float temp = accumulatingMotionVectors[index + 0] + (value.x);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 2] = float16_t(temp);
+
+        temp = accumulatingMotionVectors[index + 1] + (value.y);
+        if (isnan(temp) || isinf(temp))
+        {
+            temp = 0;
+        }
+        accumulatingMotionVectors[index + 3] = float16_t(temp);
     }
 }
 
@@ -261,6 +291,7 @@ struct RayHit
     uint material;
     vec3 voxelHitLocation;
     bool isNearest;
+    vec2 uv; // voxel hit position relevant to finding texture coords
 };
 
 float rayboxintersect(vec3 raypos, vec3 raydir, vec3 boxmin, vec3 boxmax)
@@ -320,7 +351,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
     // Put the ray at the surface of the cube
     float distToCube = rayboxintersect(rayStart, rayDir, vec3(0), vec3(size));
-    rayPos += rayDir * max(0.0, distToCube - 0.001); // The -0.001 is for numerical stability when entering the volume (This is the aformentioned correction)
+    rayPos += rayDir * max(0.0, distToCube - 0.1); // The -0.001 is for numerical stability when entering the volume (This is the aformentioned correction)
 
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
@@ -339,6 +370,11 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
     }
 
     bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
+    bool hasEntered = false;
+    // hit.wasHit = true;
+    // hit.hitLocation = rayPos;
+    // hit.dist = length(rayStart - hit.hitLocation);
+    // return hit;
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -350,7 +386,12 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         bool isOutsideVolume = (any(greaterThan(p, ivec3(size - 1))) || any(lessThan(p, ivec3(0))));
-        if ((i > 0) && isOutsideVolume)
+        if (!isOutsideVolume)
+        {
+            hasEntered = true;
+        }
+
+        if ((i > 0) && isOutsideVolume && hasEntered)
         {
             // No voxel was hit
             break;
@@ -358,12 +399,20 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
 
         int count = 0;
         // The <= is correct
-        for (int i = 0; i <= occupancyMapLayerCount; i++)
+        // iterate by 1 until it enters the voxel volume
+        if (isOutsideVolume)
         {
-            ivec3 p2 = (p >> (2 * i)) & 1;
-            uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
-            uint l = getOccupancyByte((p >> (1 + 2 * i)), i);
-            count += int((l & k) == 0) + int(l == 0);
+            count = 1;
+        }
+        else
+        {
+            for (int i = 0; i <= occupancyMapLayerCount; i++)
+            {
+                ivec3 p2 = (p >> (2 * i)) & 1;
+                uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
+                uint l = getOccupancyByte((p >> (1 + 2 * i)), i);
+                count += int((l & k) == 0) + int(l == 0);
+            }
         }
 
         if (count <= 0)
@@ -426,7 +475,7 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     rayDir /= voxelWorldScale;
 
     // Increment the ray forward slightly for numerical stability (This is corrected for in the intersection code)
-    rayPos += rayDir * 0.001;
+    rayPos += rayDir * 0.01 * 0;
 
     // Find the intersection point of the ray cast
     RayHit hit = findIntersection(rayPos, rayDir, 200, currentDepth);
@@ -439,7 +488,21 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
     hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
 
-    // Transform the hit normal from
+    // Calculate the hit uv
+    if (abs(dot(hit.normal, vec3(1, 0, 0))) > 0.1)
+    {
+        hit.uv = hit.voxelHitLocation.yz;
+    }
+    else if (abs(dot(hit.normal, vec3(0, 1, 0))) > 0.1)
+    {
+        hit.uv = hit.voxelHitLocation.xz;
+    }
+    else
+    {
+        hit.uv = hit.voxelHitLocation.xy;
+    }
+
+    // Transform the hit normal from voxel space to world space
     hit.normal *= voxelWorldScale;
     hit.normal = qtransform(voxelWorldRotation, hit.normal);
 
@@ -541,33 +604,6 @@ vec4 sampleGGX2(float roughness, vec2 rand, vec3 view, vec3 normal)
     }
 }
 
-vec3 brdf(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
-{
-    vec3 halfway = normalize(-view + light); // This is used by several things
-
-    float microfacetComponent = microfacetDistributionGGX(voxelMaterial.roughness, dot(normal, halfway)); // This is the component of the BRDF that accounts for the direction of microfacets (Based on the distribution of microfacet directions, what is the percent of light that reflects toward the camera)
-
-    vec3 baseReflectivity = vec3(1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo; // This is the metallic reflectivity (For non-metallic materials it is 1, for metallic materials is it the metallicAlbedo)
-
-    vec3 fresnelComponent = fresnel(abs(dot(light, halfway)), baseReflectivity); // This component simulates the fresnel effect (only metallic materials have this)
-
-    // This approximates how much light is blocked by microfacets, when looking from different directions
-    float dotOfViewAndNormal = dot(view, normal);
-    float dotOfLightAndNormal = dot(light, normal);
-    float geometricComponent = geometricBlockingGGX(voxelMaterial.roughness, dot(light, normal), dot(view, normal)); // geometricBlocking(abs(dotOfViewAndNormal), abs(dotOfLightAndNormal), voxelMaterial.roughness); // Like how a mountain blocks the light in a valley
-
-    // The effect of the metallicAlbedo is performed in the fresenl component
-    // A non metallic material is assumed to not be affected by the fresnel effect
-    // The fresnel component will color the reflected light, and will behave according to an approximation of the fresnel effect
-    // Since albedo is about perfectly diffuse refection color, that would imply no fresnel effect
-    // This does mean that there are two ways to get a colored mirror reflection. (one with and one without the fresnel effect)
-    // It also means that the color of the metallic albedo will show off stronger at sharper angles
-    // We add the metallic value to the albedo to prevent darkening. (this is a multiplier, so not doing this would just make metals black)
-    vec3 albedo = (1 - voxelMaterial.metallic) * voxelMaterial.albedo + voxelMaterial.metallic;
-
-    return microfacetComponent * fresnelComponent * geometricComponent * albedo / abs(4 * dotOfViewAndNormal * dotOfLightAndNormal);
-}
-
 vec3 brdf2(vec3 normal, vec3 view, vec3 light, MaterialDefinition voxelMaterial)
 {
 
@@ -627,82 +663,6 @@ float rgbToHue(vec3 rgb)
     return hue / 360.;
 }
 
-// It is guaranteeed to be a hit
-void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
-{
-    float seed = random + float(texelCoord.x + resolution.x * (texelCoord.y + resolution.y * texelCoord.z)) / resolution.x / resolution.y / resolution.z; // texelCoord.x + texelCoord.y * 1.61803398875 + texelCoord.z * 3.1415926589;
-
-    vec3 direction = rayDirection; // The direction the ray cast was in
-
-    vec3 position = hit.hitLocation;
-
-    // Load the hit normal
-    // float dist = getHitDist(texelCoord); // Distance that the ray cast covered
-    vec3 normal = hit.normal; // The normal direction of the hit
-
-    // Find the uv coordinate for the texture
-    // It is based on the hit location in voxel space
-    // vec3 voxelPosition = hit.voxelHitLocation;
-    // vec2 hitUV;
-    // if (abs(normal.x) > 0)
-    //{
-    //    // yz
-    //    hitUV = voxelPosition.yz;
-    //}
-    // else if (abs(normal.y) > 0)
-    //{
-    //    // xz
-    //    hitUV = voxelPosition.xz;
-    //}
-    // else if (abs(normal.z) > 0)
-    //{
-    //    // xy
-    //    hitUV = voxelPosition.xy;
-    //}
-    // vec2 uv = hitUV * sizes[material]; // We need to set the material textures to SL_REPEAT mode (this is the default).
-
-    // Format the voxel material into a struct
-    // Load the correct material values from the array of material textures
-    MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
-    setFirstHitMaterial(texelCoord, int(hit.material));
-
-    // Multiply in the texture values
-    /*
-    voxelMaterial.emission *= texture(sampler2d(materialTextures[materialID].emission), uv).xyz;
-    voxelMaterial.albedo *= texture(sampler2d(materialTextures[materialID].albedo), uv).xyz;
-    voxelMaterial.metallicAlbedo *= texture(sampler2d(materialTextures[materialID].metallicAlbedo), uv).xyz;
-    vec4 rmTexture = texture(sampler2d(materialTextures[materialID].rmTexture), uv);
-    voxelMaterial.roughness *= rmTexture.r;
-    voxelMaterial.metallic *= rmTexture.g;
-    */
-
-    if (texelCoord.z == 0)
-    {
-        setFirstHitRoughness(texelCoord, voxelMaterial.roughness);
-        setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));
-    }
-
-    normal = normalize(normal);
-    direction = normalize(direction);
-
-    vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
-    vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-
-    // vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
-    // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
-
-    setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
-
-    vec3 receivedLight = voxelMaterial.emission * attentuation;
-
-    // Set the output buffers
-    setRayPosition(texelCoord, position); // Set where the ray should start from next
-    setRayDirection(texelCoord, normalize(nextDirection.xyz)); // Set the direction the ray should start from next
-
-    // setAttenuation(texelCoord, attentuation * brdfValue); // The attenuation for the next bounce is the current attenuation times the brdf
-    // changeLightAccumulation(texelCoord, receivedLight); // Accumulate the light the has reached the camera
-}
-
 void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
@@ -737,7 +697,7 @@ void main()
     setRayDepth(texelCoord, hit.dist); // Update the nearest distance
     setFirstHitOldDepth(texelCoord, hit.dist);
     setFirstHitPosition(texelCoord, hit.hitLocation);
-    setFirstHitNormal(texelCoord, hit.normal);
+    setFirstHitNormal(texelCoord, normalize(hit.normal));
 
     // Calculate motion vectors
     {
@@ -775,9 +735,33 @@ void main()
 
     // Set the information that comes from material
     MaterialDefinition voxelMaterial = materialDefinitions[hit.material]; // Get the material index of the hit, and map it to an actual material
+
+    vec2 uv = mod(hit.uv / vec2(voxelMaterial.textureScaleX, voxelMaterial.textureScaleY), 1);
+    setFirstHitMaterialUV(texelCoord, uv);
+
     setFirstHitMaterial(texelCoord, int(hit.material));
-    setFirstHitRoughness(texelCoord, voxelMaterial.roughness);
-    setFirstHitHue(texelCoord, rgbToHue(voxelMaterial.albedo * (1 - voxelMaterial.metallic) + voxelMaterial.metallic * voxelMaterial.metallicAlbedo));
+
+    // Modify material data with textures
+    {
+        // Get the uv coord
+        if (voxelMaterial.albedoTextureID != 0)
+        {
+            sampler2D albedoTexture = sampler2D(voxelMaterial.albedoTextureID);
+            voxelMaterial.albedo *= texture(albedoTexture, uv).xyz;
+        }
+
+        if (voxelMaterial.roughnessTextureID != 0)
+        {
+            sampler2D roughnessTexture = sampler2D(voxelMaterial.roughnessTextureID);
+            voxelMaterial.roughness *= texture(roughnessTexture, uv).x;
+        }
+
+        if (voxelMaterial.emissionTextureID != 0)
+        {
+            sampler2D emissionTexture = sampler2D(voxelMaterial.emissionTextureID);
+            voxelMaterial.emission *= texture(emissionTexture, uv).xyz;
+        }
+    }
 
     // Choose next ray direction
     {

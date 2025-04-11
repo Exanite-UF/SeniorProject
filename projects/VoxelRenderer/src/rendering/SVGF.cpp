@@ -33,10 +33,10 @@ void SVGF::isLockOwningThreadCheck() const
 
 SVGF::SVGF()
 {
-    integrateFrameProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::integrateFrameFragmentShader);
-    firstWaveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::firstWaveletIterationFragmentShader);
-    waveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::waveletIterationFragmentShader);
-    toFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::toFramebufferSVGFFragmentShader);
+    integrateFrameProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::integrateFrameFragmentShader)->programId;
+    firstWaveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::firstWaveletIterationFragmentShader)->programId;
+    waveletIterationProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::waveletIterationFragmentShader)->programId;
+    toFramebufferProgram = ShaderManager::getInstance().getGraphicsProgram(Content::screenTriVertexShader, Content::toFramebufferSVGFFragmentShader)->programId;
 }
 
 void SVGF::remakeTextures()
@@ -53,7 +53,7 @@ void SVGF::remakeTextures()
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -67,7 +67,7 @@ void SVGF::remakeTextures()
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -115,7 +115,7 @@ void SVGF::remakeTextures()
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
             }
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -129,7 +129,7 @@ void SVGF::remakeTextures()
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
             }
             glBindTexture(GL_TEXTURE_2D, 0);
         }
@@ -144,7 +144,7 @@ void SVGF::remakeTextures()
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -204,7 +204,7 @@ void SVGF::remakeTextures()
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
             }
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -218,7 +218,7 @@ void SVGF::remakeTextures()
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->renderResolution.x, this->renderResolution.y, 0, GL_RGB, GL_FLOAT, nullptr);
             }
             glBindTexture(GL_TEXTURE_2D, 0);
         }

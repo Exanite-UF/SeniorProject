@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(VoxelRenderer LANGUAGES CXX)
 
-# --- Build ---
+# ----- Build -----
 
 add_executable(VoxelRenderer)
 set_target_properties(VoxelRenderer
@@ -45,7 +45,7 @@ if (DEBUGINFOD_LIBRARY AND SP_ENABLE_PROFILING)
     target_link_libraries(VoxelRenderer PRIVATE ${DEBUGINFOD_LIBRARY})
 endif()
 
-# --- Copy content ---
+# ----- Copy content -----
 
 add_custom_target(VoxelRenderer_CopyContent)
 add_custom_command(
@@ -56,10 +56,16 @@ add_custom_command(
 )
 add_dependencies(VoxelRenderer VoxelRenderer_CopyContent)
 
-# --- Package ---
+# ----- Packaging -----
 
-set(CPACK_PACKAGE_NAME "VoxelRenderer")
-set(CPACK_OUTPUT_CONFIG_FILE "${CMAKE_BINARY_DIR}/CPackConfig-VoxelRenderer.cmake")
-install(TARGETS VoxelRenderer)
+# Include built target
+install(
+    TARGETS VoxelRenderer
+    COMPONENT VoxelRenderer
+)
 
-include(CPack)
+# Include content folder
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/content DESTINATION bin
+    COMPONENT VoxelRenderer
+)

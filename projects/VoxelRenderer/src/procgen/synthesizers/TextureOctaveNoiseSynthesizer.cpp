@@ -10,7 +10,7 @@ TextureOctaveNoiseSynthesizer::TextureOctaveNoiseSynthesizer(int seed, int octav
     this->persistence = persistence;
 }
 
-void TextureOctaveNoiseSynthesizer::generate(std::shared_ptr<TextureData>& textureData)
+void TextureOctaveNoiseSynthesizer::generate(std::shared_ptr<TextureDataA>& textureData)
 {
     siv::BasicPerlinNoise<float> perlinNoise(seed);
 
