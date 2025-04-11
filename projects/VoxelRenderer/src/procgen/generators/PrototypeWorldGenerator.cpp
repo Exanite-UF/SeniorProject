@@ -92,6 +92,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         {
             ZoneScopedN("Generate trees");
 
+            std::lock_guard lock(chunkHierarchyManager.mutex);
+
             // Decoration: Create trees by searching points. 20 trees vs 512^3 checks + caching
             // TODO: Find precise lock locations
             if (!chunkHierarchyManager.isChunkGenerated(chunkPosition, 0))
@@ -125,6 +127,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
         {
             ZoneScopedN("Chunk Hierarchy Draw Structures");
+
+            std::lock_guard lock(chunkHierarchyManager.mutex);
 
             // Chunk hierarchy manager is a 'cache'.
             auto structures = chunkHierarchyManager.getStructuresFromChunk(chunkPosition);
