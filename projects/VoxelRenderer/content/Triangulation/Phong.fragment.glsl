@@ -183,8 +183,8 @@ void main()
     result += ambient;
 
     FragColor = vec4(result, 1.0f);
-    //FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-    // FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    // FragColor = vec4(normalize(Normal) * 0.5 + 0.5, 1.0);
-    // FragColor = vec4(Normal, 1.0);
+    // FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    //  FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    //  FragColor = vec4(normalize(Normal) * 0.5 + 0.5, 1.0);
+    //  FragColor = vec4(Normal, 1.0);
 }
