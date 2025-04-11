@@ -27,10 +27,14 @@ private:
 
     float frequency2D = 0.002;//Scale of the 2D perlin noise
     float frequency3D = 0.01;//Scale of the 3D perlin noise
+    float verticalStride = 1;//Reduces noise checks by resuing occupancy result vertically
+
+    //These could all change continuously with space
     float surfaceProbability = 0.6;//Probablility of a voxel at the surface
     float airProbability = 0.2;//The probablity of a voxel at the maximum height
     float surfaceToBottomFalloffRate = 1;//Fall off from the bottom (higher numbers mean deeper caves)
-    float verticalStride = 1;//Reduces noise checks by resuing occupancy result vertically
+
+    
 
     // Replace surface with dirt
     int dirtDepth = 5;
