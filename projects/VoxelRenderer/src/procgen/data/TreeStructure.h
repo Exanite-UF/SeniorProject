@@ -6,7 +6,7 @@
 class TreeStructure
 {
 private:
-    glm::vec3 originVoxel;
+    glm::ivec2 originVoxel;
     std::shared_ptr<Material> logMaterial;
     std::shared_ptr<Material> leafMaterial;
     int treeHeightVoxels;
@@ -19,12 +19,13 @@ private:
 
     int maxDistanceFromOrigin;
 
+    //TODO: Fix vec3 to ivec3
     void generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height);
     void generateAbsPyramid(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int extentAboveZ, int extentBelowZ, float probabilityToFill);
 
 public:
     TreeStructure(
-        glm::vec3 originVoxel,
+        glm::ivec2 originVoxel,
         std::shared_ptr<Material> logMaterial,
         std::shared_ptr<Material> leafMaterial,
         int treeHeightVoxels,
@@ -35,6 +36,7 @@ public:
         int leafExtentAboveZ,
         float leafProbabilityToFill);
 
-    void generate(VoxelChunkData& chunkData);
+    void generate(VoxelChunkData& chunkData, int z);
+    [[nodiscard]] const glm::ivec2& getOriginVoxel();
     int getMaxDistanceFromOrigin();
 };

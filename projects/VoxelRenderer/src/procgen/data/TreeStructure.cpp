@@ -5,7 +5,7 @@
 #include <tracy/Tracy.hpp>
 
 TreeStructure::TreeStructure(
-    glm::vec3 originVoxel,
+    glm::ivec2 originVoxel,
     std::shared_ptr<Material> logMaterial,
     std::shared_ptr<Material> leafMaterial,
     int treeHeightVoxels,
@@ -29,31 +29,38 @@ TreeStructure::TreeStructure(
     this->maxDistanceFromOrigin = (int)std::ceil(std::max(treeWidthVoxels, leafWidthX) / 2.0f);
 }
 
-void TreeStructure::generate(VoxelChunkData& chunkData)
+void TreeStructure::generate(VoxelChunkData& chunkData, int z)
 {
     ZoneScoped;
+
+    glm::ivec3 transformPosition = { originVoxel.x, originVoxel.y, z};
 
     // Tree Trunk
     generateRectangle(
         chunkData,
-        originVoxel,
+        transformPosition,
         logMaterial,
         treeWidthVoxels,
         treeWidthVoxels,
         treeHeightVoxels);
 
-    glm::vec3 originOffset = { 0, 0, treeHeightVoxels + 1 };
-    originVoxel += originOffset;
+    glm::ivec3 leafOffset = { 0, 0, treeHeightVoxels + 1 };
+    transformPosition += leafOffset;
 
     generateAbsPyramid(
         chunkData,
-        originVoxel,
+        transformPosition,
         leafMaterial,
         leafWidthX,
         leafWidthY,
         leafExtentAboveZ,
         leafExtentBelowZ,
         leafProbabilityToFill);
+}
+
+const glm::ivec2& TreeStructure::getOriginVoxel()
+{
+    return originVoxel;
 }
 
 int TreeStructure::getMaxDistanceFromOrigin()

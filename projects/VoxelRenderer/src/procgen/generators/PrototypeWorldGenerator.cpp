@@ -47,32 +47,13 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     float stoneFrequency = 0.01;
     // float noise = simplexNoise.GetNoise(localX * stoneFrequency, localY * stoneFrequency, localZ * stoneFrequency);
 
-    siv::BasicPerlinNoise<float> perlinNoise(seed);
-
-    // GridPointSynthesizer pointSynthesizer(seed);
-    PoissonDiskPointSynthesizer pointSynthesizer(seed);
-    std::vector<glm::vec3> treeLocations;
-
-    {
-        ZoneScopedN("Generate points");
-
-        int numPoints = 20;
-        pointSynthesizer.generatePoints(treeLocations, numPoints);
-        pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
-
-        // Lexicographic sort
-        VectorUtility::lexicographicSort(treeLocations);
-    }
-
-    int treeIndex = 0;
-    glm::vec3 treeLocation(treeLocations.at(treeIndex));
-    float probabilityToFill = 0.6;
-
-    // Iterating by block since air has empty voxels that don't need to be filled anyways. Form of mipmapping?
-
     {
         ZoneScopedN("Generate terrain");
 
+        siv::BasicPerlinNoise<float> perlinNoise(seed);
+
+        // TODO: Decorate with grass. Data dependency: terrain z-value, grass spawns on surface. Extra computation. 
+        // Intended solution: store surface to texture. Modify update texture. Caching step. 
         glm::vec2 offset = chunkSize * chunkPosition;
         for (int x = 0; x < data.getSize().x; ++x)
         {
@@ -105,37 +86,67 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                     data.setVoxelMaterial({ x, y, z }, dirtMaterial);
                 }
                 lastHeightBlocks -= dirtDepth;
-
-                if (treeLocation.x == x && treeLocation.y == y)
-                {
-                    glm::vec3 originVoxel({ x, y, heightVoxels });
-                    Log::verbose(std::format("Tree Origin Voxel:({:.2f}, {:.2f})", originVoxel.x, originVoxel.y));
-
-                    // Naive seeding. Is there a better way?
-                    TreeStructure tree = createRandomTreeInstance(data, chunkPosition, originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                    chunkHierarchyManager.addStructure(chunkPosition, data, originVoxel, tree);
-
-                    treeIndex++;
-                    if (treeIndex < treeLocations.size())
-                    {
-                        treeLocation = treeLocations.at(treeIndex);
-                    }
-                    else
-                    {
-                        treeLocation = { -1, -1, -1 };
-                    }
-                }
             }
         }
 
         {
-            ZoneScopedN("Chunk Heirarchy Draw Structures");
+            ZoneScopedN("Generate trees");
+            
+            // Decoration: Create trees by searching points. 20 trees vs 512^3 checks + caching
+            // TODO: Find precise lock locations
+            if(!chunkHierarchyManager.isChunkGenerated(chunkPosition, 0))
+            {
+                // GridPointSynthesizer pointSynthesizer(seed);
+                PoissonDiskPointSynthesizer pointSynthesizer(seed);
+                std::vector<glm::vec3> treeLocations;
+                std::vector<TreeStructure> treeStructures;
 
+                {
+                    ZoneScopedN("Generate points");
+
+                    int numPoints = 20;
+                    pointSynthesizer.generatePoints(treeLocations, numPoints);
+                    pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
+
+                    // Lexicographic sort
+                    // VectorUtility::lexicographicSort(treeLocations);
+                }
+
+                for(int i = 0; i < treeLocations.size(); i++)
+                {
+                    glm::ivec2 originVoxel(treeLocations[i].x, treeLocations[i].y);
+                    TreeStructure tree = createRandomTreeInstance(data, chunkPosition, originVoxel, seed, oakLogMaterial, oakLeafMaterial);
+                    chunkHierarchyManager.addStructure(chunkPosition, data, originVoxel, tree);
+                }
+
+                chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
+            }
+        }
+
+        {
+            ZoneScopedN("Chunk Hierarchy Draw Structures");
+
+            // Chunk hierarchy manager is a 'cache'. 
             auto structures = chunkHierarchyManager.getStructuresFromChunk(chunkPosition);
 
+            // Raycast down, place on surface. 
             for (auto& structure : structures)
             {
-                structure->structure.generate(data);
+                const glm::ivec2& originXY = structure->structure.getOriginVoxel();
+
+                int finalZ = 1;
+                for(int z = data.getSize().z - 1; z > 0; z--)
+                {
+                    glm::ivec3 position(originXY.x, originXY.y, z);
+                    if(data.getVoxelOccupancy(position))
+                    {
+                        finalZ = z;
+                        break;
+                    }
+                }
+                
+                // TODO: Raycast here
+                structure->structure.generate(data, finalZ);
             }
         }
     }
@@ -146,7 +157,7 @@ int PrototypeWorldGenerator::randomBetween(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
-TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::vec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
+TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::ivec2 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
 {
     std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
 

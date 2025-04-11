@@ -1,26 +1,25 @@
 #pragma once
 
+#include <format>
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 #include <memory>
 #include <mutex>
+#include <src/utilities/Log.h>
 #include <src/utilities/Singleton.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <src/utilities/Log.h>
-#include <format>
+
 
 #include <src/procgen/data/TreeStructure.h>
 #include <src/world/VoxelChunkData.h>
 
-
-#define sqrt2 1.41421356
 class StructureNode
 {
 public:
     TreeStructure structure;
-	
+
     StructureNode(TreeStructure structure)
         : structure(structure)
     {
@@ -32,7 +31,8 @@ class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
     friend class Singleton;
 
 private:
-	std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
+    std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
+    std::vector<std::unordered_map<glm::ivec2, bool>> isGenerated;
 
     // Singleton needs default constructor
     explicit ChunkHierarchyManager()
@@ -44,15 +44,52 @@ private:
     {
         for (int i = 0; i < levelCount; i++)
         {
-			std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>> level;
+            std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>> level;
             levels.push_back(level);
+			
+			std::unordered_map<glm::ivec2, bool> isLevelGenerated;
+			isGenerated.push_back(isLevelGenerated);
         }
     }
 
 public:
     std::mutex mutex;
 
-    void addStructure(glm::ivec2 chunkPosition, VoxelChunkData& chunkData, glm::vec3 structureOrigin, TreeStructure structure)
+    bool isChunkGenerated(glm::ivec2 chunkPosition, int level)
+    {
+		if(level < 0 || level >= isGenerated.size()) 
+		{
+            throw std::runtime_error("Chunk level does not exist");
+			return false; 
+		}
+
+		auto& isLevelGenerated = isGenerated[level];
+		auto isChunkGenerated = isLevelGenerated.find(chunkPosition);
+
+		if(isChunkGenerated != isLevelGenerated.end())
+		{
+			return isChunkGenerated->second;
+		} 
+		else 
+		{
+			return false;
+		}
+    }
+
+	
+    void setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag)
+    {
+		if(level < 0 || level >= isGenerated.size()) 
+		{
+            throw std::runtime_error("Chunk level does not exist");
+			return;
+		}
+
+		auto& isLevelGenerated = isGenerated[level];
+		isLevelGenerated[chunkPosition] = flag;
+    }
+
+    void addStructure(glm::ivec2 chunkPosition, VoxelChunkData& chunkData, glm::ivec2 structureOrigin, TreeStructure structure)
     {
         if (levels.size() == 0)
             return;
@@ -60,11 +97,11 @@ public:
         glm::ivec2 levelChunkPosition = chunkPosition;
         int chunksPerLevel = 1;
 
-        std::vector<glm::vec3> boundingBoxCorner = {
-            { 1, 1, 0 },
-            { 1, -1, 0 },
-            { -1, -1, 0 },
-            { -1, 1, 0 }
+        std::vector<glm::vec2> boundingBoxCorner = {
+            { 1, 1 },
+            { 1, -1 },
+            { -1, -1 },
+            { -1, 1 }
         };
 
         int selectedLevelIndex = -1;
@@ -91,9 +128,10 @@ public:
             bool insideBoundingBox = true;
             for (int j = 0; j < boundingBoxCorner.size(); j++)
             {
-                glm::vec3& corner = boundingBoxCorner[j];
-                glm::vec3 cornerVoxel = structureOrigin + structureRadius * corner;
-				// Log::verbose(std::format("Corner Voxel:({:.2f}, {:.2f})", cornerVoxel.x, cornerVoxel.y));
+                glm::vec2& corner = boundingBoxCorner[j];
+				glm::ivec2 cornerOffset = glm::ivec2(structureRadius * corner.x, structureRadius * corner.y);
+                glm::ivec2 cornerVoxel = structureOrigin + cornerOffset;
+                // Log::verbose(std::format("Corner Voxel:({:.2f}, {:.2f})", cornerVoxel.x, cornerVoxel.y));
 
                 if (cornerVoxel.x <= levelChunkMinBounds.x || cornerVoxel.y <= levelChunkMinBounds.y)
                 {
