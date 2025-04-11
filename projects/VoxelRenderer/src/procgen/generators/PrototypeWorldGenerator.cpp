@@ -87,51 +87,6 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
         //generate3DSplit(data, glm::ivec4(0), data.getSize());
 
-
-        /*
-        for(int ix = 0; ix < data.getSize().x / stride; ix++){
-            for(int iy = 0; iy < data.getSize().y / stride; iy++){
-                for(int iz = 0; iz < data.getSize().z / stride; iz++){
-
-                    float random3D1 = perlinNoise.octave3D_01((stride * ix + offset.x) * frequency3D, (stride * iy + offset.y) * frequency3D, (stride * iz) * frequency3D, octaves, persistence);
-
-
-                    for(int jx = 0; jx < stride; jx++){
-                        int x = stride * ix + jx;
-                        for(int jy = 0; jy < stride; jy++){
-                            int y = stride * iy + jy;
-                            float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
-                            float height = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
-                   
-                            for(int jz = 0; jz < stride; jz++){
-                                int z = stride * iz + jz;
-
-                                float p = std::min(0.8f, std::exp(-4 * (float)(z - height) / height));
-
-                                if(random3D1 < p + 0.25){
-    
-                                    float random3D2 = perlinNoise.octave3D_01((x + offset.x) * frequency3D, (y + offset.y) * frequency3D, (z) * frequency3D, octaves, persistence);
-                                    if(random3D2 < p){
-                                        data.setVoxelOccupancy({ x, y, z }, true);
-
-                                        
-                                    }
-                                    
-                                    
-                                }
-                                
-                            }
-                        }
-                    }
-
-
-
-                }
-            }
-        }
-
-        */
-
         for(int x = 0; x < data.getSize().x; x++){
             for(int y = 0; y < data.getSize().y; y++){
                 float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
@@ -193,38 +148,11 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                     
                 }
 
-                // Stone Terrain, retain same shape as using voxels of blockLength 1
-                //float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
-                //int offsetVoxels = (int)(baseHeight + (perlinNoiseSample * terrainMaxAmplitude));
-                //
-                //int heightVoxels = glm::min(data.getSize().z, offsetVoxels);
-////
-                //for (int z = 0; z < heightVoxels; ++z)
-                //{
-                //    data.setVoxelOccupancy({ x, y, z }, true);
-                //    data.setVoxelMaterial({ x, y, z }, stoneMaterial);
-                //}
-////
-                //// Replace surface with grass
-                //int lastHeightBlocks = heightVoxels - 1;
-                //for (int z = lastHeightBlocks; z >= lastHeightBlocks - grassDepth && z >= 0; --z)
-                //{
-                //    data.setVoxelOccupancy({ x, y, z }, true);
-                //    data.setVoxelMaterial({ x, y, z }, grassMaterial);
-                //}
-                //lastHeightBlocks -= grassDepth;
-////
-                //// Replace surface with dirt
-                //for (int z = lastHeightBlocks; z >= lastHeightBlocks - dirtDepth && z >= 0; --z)
-                //{
-                //    data.setVoxelOccupancy({ x, y, z }, true);
-                //    data.setVoxelMaterial({ x, y, z }, dirtMaterial);
-                //}
-                //lastHeightBlocks -= dirtDepth;
+                
             }
         }
 
-        if(false){
+        if(true){
             ZoneScopedN("Generate trees");
 
             std::lock_guard lock(chunkHierarchyManager.mutex);
@@ -260,7 +188,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             }
         }
 
-        if(false){
+        if(true){
             ZoneScopedN("Chunk Hierarchy Draw Structures");
 
             std::lock_guard lock(chunkHierarchyManager.mutex);
