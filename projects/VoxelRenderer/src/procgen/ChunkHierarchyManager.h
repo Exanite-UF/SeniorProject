@@ -8,16 +8,19 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <src/utilities/Log.h>
+#include <format>
 
 #include <src/procgen/data/TreeStructure.h>
 #include <src/world/VoxelChunkData.h>
+
 
 #define sqrt2 1.41421356
 class StructureNode
 {
 public:
     TreeStructure structure;
-
+	
     StructureNode(TreeStructure structure)
         : structure(structure)
     {
@@ -29,7 +32,7 @@ class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
     friend class Singleton;
 
 private:
-    std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
+	std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
 
     // Singleton needs default constructor
     explicit ChunkHierarchyManager()
@@ -41,7 +44,8 @@ private:
     {
         for (int i = 0; i < levelCount; i++)
         {
-            levels.emplace({});
+			std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>> level;
+            levels.push_back(level);
         }
     }
 
@@ -56,11 +60,11 @@ public:
         glm::ivec2 levelChunkPosition = chunkPosition;
         int chunksPerLevel = 1;
 
-        std::vector<glm::vec3> boundingBoxCornerDirections = {
-            { sqrt2, sqrt2, 0 },
-            { sqrt2, -sqrt2, 0 },
-            { -sqrt2, -sqrt2, 0 },
-            { -sqrt2, sqrt2, 0 }
+        std::vector<glm::vec3> boundingBoxCorner = {
+            { 1, 1, 0 },
+            { 1, -1, 0 },
+            { -1, -1, 0 },
+            { -1, 1, 0 }
         };
 
         int selectedLevelIndex = -1;
@@ -85,10 +89,11 @@ public:
 
             // Case 2: structure is on boundary of chunk
             bool insideBoundingBox = true;
-            for (int j = 0; j < boundingBoxCornerDirections.size(); j++)
+            for (int j = 0; j < boundingBoxCorner.size(); j++)
             {
-                glm::vec3& direction = boundingBoxCornerDirections[j];
-                glm::ivec3 cornerVoxel = structureOrigin + structureRadius * direction;
+                glm::vec3& corner = boundingBoxCorner[j];
+                glm::vec3 cornerVoxel = structureOrigin + structureRadius * corner;
+				// Log::verbose(std::format("Corner Voxel:({:.2f}, {:.2f})", cornerVoxel.x, cornerVoxel.y));
 
                 if (cornerVoxel.x <= levelChunkMinBounds.x || cornerVoxel.y <= levelChunkMinBounds.y)
                 {

@@ -26,6 +26,7 @@ TreeStructure::TreeStructure(
     this->leafExtentBelowZ = leafExtentBelowZ;
     this->leafExtentAboveZ = leafExtentAboveZ;
     this->leafProbabilityToFill = leafProbabilityToFill;
+    this->maxDistanceFromOrigin = (int)std::ceil(std::max(treeWidthVoxels, leafWidthX) / 2.0f);
 }
 
 void TreeStructure::generate(VoxelChunkData& chunkData)
@@ -53,8 +54,6 @@ void TreeStructure::generate(VoxelChunkData& chunkData)
         leafExtentAboveZ,
         leafExtentBelowZ,
         leafProbabilityToFill);
-
-    maxDistanceFromOrigin = (int)std::ceil(std::max(treeWidthVoxels, leafWidthX) / 2.0f);
 }
 
 int TreeStructure::getMaxDistanceFromOrigin()
