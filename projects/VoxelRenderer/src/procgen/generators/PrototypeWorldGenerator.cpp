@@ -330,7 +330,10 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     }
 
                     //Now we set the material of the voxels based on the description above
+
+                    //Check if grass is enabled
                     if(maxThick <= noMoreGrassDepth){
+                        //If so, try to place grass or dirt
                         if(depth <= grassDepth){
                             data.setVoxelMaterial({ x, y, z }, grassMaterial);
                             continue;
@@ -340,6 +343,8 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                         }
                     }
 
+                    //The default material is stone
+                    
                     //This is stone, I put lights in it for the caves
                     if((rand() % 1000) / 1000.0 < 0.1){
                         data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5));//Candy lights!
