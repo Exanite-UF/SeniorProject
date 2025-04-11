@@ -123,8 +123,8 @@ MaterialManager::MaterialManager()
     }
 
     {
-        auto& material = createMaterial("plaster", "Plaster");
-        material->albedo = glm::vec3(0.8);
+        auto& material = createMaterial("limestone", "Limestone");
+        material->albedo = glm::vec3(0.7);
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);

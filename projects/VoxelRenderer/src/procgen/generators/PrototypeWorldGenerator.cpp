@@ -38,7 +38,6 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     std::shared_ptr<Material> grassMaterial;
     std::shared_ptr<Material> oakLogMaterial;
     std::shared_ptr<Material> oakLeafMaterial;
-    std::shared_ptr<Material> plasterMaterial;
     std::vector<std::shared_ptr<Material>> lights;
 
     {
@@ -48,8 +47,6 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
         WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
         WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
-
-        WorldUtility::tryGetMaterial("plaster", materialManager, plasterMaterial);
 
         lights.emplace_back();
         WorldUtility::tryGetMaterial("white_light", materialManager, lights.back());
@@ -162,7 +159,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     std::shared_ptr<Material> grassMaterial;
     std::shared_ptr<Material> oakLogMaterial;
     std::shared_ptr<Material> oakLeafMaterial;
-    std::shared_ptr<Material> plasterMaterial;
+    std::shared_ptr<Material> limestoneMaterial;
     std::vector<std::shared_ptr<Material>> lights;
 
     {
@@ -171,7 +168,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
         WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
         WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
 
-        WorldUtility::tryGetMaterial("plaster", materialManager, plasterMaterial);
+        WorldUtility::tryGetMaterial("limestone", materialManager, limestoneMaterial);
 
         lights.emplace_back();
         WorldUtility::tryGetMaterial("white_light", materialManager, lights.back());
@@ -344,13 +341,13 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     }
 
                     //The default material is stone
-                    
+
                     //This is stone, I put lights in it for the caves
                     if((rand() % 1000) / 1000.0 < 0.1){
                         data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5));//Candy lights!
                         continue;
                     }else{
-                        data.setVoxelMaterial({ x, y, z }, plasterMaterial);//I use a plaster material because stone is very dark
+                        data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
                         continue;
                     }
 
