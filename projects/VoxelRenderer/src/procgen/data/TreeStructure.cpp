@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <src/world/VoxelChunkData.h>
+#include <src/world/VoxelChunkUtility.h>
 #include <tracy/Tracy.hpp>
 
 TreeStructure::TreeStructure(
@@ -81,7 +82,7 @@ void TreeStructure::generateRectangle(VoxelChunkData& chunkData, glm::vec3 origi
             {
                 glm::vec3 localVoxel = { originVoxel.x + localX - widthXOffset, originVoxel.y + localY - widthYOffset, originVoxel.z + localZ };
 
-                if (!chunkData.isValidPosition(localVoxel))
+                if (!VoxelChunkUtility::isValidPosition(localVoxel, chunkData.getSize()))
                 {
                     continue;
                 }
@@ -112,7 +113,7 @@ void TreeStructure::generateAbsPyramid(VoxelChunkData& chunkData, glm::vec3 orig
                 glm::vec3 localVoxel = { originVoxel.x + localX, originVoxel.y + localY, originVoxel.z + localZ };
 
                 // Fall through
-                if (!chunkData.isValidPosition(localVoxel))
+                if (!VoxelChunkUtility::isValidPosition(localVoxel, chunkData.getSize()))
                 {
                     continue;
                 }

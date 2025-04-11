@@ -6,6 +6,7 @@
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
+#include <src/world/VoxelChunkUtility.h>
 
 PointSynthesizerWorldGenerator::PointSynthesizerWorldGenerator(const std::shared_ptr<PointSynthesizer>& pointSynthesizer)
 {
@@ -48,7 +49,7 @@ void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
         {
             glm::ivec3 voxel = { point.x, point.y, z };
 
-            if (data.isValidPosition(voxel))
+            if (VoxelChunkUtility::isValidPosition(voxel, data.getSize()))
             {
                 data.setVoxelOccupancy(voxel, true);
                 data.setVoxelMaterial(voxel, blackMaterial);
