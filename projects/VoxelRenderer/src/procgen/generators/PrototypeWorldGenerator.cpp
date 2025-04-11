@@ -1,6 +1,8 @@
 #include "PrototypeWorldGenerator.h"
 
 #include <memory>
+#include <vector>
+#include <unordered_map>
 #include <algorithm>
 
 #include <PerlinNoise/PerlinNoise.hpp>
@@ -81,14 +83,41 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         siv::BasicPerlinNoise<float> perlinNoise(seed);
         siv::BasicPerlinNoise<float> perlinNoise2(seed + 1);
 
-        // TODO: Decorate with grass. Data dependency: terrain z-value, grass spawns on surface. Extra computation.
-        // Intended solution: store surface to texture. Modify update texture. Caching step.
+        std::vector<std::vector<std::vector<float>>> cache3D;//This cache is the 3D perlin noise values of the regions that could have terrain (under the max height)
+
+
         glm::vec2 offset = chunkSize * chunkPosition;
+        for(int ix = 0; ix <= data.getSize().x / stride; ix++){
+            int x = stride * ix;
+            cache3D.emplace_back();
+            for(int iy = 0; iy <= data.getSize().y / stride; iy++){
+                int y = stride * iy;
+                cache3D.back().emplace_back();
+                float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
+                float maxHeight = std::floor((baseHeight + perlinNoiseSample * terrainMaxAmplitude) / stride) * stride + stride;
+
+                for(int iz = 0; iz <= data.getSize().z / stride; iz++){
+                    int z = stride * iz;
+                    cache3D.back().back().emplace_back();
+
+                    if(z > maxHeight) continue;//Don't fill out parts of the caches that will never be used
+            
+                    cache3D[ix][iy][iz] = perlinNoise.octave3D_01((x + offset.x) * frequency3D, (y + offset.y) * frequency3D, (z) * frequency3D, octaves, persistence);
+                }
+            }
+        }
 
         //generate3DSplit(data, glm::ivec4(0), data.getSize());
 
+        glm::vec3 interpolationFactor3D = glm::vec3(0);
+        glm::ivec3 subPos = glm::ivec3(0);
         for(int x = 0; x < data.getSize().x; x++){
+            interpolationFactor3D.x = (float)(x % stride) / stride;
+            subPos.x = x / stride;
             for(int y = 0; y < data.getSize().y; y++){
+                interpolationFactor3D.y = (float)(y % stride) / stride;
+                subPos.y = y / stride;
+
                 float perlinNoiseSample = perlinNoise.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
                 float perlinNoiseSample2 = perlinNoise2.octave2D_01((x + offset.x) * frequency, (y + offset.y) * frequency, octaves, persistence);
                 float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
@@ -96,8 +125,27 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
 
                 for(int z = std::floor((std::min(data.getSize().z - 1, (int)maxHeight)) / verticalStride) * verticalStride; z >= 0; z -= verticalStride){
+                    interpolationFactor3D.z = (float)(z % stride) / stride;
+                    subPos.z = z / stride;
+                    //Smoother step (it doesn't look good)
+                    //interpolationFactor = 6.f * glm::pow(interpolationFactor, glm::vec3(5)) - 15.f * glm::pow(interpolationFactor, glm::vec3(4)) + 10.f * glm::pow(interpolationFactor, glm::vec3(3));
 
-                    float random3D = perlinNoise.octave3D_01((x + offset.x) * frequency3D, (y + offset.y) * frequency3D, (z) * frequency3D, octaves, persistence);
+                    float random3D = 0;
+                    for(int i = 0; i < 2; i++){
+                        float temp1 = 0;
+                        for(int j = 0; j < 2; j++){
+                            float temp2 = 0;
+                            for(int k = 0; k < 2; k++){
+                                temp2 += (1 - abs(k - interpolationFactor3D.z)) * cache3D[subPos.x + i][subPos.y + j][subPos.z + k];
+                            }
+
+                            temp1 += (1 - abs(j - interpolationFactor3D.y)) * temp2;
+                        }
+
+                        random3D += (1 - abs(i - interpolationFactor3D.x)) * temp1;
+                    }
+
+                    //float random3D = perlinNoise.octave3D_01((x + offset.x) * frequency3D, (y + offset.y) * frequency3D, (z) * frequency3D, octaves, persistence);
 
 
                     float p = std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));

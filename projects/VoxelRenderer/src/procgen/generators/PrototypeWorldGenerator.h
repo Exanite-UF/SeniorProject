@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <src/procgen/data/TreeStructure.h>
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/procgen/synthesizers/TextureDataSynthesizer.h>
@@ -11,6 +12,8 @@ private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureDataA> textureData;
 
+    
+
     int seed = 1;
 
     // Stone Terrain
@@ -19,6 +22,8 @@ private:
     int baseHeight = 100;//The base height in voxels
     float frequency = 0.002;
     int terrainMaxAmplitude = 200;//Terrain amplitude in voxels
+
+    int stride = 8;
 
     float frequency3D = 0.01;
     float surfaceProbability = 0.6;//Probablility of occupancy at the surface
