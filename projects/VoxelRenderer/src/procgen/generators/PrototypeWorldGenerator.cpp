@@ -215,7 +215,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
                 if(z > maxHeight) continue;//Don't fill out vertical region of the caches that will never be used
         
-                cache3D[ix][iy][iz] = perlinNoise.octave3D_01((x + offset.x) * frequency3D, (y + offset.y) * frequency3D, (z) * frequency3D, octaves, persistence);//Record the 3D perlin noise
+                cache3D[ix][iy][iz] = perlinNoise.octave3D_01((x + offset.x) * frequency3D.x, (y + offset.y) * frequency3D.y, (z) * frequency3D.z, octaves, persistence);//Record the 3D perlin noise
             }
         }
     }
@@ -284,6 +284,11 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     p *= (std::exp(c * z / surfaceHeight) + b) / (1 + b);
                 }
 
+                if(z == 0){
+                    p = 1;
+                    random3D = 0;
+                }
+                
                 //If the 3D noise at this point is below the threshold then fill the voxel
                 if(random3D < p){
                     for(int i = 0; i < verticalStride; i++){
@@ -327,6 +332,11 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     }
 
                     //Now we set the material of the voxels based on the description above
+
+                    if(z == baseHeight){
+                        data.setVoxelMaterial({ x, y, z }, stoneMaterial);
+                        continue;
+                    }
 
                     //Check if grass is enabled
                     if(maxThick <= noMoreGrassDepth){
