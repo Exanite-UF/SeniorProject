@@ -152,7 +152,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             }
         }
 
-        if(true){
+        if(false){
             ZoneScopedN("Generate trees");
 
             std::lock_guard lock(chunkHierarchyManager.mutex);
@@ -188,7 +188,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             }
         }
 
-        if(true){
+        if(false){
             ZoneScopedN("Chunk Hierarchy Draw Structures");
 
             std::lock_guard lock(chunkHierarchyManager.mutex);
