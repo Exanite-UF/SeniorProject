@@ -261,6 +261,25 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMipmaps()
 {
     ZoneScoped;
 
+    if (!component->getIsPartOfWorld())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+        return;
+    }
+
+    auto& chunkData = component->getRawChunkData();
+
+    if (shouldEnableCpuMipmaps != component->getRawChunkData().getHasMipmaps())
+    {
+        shouldCompletelyRegenerateMipmaps = true;
+    }
+
+    if (!shouldCompletelyRegenerateMipmaps)
+    {
+        return;
+    }
+
     // We only need shared access since only one command buffer is applied at a time per chunk
     // This allows the renderer and other code to keep using the chunk as normal
     componentLock.unlock();
@@ -273,20 +292,21 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMipmaps()
             return;
         }
 
-        chunkData.setHasMipmaps(command.enableCpuMipmaps);
+        chunkData.setHasMipmaps(shouldEnableCpuMipmaps);
     }
     componentLock.lock();
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::updateActiveLod()
+{
+    ZoneScoped;
+
     if (!component->getIsPartOfWorld())
     {
         Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
         return;
     }
-}
-
-void VoxelChunkCommandBuffer::CommandApplicator::updateActiveLod()
-{
-    ZoneScoped;
 
     auto& chunkManagerData = component->getChunkManagerData();
 
@@ -306,6 +326,13 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateActiveLod()
 void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
 {
     ZoneScoped;
+
+    if (!component->getIsPartOfWorld())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+        return;
+    }
 
     auto& lods = chunkManagerData.lods;
     if (lods.size() >= command.maxLod)
@@ -361,12 +388,6 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
             }
         }
         componentLock.lock();
-        if (!component->getIsPartOfWorld())
-        {
-            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-            return;
-        }
     }
 
     // Track the max requested LOD even if we don't generate that many
@@ -451,11 +472,5 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
             }
         }
         componentLock.lock();
-        if (!component->getIsPartOfWorld())
-        {
-            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-            return;
-        }
     }
 }
