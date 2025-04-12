@@ -195,6 +195,9 @@ endif()
 # debuginfod
 find_library(DEBUGINFOD_LIBRARY NAMES debuginfod)
 
+# FastNoise2
+add_subdirectory(./external/fastnoise2)
+
 # Extra libraries
 add_library(extra STATIC)
 target_include_directories(extra PUBLIC ./external/extra/include)
