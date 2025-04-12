@@ -53,7 +53,7 @@ private:
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
     RendererData rendererData {};
-    ChunkManagerData modificationData {};
+    ChunkManagerData chunkManagerData {};
 
     std::shared_mutex mutex {};
 

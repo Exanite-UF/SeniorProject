@@ -91,14 +91,20 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
 VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex)
 {
+    // Inputs
     this->commandBuffer = commandBuffer;
     this->component = component;
     this->scene = scene;
 
+    // Synchronization
     componentLock = std::move(std::unique_lock(component->getMutex()));
     gpuUploadLock = std::move(std::unique_lock(gpuUploadMutex, std::defer_lock));
 
+    // Initialize desired states
     this->shouldExistOnGpu = component->getExistsOnGpu();
+    this->shouldEnableCpuMipmaps = component->getChunkData().getHasMipmaps();
+    this->requestedActiveLod = component->getChunkManagerData().requestedActiveLod;
+    this->requestedMaxLod = component->getChunkManagerData().requestedMaxLod;
 }
 
 void VoxelChunkCommandBuffer::CommandApplicator::apply()
@@ -220,7 +226,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 // This allows the renderer and other code to keep using the chunk as normal
                 componentLock.unlock();
                 {
-                    std::shared_lock sharedcomponentLock(component->getMutex());
+                    std::shared_lock sharedComponentLock(component->getMutex());
                     if (!component->getIsPartOfWorld())
                     {
                         Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
@@ -382,7 +388,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
                 componentLock.unlock();
                 {
-                    std::shared_lock sharedcomponentLock(component->getMutex());
+                    std::shared_lock sharedComponentLock(component->getMutex());
                     if (!component->getIsPartOfWorld())
                     {
                         Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");

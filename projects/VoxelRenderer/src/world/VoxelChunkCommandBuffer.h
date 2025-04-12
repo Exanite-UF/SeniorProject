@@ -157,10 +157,12 @@ public:
 private:
     class CommandApplicator
     {
+        // Inputs
         const VoxelChunkCommandBuffer* commandBuffer;
         std::shared_ptr<VoxelChunkComponent> component;
         std::shared_ptr<SceneComponent> scene;
 
+        // Synchronization
         std::unique_lock<std::shared_mutex> componentLock;
         std::unique_lock<std::mutex> gpuUploadLock;
 
@@ -169,7 +171,13 @@ private:
         // Change tracking
         bool shouldCompletelyWriteToGpu = false;
         bool shouldCompletelyRegenerateLods = false;
+        bool shouldCompletelyRegenerateMipmaps = false;
+
+        // Deferred desired states
         bool shouldExistOnGpu;
+        bool shouldEnableCpuMipmaps;
+        int requestedActiveLod;
+        int requestedMaxLod;
 
     public:
         explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex);
