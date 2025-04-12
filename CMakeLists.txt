@@ -94,7 +94,7 @@ endif()
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
 # GLFW
-add_subdirectory(./external/glfw)
+#add_subdirectory(./external/glfw)
 
 # GLM
 add_subdirectory(./external/glm)
@@ -196,6 +196,7 @@ endif()
 find_library(DEBUGINFOD_LIBRARY NAMES debuginfod)
 
 # FastNoise2
+set(FASTNOISE2_NOISETOOL ON "Build the UI for FastNoise2")
 add_subdirectory(./external/fastnoise2)
 
 # Extra libraries
