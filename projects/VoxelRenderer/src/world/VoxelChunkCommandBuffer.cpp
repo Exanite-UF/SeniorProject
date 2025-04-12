@@ -123,7 +123,6 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
     }
 
     auto& chunkData = component->getRawChunkData();
-    auto& chunkManagerData = component->getChunkManagerData();
 
     for (const auto entry : commandBuffer->commands)
     {
@@ -210,7 +209,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
 
                 // This command is deferred until the very end of the command buffer execution
-                auto command = commandBuffer->setExistsOnGpuCommands.at(entry.index);
+                const auto command = commandBuffer->setExistsOnGpuCommands.at(entry.index);
                 shouldExistOnGpu = command.existsOnGpu;
 
                 shouldCompletelyWriteToGpu = true;
@@ -222,7 +221,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetEnableCpuMipmaps");
 
                 // This command is deferred until the very end of the command buffer execution
-                auto command = commandBuffer->setEnableCpuMipmapsCommands.at(entry.index);
+                const auto command = commandBuffer->setEnableCpuMipmapsCommands.at(entry.index);
                 shouldEnableCpuMipmaps = command.enableCpuMipmaps;
 
                 break;
@@ -232,7 +231,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
                 // This command is deferred until the very end of the command buffer execution
-                auto command = commandBuffer->setActiveLodCommands.at(entry.index);
+                const auto command = commandBuffer->setActiveLodCommands.at(entry.index);
                 Assert::isTrue(requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
 
                 requestedActiveLod = command.activeLod;
@@ -244,7 +243,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
 
                 // This command is deferred until the very end of the command buffer execution
-                auto command = commandBuffer->setMaxLodCommands.at(entry.index);
+                const auto command = commandBuffer->setMaxLodCommands.at(entry.index);
                 if (command.trim)
                 {
                     requestedMaxLod = command.maxLod;
@@ -318,8 +317,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateActiveLod()
 
     auto& chunkManagerData = component->getChunkManagerData();
 
-    auto previousActiveLod = chunkManagerData.activeLod;
-    auto activeLod = glm::min(requestedActiveLod, static_cast<int>(chunkManagerData.lods.size()));
+    const auto previousActiveLod = chunkManagerData.activeLod;
+    const auto activeLod = glm::min(requestedActiveLod, static_cast<int>(chunkManagerData.lods.size()));
 
     chunkManagerData.requestedActiveLod = requestedActiveLod;
     chunkManagerData.activeLod = activeLod;
@@ -345,12 +344,12 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
     auto& chunkManagerData = component->getChunkManagerData();
 
     // Calculate max possible LOD
-    int minSideLength = glm::min(glm::min(component->chunkData.getSize().x, component->chunkData.getSize().y), component->chunkData.getSize().z);
-    int maxPossibleLod = minSideLength == 0 ? 0 : glm::log2(minSideLength);
+    const int minSideLength = glm::min(glm::min(component->chunkData.getSize().x, component->chunkData.getSize().y), component->chunkData.getSize().z);
+    const int maxPossibleLod = minSideLength == 0 ? 0 : glm::log2(minSideLength);
 
     // Update max LODs
     chunkManagerData.requestedMaxLod = requestedMaxLod;
-    int maxLodLevels = glm::min(requestedMaxLod, maxPossibleLod);
+    const int maxLodLevels = glm::min(requestedMaxLod, maxPossibleLod);
     auto& lods = chunkManagerData.lods;
 
     // Trim LOD count if needed
@@ -412,7 +411,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         return;
     }
 
-    auto& chunkManagerData = component->getChunkManagerData();
+    const auto& chunkManagerData = component->getChunkManagerData();
 
     if (!shouldExistOnGpu && component->getExistsOnGpu())
     {
@@ -434,9 +433,9 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
     {
         // Find active LOD and upload it to the GPU
         // We don't generate the LOD here
-        auto activeLodIndex = glm::min(chunkManagerData.activeLod, static_cast<int>(chunkManagerData.lods.size()));
-        VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *chunkManagerData.lods.at(activeLodIndex - 1);
-        auto lodSize = lod.getSize();
+        const auto activeLodIndex = glm::min(chunkManagerData.activeLod, static_cast<int>(chunkManagerData.lods.size()));
+        const VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *chunkManagerData.lods.at(activeLodIndex - 1);
+        const auto lodSize = lod.getSize();
 
         // Break if size is not 0
         if (lodSize.x == 0 || lodSize.y == 0 || lodSize.z == 0)
