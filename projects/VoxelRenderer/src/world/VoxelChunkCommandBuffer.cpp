@@ -85,6 +85,22 @@ void VoxelChunkCommandBuffer::clear()
 
 void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
 {
+    CommandApplicator applicator(this, component, scene, &gpuUploadMutex);
+    applicator.apply();
+}
+
+VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex* gpuUploadMutex)
+{
+    this->commandBuffer = commandBuffer;
+    this->component = component;
+    this->scene = scene;
+    this->gpuUploadMutex = gpuUploadMutex;
+
+    this->shouldExistOnGpu = component->getExistsOnGpu();
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::apply()
+{
     ZoneScoped;
 
     // Acquire lock for component, but not for the scene
@@ -99,13 +115,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     auto& chunkData = component->getRawChunkData();
     auto& chunkManagerData = component->getChunkManagerData();
 
-    // TODO: Track exact changes for optimized CPU -> GPU copies
-    // TODO: Note that change tracking also needs to consider the active LOD
-    // Change tracking
-    bool isGpuUpToDate = true;
-    bool shouldExistOnGpu = component->getExistsOnGpu();
-
-    for (const auto entry : commands)
+    for (const auto entry : commandBuffer->commands)
     {
         switch (entry.type)
         {
@@ -113,13 +123,13 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetSize");
 
-                auto command = setSizeCommands.at(entry.index);
+                auto command = commandBuffer->setSizeCommands.at(entry.index);
                 chunkData.setSize(command.size);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
-                // TODO: Regenerate LODs
-                setActiveLodInternal(component, isGpuUpToDate, chunkManagerData.activeLod);
+                shouldCompletelyRegenerateLods = true;
+                setActiveLod(chunkManagerData.activeLod);
 
                 break;
             }
@@ -127,10 +137,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetOccupancy");
 
-                auto command = setOccupancyCommands.at(entry.index);
+                auto command = commandBuffer->setOccupancyCommands.at(entry.index);
                 chunkData.setVoxelOccupancy(command.position, command.isOccupied);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
                 // TODO: Update mipmaps
                 // TODO: Update LODs
@@ -141,10 +151,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaterial");
 
-                auto command = setMaterialCommands.at(entry.index);
+                auto command = commandBuffer->setMaterialCommands.at(entry.index);
                 chunkData.setVoxelMaterialIndex(command.position, command.materialIndex);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
                 // TODO: Update LODs
 
@@ -156,7 +166,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 chunkData.clearOccupancyMap();
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
                 // TODO: Update LODs
 
@@ -168,7 +178,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 chunkData.clearMaterialMap();
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
                 // TODO: Update LODs
 
@@ -178,10 +188,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - Copy");
 
-                auto command = copyCommands.at(entry.index);
+                auto command = commandBuffer->copyCommands.at(entry.index);
                 chunkData.copyFrom(*command.source);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
                 // TODO: Update LODs
 
@@ -192,10 +202,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
 
                 // This command is deferred until the very end of the command buffer execution
-                auto command = setExistsOnGpuCommands.at(entry.index);
+                auto command = commandBuffer->setExistsOnGpuCommands.at(entry.index);
                 shouldExistOnGpu = command.existsOnGpu;
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
                 break;
             }
@@ -203,7 +213,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetEnableCpuMipmaps");
 
-                auto command = setEnableCpuMipmapsCommands.at(entry.index);
+                auto command = commandBuffer->setEnableCpuMipmapsCommands.at(entry.index);
 
                 // We only need shared access since only one command buffer is applied at a time per chunk
                 // This allows the renderer and other code to keep using the chunk as normal
@@ -233,10 +243,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
-                auto command = setActiveLodCommands.at(entry.index);
+                auto command = commandBuffer->setActiveLodCommands.at(entry.index);
                 Assert::isTrue(chunkManagerData.requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
 
-                setActiveLodInternal(component, isGpuUpToDate, command.activeLod);
+                setActiveLod(command.activeLod);
 
                 break;
             }
@@ -244,7 +254,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
 
-                auto command = setMaxLodCommands.at(entry.index);
+                auto command = commandBuffer->setMaxLodCommands.at(entry.index);
                 auto& lods = chunkManagerData.lods;
                 if (lods.size() >= command.maxLod)
                 {
@@ -329,12 +339,12 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 // Deallocate and exit
                 component->deallocateGpuData();
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
 
                 break;
             }
 
-            if (isGpuUpToDate)
+            if (!shouldCompletelyWriteToGpu)
             {
                 // GPU is already up to date, skip writing to the GPU
                 break;
@@ -391,12 +401,10 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                     }
 
                     {
-                        std::lock_guard lockGpuUpload(gpuUploadMutex);
+                        std::lock_guard lockGpuUpload(*gpuUploadMutex);
                         auto& test = *component->getChunk();
                         lod.copyTo(test);
                     }
-
-                    isGpuUpToDate = true;
                 }
                 lockComponent.lock();
                 if (!component->getIsPartOfWorld())
@@ -412,7 +420,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     }
 }
 
-void VoxelChunkCommandBuffer::setActiveLodInternal(const std::shared_ptr<VoxelChunkComponent>& component, bool& isGpuUpToDate, const int activeLod) const
+void VoxelChunkCommandBuffer::CommandApplicator::setActiveLod(int activeLod)
 {
     auto& chunkManagerData = component->getChunkManagerData();
 
@@ -425,6 +433,6 @@ void VoxelChunkCommandBuffer::setActiveLodInternal(const std::shared_ptr<VoxelCh
 
     if (previousActiveLod != activeLod)
     {
-        isGpuUpToDate = false;
+        shouldCompletelyWriteToGpu = true;
     }
 }

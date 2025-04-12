@@ -155,8 +155,29 @@ public:
     void clear();
 
 private:
+    class CommandApplicator
+    {
+        const VoxelChunkCommandBuffer* commandBuffer;
+        std::shared_ptr<VoxelChunkComponent> component;
+        std::shared_ptr<SceneComponent> scene;
+        std::mutex* gpuUploadMutex;
+
+        // TODO: Track exact changes for optimized CPU -> GPU copies
+        // TODO: Note that change tracking also needs to consider the active LOD
+        // Change tracking
+        bool shouldCompletelyWriteToGpu = false;
+        bool shouldCompletelyRegenerateLods = false;
+        bool shouldExistOnGpu;
+
+    public:
+        explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex* gpuUploadMutex);
+
+        void apply();
+
+    private:
+        void setActiveLod(int activeLod);
+    };
+
     // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
     void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const;
-
-    void setActiveLodInternal(const std::shared_ptr<VoxelChunkComponent>& component, bool& isGpuUpToDate, int activeLod) const;
 };
