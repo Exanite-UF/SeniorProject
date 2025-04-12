@@ -373,10 +373,16 @@ void VoxelChunkManager::update(const float deltaTime)
                 }
 
                 Log::verbose(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
+
+                // Only load one chunk per frame to reduce stutters
+                break;
             }
         }
 
-        state.isChunkLoadingDirty = false;
+        if (chunksToLoad.empty())
+        {
+            state.isChunkLoadingDirty = false;
+        }
     }
 
     // Chunk unloading logic
