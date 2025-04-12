@@ -148,8 +148,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                 shouldCompletelyWriteToGpu = true;
 
-                // TODO: Update mipmaps
-                // TODO: Update LODs
+                // TODO: Incrementally update mipmaps
+                // TODO: Incrementally update LODs
 
                 break;
             }
@@ -162,7 +162,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                 shouldCompletelyWriteToGpu = true;
 
-                // TODO: Update LODs
+                // TODO: Incrementally update LODs
 
                 break;
             }
@@ -173,9 +173,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 chunkData.clearOccupancyMap();
 
                 shouldCompletelyWriteToGpu = true;
-
-                // TODO: Update mipmaps
-                // TODO: Update LODs
+                shouldCompletelyRegenerateLods = true;
+                shouldCompletelyRegenerateMipmaps = true;
 
                 break;
             }
@@ -186,8 +185,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 chunkData.clearMaterialMap();
 
                 shouldCompletelyWriteToGpu = true;
-
-                // TODO: Update LODs
+                shouldCompletelyRegenerateLods = true;
 
                 break;
             }
@@ -199,8 +197,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 chunkData.copyFrom(*command.source);
 
                 shouldCompletelyWriteToGpu = true;
-
-                // TODO: Update LODs
+                shouldCompletelyRegenerateLods = true;
+                shouldCompletelyRegenerateMipmaps = true;
 
                 break;
             }
