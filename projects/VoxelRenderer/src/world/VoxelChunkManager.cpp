@@ -411,6 +411,9 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 Log::information(std::format("Unloaded chunk at ({}, {})", chunkPositionToUnload.x, chunkPositionToUnload.y));
                 state.activeChunks.erase(chunkPositionToUnload);
+
+                // Only destroy one chunk per frame to reduce stutters
+                break;
             }
         }
 
