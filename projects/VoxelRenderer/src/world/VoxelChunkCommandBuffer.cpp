@@ -168,6 +168,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                 shouldCompletelyWriteToGpu = true;
 
+                // TODO: Update mipmaps
                 // TODO: Update LODs
 
                 break;
@@ -391,8 +392,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                     if (!component->getExistsOnGpu())
                     {
-                        // Note that this case cannot happen when the VoxelChunkComponent is only modified
-                        // by the chunk modification threads.
+                        // Note that this case cannot happen when the VoxelChunkComponent
+                        // is only modified by the chunk modification threads.
                         //
                         // This is because the chunk modification threads respect command buffer submission order.
                         Log::error("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer uploaded to the GPU. This usually indicates a synchronization error.");
