@@ -1,5 +1,6 @@
 #include "VoxelChunkCommandBuffer.h"
 
+#include <glm/gtc/integer.hpp>
 #include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
@@ -345,7 +346,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
 
     // Calculate max possible LOD
     int minSideLength = glm::min(glm::min(component->chunkData.getSize().x, component->chunkData.getSize().y), component->chunkData.getSize().z);
-    int maxPossibleLod = glm::log2(minSideLength);
+    int maxPossibleLod = minSideLength == 0 ? 0 : glm::log2(minSideLength);
 
     // Update max LODs
     chunkManagerData.requestedMaxLod = requestedMaxLod;
@@ -365,6 +366,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
     }
 
     // Regenerate LODs as needed
+    if (lodRegenerationStartIndex < lods.size())
     {
         // We only need shared access since only one command buffer is applied at a time per chunk
         // This allows the renderer and other code to keep using the chunk as normal
@@ -380,14 +382,23 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
 
             for (int i = lodRegenerationStartIndex; i < lods.size(); ++i)
             {
-                auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
-                auto newLod = std::make_shared<VoxelChunkData>();
+                auto& previousLod = i > 0 ? *lods.at(i - 1) : component->chunkData;
+                auto newLod = lods.at(i);
 
                 previousLod.copyToLod(*newLod);
             }
+
+#if DEBUG
+            for (int i = 0; i < lods.size(); ++i)
+            {
+                Assert::isTrue(lods.at(i)->getSize() != glm::ivec3(0), "LOD has 0 size");
+            }
+#endif
         }
         componentLock.lock();
     }
+
+    lodRegenerationStartIndex = lods.size();
 }
 
 void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
