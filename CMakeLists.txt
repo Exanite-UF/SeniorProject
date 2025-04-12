@@ -28,20 +28,20 @@ endif()
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
-    # Set IPO policy
-    # The NEW policy enables IPO flags for all compilers if possible and to error if not
-    # We check for compatibility below so using the new policy is safe
-    cmake_policy(SET CMP0069 NEW)
-    set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
-
-    # Enable Inter-Procedural Optimization (IPO) if supported by the compiler
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT IS_IPO_SUPPORTED)
-    if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-    endif()
-endif()
+#if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+#    # Set IPO policy
+#    # The NEW policy enables IPO flags for all compilers if possible and to error if not
+#    # We check for compatibility below so using the new policy is safe
+#    cmake_policy(SET CMP0069 NEW)
+#    set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+#
+#    # Enable Inter-Procedural Optimization (IPO) if supported by the compiler
+#    include(CheckIPOSupported)
+#    check_ipo_supported(RESULT IS_IPO_SUPPORTED)
+#    if((IS_IPO_SUPPORTED) AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
+#        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+#    endif()
+#endif()
 
 # --- Output options ---
 
