@@ -520,32 +520,10 @@ void VoxelChunkManager::update(const float deltaTime)
                 VoxelChunkCommandBuffer commandBuffer {};
                 commandBuffer.setMaxLod(lod);
                 commandBuffer.setActiveLod(lod);
+                commandBuffer.setExistsOnGpu(true);
 
                 submitCommandBuffer(chunk, commandBuffer);
                 chunk->getChunkManagerData().desiredLod = lod;
-            }
-        }
-
-        {
-            ZoneScopedN("Chunk uploading");
-
-            for (int i = 0; i < worldChunks.size(); ++i)
-            {
-                auto& chunk = worldChunks.at(i);
-                bool shouldUpload = (chunk->getRendererData().isVisible || i < 4) && !chunk->getChunkManagerData().isPendingDestroy;
-
-                if (shouldUpload == chunk->getChunkManagerData().isUploadDesired)
-                {
-                    // Upload state is already the same as desired OR we already have a pending command buffer submitted
-                    continue;
-                }
-
-                // Submit command buffer
-                VoxelChunkCommandBuffer commandBuffer {};
-                commandBuffer.setExistsOnGpu(shouldUpload);
-
-                submitCommandBuffer(chunk, commandBuffer);
-                chunk->getChunkManagerData().isUploadDesired = shouldUpload;
             }
         }
     }
