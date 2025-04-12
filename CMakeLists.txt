@@ -25,9 +25,6 @@ endif()
 
 # --- Linking options ---
 
-# Use static linking by default
-set(BUILD_SHARED_LIBS OFF)
-
 # This allows shared libraries to be loaded at different memory addresses
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -55,11 +52,6 @@ set(CMAKE_DEBUG_POSTFIX d)
 if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
-
-# Put build outputs into the following folders
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # --- Windows ---
 
