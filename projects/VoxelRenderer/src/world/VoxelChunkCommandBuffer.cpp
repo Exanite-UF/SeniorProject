@@ -68,6 +68,21 @@ void VoxelChunkCommandBuffer::setMaxLod(int maxLod, bool trim)
     setMaxLodCommands.emplace_back(maxLod, trim);
 }
 
+void VoxelChunkCommandBuffer::clear()
+{
+    ZoneScoped;
+
+    commands.clear();
+    setSizeCommands.clear();
+    setOccupancyCommands.clear();
+    setMaterialCommands.clear();
+    copyCommands.clear();
+    setExistsOnGpuCommands.clear();
+    setEnableCpuMipmapsCommands.clear();
+    setActiveLodCommands.clear();
+    setMaxLodCommands.clear();
+}
+
 void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
 {
     ZoneScoped;
@@ -103,7 +118,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 isGpuUpToDate = false;
 
-                // TODO: Update LODs
+                // TODO: Regenerate LODs
+                setActiveLodInternal(component, isGpuUpToDate, chunkManagerData.activeLod);
 
                 break;
             }
@@ -218,18 +234,9 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
                 auto command = setActiveLodCommands.at(entry.index);
-                Assert::isTrue(chunkManagerData.maxRequestedLod >= command.activeLod, "Requested LOD has not been generated");
+                Assert::isTrue(chunkManagerData.requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
 
-                auto previousActiveLod = chunkManagerData.activeLod;
-                auto lodToActivate = glm::min(command.activeLod, static_cast<int>(chunkManagerData.lods.size()));
-
-                chunkManagerData.activeLod = lodToActivate;
-                component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
-
-                if (previousActiveLod != command.activeLod)
-                {
-                    isGpuUpToDate = false;
-                }
+                setActiveLodInternal(component, isGpuUpToDate, command.activeLod);
 
                 break;
             }
@@ -252,7 +259,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                             lods.pop_back();
                         }
 
-                        chunkManagerData.maxRequestedLod = command.maxLod;
+                        chunkManagerData.requestedMaxLod = command.maxLod;
                     }
 
                     // Early exit
@@ -303,7 +310,7 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
                 // Track the max requested LOD even if we don't generate that many
                 // This means we "virtually" generate the LOD when the size of the chunk is too small to allow for that many LODs
                 // This is to allow users of the command buffer API to ignore the size of the voxel chunk when setting the max and active LODs
-                chunkManagerData.maxRequestedLod = command.maxLod;
+                chunkManagerData.requestedMaxLod = command.maxLod;
 
                 break;
             }
@@ -405,17 +412,19 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     }
 }
 
-void VoxelChunkCommandBuffer::clear()
+void VoxelChunkCommandBuffer::setActiveLodInternal(const std::shared_ptr<VoxelChunkComponent>& component, bool& isGpuUpToDate, const int activeLod) const
 {
-    ZoneScoped;
+    auto& chunkManagerData = component->getChunkManagerData();
 
-    commands.clear();
-    setSizeCommands.clear();
-    setOccupancyCommands.clear();
-    setMaterialCommands.clear();
-    copyCommands.clear();
-    setExistsOnGpuCommands.clear();
-    setEnableCpuMipmapsCommands.clear();
-    setActiveLodCommands.clear();
-    setMaxLodCommands.clear();
+    auto previousActiveLod = chunkManagerData.activeLod;
+    auto lodToActivate = glm::min(activeLod, static_cast<int>(chunkManagerData.lods.size()));
+
+    chunkManagerData.requestedActiveLod = activeLod;
+    chunkManagerData.activeLod = lodToActivate;
+    component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
+
+    if (previousActiveLod != activeLod)
+    {
+        isGpuUpToDate = false;
+    }
 }
