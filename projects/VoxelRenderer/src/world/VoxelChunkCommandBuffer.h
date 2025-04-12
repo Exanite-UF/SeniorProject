@@ -160,7 +160,9 @@ private:
         const VoxelChunkCommandBuffer* commandBuffer;
         std::shared_ptr<VoxelChunkComponent> component;
         std::shared_ptr<SceneComponent> scene;
-        std::mutex* gpuUploadMutex;
+
+        std::unique_lock<std::shared_mutex> componentLock;
+        std::unique_lock<std::mutex> gpuUploadLock;
 
         // TODO: Track exact changes for optimized CPU -> GPU copies
         // TODO: Note that change tracking also needs to consider the active LOD
@@ -170,7 +172,7 @@ private:
         bool shouldExistOnGpu;
 
     public:
-        explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex* gpuUploadMutex);
+        explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex);
 
         void apply();
 
