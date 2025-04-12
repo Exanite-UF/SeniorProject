@@ -46,7 +46,7 @@ VoxelChunkComponent::RendererData& VoxelChunkComponent::getRendererData()
 
 VoxelChunkComponent::ChunkManagerData& VoxelChunkComponent::getChunkManagerData()
 {
-    return modificationData;
+    return chunkManagerData;
 }
 
 bool VoxelChunkComponent::getExistsOnGpu() const

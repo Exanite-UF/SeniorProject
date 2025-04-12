@@ -37,9 +37,10 @@ public:
         PendingTasks<void> pendingTasks {};
 
         // Used by LODing system
-        int activeLod = 0;
-        int maxRequestedLod = 0; // Tracks what LOD levels have been requested before. See VoxelChunkCommandBuffer::apply()'s SetMaxLod case for more info.
         std::vector<std::shared_ptr<VoxelChunkData>> lods {};
+        int activeLod = 0; // The actual LOD level. This is limited by the possible amount of LODs that can be generated.
+        int requestedActiveLod = 0; // The active LOD level, as requested by the user. This may be higher than what is used.
+        int requestedMaxLod = 0; // The max LOD level, as requested by the user. This may be higher than the number of LODs that can be generated.
 
         // For caching
         bool isPendingDestroy = false;
@@ -52,7 +53,7 @@ private:
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
     RendererData rendererData {};
-    ChunkManagerData modificationData {};
+    ChunkManagerData chunkManagerData {};
 
     std::shared_mutex mutex {};
 

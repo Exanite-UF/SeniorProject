@@ -76,6 +76,10 @@ VoxelChunkManager::ActiveWorldChunk::~ActiveWorldChunk()
     {
         component->getGameObject()->removeFromWorld();
     }
+
+    // Reset pointers here so Tracy profiler can track how long the destructors take
+    component.reset();
+    scene.reset();
 }
 
 VoxelChunkManager::~VoxelChunkManager() = default;
@@ -134,7 +138,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk loading threads
     {
-        auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2);
+        auto loadingThreadCount = std::max(2u, std::thread::hardware_concurrency() / 2);
         Log::information(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
         for (int i = 0; i < loadingThreadCount; ++i)
         {
@@ -144,7 +148,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk modification threads
     {
-        auto modificationThreadCount = Constants::VoxelChunkManager::maxChunkModificationThreads; // Note: Each thread must have its own GlfwContext.
+        auto modificationThreadCount = modificationThreadContexts.size(); // Note: Each thread must have its own GlfwContext.
         Log::information(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
         for (int i = 0; i < modificationThreadCount; ++i)
         {
@@ -204,7 +208,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
             generator.setChunkSize(task->chunkSize);
             generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0));
 
-            generator.generate(*task->chunkData);
+            generator.generate(*task->chunkData, false);
         }
 
         Log::verbose(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
@@ -369,10 +373,16 @@ void VoxelChunkManager::update(const float deltaTime)
                 }
 
                 Log::verbose(std::format("Loading chunk at ({}, {})", chunkToLoad.x, chunkToLoad.y));
+
+                // Only load one chunk per frame to reduce stutters
+                break;
             }
         }
 
-        state.isChunkLoadingDirty = false;
+        if (chunksToLoad.empty())
+        {
+            state.isChunkLoadingDirty = false;
+        }
     }
 
     // Chunk unloading logic
@@ -407,6 +417,9 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 Log::information(std::format("Unloaded chunk at ({}, {})", chunkPositionToUnload.x, chunkPositionToUnload.y));
                 state.activeChunks.erase(chunkPositionToUnload);
+
+                // Only destroy one chunk per frame to reduce stutters
+                break;
             }
         }
 
@@ -518,34 +531,12 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 // Submit command buffer
                 VoxelChunkCommandBuffer commandBuffer {};
-                commandBuffer.setMaxLod(lod);
+                commandBuffer.setMaxLod(maxLod);
                 commandBuffer.setActiveLod(lod);
+                commandBuffer.setExistsOnGpu(true);
 
                 submitCommandBuffer(chunk, commandBuffer);
                 chunk->getChunkManagerData().desiredLod = lod;
-            }
-        }
-
-        {
-            ZoneScopedN("Chunk uploading");
-
-            for (int i = 0; i < worldChunks.size(); ++i)
-            {
-                auto& chunk = worldChunks.at(i);
-                bool shouldUpload = (chunk->getRendererData().isVisible || i < 4) && !chunk->getChunkManagerData().isPendingDestroy;
-
-                if (shouldUpload == chunk->getChunkManagerData().isUploadDesired)
-                {
-                    // Upload state is already the same as desired OR we already have a pending command buffer submitted
-                    continue;
-                }
-
-                // Submit command buffer
-                VoxelChunkCommandBuffer commandBuffer {};
-                commandBuffer.setExistsOnGpu(shouldUpload);
-
-                submitCommandBuffer(chunk, commandBuffer);
-                chunk->getChunkManagerData().isUploadDesired = shouldUpload;
             }
         }
     }

@@ -62,7 +62,7 @@ public:
     void updateMipmaps();
 
     void copyFrom(VoxelChunk& other);
-    void copyTo(VoxelChunk& other);
+    void copyTo(VoxelChunk& other) const;
 
     void copyFrom(const VoxelChunkData& other);
     void copyTo(VoxelChunkData& other) const;

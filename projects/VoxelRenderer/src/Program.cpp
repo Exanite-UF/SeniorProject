@@ -82,9 +82,10 @@ Program::Program()
 
     std::shared_ptr<GlfwContext> previousContext {};
 
-    for (int i = 0; i < Constants::VoxelChunkManager::maxChunkModificationThreads; ++i)
+    auto chunkModificationThreadCount = std::max(2u, std::thread::hardware_concurrency() / 2);
+    for (int i = 0; i < chunkModificationThreadCount; ++i)
     {
-        previousContext = std::make_shared<GlfwContext>("Chunk modification", previousContext.get());
+        previousContext = std::make_shared<GlfwContext>(std::format("Chunk modification {}", i), previousContext.get());
         chunkModificationThreadContexts.push_back(previousContext);
     }
 
@@ -553,17 +554,17 @@ void Program::run()
 
                     if (input->isKeyPressed(GLFW_KEY_F6))
                     {
-                        exaniteWorldGenerator.generate(*closestChunk);
+                        exaniteWorldGenerator.generate(closestChunk);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F7))
                     {
-                        exampleWorldGenerator.generate(*closestChunk);
+                        exampleWorldGenerator.generate(closestChunk);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F8))
                     {
-                        prototypeWorldGenerator.generate(*closestChunk);
+                        prototypeWorldGenerator.generate(closestChunk);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F9))
