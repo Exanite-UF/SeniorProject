@@ -258,10 +258,10 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
         }
     }
 
-    updateMipmaps();
     updateMaxLod();
     updateActiveLod();
     updateGpu();
+    updateMipmaps();
 }
 
 void VoxelChunkCommandBuffer::CommandApplicator::updateMipmaps()
