@@ -465,7 +465,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
                 // is only modified by the chunk modification threads.
                 //
                 // This is because the chunk modification threads respect command buffer submission order.
-                Log::error("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer uploaded to the GPU. This usually indicates a synchronization error.");
+                Log::error("Failed to apply VoxelChunkCommandBuffer (unexpected case). VoxelChunkComponent is no longer uploaded to the GPU. This usually indicates a synchronization error.");
 
                 return;
             }
