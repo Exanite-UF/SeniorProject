@@ -208,7 +208,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
     
 
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
 
     // Create an array of floats to store the noise output in
     std::vector<float> noiseOutput3D(data.getSize().x * data.getSize().y * data.getSize().z);
@@ -345,9 +345,9 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     }
 
 
-    auto end = std::chrono::high_resolution_clock::now();
+    //auto end = std::chrono::high_resolution_clock::now();
 
-    std::cout << std::chrono::duration<double>(end - start).count() << std::endl;
+    //std::cout << std::chrono::duration<double>(end - start).count() << std::endl;
 }
 
 /*
