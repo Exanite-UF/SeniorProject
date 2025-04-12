@@ -24,6 +24,7 @@ target_link_libraries(VoxelRenderer PRIVATE imgui)
 target_link_libraries(VoxelRenderer PRIVATE assimp)
 target_link_libraries(VoxelRenderer PRIVATE Jolt)
 target_link_libraries(VoxelRenderer PRIVATE stb)
+target_link_libraries(VoxelRenderer PRIVATE FastNoise2)
 target_link_libraries(VoxelRenderer PRIVATE extra)
 
 # Boost is a CGAL dependency

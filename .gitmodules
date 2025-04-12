@@ -22,3 +22,6 @@
 [submodule "external/tracy"]
 	path = external/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "external/fastnoise2"]
+	path = external/fastnoise2
+	url = https://github.com/Auburn/FastNoise2.git
