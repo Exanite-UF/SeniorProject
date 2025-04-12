@@ -100,6 +100,9 @@ VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(const VoxelChunkCo
     componentLock = std::move(std::unique_lock(component->getMutex()));
     gpuUploadLock = std::move(std::unique_lock(gpuUploadMutex, std::defer_lock));
 
+    // Change tracking
+    lodRegenerationStartIndex = component->getChunkManagerData().lods.size();
+
     // Initialize desired states
     this->shouldExistOnGpu = component->getExistsOnGpu();
     this->shouldEnableCpuMipmaps = component->getChunkData().getHasMipmaps();
@@ -133,9 +136,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 chunkData.setSize(command.size);
 
                 shouldCompletelyWriteToGpu = true;
-
-                shouldCompletelyRegenerateLods = true;
-                setActiveLod(chunkManagerData.activeLod);
+                shouldCompletelyRegenerateMipmaps = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -173,8 +175,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 chunkData.clearOccupancyMap();
 
                 shouldCompletelyWriteToGpu = true;
-                shouldCompletelyRegenerateLods = true;
                 shouldCompletelyRegenerateMipmaps = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -185,7 +187,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 chunkData.clearMaterialMap();
 
                 shouldCompletelyWriteToGpu = true;
-                shouldCompletelyRegenerateLods = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -197,8 +199,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 chunkData.copyFrom(*command.source);
 
                 shouldCompletelyWriteToGpu = true;
-                shouldCompletelyRegenerateLods = true;
                 shouldCompletelyRegenerateMipmaps = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -218,29 +220,9 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetEnableCpuMipmaps");
 
+                // This command is deferred until the very end of the command buffer execution
                 auto command = commandBuffer->setEnableCpuMipmapsCommands.at(entry.index);
-
-                // We only need shared access since only one command buffer is applied at a time per chunk
-                // This allows the renderer and other code to keep using the chunk as normal
-                componentLock.unlock();
-                {
-                    std::shared_lock sharedComponentLock(component->getMutex());
-                    if (!component->getIsPartOfWorld())
-                    {
-                        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                        return;
-                    }
-
-                    chunkData.setHasMipmaps(command.enableCpuMipmaps);
-                }
-                componentLock.lock();
-                if (!component->getIsPartOfWorld())
-                {
-                    Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                    return;
-                }
+                shouldEnableCpuMipmaps = command.enableCpuMipmaps;
 
                 break;
             }
@@ -248,10 +230,11 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
 
+                // This command is deferred until the very end of the command buffer execution
                 auto command = commandBuffer->setActiveLodCommands.at(entry.index);
-                Assert::isTrue(chunkManagerData.requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
+                Assert::isTrue(requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
 
-                setActiveLod(command.activeLod);
+                requestedActiveLod = command.activeLod;
 
                 break;
             }
@@ -259,185 +242,220 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
 
+                // This command is deferred until the very end of the command buffer execution
                 auto command = commandBuffer->setMaxLodCommands.at(entry.index);
-                auto& lods = chunkManagerData.lods;
-                if (lods.size() >= command.maxLod)
-                {
-                    // We already have enough LODs
-
-                    // Trim if needed
-                    if (command.trim)
-                    {
-                        Assert::isTrue(chunkManagerData.activeLod <= command.maxLod, "LOD is being used, cannot trim");
-                        while (lods.size() > command.maxLod)
-                        {
-                            lods.pop_back();
-                        }
-
-                        chunkManagerData.requestedMaxLod = command.maxLod;
-                    }
-
-                    // Early exit
-                    break;
-                }
-
-                // We don't have enough LODs
-                // We need to generate them
-                auto newLodsRequired = command.maxLod - lods.size();
-                {
-                    // We only need shared access since only one command buffer is applied at a time per chunk
-                    // This allows the renderer and other code to keep using the chunk as normal
-                    componentLock.unlock();
-                    {
-                        std::shared_lock sharedComponentLock(component->getMutex());
-                        if (!component->getIsPartOfWorld())
-                        {
-                            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                            return;
-                        }
-
-                        for (int i = 0; i < newLodsRequired; ++i)
-                        {
-                            auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
-                            auto previousLodSize = previousLod.getSize();
-                            if (previousLodSize.x < 2 || previousLodSize.y < 2 || previousLodSize.z < 2)
-                            {
-                                // Previous LOD is too small to make another LOD level
-                                break;
-                            }
-
-                            auto newLod = std::make_shared<VoxelChunkData>();
-                            lods.push_back(newLod);
-
-                            previousLod.copyToLod(*newLod);
-                        }
-                    }
-                    componentLock.lock();
-                    if (!component->getIsPartOfWorld())
-                    {
-                        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                        return;
-                    }
-                }
-
-                // Track the max requested LOD even if we don't generate that many
-                // This means we "virtually" generate the LOD when the size of the chunk is too small to allow for that many LODs
-                // This is to allow users of the command buffer API to ignore the size of the voxel chunk when setting the max and active LODs
-                chunkManagerData.requestedMaxLod = command.maxLod;
+                requestedMaxLod = command.maxLod;
 
                 break;
             }
         }
     }
 
+    updateMipmaps();
+    updateMaxLod();
+    updateActiveLod();
+    updateGpu();
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::updateMipmaps()
+{
+    ZoneScoped;
+
+    // We only need shared access since only one command buffer is applied at a time per chunk
+    // This allows the renderer and other code to keep using the chunk as normal
+    componentLock.unlock();
     {
-        ZoneScopedN("VoxelChunkCommandBuffer::apply - Check if GPU is up to date");
-
-        // This while loop is restricted to only running once
-        // The whole point of this is to create a scope that we can break out of since I don't want to split this into a separate function
-        while (true)
+        std::shared_lock sharedComponentLock(component->getMutex());
+        if (!component->getIsPartOfWorld())
         {
-            if (!shouldExistOnGpu && component->getExistsOnGpu())
-            {
-                // Deallocate and exit
-                component->deallocateGpuData();
+            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
-                shouldCompletelyWriteToGpu = true;
-
-                break;
-            }
-
-            if (!shouldCompletelyWriteToGpu)
-            {
-                // GPU is already up to date, skip writing to the GPU
-                break;
-            }
-
-            // Write to the GPU
-            {
-                ZoneScopedN("VoxelChunkCommandBuffer::apply - Write to GPU");
-
-                // Find active LOD and upload it to the GPU
-                // We don't generate the LOD here
-                auto activeLodIndex = glm::min(chunkManagerData.activeLod, static_cast<int>(chunkManagerData.lods.size()));
-                VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *chunkManagerData.lods.at(activeLodIndex - 1);
-                auto lodSize = lod.getSize();
-
-                // Break if size is not 0
-                if (lodSize.x == 0 || lodSize.y == 0 || lodSize.z == 0)
-                {
-                    break;
-                }
-
-                // TODO: This check shouldn't be needed, but for some reason it is. This hints towards a synchronization issue.
-                if (!component->getIsPartOfWorld())
-                {
-                    Log::error("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This case is unexpected.");
-
-                    return;
-                }
-
-                // allocateGpuData is idempotent so we can just call it
-                component->allocateGpuData(lod.getSize());
-
-                // We only need shared access because we are modifying a GPU resource
-                // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
-                componentLock.unlock();
-                {
-                    std::shared_lock sharedComponentLock(component->getMutex());
-                    if (!component->getIsPartOfWorld())
-                    {
-                        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                        return;
-                    }
-
-                    if (!component->getExistsOnGpu())
-                    {
-                        // Note that this case cannot happen when the VoxelChunkComponent
-                        // is only modified by the chunk modification threads.
-                        //
-                        // This is because the chunk modification threads respect command buffer submission order.
-                        Log::error("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer uploaded to the GPU. This usually indicates a synchronization error.");
-
-                        return;
-                    }
-
-                    {
-                        std::lock_guard lockGpuUpload(gpuUploadLock);
-                        auto& test = *component->getChunk();
-                        lod.copyTo(test);
-                    }
-                }
-                componentLock.lock();
-                if (!component->getIsPartOfWorld())
-                {
-                    Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                    return;
-                }
-            }
-
-            break;
+            return;
         }
+
+        chunkData.setHasMipmaps(command.enableCpuMipmaps);
+    }
+    componentLock.lock();
+    if (!component->getIsPartOfWorld())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+        return;
     }
 }
 
-void VoxelChunkCommandBuffer::CommandApplicator::setActiveLod(int activeLod)
+void VoxelChunkCommandBuffer::CommandApplicator::updateActiveLod()
 {
+    ZoneScoped;
+
     auto& chunkManagerData = component->getChunkManagerData();
 
     auto previousActiveLod = chunkManagerData.activeLod;
-    auto lodToActivate = glm::min(activeLod, static_cast<int>(chunkManagerData.lods.size()));
+    auto activeLod = glm::min(requestedActiveLod, static_cast<int>(chunkManagerData.lods.size()));
 
-    chunkManagerData.requestedActiveLod = activeLod;
-    chunkManagerData.activeLod = lodToActivate;
-    component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
+    chunkManagerData.requestedActiveLod = requestedActiveLod;
+    chunkManagerData.activeLod = activeLod;
 
     if (previousActiveLod != activeLod)
     {
         shouldCompletelyWriteToGpu = true;
+        component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, activeLod)));
+    }
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
+{
+    ZoneScoped;
+
+    auto& lods = chunkManagerData.lods;
+    if (lods.size() >= command.maxLod)
+    {
+        // We already have enough LODs
+
+        // Trim if needed
+        if (command.trim)
+        {
+            Assert::isTrue(chunkManagerData.activeLod <= command.maxLod, "LOD is being used, cannot trim");
+            while (lods.size() > command.maxLod)
+            {
+                lods.pop_back();
+            }
+
+            chunkManagerData.requestedMaxLod = command.maxLod;
+        }
+
+        // Early exit
+        break;
+    }
+
+    // We don't have enough LODs
+    // We need to generate them
+    auto newLodsRequired = command.maxLod - lods.size();
+    {
+        // We only need shared access since only one command buffer is applied at a time per chunk
+        // This allows the renderer and other code to keep using the chunk as normal
+        componentLock.unlock();
+        {
+            std::shared_lock sharedComponentLock(component->getMutex());
+            if (!component->getIsPartOfWorld())
+            {
+                Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                return;
+            }
+
+            for (int i = 0; i < newLodsRequired; ++i)
+            {
+                auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
+                auto previousLodSize = previousLod.getSize();
+                if (previousLodSize.x < 2 || previousLodSize.y < 2 || previousLodSize.z < 2)
+                {
+                    // Previous LOD is too small to make another LOD level
+                    break;
+                }
+
+                auto newLod = std::make_shared<VoxelChunkData>();
+                lods.push_back(newLod);
+
+                previousLod.copyToLod(*newLod);
+            }
+        }
+        componentLock.lock();
+        if (!component->getIsPartOfWorld())
+        {
+            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+            return;
+        }
+    }
+
+    // Track the max requested LOD even if we don't generate that many
+    // This means we "virtually" generate the LOD when the size of the chunk is too small to allow for that many LODs
+    // This is to allow users of the command buffer API to ignore the size of the voxel chunk when setting the max and active LODs
+    chunkManagerData.requestedMaxLod = command.maxLod;
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
+{
+    ZoneScoped;
+
+    if (!component->getIsPartOfWorld())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+        return;
+    }
+
+    auto& chunkManagerData = component->getChunkManagerData();
+
+    if (!shouldExistOnGpu && component->getExistsOnGpu())
+    {
+        // Deallocate and exit
+        component->deallocateGpuData();
+
+        shouldCompletelyWriteToGpu = true;
+
+        return;
+    }
+
+    if (!shouldCompletelyWriteToGpu)
+    {
+        // GPU is already up to date, skip writing to the GPU
+        return;
+    }
+
+    // Write to the GPU
+    {
+        // Find active LOD and upload it to the GPU
+        // We don't generate the LOD here
+        auto activeLodIndex = glm::min(chunkManagerData.activeLod, static_cast<int>(chunkManagerData.lods.size()));
+        VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *chunkManagerData.lods.at(activeLodIndex - 1);
+        auto lodSize = lod.getSize();
+
+        // Break if size is not 0
+        if (lodSize.x == 0 || lodSize.y == 0 || lodSize.z == 0)
+        {
+            return;
+        }
+
+        // allocateGpuData is idempotent so we can just call it
+        component->allocateGpuData(lod.getSize());
+
+        // We only need shared access because we are modifying a GPU resource
+        // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
+        componentLock.unlock();
+        {
+            std::shared_lock sharedComponentLock(component->getMutex());
+            if (!component->getIsPartOfWorld())
+            {
+                Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                return;
+            }
+
+            if (!component->getExistsOnGpu())
+            {
+                // Note that this case cannot happen when the VoxelChunkComponent
+                // is only modified by the chunk modification threads.
+                //
+                // This is because the chunk modification threads respect command buffer submission order.
+                Log::error("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer uploaded to the GPU. This usually indicates a synchronization error.");
+
+                return;
+            }
+
+            {
+                std::lock_guard lockGpuUpload(gpuUploadLock);
+                auto& test = *component->getChunk();
+                lod.copyTo(test);
+            }
+        }
+        componentLock.lock();
+        if (!component->getIsPartOfWorld())
+        {
+            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+            return;
+        }
     }
 }

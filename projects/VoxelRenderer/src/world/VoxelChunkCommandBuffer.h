@@ -157,27 +157,35 @@ public:
 private:
     class CommandApplicator
     {
-        // Inputs
+        // ----- Inputs -----
+
         const VoxelChunkCommandBuffer* commandBuffer;
         std::shared_ptr<VoxelChunkComponent> component;
         std::shared_ptr<SceneComponent> scene;
 
-        // Synchronization
+        // ----- Synchronization -----
+
         std::unique_lock<std::shared_mutex> componentLock;
         std::unique_lock<std::mutex> gpuUploadLock;
 
+        // ----- Change tracking -----
+
         // TODO: Track exact changes for optimized CPU -> GPU copies
         // TODO: Note that change tracking also needs to consider the active LOD
-        // Change tracking
+
         bool shouldCompletelyWriteToGpu = false;
-        bool shouldCompletelyRegenerateLods = false;
         bool shouldCompletelyRegenerateMipmaps = false;
 
-        // Deferred desired states
-        bool shouldExistOnGpu;
-        bool shouldEnableCpuMipmaps;
-        int requestedActiveLod;
-        int requestedMaxLod;
+        // If this is equal or greater than the actual max LOD count, then no regeneration needs to be done
+        // Set to 0 to regenerate all LODs
+        int lodRegenerationStartIndex = 0;
+
+        // ----- Deferred desired states -----
+
+        bool shouldExistOnGpu = false;
+        bool shouldEnableCpuMipmaps = false;
+        int requestedActiveLod = 0;
+        int requestedMaxLod = 0;
 
     public:
         explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex);
@@ -185,7 +193,10 @@ private:
         void apply();
 
     private:
-        void setActiveLod(int activeLod);
+        void updateMipmaps();
+        void updateActiveLod();
+        void updateMaxLod();
+        void updateGpu();
     };
 
     // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
