@@ -21,10 +21,10 @@ private:
     float persistence = 0.5;
     
 
-    int stride = 8;//This is how sparsely it samples perlin noise
+    glm::vec2 scale2D = glm::vec2(1 / 8.0);
 
     float frequency2D = 0.002 / 8;//Scale of the 2D perlin noise
-    glm::vec3 frequency3D = glm::vec3(0.01 / 8, 0.01 / 8, 0.01 / 2);//Scale of the 3D perlin noise
+    float frequency3D = 0.01 / 2;//Scale of the 3D perlin noise
     float verticalStride = 1;//Reduces noise checks by resuing occupancy result vertically
 
     //These could all change continuously with space
