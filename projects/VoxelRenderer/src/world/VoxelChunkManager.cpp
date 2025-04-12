@@ -518,7 +518,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 // Submit command buffer
                 VoxelChunkCommandBuffer commandBuffer {};
-                commandBuffer.setMaxLod(lod);
+                commandBuffer.setMaxLod(maxLod);
                 commandBuffer.setActiveLod(lod);
                 commandBuffer.setExistsOnGpu(true);
 
