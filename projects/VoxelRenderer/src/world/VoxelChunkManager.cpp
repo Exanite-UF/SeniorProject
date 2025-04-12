@@ -76,6 +76,10 @@ VoxelChunkManager::ActiveWorldChunk::~ActiveWorldChunk()
     {
         component->getGameObject()->removeFromWorld();
     }
+
+    // Reset pointers here so Tracy profiler can track how long the destructors take
+    component.reset();
+    scene.reset();
 }
 
 VoxelChunkManager::~VoxelChunkManager() = default;
