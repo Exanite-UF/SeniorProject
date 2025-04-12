@@ -544,17 +544,17 @@ void Program::run()
 
                     if (input->isKeyPressed(GLFW_KEY_F6))
                     {
-                        exaniteWorldGenerator.generate(*closestChunk);
+                        exaniteWorldGenerator.generate(closestChunk);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F7))
                     {
-                        exampleWorldGenerator.generate(*closestChunk);
+                        exampleWorldGenerator.generate(closestChunk);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F8))
                     {
-                        prototypeWorldGenerator.generate(*closestChunk);
+                        prototypeWorldGenerator.generate(closestChunk);
                     }
                 }
 

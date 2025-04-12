@@ -19,8 +19,10 @@ protected:
 public:
     explicit WorldGenerator();
 
-    void generate(VoxelChunkData& data);
-    void generate(VoxelChunkComponent& chunk); // Mainly for testing purposes
+    // Most generators expect the provided VoxelChunkData to be already cleared
+    // clearData is mainly used to avoid clearing a cleared VoxelChunkData
+    void generate(VoxelChunkData& data, bool clearData = true);
+    void generate(const std::shared_ptr<VoxelChunkComponent>& chunk); // Mainly for testing purposes
 
     virtual void showDebugMenu() = 0;
 

@@ -204,7 +204,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
             generator.setChunkSize(task->chunkSize);
             generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0));
 
-            generator.generate(*task->chunkData);
+            generator.generate(*task->chunkData, false);
         }
 
         Log::verbose(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));

@@ -4,40 +4,36 @@
 #include <src/utilities/MeasureElapsedTimeScope.h>
 #include <src/world/VoxelChunkComponent.h>
 #include <src/world/VoxelChunkData.h>
+#include <src/world/VoxelChunkManager.h>
 
 WorldGenerator::WorldGenerator() = default;
 
-void WorldGenerator::generate(VoxelChunkData& data)
+void WorldGenerator::generate(VoxelChunkData& data, const bool clearData)
 {
     ZoneScoped;
 
-    data.clearOccupancyMap();
-    data.clearMaterialMap();
+    if (clearData)
     {
-        generateData(data);
+        data.clearOccupancyMap();
+        data.clearMaterialMap();
     }
+
+    generateData(data);
 }
 
-void WorldGenerator::generate(VoxelChunkComponent& chunk)
+void WorldGenerator::generate(const std::shared_ptr<VoxelChunkComponent>& chunk)
 {
     ZoneScoped;
 
-    MeasureElapsedTimeScope scope("WorldGenerator::generate");
+    std::lock_guard lock(chunk->getMutex());
 
-    std::lock_guard lock(chunk.getMutex());
+    auto data = std::make_shared<VoxelChunkData>(chunk->getRawChunkData().getSize());
+    generateData(*data);
 
-    VoxelChunkData& data = chunk.getRawChunkData();
+    VoxelChunkCommandBuffer commandBuffer {};
+    commandBuffer.copyFrom(data);
 
-    data.clearOccupancyMap();
-    data.clearMaterialMap();
-    {
-        generateData(data);
-    }
-
-    if (chunk.getExistsOnGpu())
-    {
-        data.copyTo(*chunk.getChunk());
-    }
+    VoxelChunkManager::getInstance().submitCommandBuffer(chunk, commandBuffer);
 }
 
 void WorldGenerator::setChunkSize(const glm::ivec3& chunkSize)
