@@ -244,7 +244,14 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                 // This command is deferred until the very end of the command buffer execution
                 auto command = commandBuffer->setMaxLodCommands.at(entry.index);
-                requestedMaxLod = command.maxLod;
+                if (command.trim)
+                {
+                    requestedMaxLod = command.maxLod;
+                }
+                else
+                {
+                    requestedMaxLod = glm::max(requestedMaxLod, command.maxLod);
+                }
 
                 break;
             }
@@ -334,30 +341,30 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
         return;
     }
 
+    auto& chunkManagerData = component->getChunkManagerData();
+
+    // Calculate max possible LOD
+    int minSideLength = glm::min(glm::min(component->chunkData.getSize().x, component->chunkData.getSize().y), component->chunkData.getSize().z);
+    int maxPossibleLod = glm::log2(minSideLength);
+
+    // Update max LODs
+    chunkManagerData.requestedMaxLod = requestedMaxLod;
+    int maxLodLevels = glm::min(requestedMaxLod, maxPossibleLod);
     auto& lods = chunkManagerData.lods;
-    if (lods.size() >= command.maxLod)
+
+    // Trim LOD count if needed
+    while (lods.size() > maxLodLevels)
     {
-        // We already have enough LODs
-
-        // Trim if needed
-        if (command.trim)
-        {
-            Assert::isTrue(chunkManagerData.activeLod <= command.maxLod, "LOD is being used, cannot trim");
-            while (lods.size() > command.maxLod)
-            {
-                lods.pop_back();
-            }
-
-            chunkManagerData.requestedMaxLod = command.maxLod;
-        }
-
-        // Early exit
-        break;
+        lods.pop_back();
     }
 
-    // We don't have enough LODs
-    // We need to generate them
-    auto newLodsRequired = command.maxLod - lods.size();
+    // Add new LODs as needed
+    while (lods.size() < maxLodLevels)
+    {
+        lods.emplace_back(std::make_shared<VoxelChunkData>());
+    }
+
+    // Regenerate LODs as needed
     {
         // We only need shared access since only one command buffer is applied at a time per chunk
         // This allows the renderer and other code to keep using the chunk as normal
@@ -371,29 +378,16 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
                 return;
             }
 
-            for (int i = 0; i < newLodsRequired; ++i)
+            for (int i = lodRegenerationStartIndex; i < lods.size(); ++i)
             {
                 auto& previousLod = lods.size() > 0 ? *lods.at(lods.size() - 1) : component->chunkData;
-                auto previousLodSize = previousLod.getSize();
-                if (previousLodSize.x < 2 || previousLodSize.y < 2 || previousLodSize.z < 2)
-                {
-                    // Previous LOD is too small to make another LOD level
-                    break;
-                }
-
                 auto newLod = std::make_shared<VoxelChunkData>();
-                lods.push_back(newLod);
 
                 previousLod.copyToLod(*newLod);
             }
         }
         componentLock.lock();
     }
-
-    // Track the max requested LOD even if we don't generate that many
-    // This means we "virtually" generate the LOD when the size of the chunk is too small to allow for that many LODs
-    // This is to allow users of the command buffer API to ignore the size of the voxel chunk when setting the max and active LODs
-    chunkManagerData.requestedMaxLod = command.maxLod;
 }
 
 void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
