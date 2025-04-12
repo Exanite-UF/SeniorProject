@@ -569,7 +569,7 @@ void Program::run()
 
                     if (input->isKeyPressed(GLFW_KEY_F9))
                     {
-                        pointSynthesizerWorldGenerator.generate(*closestChunk);
+                        pointSynthesizerWorldGenerator.generate(closestChunk);
                     }
                 }
 
