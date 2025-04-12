@@ -138,7 +138,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk loading threads
     {
-        auto loadingThreadCount = std::max(1u, std::thread::hardware_concurrency() / 2);
+        auto loadingThreadCount = std::max(2u, std::thread::hardware_concurrency() / 2);
         Log::information(std::format("Starting VoxelChunkManager {} chunk loading threads", loadingThreadCount));
         for (int i = 0; i < loadingThreadCount; ++i)
         {
@@ -148,7 +148,7 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk modification threads
     {
-        auto modificationThreadCount = Constants::VoxelChunkManager::maxChunkModificationThreads; // Note: Each thread must have its own GlfwContext.
+        auto modificationThreadCount = modificationThreadContexts.size(); // Note: Each thread must have its own GlfwContext.
         Log::information(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
         for (int i = 0; i < modificationThreadCount; ++i)
         {

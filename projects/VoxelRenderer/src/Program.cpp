@@ -80,9 +80,10 @@ Program::Program()
 
     std::shared_ptr<GlfwContext> previousContext {};
 
-    for (int i = 0; i < Constants::VoxelChunkManager::maxChunkModificationThreads; ++i)
+    auto chunkModificationThreadCount = std::max(2u, std::thread::hardware_concurrency() / 2);
+    for (int i = 0; i < chunkModificationThreadCount; ++i)
     {
-        previousContext = std::make_shared<GlfwContext>("Chunk modification", previousContext.get());
+        previousContext = std::make_shared<GlfwContext>(std::format("Chunk modification {}", i), previousContext.get());
         chunkModificationThreadContexts.push_back(previousContext);
     }
 
