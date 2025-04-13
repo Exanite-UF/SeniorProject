@@ -344,6 +344,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         }
         else
         {
+            count += 2 * firstMipMapLevel;
             isOutside = true;
             // This calculates how far a mip map level should jump
             t += mod(floor(-sRayDir * rayPos), (1 << (count - 1))) * aRayDir; // This uses the number of mip maps where there are no voxels, to determine how far to jump

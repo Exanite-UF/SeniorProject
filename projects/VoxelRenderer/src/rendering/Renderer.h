@@ -187,4 +187,7 @@ public:
     bool isRenderingPaused();
 
     bool isRenderingAsynchronously();
+
+    void increaseFirstMipMapLevel();
+    void decreaseFirstMipMapLevel();
 };
