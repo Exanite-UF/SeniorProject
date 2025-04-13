@@ -585,7 +585,7 @@ void Program::run()
                         glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                     }
                 }
-                if (input->isKeyPressed(GLFW_KEY_ESCAPE))
+                if (input->isKeyPressed(GLFW_KEY_END))
                 {
                     glfwSetWindowShouldClose(window->getGlfwWindowHandle(), GLFW_TRUE);
                 }
@@ -765,7 +765,7 @@ void Program::run()
                             ImGui::Text("S - Backward");
                             ImGui::Text("A - Left");
                             ImGui::Text("D - Right");
-                            ImGui::Text("Esc - Close Application");
+                            ImGui::Text("End - Close Application");
                             ImGui::Text("E - Iterate Noise Over Time");
                             ImGui::Text("F - Toggle Fullscreen");
                             ImGui::Text("Q - Toggle Mouse Input");
