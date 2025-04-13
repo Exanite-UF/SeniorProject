@@ -1,6 +1,10 @@
 #include "SceneComponent.h"
 #include <glm/gtx/quaternion.hpp>
 #include <src/world/SceneComponent.h>
+#include <limits>
+
+#include <glm/glm.hpp>
+#include <iostream>
 
 std::shared_mutex& SceneComponent::getMutex()
 {
@@ -116,4 +120,31 @@ void SceneComponent::setSkybox(const std::shared_ptr<SkyboxComponent>& skybox)
 std::shared_ptr<SkyboxComponent> SceneComponent::getSkybox()
 {
     return skybox;
+}
+
+std::pair<float, glm::vec3> SceneComponent::raycast(glm::vec3 start, glm::vec3 direction)
+{
+    glm::vec3 hitLocation;
+    float currentDepth = -1;
+    std::cout << "START" << std::endl;
+    for(auto& chunk : allChunks){
+        std::cout << "HI" << std::endl;
+        auto result = chunk->raycast(start, direction, currentDepth);
+
+        if(currentDepth < 0){
+            //If no hit has been found, then the hit only needs to exist
+            if(result.first > 0){
+                hitLocation = result.second;
+                currentDepth = result.first;
+            }
+        }else{
+            //If a hit has been found then it must be the nearest
+            if(result.first < currentDepth){
+                hitLocation = result.second;
+                currentDepth = result.first;
+            }
+        }
+        
+    }
+    return {currentDepth, hitLocation};
 }

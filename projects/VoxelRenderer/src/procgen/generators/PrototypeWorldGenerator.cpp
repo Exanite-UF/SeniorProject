@@ -296,7 +296,13 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
                         // Now we set the material of the voxels based on the description above
 
-                        if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
+                        //if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
+                        //{
+                        //    data.setVoxelMaterial({ x, y, z }, stoneMaterial);
+                        //    continue;
+                        //}
+
+                        if (x == 0 || y == 0)
                         {
                             data.setVoxelMaterial({ x, y, z }, stoneMaterial);
                             continue;

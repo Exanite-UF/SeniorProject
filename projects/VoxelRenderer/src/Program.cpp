@@ -509,6 +509,15 @@ void Program::run()
                     cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
                 }
 
+                if (input->isKeyHeld(GLFW_KEY_J))
+                {
+                    auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0, 0, -1));
+                    std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
+                    if(result.first > 0){
+                        camera->getTransform()->setGlobalPosition(result.second + glm::vec3(0, 0, 2));
+                    }
+                }
+
                 if (input->isKeyPressed(GLFW_KEY_G))
                 {
                     renderer.toggleAsynchronousReprojection();

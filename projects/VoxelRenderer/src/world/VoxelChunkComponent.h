@@ -84,10 +84,14 @@ public:
 
     bool getExistsOnGpu() const;
 
+    std::pair<float, glm::vec3> raycast(glm::vec3 start, glm::vec3 direction, float currentDepth);
+
 protected:
     void onRemovingFromWorld() override;
 
 private:
     void allocateGpuData(const glm::ivec3& size);
     void deallocateGpuData();
+
+    std::uint8_t getOccupancyByte(glm::ivec3 coord, int mipMapTexture);
 };

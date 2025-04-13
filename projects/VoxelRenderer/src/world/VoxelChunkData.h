@@ -6,6 +6,7 @@
 #include <src/world/Material.h>
 #include <src/world/VoxelChunk.h>
 
+
 class VoxelChunkData : public NonCopyable
 {
 private:
@@ -25,6 +26,8 @@ private:
     };
 
     Data data;
+
+    friend class VoxelChunkComponent;
 
 public:
     explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
