@@ -3,7 +3,7 @@
 #include <iostream>
 
 
-void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 structureOrigin, TreeStructure structure)
+void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure)
 {
     if (levels.size() == 0){
         levels.emplace_back();
@@ -17,7 +17,7 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
         chunkPosition
     };
     
-    glm::vec2 structureRadius = structure.getMaxDistanceFromOrigin();
+    glm::vec2 structureRadius = structure->getMaxDistanceFromOrigin();
     std::vector<glm::vec2> boundingBoxCorners = {
         glm::vec2( structureRadius.x, structureRadius.y ) + glm::vec2(structureOrigin),
         glm::vec2( structureRadius.x, -structureRadius.y ) + glm::vec2(structureOrigin),
@@ -101,7 +101,7 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
             //At this point the structure is guaranteed to fit inside the region, so add it
             wasAdded = true;
             
-            level[regionIndex].push_back(std::make_shared<StructureNode>(structure));
+            level[regionIndex].push_back(structure);
         }
         //If it was not added at this level, then try at the next level
         levelsMTX.unlock();

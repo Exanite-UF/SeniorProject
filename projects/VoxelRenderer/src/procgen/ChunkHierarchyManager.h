@@ -24,6 +24,10 @@ public:
         : structure(structure)
     {
     }
+
+    glm::ivec2 getMaxDistanceFromOrigin(){
+        return structure.getMaxDistanceFromOrigin();
+    }
 };
 
 
@@ -100,7 +104,7 @@ public:
     /// @param chunkSize The size of a chunk in voxels
     /// @param structureOrigin //This is the world space position of the structure (in voxels)
     /// @param structure This is the actual structure
-    void addStructure(glm::ivec2 chunkSize, glm::ivec3 structureOrigin, TreeStructure structure);
+    void addStructure(glm::ivec2 chunkSize, glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure);
     
 
     /// @brief Gets all the structure seeds whose structure could appear in the requested chunk
