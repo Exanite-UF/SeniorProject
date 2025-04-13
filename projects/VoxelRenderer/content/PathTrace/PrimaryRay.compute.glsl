@@ -408,16 +408,17 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         }
         else
         {
-            for (int i = firstMipMapLevel; i <= occupancyMapLayerCount; i++)
+            for (int i = firstMipMapLevel / 2; i <= occupancyMapLayerCount; i++)
             {
                 ivec3 p2 = (p >> (2 * i)) & 1;
                 uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
                 uint l = getOccupancyByte((p >> (1 + 2 * i)), i);
                 count += int((l & k) == 0) + int(l == 0);
             }
+
         }
 
-        if (count <= 0)
+        if (count <= firstMipMapLevel % 2)
         {
 
             // This means that there was a hit
@@ -437,7 +438,8 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         }
         else
         {
-            count += 2 * firstMipMapLevel;
+            count -= firstMipMapLevel % 2;
+            count += firstMipMapLevel;
             isOutside = true;
             // This calculates how far a mip map level should jump
             t += mod(floor(-sRayDir * rayPos), (1 << (count - 1))) * aRayDir; // This uses the number of mip maps where there are no voxels, to determine how far to jump
