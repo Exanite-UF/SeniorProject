@@ -51,10 +51,10 @@ public:
     [[nodiscard]] uint16_t getVoxelMaterialIndex(const glm::ivec3& position) const;
     void setVoxelMaterialIndex(const glm::ivec3& position, uint16_t materialIndex);
 
-    std::vector<uint8_t>& getRawOccupancyMap();
-    std::vector<uint32_t>& getRawOccupancyMapIndices();
+    [[nodiscard]] std::vector<uint8_t>& getRawOccupancyMap();
+    [[nodiscard]] std::vector<uint32_t>& getRawOccupancyMapIndices();
 
-    std::vector<uint16_t>& getRawMaterialMap();
+    [[nodiscard]] std::vector<uint16_t>& getRawMaterialMap();
 
     void clearOccupancyMap();
     void clearMaterialMap();
@@ -68,4 +68,8 @@ public:
     void copyTo(VoxelChunkData& other) const;
 
     void copyToLod(VoxelChunkData& lod) const;
+
+private:
+    [[nodiscard]] static uint32_t hash(uint32_t value);
+    [[nodiscard]] static uint8_t getLodSampleIndex(const glm::ivec3& position);
 };

@@ -521,7 +521,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                     // This will determine which of the valid materials we will take
                     // Ideally, we want the valid material selected to be uniformly selected and deterministic
                     // The selection process also needs to be fast
-                    uint8_t index = ((lodZ & 1) << 2) | ((lodY & 1) << 1) | ((lodX & 1) << 0);
+                    uint8_t index = getLodSampleIndex(lodPosition);
 
                     uint8_t currentBitI = 0;
                     uint8_t matchedCount = 0;
@@ -550,4 +550,19 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
             }
         }
     }
+}
+
+uint32_t VoxelChunkData::hash(uint32_t value)
+{
+    value = (value ^ 61) ^ (value >> 16);
+    value = value + (value << 3);
+    value = value ^ (value >> 4);
+    value = value * 0x27d4eb2d;
+    value = value ^ (value >> 15);
+    return value;
+}
+
+uint8_t VoxelChunkData::getLodSampleIndex(const glm::ivec3& position)
+{
+    return (hash(position.x) ^ hash(position.y) ^ hash(position.z)) % 8;
 }
