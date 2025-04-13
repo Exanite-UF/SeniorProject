@@ -213,7 +213,7 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     //This number is iterations is guarenteed to go through the entire chunk
 
     //std::cout << "START" << std::endl;
-    std::cout << occupancyMapLayerCount << std::endl;
+    //std::cout << occupancyMapLayerCount << std::endl;
     occupancyMapLayerCount = 0;
     for (std::int32_t i = 0; i < cellCount.x * 3; i++)
     {
@@ -255,7 +255,7 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
         }
         else
         {
-            //std::cout << p.x << " " << p.y << " " << p.z << std::endl;
+            //wstd::cout << p.x << " " << p.y << " " << p.z << std::endl;
             for (std::int32_t i = 0; i <= occupancyMapLayerCount; i++)
             {
                 
@@ -264,7 +264,7 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
                 std::uint32_t l = getOccupancyByte((p >> (1 + 2 * i)), i);
 
                 //std::cout << l << std::endl;
-                count += int((l & k) == 0) + int(l == 0);
+                count += ((l & k) == 0) + (l == 0);
             }
         }
 
@@ -355,7 +355,8 @@ std::uint8_t VoxelChunkComponent::getOccupancyByte(glm::ivec3 coord, int mipMapT
 {
     
     glm::ivec3 tempRes = (chunkData.getSize() / 2) / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
-    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(chunkData.getRawOccupancyMapIndices()[mipMapTexture]);
+    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + chunkData.getRawOccupancyMapIndices()[mipMapTexture];
+    //std::cout << mipMapTexture << " " << chunkData.getRawOccupancyMapIndices()[mipMapTexture] << " " << (int)chunkData.getRawOccupancyMap()[index] << std::endl;
     return chunkData.getRawOccupancyMap()[index];
 }
 

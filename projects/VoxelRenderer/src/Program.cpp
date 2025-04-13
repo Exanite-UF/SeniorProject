@@ -513,9 +513,23 @@ void Program::run()
                 {
                     isGroundMovementEnabled = !isGroundMovementEnabled;
                     groundCameraHeight = camera->getTransform()->getGlobalPosition().z;
+                    
+                    /*
+                    auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
+                    std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
+                    if(result.first > 0){
+                        groundCameraHeight = result.second.z + 1.6 * 8;
+
+                        glm::vec3 camPos = camera->getTransform()->getGlobalPosition();
+                        float p = 1 - std::exp(-groundCameraSnapSpeed * deltaTime);
+                        camPos.z = ((1 - p) * camPos.z + p * groundCameraHeight);
+
+                        camera->getTransform()->setGlobalPosition(camPos);
+                    }
+                    */
                 }
 
-                if(isGroundMovementEnabled){
+                if(true && isGroundMovementEnabled){
                     auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
                     //std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
                     if(result.first > 0){
