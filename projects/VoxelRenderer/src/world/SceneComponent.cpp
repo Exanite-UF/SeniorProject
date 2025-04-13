@@ -126,10 +126,10 @@ std::pair<float, glm::vec3> SceneComponent::raycast(glm::vec3 start, glm::vec3 d
 {
     glm::vec3 hitLocation;
     float currentDepth = -1;
-    std::cout << "START" << std::endl;
     for(auto& chunk : allChunks){
-        std::cout << "HI" << std::endl;
         auto result = chunk->raycast(start, direction, currentDepth);
+
+        //std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
 
         if(currentDepth < 0){
             //If no hit has been found, then the hit only needs to exist
@@ -139,7 +139,7 @@ std::pair<float, glm::vec3> SceneComponent::raycast(glm::vec3 start, glm::vec3 d
             }
         }else{
             //If a hit has been found then it must be the nearest
-            if(result.first < currentDepth){
+            if(result.first > 0 && result.first < currentDepth){
                 hitLocation = result.second;
                 currentDepth = result.first;
             }

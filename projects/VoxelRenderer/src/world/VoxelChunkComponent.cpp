@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 
+#include <iostream>
+
 #include <src/gameobjects/TransformComponent.h>
 #include "VoxelChunkUtility.h"
 
@@ -49,6 +51,12 @@ float rayboxintersect(glm::vec3 raypos, glm::vec3 raydir, glm::vec3 boxmin, glm:
     return tmin;
 }
 
+
+glm::vec3 qtransform(glm::vec4 q, glm::vec3 v)
+{
+    glm::vec3 temp = glm::vec3(q.x, q.y, q.z);
+    return v + 2.0f * glm::cross(temp, glm::cross(temp, v) + q.w * v);
+}
 
 VoxelChunkComponent::VoxelChunkComponent()
     : VoxelChunkComponent(false)
@@ -108,35 +116,76 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     hit.wasHit = false;
     hit.isNearest = true;
 
+
+    glm::vec3 rayDir = direction;
+    glm::vec3 rayPos = start;
+
+    glm::ivec3 cellCount = chunkData.getSize() / 2;
+
+    glm::vec3 voxelWorldSize = 2.f * glm::vec3(cellCount);
+
+    glm::vec3 voxelWorldPosition = getTransform()->getGlobalPosition();
+    glm::vec3 voxelWorldScale = getTransform()->getLossyGlobalScale();
+    glm::vec4 voxelWorldRotation;
+    {
+        glm::quat temp = getTransform()->getGlobalRotation();
+        voxelWorldRotation = glm::vec4(temp.x, temp.y, temp.z, temp.w);
+    }
+
+
+    // Transform the ray position to voxel space
+    rayPos -= voxelWorldPosition; // Find position relative to the voxel world
+    rayPos = qtransform(glm::vec4(voxelWorldRotation.x, voxelWorldRotation.y, voxelWorldRotation.z, -voxelWorldRotation.w), rayPos); // Inverse rotations lets us rotate from world space to voxel space
+    rayPos /= voxelWorldScale; // Undo the scale now that we are aligned with voxel space
+    rayPos += 0.5f * glm::vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
+
+    // Transform the ray direction to voxel space
+    rayDir = qtransform(glm::vec4(voxelWorldRotation.x, voxelWorldRotation.y, voxelWorldRotation.z, -voxelWorldRotation.w), rayDir);
+    rayDir /= voxelWorldScale;
+
+
     if (currentDepth <= 0)
     {
         currentDepth = std::numeric_limits<float>::infinity();
     }
 
-    glm::ivec3 cellCount = chunkData.getSize() / 2;
+    
 
-    glm::vec3 voxelWorldScale = getTransform()->getLossyGlobalScale();
+    
 
-    std::uint32_t occupancyMapLayerCount = VoxelChunkUtility::getOccupancyMapIndices(chunkData.getSize()).size() - 2;
+    std::uint32_t occupancyMapLayerCount = chunkData.getRawOccupancyMapIndices().size() - 1;
 
     if(!chunkData.getHasMipmaps()){
         occupancyMapLayerCount = 0;
     }
 
-    direction /= glm::length(direction);
+    
 
-    glm::vec3 aRayDir = 1.f / glm::abs(direction); // This is a constant that is used several times
-    glm::ivec3 sRayDir = glm::ivec3(1.5f * direction / abs(direction)); // This is the sign of the ray direction (1.5 is for numerical stability)
-    glm::vec3 iRayDir = 1.f / direction;
+    rayDir /= glm::length(rayDir);
+
+    
+    glm::vec3 aRayDir = glm::abs(1.f / rayDir); // This is a constant that is used several times
+    glm::ivec3 sRayDir = glm::ivec3((1.5f * rayDir) / glm::abs(rayDir)); // This is the sign of the ray direction (1.5 is for numerical stability)
+    glm::vec3 iRayDir = 1.f / rayDir;
 
     glm::ivec3 size = 2 * cellCount; // This is the size of the voxel volume
 
-    glm::vec3 rayPos = start;
+    if(sRayDir.x < -10){
+        sRayDir.x = 0;
+    }
+    if(sRayDir.y < -10){
+        sRayDir.y = 0;
+    }
+    if(sRayDir.y < -10){
+        sRayDir.y = 0;
+    }
+
+    
     glm::vec3 rayStart = rayPos;
 
     // Put the ray at the surface of the cube
-    float distToCube = rayboxintersect(rayStart, direction, glm::vec3(0), glm::vec3(size));
-    rayPos += direction * std::max(0.f, distToCube - 0.1f); // The -0.001 is for numerical stability when entering the volume (This is the aformentioned correction)
+    float distToCube = rayboxintersect(rayStart, rayDir, glm::vec3(0), glm::vec3(size));
+    rayPos += rayDir * std::max(0.f, distToCube - 0.1f); // The -0.001 is for numerical stability when entering the volume (This is the aformentioned correction)
 
     // If the ray never entered the cube, then quit
     if (distToCube < 0)
@@ -162,6 +211,10 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     // return hit;
 
     //This number is iterations is guarenteed to go through the entire chunk
+
+    //std::cout << "START" << std::endl;
+    std::cout << occupancyMapLayerCount << std::endl;
+    occupancyMapLayerCount = 0;
     for (std::int32_t i = 0; i < cellCount.x * 3; i++)
     {
         hit.iterations = i;
@@ -169,6 +222,16 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
 
         glm::vec3 t = glm::ceil(rayPos * glm::vec3(sRayDir)) * aRayDir - rayPos * iRayDir;
         t += glm::vec3(glm::lessThanEqual(t, glm::vec3(0))) * aRayDir; // Numerical stability correction
+
+        if(std::isnan(t.x) || std::isinf(t.x)){
+            t.x = std::numeric_limits<float>::infinity();
+        }
+        if(std::isnan(t.y) || std::isinf(t.y)){
+            t.y = std::numeric_limits<float>::infinity();
+        }
+        if(std::isnan(t.z) || std::isinf(t.z)){
+            t.z = std::numeric_limits<float>::infinity();
+        }
 
         // Stop iterating if you leave the cube that all the voxels are in (1 unit of padding is provided to help with numerical stability)
         bool isOutsideVolume = (glm::any(glm::greaterThan(p, glm::ivec3(size - 1))) || glm::any(glm::lessThan(p, glm::ivec3(0))));
@@ -192,14 +255,20 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
         }
         else
         {
+            //std::cout << p.x << " " << p.y << " " << p.z << std::endl;
             for (std::int32_t i = 0; i <= occupancyMapLayerCount; i++)
             {
+                
                 glm::ivec3 p2 = (p >> (2 * i)) & 1;
                 std::uint32_t k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want
                 std::uint32_t l = getOccupancyByte((p >> (1 + 2 * i)), i);
+
+                //std::cout << l << std::endl;
                 count += int((l & k) == 0) + int(l == 0);
             }
         }
+
+        //std::cout << count << std::endl;
 
         if (count <= 0)
         {
@@ -216,17 +285,41 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
             isOutside = true;
             // This calculates how far a mip map level should jump
             t += glm::mod(glm::floor(-glm::vec3(sRayDir) * rayPos), glm::vec3(1 << (count - 1))) * aRayDir; // This uses the number of mip maps where there are no voxels, to determine how far to jump
+        
+            if(std::isnan(t.x) || std::isinf(t.x)){
+                t.x = std::numeric_limits<float>::infinity();
+            }
+            if(std::isnan(t.y) || std::isinf(t.y)){
+                t.y = std::numeric_limits<float>::infinity();
+            }
+            if(std::isnan(t.z) || std::isinf(t.z)){
+                t.z = std::numeric_limits<float>::infinity();
+            }
         }
 
         // Find which jump amount to use next
         float minT = glm::min(glm::min(t.x, t.y), t.z);
         hit.normal = -sRayDir * glm::ivec3(minT == t.x, minT == t.y, minT == t.z); // Set the normal
 
-        rayPos += direction * (minT)-hit.normal * 0.001f; // 0.001 is for numerical stability (yes it causes a small aliasing artifact)
+        rayPos += rayDir * (minT)-hit.normal * 0.001f; // 0.001 is for numerical stability (yes it causes a small aliasing artifact)
     }
 
     hit.hitLocation = rayPos;
-    hit.dist = glm::length(rayStart - hit.hitLocation);
+    
+
+
+    hit.hitLocation -= 0.5f * glm::vec3(voxelWorldSize); // This moves the origin of the voxel world to its center
+    hit.hitLocation *= voxelWorldScale; // Apply the scale of the voxel world
+    hit.hitLocation = qtransform(voxelWorldRotation, hit.hitLocation); // Rotate back into world space
+    hit.hitLocation += voxelWorldPosition; // Apply the voxel world position
+
+    hit.dist = glm::length(start - hit.hitLocation);
+
+    //std::cout << "END " << hit.wasHit << " " << hit.dist << " | " << hit.hitLocation.x << " " << hit.hitLocation.y << " " << hit.hitLocation.z<< std::endl;
+
+    if(!hit.wasHit){
+        return {-1, glm::vec3(0)};
+    }
 
     return {hit.dist, hit.hitLocation};
 }
@@ -260,12 +353,10 @@ void VoxelChunkComponent::deallocateGpuData()
 // coord is a cell coord
 std::uint8_t VoxelChunkComponent::getOccupancyByte(glm::ivec3 coord, int mipMapTexture)
 {
+    
     glm::ivec3 tempRes = (chunkData.getSize() / 2) / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
-    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(chunkData.data.occupancyMapIndices[mipMapTexture]);
-    int bufferIndex = index / 4; // Divide by 4, because glsl does not support single byte data types, so a 4 byte data type is being used
-    int bufferOffset = (index & 3); // Modulus 4 done using a bitmask
-
-    return (chunkData.data.occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset);
+    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + int(chunkData.getRawOccupancyMapIndices()[mipMapTexture]);
+    return chunkData.getRawOccupancyMap()[index];
 }
 
 void VoxelChunkComponent::onRemovingFromWorld()

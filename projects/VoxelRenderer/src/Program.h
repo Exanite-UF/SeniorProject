@@ -33,6 +33,9 @@ public:
     float fillAmount = 0.6;
     bool isRemakeNoiseRequested = false;
 
+    bool isGroundMovementEnabled = false;
+    float groundCameraHeight = 0;
+    float groundCameraSnapSpeed = 10;
     // Fps counter
     float fpsCycleTimer = 0;
 

@@ -191,7 +191,7 @@ void Program::run()
         auto camera = cameraObject->addComponent<CameraComponent>();
         auto cameraTransform = camera->getTransform();
         scene->setCamera(camera);
-        cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
+        cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
 
         // Initialize the chunk manager
         voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
@@ -509,12 +509,23 @@ void Program::run()
                     cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
                 }
 
-                if (input->isKeyHeld(GLFW_KEY_J))
+                if (input->isKeyPressed(GLFW_KEY_J))
                 {
-                    auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0, 0, -1));
-                    std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
+                    isGroundMovementEnabled = !isGroundMovementEnabled;
+                    groundCameraHeight = camera->getTransform()->getGlobalPosition().z;
+                }
+
+                if(isGroundMovementEnabled){
+                    auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
+                    //std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
                     if(result.first > 0){
-                        camera->getTransform()->setGlobalPosition(result.second + glm::vec3(0, 0, 2));
+                        groundCameraHeight = result.second.z + 1.6 * 8;
+
+                        glm::vec3 camPos = camera->getTransform()->getGlobalPosition();
+                        float p = 1 - std::exp(-groundCameraSnapSpeed * deltaTime);
+                        camPos.z = ((1 - p) * camPos.z + p * groundCameraHeight);
+
+                        camera->getTransform()->setGlobalPosition(camPos);
                     }
                 }
 
