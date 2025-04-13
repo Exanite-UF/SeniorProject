@@ -343,6 +343,19 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     {
                         lastAir = z; // track the last height at which we saw air
                         tempThick = 0; // Reset the consecutive non-air counter
+
+                        // This doesn't have an occupied voxel. It's so that the debug tools have light
+                        // This is stone, I put lights in it for the caves
+                        if ((rand() % 1000) / 1000.0 < 0.1)
+                        {
+                            data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
+                            continue;
+                        }
+                        else
+                        {
+                            data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
+                            continue;
+                        }
                     }
                 }
             }

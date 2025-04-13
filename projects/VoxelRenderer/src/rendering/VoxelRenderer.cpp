@@ -231,6 +231,8 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         glUniform1i(glGetUniformLocation(fullCastProgram, "shadingRate"), shadingRate);
         glUniform2i(glGetUniformLocation(fullCastProgram, "inputOffset"), offset.x, offset.y);
 
+        glUniform1i(glGetUniformLocation(fullCastProgram, "firstMipMapLevel"), firstMipMapLevel);
+
         for (auto& chunkComponent : chunks)
         {
             ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk preconditions");
@@ -583,6 +585,8 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
         glUniform1i(glGetUniformLocation(primaryRayProgram, "whichAccumulatingVector"), whichMotionVectors);
         glUniform1i(glGetUniformLocation(primaryRayProgram, "whichDepth"), whichDepth);
+
+        glUniform1i(glGetUniformLocation(primaryRayProgram, "firstMipMapLevel"), firstMipMapLevel);
 
         for (auto& chunkComponent : chunks)
         {

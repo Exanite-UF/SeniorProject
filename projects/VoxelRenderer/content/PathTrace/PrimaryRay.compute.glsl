@@ -56,6 +56,8 @@ uniform float random; // This is used to make non-deterministic randomness
 uniform float sunAngularSize; // The angle of the sun in diameter
 uniform vec3 sunDirection;
 
+uniform int firstMipMapLevel;
+
 layout(std430, binding = 0) buffer RayPosition
 {
     float rayPosition[];
@@ -406,7 +408,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         }
         else
         {
-            for (int i = 0; i <= occupancyMapLayerCount; i++)
+            for (int i = firstMipMapLevel; i <= occupancyMapLayerCount; i++)
             {
                 ivec3 p2 = (p >> (2 * i)) & 1;
                 uint k = ((1 << p2.x) << (p2.y << 1)) << (p2.z << 2); // This creates the mask that will extract the single bit that we want

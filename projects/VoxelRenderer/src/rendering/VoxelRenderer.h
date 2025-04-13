@@ -109,6 +109,7 @@ private:
     friend class Renderer;
 
     float maxDepth = 10000.0;
+    int firstMipMapLevel = 1;
 
 public:
     void setResolution(glm::ivec2 size);
