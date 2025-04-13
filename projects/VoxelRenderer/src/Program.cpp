@@ -164,11 +164,11 @@ void Program::run()
         scene->setSkybox(skybox);
 
         // Generate static, noise-based placeholder chunks for testing purposes
-        if (false)
+        if (true)
         {
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
-            for (int x = 0; x < 2; x++)
+            for (int x = 0; x < 1; x++)
             {
                 for (int y = 0; y < 1; ++y)
                 {
@@ -176,11 +176,124 @@ void Program::run()
 
                     auto voxelChunk = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
                     voxelChunk->getTransform()->addGlobalPosition(glm::vec3(chunkSize.x * x, chunkSize.y * y, 0) + glm::vec3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2));
-                    // voxelChunk->getTransform()->setLocalScale(glm::vec3(1.0/8, 1.0/8, 1.0/8));
-                    voxelChunk->getTransform()->setLocalScale(glm::vec3(x + 1, x + 1, x + 1));
 
                     scene->addWorldChunk(glm::ivec3(x, y, 0), voxelChunk);
                 }
+            }
+
+            auto component = scene->getAllChunks().at(0);
+            auto size = component->getChunk()->getSize();
+
+            VoxelChunkData cpuData(size, true);
+            cpuData.copyFrom(*component->getChunk());
+            cpuData.updateMipmaps();
+
+            VoxelChunkData gpuData(size, true);
+            gpuData.copyFrom(*component->getChunk(), true);
+
+            for (int mipmapI = 1; mipmapI <= cpuData.getOccupancyMipmapCount(); ++mipmapI)
+            {
+                auto mipmapCellCount = size >> (mipmapI + 1);
+
+                for (int z1 = 0; z1 < mipmapCellCount.z; ++z1)
+                {
+                    for (int y1 = 0; y1 < mipmapCellCount.y; ++y1)
+                    {
+                        for (int x1 = 0; x1 < mipmapCellCount.x; ++x1)
+                        {
+                            bool isCpuOccupied = false;
+                            bool isGpuOccupied = false;
+
+                            bool isGpuGeneratedOccupied = gpuData.getMipmapVoxelOccupancy(glm::ivec3(x1, y1, z1), mipmapI);
+
+                            for (int z0 = 0; z0 < 4; ++z0)
+                            {
+                                for (int y0 = 0; y0 < 4; ++y0)
+                                {
+                                    for (int x0 = 0; x0 < 4; ++x0)
+                                    {
+                                        {
+                                            auto position = glm::ivec3(x1, y1, z1) * 4 + glm::ivec3(x0, y0, z0);
+                                            auto isOccupied = cpuData.getMipmapVoxelOccupancy(position, mipmapI - 1);
+
+                                            isCpuOccupied |= isOccupied;
+                                        }
+
+                                        {
+                                            auto position = glm::ivec3(x1, y1, z1) * 4 + glm::ivec3(x0, y0, z0);
+                                            auto isOccupied = gpuData.getMipmapVoxelOccupancy(position, mipmapI - 1);
+
+                                            isGpuOccupied |= isOccupied;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Log if mismatch
+                            if (isCpuOccupied != isGpuOccupied)
+                            {
+                                Log::debug("Mismatched 4x4x4 region - CPU gen");
+
+                                for (int z0 = 0; z0 < 4; ++z0)
+                                {
+                                    for (int y0 = 0; y0 < 4; ++y0)
+                                    {
+                                        for (int x0 = 0; x0 < 4; ++x0)
+                                        {
+                                            {
+                                                auto position = glm::ivec3(x1, y1, z1) * 4 + glm::ivec3(x0, y0, z0);
+                                                auto isOccupied = cpuData.getMipmapVoxelOccupancy(position, mipmapI - 1);
+
+                                                Log::debug(std::format("CPU position ({}, {}, {}): {}", position.x, position.y, position.z, isOccupied));
+                                            }
+
+                                            {
+                                                auto position = glm::ivec3(x1, y1, z1) * 4 + glm::ivec3(x0, y0, z0);
+                                                auto isOccupied = gpuData.getMipmapVoxelOccupancy(position, mipmapI - 1);
+
+                                                Log::debug(std::format("GPU position ({}, {}, {}): {}", position.x, position.y, position.z, isOccupied));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Log if mismatch
+                            if (isCpuOccupied != isGpuGeneratedOccupied)
+                            {
+                                // TODO: Index is wrong
+                                int index = x1 + mipmapCellCount.x * (y1 + mipmapCellCount.y * z1) + cpuData.getRawOccupancyMapIndices().at(mipmapI);
+                                Log::debug(std::format("Mismatched 4x4x4 region ({}, {}, {}) at L{}, Index = {} - GPU gen | CPU = {} | GPU = {}", x1, y1, z1, mipmapI, index, isCpuOccupied, isGpuGeneratedOccupied));
+
+                                for (int z0 = 0; z0 < 4; ++z0)
+                                {
+                                    for (int y0 = 0; y0 < 4; ++y0)
+                                    {
+                                        for (int x0 = 0; x0 < 4; ++x0)
+                                        {
+                                            {
+                                                auto position = glm::ivec3(x1, y1, z1) * 4 + glm::ivec3(x0, y0, z0);
+                                                auto isOccupied = cpuData.getMipmapVoxelOccupancy(position, mipmapI - 1);
+
+                                                Log::debug(std::format("CPU position ({}, {}, {}): {}", position.x, position.y, position.z, isOccupied));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < cpuData.getRawOccupancyMap().size(); ++i)
+            {
+                if (cpuData.getRawOccupancyMap().at(i) != gpuData.getRawOccupancyMap().at(i))
+                {
+                    Log::debug(std::format("{}: {} != {}", i, cpuData.getRawOccupancyMap().at(i), gpuData.getRawOccupancyMap().at(i)));
+                }
+
+                // Assert::isTrue(cpuData.getRawOccupancyMap().at(i) == gpuData.getRawOccupancyMap().at(i), "CPU generated mipmaps don't match GPU generated mipmaps");
             }
         }
 

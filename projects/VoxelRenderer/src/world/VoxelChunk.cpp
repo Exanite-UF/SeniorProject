@@ -18,7 +18,7 @@ VoxelChunk::VoxelChunk(glm::ivec3 size, bool shouldGeneratePlaceholderData)
     if (shouldGeneratePlaceholderData)
     {
         // Generates initial occupancy map data
-        generatePlaceholderData(0, true, 0.6);
+        generatePlaceholderData(0, false, 0.6);
 
         // Generates initial material map
         generatePlaceholderMaterialMap();

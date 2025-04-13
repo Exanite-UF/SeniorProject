@@ -3,6 +3,7 @@
 #include <chrono>
 #include <glm/gtc/integer.hpp>
 #include <set>
+#include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkUtility.h>
 #include <stdexcept>
@@ -271,6 +272,7 @@ void VoxelChunkData::updateMipmaps()
                             for (int currentVoxelX = 0; currentVoxelX < 2; ++currentVoxelX)
                             {
                                 bool isOccupied = false;
+                                bool isOccupied2 = false;
 
                                 for (int previousCellZ = 0; !isOccupied && previousCellZ < 2; ++previousCellZ)
                                 {
@@ -286,6 +288,25 @@ void VoxelChunkData::updateMipmaps()
                                             isOccupied = data.occupancyMap.at(previousCellIndex) != 0;
                                         }
                                     }
+                                }
+
+                                for (int previousVoxelZ = 0; !isOccupied2 && previousVoxelZ < 4; ++previousVoxelZ)
+                                {
+                                    for (int previousVoxelY = 0; !isOccupied2 && previousVoxelY < 4; ++previousVoxelY)
+                                    {
+                                        for (int previousVoxelX = 0; !isOccupied2 && previousVoxelX < 4; ++previousVoxelX)
+                                        {
+                                            auto previousVoxelOffset = glm::ivec3(previousVoxelX, previousVoxelY, previousVoxelZ);
+                                            auto previousVoxelPosition = currentCellPosition * 4 + previousVoxelOffset;
+
+                                            isOccupied2 = getVoxelOccupancy(previousVoxelPosition);
+                                        }
+                                    }
+                                }
+
+                                if (isOccupied != isOccupied2)
+                                {
+                                    Log::fatal("Mismatch!!!");
                                 }
 
                                 if (isOccupied)
