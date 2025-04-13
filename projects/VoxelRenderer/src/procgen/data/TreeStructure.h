@@ -5,8 +5,11 @@
 
 class TreeStructure
 {
-private:
+public:
     glm::ivec3 originVoxel;
+    
+private:
+    
     std::shared_ptr<Material> logMaterial;
     std::shared_ptr<Material> leafMaterial;
     int treeHeightVoxels;
@@ -36,7 +39,7 @@ public:
         int leafExtentAboveZ,
         float leafProbabilityToFill);
 
-    void generate(VoxelChunkData& chunkData, int z);
+    void generate(VoxelChunkData& chunkData);
     [[nodiscard]] const glm::ivec3& getOriginVoxel();
     glm::ivec2 getMaxDistanceFromOrigin();
 };

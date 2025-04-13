@@ -30,11 +30,11 @@ TreeStructure::TreeStructure(
     this->maxDistanceFromOrigin = glm::ceil(glm::max(glm::vec2(treeWidthVoxels), glm::vec2(leafWidthX, leafWidthY)) / 2.f);
 }
 
-void TreeStructure::generate(VoxelChunkData& chunkData, int z)
+void TreeStructure::generate(VoxelChunkData& chunkData)
 {
     ZoneScoped;
 
-    glm::ivec3 transformPosition = { originVoxel.x, originVoxel.y, z };
+    glm::ivec3 transformPosition = { originVoxel.x, originVoxel.y, originVoxel.z };
 
     // Tree Trunk
     generateRectangle(

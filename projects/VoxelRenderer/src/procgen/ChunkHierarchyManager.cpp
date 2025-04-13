@@ -7,6 +7,7 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
 {
     if (levels.size() == 0){
         levels.emplace_back();
+        isGenerated.emplace_back();
     }
 
     glm::ivec2 chunkPosition = glm::floor(glm::vec2(structureOrigin) / glm::vec2(chunkSize));
@@ -32,7 +33,7 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
     {
         levelsMTX.lock();
         auto& level = levels[levelCounter];//Get the current level
-
+        auto& isGeneratedLevel = isGenerated[levelCounter];
         
 
         glm::vec2 radiusOfRegion = glm::vec2(chunkSize) * (powf(2, levelCounter - 1) + 0.5f);
@@ -54,6 +55,7 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
             //If the next level does not exist, create it
             if(levels.size() == levelCounter){
                 levels.emplace_back();
+                isGenerated.emplace_back();
             }
 
             //Coordinate adjustment for the next level
@@ -102,6 +104,10 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
             wasAdded = true;
             
             level[regionIndex].push_back(structure);
+            //if(!isGeneratedLevel.count(regionIndex)){
+            //    isGeneratedLevel[regionIndex] = false;
+            //}
+            
         }
         //If it was not added at this level, then try at the next level
         levelsMTX.unlock();
@@ -117,6 +123,7 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
         //If the next level does not exist, create it
         if(levels.size() == levelCounter){
             levels.emplace_back();
+            isGenerated.emplace_back();
         }
 
         //Coordinate adjustment for the next level

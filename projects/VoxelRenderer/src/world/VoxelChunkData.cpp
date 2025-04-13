@@ -9,6 +9,7 @@
 #include <thread>
 #include <tracy/Tracy.hpp>
 
+
 VoxelChunkData::VoxelChunkData(const glm::ivec3& size, bool includeMipmaps)
 {
     ZoneScoped;

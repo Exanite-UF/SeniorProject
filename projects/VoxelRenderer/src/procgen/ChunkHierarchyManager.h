@@ -12,6 +12,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <iostream>
+
 #include <src/procgen/data/TreeStructure.h>
 #include <src/world/VoxelChunkData.h>
 
@@ -67,9 +69,13 @@ public:
 
     bool isChunkGenerated(glm::ivec2 chunkPosition, int level)
     {
-        if (level < 0 || level >= isGenerated.size())
+        if (level < 0)
         {
-            throw std::runtime_error("Chunk level does not exist");
+            throw std::runtime_error("Negative levels do not exist.");
+        }
+
+        if (level >= isGenerated.size())
+        {
             return false;
         }
 
@@ -88,10 +94,13 @@ public:
 
     void setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag)
     {
-        if (level < 0 || level >= isGenerated.size())
+        if (level < 0)
         {
-            throw std::runtime_error("Chunk level does not exist");
-            return;
+            throw std::runtime_error("Negative levels do not exist.");
+        }
+
+        for(int i = isGenerated.size(); i <= level; i++){
+            isGenerated.emplace_back();
         }
 
         auto& isLevelGenerated = isGenerated[level];
