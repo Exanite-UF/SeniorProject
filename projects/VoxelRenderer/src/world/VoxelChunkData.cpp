@@ -13,7 +13,7 @@ VoxelChunkData::VoxelChunkData(const glm::ivec3& size, bool includeMipmaps)
 {
     ZoneScoped;
 
-    setSize(size, includeMipmaps);
+    setSizeAndMipmaps(size, includeMipmaps);
 }
 
 const glm::ivec3& VoxelChunkData::getSize() const
@@ -21,12 +21,12 @@ const glm::ivec3& VoxelChunkData::getSize() const
     return data.size;
 }
 
-void VoxelChunkData::setSize(const glm::ivec3& size)
+void VoxelChunkData::setSize(const glm::ivec3& size, const bool generateMipMaps)
 {
-    setSize(size, data.hasMipmaps);
+    setSizeAndMipmaps(size, data.hasMipmaps, generateMipMaps);
 }
 
-void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
+void VoxelChunkData::setSizeAndMipmaps(glm::ivec3 size, const bool allocateMipmaps, const bool generateMipmaps)
 {
     ZoneScoped;
 
@@ -34,7 +34,7 @@ void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
     if (size.x * size.y * size.z == 0)
     {
         this->data.size = size;
-        this->data.hasMipmaps = includeMipmaps;
+        this->data.hasMipmaps = allocateMipmaps;
 
         data.occupancyMapIndices = { 0 };
         data.occupancyMap.resize(0);
@@ -52,9 +52,9 @@ void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
 
     auto previousSize = this->data.size;
     this->data.size = size;
-    this->data.hasMipmaps = includeMipmaps;
+    this->data.hasMipmaps = allocateMipmaps;
 
-    if (includeMipmaps)
+    if (allocateMipmaps)
     {
         // Store all mipmap layer data
         data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
@@ -62,7 +62,7 @@ void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
 
         // Update mipmaps if there was any previously existing data
         // If there was not, then everything is just zero
-        if (previousSize != glm::ivec3(0))
+        if (generateMipmaps && previousSize != glm::ivec3(0))
         {
             updateMipmaps();
         }
@@ -82,9 +82,9 @@ bool VoxelChunkData::getHasMipmaps() const
     return data.hasMipmaps;
 }
 
-void VoxelChunkData::setHasMipmaps(bool hasMipmaps)
+void VoxelChunkData::setHasMipmaps(const bool allocateMipmaps, const bool generateMipmaps)
 {
-    setSize(data.size, hasMipmaps);
+    setSizeAndMipmaps(data.size, allocateMipmaps, generateMipmaps);
 }
 
 int VoxelChunkData::getOccupancyMipmapCount() const
@@ -308,18 +308,32 @@ void VoxelChunkData::updateMipmaps()
     }
 }
 
-void VoxelChunkData::copyFrom(VoxelChunk& other)
+void VoxelChunkData::copyFrom(VoxelChunk& other, const bool includeMipmaps)
 {
     ZoneScoped;
 
-    if (data.size != other.getSize())
+    if (includeMipmaps)
     {
-        setSize(other.getSize());
-    }
+        if (data.size != other.getSize())
+        {
+            setSizeAndMipmaps(other.getSize(), true, false);
+        }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+    else
+    {
+        if (data.size != other.getSize())
+        {
+            setSize(other.getSize());
+        }
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(data.occupancyMapIndices.size() - 1), data.occupancyMap.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getMaterialMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.materialMap.size() * 2, data.materialMap.data());

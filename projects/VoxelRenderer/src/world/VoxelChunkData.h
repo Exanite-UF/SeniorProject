@@ -30,11 +30,11 @@ public:
     explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
 
     [[nodiscard]] const glm::ivec3& getSize() const;
-    void setSize(const glm::ivec3& size);
-    void setSize(glm::ivec3 size, bool includeMipmaps);
+    void setSize(const glm::ivec3& size, bool generateMipmaps = true);
+    void setSizeAndMipmaps(glm::ivec3 size, bool allocateMipmaps, bool generateMipmaps = true);
 
     bool getHasMipmaps() const;
-    void setHasMipmaps(bool hasMipmaps);
+    void setHasMipmaps(bool allocateMipmaps, bool generateMipmaps = true);
 
     int getOccupancyMipmapCount() const;
     int getOccupancyLayerCount() const;
@@ -61,7 +61,7 @@ public:
 
     void updateMipmaps();
 
-    void copyFrom(VoxelChunk& other);
+    void copyFrom(VoxelChunk& other, bool includeMipmaps = false);
     void copyTo(VoxelChunk& other) const;
 
     void copyFrom(const VoxelChunkData& other);
