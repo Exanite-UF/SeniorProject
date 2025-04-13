@@ -57,6 +57,7 @@ uniform float sunAngularSize; // The angle of the sun in diameter
 uniform vec3 sunDirection;
 
 uniform int firstMipMapLevel;
+uniform int maxIterations;
 
 layout(std430, binding = 0) buffer RayPosition
 {
@@ -483,7 +484,7 @@ RayHit rayCast(ivec3 texelCoord, vec3 startPos, vec3 rayDir, float currentDepth)
     rayPos += rayDir * 0.01 * 0;
 
     // Find the intersection point of the ray cast
-    RayHit hit = findIntersection(rayPos, rayDir, 200, currentDepth);
+    RayHit hit = findIntersection(rayPos, rayDir, maxIterations, currentDepth);
 
     hit.voxelHitLocation = hit.hitLocation; // Store the position of the intersection in voxel space
 
