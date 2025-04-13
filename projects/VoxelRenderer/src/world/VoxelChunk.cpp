@@ -62,7 +62,7 @@ void VoxelChunk::setSize(glm::ivec3 size)
     this->materialMap.setSize(size.x * size.y * size.z);
 }
 
-void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise, float fillAmount)
+void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useIsosurfaceNoise, float fillAmount)
 {
     ZoneScoped;
 
@@ -83,7 +83,7 @@ void VoxelChunk::generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise
     glUniform3i(glGetUniformLocation(makeNoiseComputeProgram, "resolution"), size.x / 2, size.y / 2, size.z / 2);
     glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "time"), noiseTime);
     glUniform1f(glGetUniformLocation(makeNoiseComputeProgram, "fillAmount"), fillAmount);
-    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), useRandomNoise);
+    glUniform1i(glGetUniformLocation(makeNoiseComputeProgram, "isRand2"), useIsosurfaceNoise);
 
     glDispatchCompute(workgroupCountX, 1, 1);
 
@@ -153,11 +153,11 @@ void VoxelChunk::generatePlaceholderMaterialMap()
     this->materialMap.unbind();
 }
 
-void VoxelChunk::generatePlaceholderData(double deltaTime, bool useRandomNoise, float fillAmount)
+void VoxelChunk::generatePlaceholderData(double deltaTime, bool useIsosurfaceNoise, float fillAmount)
 {
     ZoneScoped;
 
-    generateNoiseOccupancyMap(currentNoiseTime, useRandomNoise, fillAmount);
+    generateNoiseOccupancyMap(currentNoiseTime, useIsosurfaceNoise, fillAmount);
     updateMipMaps();
 
     // Updating noise after generating makes the initial generation independent to framerate
