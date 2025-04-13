@@ -497,12 +497,6 @@ void VoxelChunkManager::update(const float deltaTime)
             // Use camera chunk position to determine 4 closest chunks
             glm::vec2 cameraChunkPosition = state.cameraFloatChunkPosition;
 
-            // Bias camera chunk position in the direction the camera is facing
-            // This is to make it so that higher resolution LODs for chunks in front of the camera
-            // This also helps hide LOD transitions
-            glm::vec2 cameraForwardDirection = glm::vec2(state.scene->camera->getTransform()->getForwardDirection());
-            cameraChunkPosition += cameraForwardDirection;
-
             // Floor the camera chunk position
             // Adding one to the coordinate will define a square of chunks
             cameraChunkPosition = glm::floor(cameraChunkPosition);
