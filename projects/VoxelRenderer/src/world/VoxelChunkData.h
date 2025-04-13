@@ -30,7 +30,7 @@ private:
     friend class VoxelChunkComponent;
 
 public:
-    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
+    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool allocateMipmaps = false);
 
     [[nodiscard]] const glm::ivec3& getSize() const;
     void setSize(const glm::ivec3& size, bool generateMipmaps = true);
