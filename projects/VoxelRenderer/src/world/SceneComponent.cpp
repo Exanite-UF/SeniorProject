@@ -124,6 +124,9 @@ std::shared_ptr<SkyboxComponent> SceneComponent::getSkybox()
 
 std::pair<float, glm::vec3> SceneComponent::raycast(glm::vec3 start, glm::vec3 direction)
 {
+
+    mutex.lock_shared();
+
     glm::vec3 hitLocation;
     float currentDepth = -1;
     for(auto& chunk : allChunks){
@@ -146,5 +149,6 @@ std::pair<float, glm::vec3> SceneComponent::raycast(glm::vec3 start, glm::vec3 d
         }
         
     }
+    mutex.unlock_shared();
     return {currentDepth, hitLocation};
 }

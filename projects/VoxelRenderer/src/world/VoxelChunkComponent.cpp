@@ -111,6 +111,11 @@ bool VoxelChunkComponent::getExistsOnGpu() const
 
 std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::vec3 direction, float currentDepth)
 {
+    if(!mutex.try_lock_shared()){
+        return {-1, glm::vec3(0)};
+    }
+
+
     RayHit hit;
     hit.iterations = 0;
     hit.wasHit = false;
@@ -191,6 +196,7 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     if (distToCube < 0)
     {
         hit.isNearest = false;
+        mutex.unlock_shared();
         return {-1, glm::vec3(0)};
     }
 
@@ -200,6 +206,7 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     if (depth > currentDepth)
     {
         hit.isNearest = false;
+        mutex.unlock_shared();
         return {-1, glm::vec3(0)};
     }
 
@@ -318,9 +325,11 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     //std::cout << "END " << hit.wasHit << " " << hit.dist << " | " << hit.hitLocation.x << " " << hit.hitLocation.y << " " << hit.hitLocation.z<< std::endl;
 
     if(!hit.wasHit){
+        mutex.unlock_shared();
         return {-1, glm::vec3(0)};
     }
 
+    mutex.unlock_shared();
     return {hit.dist, hit.hitLocation};
 }
 
@@ -355,9 +364,9 @@ std::uint8_t VoxelChunkComponent::getOccupancyByte(glm::ivec3 coord, int mipMapT
 {
     
     glm::ivec3 tempRes = (chunkData.getSize() / 2) / (1 << (2 * mipMapTexture)); // get the resolution of the requested mipmap
-    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + chunkData.getRawOccupancyMapIndices()[mipMapTexture];
+    int index = (coord.x + tempRes.x * (coord.y + tempRes.y * coord.z)) + chunkData.getRawOccupancyMapIndices().at(mipMapTexture);
     //std::cout << mipMapTexture << " " << chunkData.getRawOccupancyMapIndices()[mipMapTexture] << " " << (int)chunkData.getRawOccupancyMap()[index] << std::endl;
-    return chunkData.getRawOccupancyMap()[index];
+    return chunkData.getRawOccupancyMap().at(index);
 }
 
 void VoxelChunkComponent::onRemovingFromWorld()

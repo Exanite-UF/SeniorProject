@@ -189,6 +189,7 @@ void Program::run()
         // Create the camera GameObject
         auto cameraObject = sceneObject->createChildObject("Camera");
         auto camera = cameraObject->addComponent<CameraComponent>();
+        camera->moveSpeed = 4.317 * 8;//Set the base speed to 4.317 meter a second (minecraft walking speed. This is 9.6 miles per hour, Steve is very fast)
         auto cameraTransform = camera->getTransform();
         scene->setCamera(camera);
         cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
