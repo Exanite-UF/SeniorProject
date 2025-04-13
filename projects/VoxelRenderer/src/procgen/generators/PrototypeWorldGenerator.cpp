@@ -71,14 +71,14 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         generateTerrain(data);
 
 
-        if (false)
+        if (true)
         {
             ZoneScopedN("Generate trees");
             std::lock_guard lock(chunkHierarchyManager.mutex);
 
             // Decoration: Create trees by searching points. 20 trees vs 512^3 checks + caching
             // TODO: Find precise lock locations
-            if (!chunkHierarchyManager.isChunkGenerated(chunkPosition, 0))
+            if (!hasGeneratedSeedNode)
             {
                 // GridPointSynthesizer pointSynthesizer(seed);
                 PoissonDiskPointSynthesizer pointSynthesizer(seed);
@@ -87,7 +87,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 {
                     ZoneScopedN("Generate points");
 
-                    int numPoints = 20;
+                    int numPoints = 400;
                     pointSynthesizer.generatePoints(treeLocations, numPoints);
                     pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
                     // Lexicographic sort
@@ -96,26 +96,19 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
                 for (int i = 0; i < treeLocations.size(); i++)
                 {
-                    glm::ivec3 originVoxel(treeLocations[i].x, treeLocations[i].y, data.getSize().z - 1);
-                    //std::cout << originVoxel.z << std::endl;
-                    while(!data.getVoxelOccupancy(originVoxel)){
-                        originVoxel.z--;
-                        //std::cout << originVoxel.z << std::endl;
-                        if(originVoxel.z == 0){
-                            break;
-                        }
-                    }
+                    glm::ivec3 originVoxel(4 * (treeLocations[i].x - data.getSize().x * 0.5), 4 * (treeLocations[i].y - data.getSize().y * 0.5), 200);
 
                     //std::cout << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
-                    TreeStructure tree = createRandomTreeInstance(data, chunkPosition, originVoxel, seed, oakLogMaterial, oakLeafMaterial);
+                    TreeStructure tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
                     chunkHierarchyManager.addStructure(data.getSize(), originVoxel, std::make_shared<StructureNode>(tree));
                 }
 
-                chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
+                hasGeneratedSeedNode = true;
+                //chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
             }
         }
 
-        if(true){
+        if(false){
             if (!hasGeneratedSeedNode){
                 //glm::ivec3 originVoxel(chunkPosition.x * data.getSize().x, chunkPosition.y * data.getSize().y, data.getSize().z - 1);
                 glm::ivec3 originVoxel(0, 0, 200);
@@ -143,6 +136,15 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 std::cout << "Initial: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
                 origin.x -= chunkPosition.x * data.getSize().x;
                 origin.y -= chunkPosition.y * data.getSize().y;
+
+                while(!data.getVoxelOccupancy(origin)){
+                    origin.z--;
+                    if(origin.z == 0){
+                        break;
+                    }
+                }
+
+
                 std::cout << "Post: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
 
                 glm::ivec3 saved = structure->structure.originVoxel;
