@@ -344,7 +344,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
 
     // Calculate max possible LOD
     const int minSideLength = glm::min(glm::min(component->chunkData.getSize().x, component->chunkData.getSize().y), component->chunkData.getSize().z);
-    const int maxPossibleLod = minSideLength == 0 ? 0 : glm::log2(minSideLength);
+    const int maxPossibleLod = minSideLength == 0 ? 0 : (glm::log2(minSideLength) - 1);
 
     // Update max LODs
     chunkManagerData.requestedMaxLod = requestedMaxLod;
