@@ -1090,31 +1090,31 @@ void Program::runLateStartupTests()
         Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
     }
 
-    //{
-    //    // Test LOD generation
-    //    VoxelChunkData original(glm::ivec3(4, 4, 4));
-    //    original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
-    //    original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
-    //
-    //    VoxelChunkData lod {};
-    //
-    //    original.copyToLod(lod);
-    //    Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
-    //    Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
-    //}
-    //
-    //{
-    //    // Test mipmap generation
-    //    VoxelChunkData data(glm::ivec3(16, 16, 16));
-    //    data.setVoxelOccupancy(glm::ivec3(3, 3, 3), true);
-    //    data.setHasMipmaps(true);
-    //
-    //    Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
-    //    Assert::isTrue(data.getOccupancyLayerCount() == 2, "Expected 2 occupancy layers");
-    //    Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");
-    //    Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
-    //    Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
-    //}
+    {
+        // Test LOD generation
+        VoxelChunkData original(glm::ivec3(4, 4, 4));
+        original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
+        original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
+
+        VoxelChunkData lod {};
+
+        original.copyToLod(lod);
+        Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
+        Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
+    }
+
+    {
+        // Test mipmap generation
+        VoxelChunkData data(glm::ivec3(16, 16, 16));
+        data.setVoxelOccupancy(glm::ivec3(3, 3, 3), true);
+        data.setHasMipmaps(true);
+
+        Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
+        Assert::isTrue(data.getOccupancyLayerCount() == 2, "Expected 2 occupancy layers");
+        Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
+    }
 
     //runChunkHierarchyTest();
 }
@@ -1136,7 +1136,7 @@ void Program::runChunkHierarchyTest()
     WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
     WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
 
-    
+
 
     glm::ivec2 leafSize = {8, 8};//This is the number of unit that the leaves will span
     int treeHeight = 8 * 10;
@@ -1191,18 +1191,18 @@ void Program::runChunkHierarchyTest()
             for(int j = -2; j <= 2; j++){
                 glm::ivec2 chunkPosition = {i * 512, j * 512};
                 auto temp = manager.getStructuresForChunk(chunkPosition);
-        
+
                 if(i >= -3 && i <= -1 && j >= -1 && j <= 1){
                     glm::ivec3 origin = (*temp.begin())->structure.getOriginVoxel();
                     Assert::isTrue(origin.x == -757 && origin.y == 245, "Expected Tree at -757, 245 with radius 540 to be accessible in the rectangle (-1536, -512) to (-512, 512).");
                 }
-                
+
             }
         }
 
         manager.clear();
     }
-    
 
-    
+
+
 }
