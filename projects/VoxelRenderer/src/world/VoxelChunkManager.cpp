@@ -386,7 +386,7 @@ void VoxelChunkManager::update(const float deltaTime)
     }
 
     // Chunk unloading logic
-    if (state.isChunkUnloadingDirty && settings.isChunkLoadingEnabled)
+    if (state.isChunkUnloadingDirty)
     {
         ZoneScopedN("Chunk unloading logic");
 
