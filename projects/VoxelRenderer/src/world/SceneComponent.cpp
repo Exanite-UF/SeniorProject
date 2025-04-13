@@ -130,6 +130,9 @@ std::pair<float, glm::vec3> SceneComponent::raycast(glm::vec3 start, glm::vec3 d
     glm::vec3 hitLocation;
     float currentDepth = -1;
     for(auto& chunk : allChunks){
+
+        if(!chunk->getExistsOnGpu()) continue;
+        
         auto result = chunk->raycast(start, direction, currentDepth);
 
         //std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
