@@ -494,6 +494,19 @@ void VoxelChunkManager::update(const float deltaTime)
         {
             ZoneScopedN("Chunk LOD generation");
 
+            // Use camera chunk position to determine 4 closest chunks
+            glm::vec2 cameraChunkPosition = state.cameraFloatChunkPosition;
+
+            // Bias camera chunk position in the direction the camera is facing
+            // This is to make it so that higher resolution LODs for chunks in front of the camera
+            // This also helps hide LOD transitions
+            glm::vec2 cameraForwardDirection = glm::vec2(state.scene->camera->getTransform()->getForwardDirection());
+            cameraChunkPosition += cameraForwardDirection;
+
+            // Floor the camera chunk position
+            // Adding one to the coordinate will define a square of chunks
+            cameraChunkPosition = glm::floor(cameraChunkPosition);
+
             // Calculate LOD level for each chunk
             for (auto& activeChunkIterator : state.activeChunks)
             {
@@ -502,14 +515,13 @@ void VoxelChunkManager::update(const float deltaTime)
                 float chunkDistance = glm::length(component->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
 
                 // Check if one of the 4 closest chunks
-                glm::vec2 flooredCameraChunkPosition = glm::floor(state.cameraFloatChunkPosition);
-                bool isClosest4Chunks = (activeChunk->chunkPosition.x >= flooredCameraChunkPosition.x) && (activeChunk->chunkPosition.x <= flooredCameraChunkPosition.x + 1)
-                    && (activeChunk->chunkPosition.y >= flooredCameraChunkPosition.y) && (activeChunk->chunkPosition.y <= flooredCameraChunkPosition.y + 1);
+                bool isClosest4Chunks = (activeChunk->chunkPosition.x >= cameraChunkPosition.x) && (activeChunk->chunkPosition.x <= cameraChunkPosition.x + 1)
+                    && (activeChunk->chunkPosition.y >= cameraChunkPosition.y) && (activeChunk->chunkPosition.y <= cameraChunkPosition.y + 1);
 
                 // Artificially decrease distance of the 4 closest chunks
                 if (isClosest4Chunks)
                 {
-                    chunkDistance *= 0.75f;
+                    chunkDistance *= 0.5f;
                 }
 
                 // Calculate desired LOD level
