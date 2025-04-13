@@ -808,6 +808,7 @@ void Program::run()
                             ImGui::Text("G - Toggle Reprojection");
                             ImGui::Text("V - Toggle Bounce Count");
                             ImGui::Text("B - Pause/Unpause Rendering");
+                            ImGui::Text("J - Toggle ground camera");
                             ImGui::Text("Mouse Scroll - Change Move Speed");
                             ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
                             ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");
