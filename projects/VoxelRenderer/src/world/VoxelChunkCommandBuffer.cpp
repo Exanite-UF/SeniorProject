@@ -152,6 +152,11 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                 // TODO: Incrementally update mipmaps
                 // TODO: Incrementally update LODs
+                {
+                    // TODO: Don't do this
+                    shouldCompletelyRegenerateMipmaps = true;
+                    lodRegenerationStartIndex = 0;
+                }
 
                 break;
             }
@@ -165,6 +170,10 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 shouldCompletelyWriteToGpu = true;
 
                 // TODO: Incrementally update LODs
+                {
+                    // TODO: Don't do this
+                    lodRegenerationStartIndex = 0;
+                }
 
                 break;
             }
