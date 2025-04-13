@@ -198,7 +198,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     fnNormalized->SetSource(fnFractal);
     fnNormalized->SetRemap(-1, 1, 0, 1);
 
-    // auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
 
     // Create an array of floats to store the noise output in
     std::vector<float> noiseOutput3D(data.getSize().x * data.getSize().y * data.getSize().z);
@@ -215,9 +215,11 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     fnNormalized->GenUniformGrid3D(noiseOutput3D.data(), 0, offset.y, offset.x, data.getSize().z, data.getSize().y, data.getSize().x, frequency3D, seed);
 
     int index2D1 = 0;
-    int index2D2 = 0;
     int index3D = 0;
+
+    glm::ivec3 size = data.getSize();
     // Set the occupancy data of the voxel chunk
+
     // Assign materials
     // It scans from the top of the voxel chunk
     // When going from air to not air
@@ -227,13 +229,14 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     //   This counter is reset everytime air is hit (unless grass gets disabled)
     //
     // Encountering 10 non-air voxels in a row will disable grass for the rest of the column
-    for (int x = 0; x < data.getSize().x; x++)
+    
+    for (int x = 0; x < size.x; x++)
     {
-        for (int y = 0; y < data.getSize().y; y++)
+        for (int y = 0; y < size.y; y++)
         {
 
-            float perlinNoiseSample = noiseOutput2D1[index2D1++];
-            float perlinNoiseSample2 = noiseOutput2D2[index2D2++];
+            float perlinNoiseSample = noiseOutput2D1[index2D1];
+            float perlinNoiseSample2 = noiseOutput2D2[index2D1++];
 
             // Calculate the maximum height and surface height
             float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
@@ -243,7 +246,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
             int maxThick = 0; // Keep track of the thickest consecutive region we have seen
             int tempThick = 0; // This keeps track of the current number of consecutive non-air voxels
 
-            for (int z = data.getSize().z - 1; z >= 0; z--)
+            for (int z = size.z - 1; z >= 0; z--)
             {
 
                 float random3D = noiseOutput3D[index3D++];
@@ -270,11 +273,8 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                 bool isOccupied = false;
                 if (random3D <= p)
                 {
-                    for (int i = 0; i < verticalStride; i++)
-                    {
-                        isOccupied = true;
-                        data.setVoxelOccupancy({ x, y, z + i }, true);
-                    }
+                    isOccupied = true;
+                    data.setVoxelOccupancy({ x, y, z }, true);
                 }
 
                 // Set material
@@ -346,7 +346,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
                         // This doesn't have an occupied voxel. It's so that the debug tools have light
 
-                        
+
                         // Check if grass is enabled
                         if (maxThick <= noMoreGrassDepth)
                         {
@@ -381,10 +381,10 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
             }
         }
     }
+   
+    //auto end = std::chrono::high_resolution_clock::now();
 
-    // auto end = std::chrono::high_resolution_clock::now();
-
-    // std::cout << std::chrono::duration<double>(end - start).count() << std::endl;
+    //std::cout << std::chrono::duration<double>(end - start).count() << std::endl;
 }
 
 /*

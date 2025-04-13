@@ -21,7 +21,6 @@ private:
 
     float frequency2D = 0.002 / 8; // Scale of the 2D perlin noise
     float frequency3D = 0.01 / 2; // Scale of the 3D perlin noise
-    float verticalStride = 1; // Reduces noise checks by resuing occupancy result vertically
 
     // These could all change continuously with space
     int terrainMaxAmplitude = 200; // Terrain amplitude in voxels
