@@ -326,7 +326,6 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateActiveLod()
     if (previousActiveLod != activeLod)
     {
         shouldCompletelyWriteToGpu = true;
-        component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, activeLod)));
     }
 }
 
@@ -443,8 +442,29 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
             return;
         }
 
-        // allocateGpuData is idempotent so we can just call it
-        component->allocateGpuData(lod.getSize());
+        // This is a pointer to a unique pointer because we either use the existing VoxelChunk or allocate a new one
+        // We use the existing VoxelChunk if possible, but that's not ideal in all cases
+        //
+        // If we need to resize the VoxelChunk, the resized VoxelChunk will have uninitialized data until we are done writing to it
+        // This uninitialized data will be used by the renderer and cause a visual flash where uninitialized chunk data is displayed
+        //
+        // We want to avoid this flash, so we allocate a separate VoxelChunk and write our data there
+        // After writing the data, we replace the VoxelChunk that the renderer uses
+        const std::unique_ptr<VoxelChunk>* gpuData;
+        std::unique_ptr<VoxelChunk> localGpuData; // Don't use. Only used for initialization purposes in the if statement below.
+        if (component->getExistsOnGpu() && component->getChunk()->getSize() == lodSize)
+        {
+            // Existing data exists and does not need a resize
+            // We will use it directly
+            gpuData = &component->getChunk();
+        }
+        else
+        {
+            // Cannot use existing data
+            // We will allocate a new VoxelChunk
+            localGpuData = std::make_unique<VoxelChunk>(lodSize, false);
+            gpuData = &localGpuData;
+        }
 
         // We only need shared access because we are modifying a GPU resource
         // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
@@ -458,23 +478,38 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
                 return;
             }
 
-            if (!component->getExistsOnGpu())
+            // Check if unique pointer is valid
+            // The dereference is because gpuData is a pointer to a unique pointer
+            if (!*gpuData)
             {
                 // Note that this case cannot happen when the VoxelChunkComponent
                 // is only modified by the chunk modification threads.
                 //
                 // This is because the chunk modification threads respect command buffer submission order.
-                Log::error("Failed to apply VoxelChunkCommandBuffer (unexpected case). VoxelChunkComponent is no longer uploaded to the GPU. This usually indicates a synchronization error.");
+                Log::error("Attempted to write to an invalid unique pointer. This is unexpected and is probably a synchronization error.");
 
                 return;
             }
 
+            // Upload
             {
                 std::lock_guard lockGpuUpload(gpuUploadLock);
-                auto& test = *component->getChunk();
-                lod.copyTo(test);
+                lod.copyTo(**gpuData);
             }
         }
         componentLock.lock();
+        if (!component->getIsPartOfWorld())
+        {
+            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+            return;
+        }
+
+        // Replace the VoxelChunk used by the component if needed
+        if (localGpuData)
+        {
+            component->chunk = std::move(localGpuData);
+            component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, component->getChunkManagerData().activeLod)));
+        }
     }
 }
