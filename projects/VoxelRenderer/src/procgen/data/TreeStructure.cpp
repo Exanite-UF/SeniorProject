@@ -6,7 +6,7 @@
 #include <tracy/Tracy.hpp>
 
 TreeStructure::TreeStructure(
-    glm::ivec2 originVoxel,
+    glm::ivec3 originVoxel,
     std::shared_ptr<Material> logMaterial,
     std::shared_ptr<Material> leafMaterial,
     int treeHeightVoxels,
@@ -27,7 +27,7 @@ TreeStructure::TreeStructure(
     this->leafExtentBelowZ = leafExtentBelowZ;
     this->leafExtentAboveZ = leafExtentAboveZ;
     this->leafProbabilityToFill = leafProbabilityToFill;
-    this->maxDistanceFromOrigin = (int)std::ceil(std::max(treeWidthVoxels, leafWidthX) / 2.0f);
+    this->maxDistanceFromOrigin = glm::ceil(glm::max(glm::vec2(treeWidthVoxels), glm::vec2(leafWidthX, leafWidthY)) / 2.f);
 }
 
 void TreeStructure::generate(VoxelChunkData& chunkData, int z)
@@ -59,12 +59,12 @@ void TreeStructure::generate(VoxelChunkData& chunkData, int z)
         leafProbabilityToFill);
 }
 
-const glm::ivec2& TreeStructure::getOriginVoxel()
+const glm::ivec3& TreeStructure::getOriginVoxel()
 {
     return originVoxel;
 }
 
-int TreeStructure::getMaxDistanceFromOrigin()
+glm::ivec2 TreeStructure::getMaxDistanceFromOrigin()
 {
     return maxDistanceFromOrigin;
 }

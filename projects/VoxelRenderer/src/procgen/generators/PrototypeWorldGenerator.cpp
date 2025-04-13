@@ -68,6 +68,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
         generateTerrain(data);
 
+        /*
         if (false)
         {
             ZoneScopedN("Generate trees");
@@ -134,6 +135,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 structure->structure.generate(data, finalZ);
             }
         }
+        */
     }
 }
 
@@ -683,8 +685,10 @@ TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& 
     int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
     int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
-    TreeStructure tree(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
-
+    //TODO: Fix this
+    //The origin voxel of a tree should be the actual origin, not just 2 of the 3 values
+    TreeStructure tree(glm::ivec3(originVoxel.x, originVoxel.y, 0), logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
+    throw std::runtime_error("Not implemented correctly");
     return tree;
 }
 

@@ -5,6 +5,7 @@
 #include <glm/gtx/hash.hpp>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <src/utilities/Log.h>
 #include <src/utilities/Singleton.h>
 #include <unordered_map>
@@ -25,17 +26,23 @@ public:
     }
 };
 
+
 class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
 {
     friend class Singleton;
 
 private:
+    //Each level contain a map from 2D voxel positions to lists of structures at that position
+    //The higher levels span multiple of the lower levels, and they overlap
+    //Then enables structures to cross chunk boundaries
     std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
     std::vector<std::unordered_map<glm::ivec2, bool>> isGenerated;
+    std::shared_mutex levelsMTX;//Lock the levels data structure 
+
 
     // Singleton needs default constructor
     explicit ChunkHierarchyManager()
-        : ChunkHierarchyManager(3)
+        : ChunkHierarchyManager(0)
     {
     }
 
@@ -87,131 +94,20 @@ public:
         isLevelGenerated[chunkPosition] = flag;
     }
 
-    void addStructure(glm::ivec2 chunkPosition, VoxelChunkData& chunkData, glm::ivec2 structureOrigin, TreeStructure structure)
-    {
-        if (levels.size() == 0)
-            return;
+    //These require axis aligned voxel chunks
 
-        glm::ivec2 levelChunkPosition = chunkPosition;
-        int chunksPerLevel = 1;
+    /// @brief Add the seed point of a structure so that it can be queried for later
+    /// @param chunkSize The size of a chunk in voxels
+    /// @param structureOrigin //This is the world space position of the structure (in voxels)
+    /// @param structure This is the actual structure
+    void addStructure(glm::ivec2 chunkSize, glm::ivec3 structureOrigin, TreeStructure structure);
+    
 
-        std::vector<glm::vec2> boundingBoxCorner = {
-            { 1, 1 },
-            { 1, -1 },
-            { -1, -1 },
-            { -1, 1 }
-        };
+    /// @brief Gets all the structure seeds whose structure could appear in the requested chunk
+    /// @param chunkPosition A coordinate inside the chunk in question (in voxels)
+    /// @param chunkSize The size of a chunk in voxels
+    std::unordered_set<std::shared_ptr<StructureNode>> getStructuresForChunk(glm::ivec2 chunkPosition, glm::ivec2 chunkSize);
+    
 
-        int selectedLevelIndex = -1;
-        for (int i = 0; i < levels.size() - 1; i++)
-        {
-            auto& level = levels[i];
-
-            float structureRadius = structure.getMaxDistanceFromOrigin();
-
-            int widthPerLevelChunk = chunkData.getSize().x * chunksPerLevel;
-            glm::ivec2 levelChunkCornerPosition = levelChunkPosition * widthPerLevelChunk;
-            glm::ivec2 levelChunkMinBounds = { levelChunkCornerPosition.x, levelChunkCornerPosition.y };
-            glm::ivec2 levelChunkMaxBounds = { levelChunkCornerPosition.x + (chunksPerLevel * widthPerLevelChunk), levelChunkCornerPosition.y + (chunksPerLevel * widthPerLevelChunk) };
-
-            // Case 1: structure is larger than a chunk
-            if (2 * structureRadius > widthPerLevelChunk)
-            {
-                levelChunkPosition = { glm::ceil(levelChunkPosition.x / 2), glm::ceil(levelChunkPosition.y / 2) };
-                chunksPerLevel = 2 * chunksPerLevel + 1;
-                continue;
-            }
-
-            // Case 2: structure is on boundary of chunk
-            bool insideBoundingBox = true;
-            for (int j = 0; j < boundingBoxCorner.size(); j++)
-            {
-                glm::vec2& corner = boundingBoxCorner[j];
-                glm::ivec2 cornerOffset = glm::ivec2(structureRadius * corner.x, structureRadius * corner.y);
-                glm::ivec2 cornerVoxel = structureOrigin + cornerOffset;
-                // Log::verbose(std::format("Corner Voxel:({:.2f}, {:.2f})", cornerVoxel.x, cornerVoxel.y));
-
-                if (cornerVoxel.x <= levelChunkMinBounds.x || cornerVoxel.y <= levelChunkMinBounds.y)
-                {
-                    insideBoundingBox = false;
-                    break;
-                }
-
-                if (cornerVoxel.x >= levelChunkMaxBounds.x || cornerVoxel.y >= levelChunkMaxBounds.y)
-                {
-                    insideBoundingBox = false;
-                    break;
-                }
-            }
-
-            if (!insideBoundingBox)
-            {
-                levelChunkPosition = { glm::ceil(levelChunkPosition.x / 2), glm::ceil(levelChunkPosition.y / 2) };
-                chunksPerLevel = 2 * chunksPerLevel + 1;
-                continue;
-            }
-
-            selectedLevelIndex = i;
-            break;
-        }
-
-        // Add structure to level
-        if (selectedLevelIndex == -1)
-        {
-            selectedLevelIndex = levels.size() - 1;
-        }
-
-        auto& selectedLevel = levels[selectedLevelIndex];
-
-        if (!selectedLevel.contains(levelChunkPosition))
-        {
-            std::vector<std::shared_ptr<StructureNode>> empty;
-            selectedLevel.emplace(levelChunkPosition, empty);
-        }
-
-        std::shared_ptr<StructureNode> node = std::make_shared<StructureNode>(structure);
-
-        auto levelStructures = selectedLevel.find(levelChunkPosition);
-        levelStructures->second.push_back(node);
-    }
-
-    std::unordered_set<std::shared_ptr<StructureNode>> getStructuresFromChunk(glm::ivec2 chunkPosition)
-    {
-        std::unordered_set<std::shared_ptr<StructureNode>> allStructures;
-
-        glm::vec2 levelChunkPosition = chunkPosition;
-
-        std::unordered_set<glm::vec2> quad = {
-            chunkPosition
-        };
-
-        for (int i = 0; i < levels.size(); i++)
-        {
-            auto& level = levels[i];
-
-            for (auto& mappedChunkPosition : quad)
-            {
-                auto levelStructures = level.find((glm::ivec2)mappedChunkPosition);
-
-                if (levelStructures != level.end())
-                {
-                    for (int j = 0; j < levelStructures->second.size(); j++)
-                    {
-                        allStructures.emplace(levelStructures->second[j]);
-                    }
-                }
-            }
-
-            quad = {
-                { glm::floor(levelChunkPosition.x / 2), glm::floor(levelChunkPosition.y / 2) },
-                { glm::ceil(levelChunkPosition.x / 2), glm::floor(levelChunkPosition.y / 2) },
-                { glm::floor(levelChunkPosition.x / 2), glm::ceil(levelChunkPosition.y / 2) },
-                { glm::ceil(levelChunkPosition.x / 2), glm::ceil(levelChunkPosition.y / 2) }
-            };
-
-            levelChunkPosition = { glm::ceil(levelChunkPosition.x / 2), glm::ceil(levelChunkPosition.y / 2) };
-        }
-
-        return allStructures;
-    }
+    void clear();
 };

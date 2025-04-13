@@ -18,6 +18,8 @@ private:
     // Use this if things like OpenGL need to have been initialized
     static void runLateStartupTests();
 
+    static void runChunkHierarchyTest();
+
 public:
     std::shared_ptr<GlfwContext> offscreenContext {};
     std::vector<std::shared_ptr<GlfwContext>> chunkModificationThreadContexts {};
