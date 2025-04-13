@@ -345,6 +345,26 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                         tempThick = 0; // Reset the consecutive non-air counter
 
                         // This doesn't have an occupied voxel. It's so that the debug tools have light
+
+                        
+                        // Check if grass is enabled
+                        if (maxThick <= noMoreGrassDepth)
+                        {
+                            // If so, try to place grass or dirt
+                            if (depth <= grassDepth)
+                            {
+                                data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                                continue;
+                            }
+                            else if (depth <= dirtDepth)
+                            {
+                                data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                                continue;
+                            }
+                        }
+
+                        // The default material is stone
+
                         // This is stone, I put lights in it for the caves
                         if ((rand() % 1000) / 1000.0 < 0.1)
                         {
