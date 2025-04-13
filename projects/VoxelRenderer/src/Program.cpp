@@ -576,7 +576,7 @@ void Program::run()
                     {
                         std::lock_guard lock(closestChunk->getMutex());
 
-                        closestChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                        closestChunk->getChunk()->generatePlaceholderData(deltaTime, useIsosurfaceNoise, fillAmount);
                     }
 
                     if (isRemakeNoiseRequested && closestChunk->getExistsOnGpu())
@@ -584,7 +584,7 @@ void Program::run()
                         std::lock_guard lock(closestChunk->getMutex());
 
                         // The noise time (corresponds to the deltaTime parameter) should not be incremented here
-                        closestChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                        closestChunk->getChunk()->generatePlaceholderData(0, useIsosurfaceNoise, fillAmount);
                         isRemakeNoiseRequested = false;
                     }
 
@@ -645,7 +645,7 @@ void Program::run()
                 }
                 if (input->isKeyPressed(GLFW_KEY_T))
                 {
-                    useRandomNoise = !useRandomNoise;
+                    useIsosurfaceNoise = !useIsosurfaceNoise;
                     isRemakeNoiseRequested = true;
                 }
 
