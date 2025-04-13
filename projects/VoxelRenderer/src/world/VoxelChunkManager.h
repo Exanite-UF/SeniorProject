@@ -109,6 +109,7 @@ private:
 
         glm::vec3 cameraWorldPosition {};
         glm::ivec2 cameraChunkPosition {};
+        glm::vec2 cameraFloatChunkPosition {};
 
         // ----- Chunk loading -----
 
