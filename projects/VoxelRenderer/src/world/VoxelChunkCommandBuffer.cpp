@@ -107,8 +107,6 @@ VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(const VoxelChunkCo
     // Initialize desired states
     this->shouldExistOnGpu = component->getExistsOnGpu();
     this->shouldEnableCpuMipmaps = component->getChunkData().getHasMipmaps();
-    this->requestedActiveLod = component->getChunkManagerData().requestedActiveLod;
-    this->requestedMaxLod = component->getChunkManagerData().requestedMaxLod;
 }
 
 void VoxelChunkCommandBuffer::CommandApplicator::apply()
@@ -123,6 +121,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
     }
 
     auto& chunkData = component->getRawChunkData();
+    auto& chunkManagerData = component->getChunkManagerData();
 
     for (const auto entry : commandBuffer->commands)
     {
@@ -241,9 +240,9 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                 // This command is deferred until the very end of the command buffer execution
                 const auto command = commandBuffer->setActiveLodCommands.at(entry.index);
-                Assert::isTrue(requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
+                Assert::isTrue(chunkManagerData.requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
 
-                requestedActiveLod = command.activeLod;
+                chunkManagerData.requestedActiveLod = command.activeLod;
 
                 break;
             }
@@ -255,11 +254,11 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
                 const auto command = commandBuffer->setMaxLodCommands.at(entry.index);
                 if (command.trim)
                 {
-                    requestedMaxLod = command.maxLod;
+                    chunkManagerData.requestedMaxLod = command.maxLod;
                 }
                 else
                 {
-                    requestedMaxLod = glm::max(requestedMaxLod, command.maxLod);
+                    chunkManagerData.requestedMaxLod = glm::max(chunkManagerData.requestedMaxLod, command.maxLod);
                 }
 
                 break;
@@ -268,7 +267,6 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
     }
 
     updateMaxLod();
-    updateActiveLod();
     updateGpu();
     updateMipmaps();
 }
@@ -313,31 +311,6 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMipmaps()
     componentLock.lock();
 }
 
-void VoxelChunkCommandBuffer::CommandApplicator::updateActiveLod()
-{
-    ZoneScoped;
-
-    if (!component->getIsPartOfWorld())
-    {
-        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-        return;
-    }
-
-    auto& chunkManagerData = component->getChunkManagerData();
-
-    const auto previousActiveLod = chunkManagerData.activeLod;
-    const auto activeLod = glm::min(requestedActiveLod, static_cast<int>(chunkManagerData.lods.size()));
-
-    chunkManagerData.requestedActiveLod = requestedActiveLod;
-    chunkManagerData.activeLod = activeLod;
-
-    if (previousActiveLod != activeLod)
-    {
-        shouldCompletelyWriteToGpu = true;
-    }
-}
-
 void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
 {
     ZoneScoped;
@@ -356,8 +329,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
     const int maxPossibleLod = minSideLength == 0 ? 0 : (glm::log2(minSideLength) - 1);
 
     // Update max LODs
-    chunkManagerData.requestedMaxLod = requestedMaxLod;
-    const int maxLodLevels = glm::min(requestedMaxLod, maxPossibleLod);
+    const int maxLodLevels = glm::min(chunkManagerData.requestedMaxLod, maxPossibleLod);
     auto& lods = chunkManagerData.lods;
 
     // Trim LOD count if needed
@@ -419,7 +391,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         return;
     }
 
-    const auto& chunkManagerData = component->getChunkManagerData();
+    auto& chunkManagerData = component->getChunkManagerData();
 
     if (!shouldExistOnGpu && component->getExistsOnGpu())
     {
@@ -429,6 +401,14 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         shouldCompletelyWriteToGpu = true;
 
         return;
+    }
+
+    // Calculate which LOD should be activated
+    const int lodToActivate = glm::min(chunkManagerData.requestedActiveLod, static_cast<int>(chunkManagerData.lods.size()));
+    const int previousActiveLod = chunkManagerData.activeLod;
+    if (lodToActivate != previousActiveLod)
+    {
+        shouldCompletelyWriteToGpu = true;
     }
 
     if (!shouldCompletelyWriteToGpu)
@@ -441,8 +421,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
     {
         // Find active LOD and upload it to the GPU
         // We don't generate the LOD here
-        const auto activeLodIndex = glm::min(chunkManagerData.activeLod, static_cast<int>(chunkManagerData.lods.size()));
-        const VoxelChunkData& lod = activeLodIndex == 0 ? component->chunkData : *chunkManagerData.lods.at(activeLodIndex - 1);
+        const VoxelChunkData& lod = lodToActivate == 0 ? component->chunkData : *chunkManagerData.lods.at(lodToActivate - 1);
         const auto lodSize = lod.getSize();
 
         // Break if size is not 0
@@ -518,7 +497,8 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         if (localGpuData)
         {
             component->chunk = std::move(localGpuData);
-            component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, component->getChunkManagerData().activeLod)));
+            chunkManagerData.activeLod = lodToActivate;
+            component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
         }
     }
 }

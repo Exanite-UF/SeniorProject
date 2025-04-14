@@ -2,10 +2,10 @@
 
 #include <algorithm>
 #include <glm/glm.hpp>
+#include <glm/gtx/optimum_pow.hpp>
+#include <iostream>
 #include <src/Constants.h>
 #include <tracy/Tracy.hpp>
-
-#include <iostream>
 
 #include "VoxelChunkUtility.h"
 #include <src/gameobjects/TransformComponent.h>
@@ -128,7 +128,7 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     glm::vec3 voxelWorldSize = 2.f * glm::vec3(cellCount);
 
     glm::vec3 voxelWorldPosition = getTransform()->getGlobalPosition();
-    glm::vec3 voxelWorldScale = getTransform()->getLossyGlobalScale();
+    glm::vec3 voxelWorldScale = getTransform()->getLossyGlobalScale() / static_cast<float>(glm::pow(2, getChunkManagerData().activeLod));
     glm::vec4 voxelWorldRotation;
     {
         glm::quat temp = getTransform()->getGlobalRotation();

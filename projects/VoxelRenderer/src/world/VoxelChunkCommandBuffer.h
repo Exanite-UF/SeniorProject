@@ -184,8 +184,6 @@ private:
 
         bool shouldExistOnGpu = false;
         bool shouldEnableCpuMipmaps = false;
-        int requestedActiveLod = 0;
-        int requestedMaxLod = 0;
 
     public:
         explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex);
@@ -194,7 +192,6 @@ private:
 
     private:
         void updateMipmaps();
-        void updateActiveLod();
         void updateMaxLod();
         void updateGpu();
     };
