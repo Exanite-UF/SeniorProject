@@ -1,10 +1,16 @@
 #include "ChunkHierarchyManager.h"
 
+#include <glm/glm.hpp>
 #include <iostream>
 
-
-void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure)
+void ChunkHierarchyManager::validateChunkSize() const
 {
+    Assert::isTrue(glm::all(glm::greaterThan(chunkSize, glm::ivec3(0))), "Chunk size must be greater that 0. You probably didn't set it.");
+}
+
+void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure)
+{
+    validateChunkSize();
     if (levels.size() == 0){
         levels.emplace_back();
         isGenerated.emplace_back();
@@ -137,8 +143,9 @@ void ChunkHierarchyManager::addStructure(glm::ivec2 chunkSize, glm::ivec3 struct
     }
 }
 
-std::unordered_set<std::shared_ptr<StructureNode>> ChunkHierarchyManager::getStructuresForChunk(glm::ivec2 chunkPosition, glm::ivec2 chunkSize)
+std::unordered_set<std::shared_ptr<StructureNode>> ChunkHierarchyManager::getStructuresForChunk(glm::ivec2 chunkPosition)
 {
+    validateChunkSize();
     std::unordered_set<std::shared_ptr<StructureNode>> allStructures;
 
     glm::ivec2 regionBasePosition = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
@@ -194,3 +201,9 @@ void ChunkHierarchyManager::clear()
     isGenerated.clear();
     levelsMTX.unlock();
 }
+
+void ChunkHierarchyManager::setChunkSize(glm::ivec3 size)
+{
+    this->chunkSize = size;
+}
+

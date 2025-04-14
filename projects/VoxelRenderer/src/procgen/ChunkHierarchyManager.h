@@ -45,6 +45,10 @@ private:
     std::vector<std::unordered_map<glm::ivec2, bool>> isGenerated;
     std::shared_mutex levelsMTX;//Lock the levels data structure 
 
+    glm::ivec3 chunkSize = glm::ivec3(0);
+
+    void validateChunkSize() const;
+
 
     // Singleton needs default constructor
     explicit ChunkHierarchyManager()
@@ -113,14 +117,16 @@ public:
     /// @param chunkSize The size of a chunk in voxels
     /// @param structureOrigin //This is the world space position of the structure (in voxels)
     /// @param structure This is the actual structure
-    void addStructure(glm::ivec2 chunkSize, glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure);
+    void addStructure(glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure);
     
 
     /// @brief Gets all the structure seeds whose structure could appear in the requested chunk
     /// @param chunkPosition A coordinate inside the chunk in question (in voxels)
     /// @param chunkSize The size of a chunk in voxels
-    std::unordered_set<std::shared_ptr<StructureNode>> getStructuresForChunk(glm::ivec2 chunkPosition, glm::ivec2 chunkSize);
+    std::unordered_set<std::shared_ptr<StructureNode>> getStructuresForChunk(glm::ivec2 chunkPosition);
     
 
     void clear();
+
+    void setChunkSize(glm::ivec3 size);
 };

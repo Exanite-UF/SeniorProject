@@ -35,6 +35,7 @@ bool hasGeneratedSeedNode = false;
 void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 {
     auto& chunkHierarchyManager = ChunkHierarchyManager::getInstance();
+    chunkHierarchyManager.setChunkSize(data.getSize());
     auto& materialManager = MaterialManager::getInstance();
 
     // Load a set of materials to use
@@ -100,7 +101,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
                     //std::cout << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
                     TreeStructure tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                    chunkHierarchyManager.addStructure(data.getSize(), originVoxel, std::make_shared<StructureNode>(tree));
+                    chunkHierarchyManager.addStructure(originVoxel, std::make_shared<StructureNode>(tree));
                 }
 
                 hasGeneratedSeedNode = true;
@@ -114,7 +115,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 glm::ivec3 originVoxel(0, 0, 200);
 
                 TreeStructure tree = createRandomTreeInstance(data, glm::ivec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                chunkHierarchyManager.addStructure(data.getSize(), originVoxel, std::make_shared<StructureNode>(tree));
+                chunkHierarchyManager.addStructure(originVoxel, std::make_shared<StructureNode>(tree));
                 //chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
                 hasGeneratedSeedNode = true;
             }
@@ -127,13 +128,13 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             std::lock_guard lock(chunkHierarchyManager.mutex);
 
             // Chunk hierarchy manager is a 'cache'.
-            auto structures = chunkHierarchyManager.getStructuresForChunk(chunkPosition * data.getSize(), data.getSize());
+            auto structures = chunkHierarchyManager.getStructuresForChunk(chunkPosition * data.getSize());
             std::cout << chunkPosition.x << " " << chunkPosition.y << ": " << structures.size() << std::endl;
             // Raycast down, place on surface.
             for (auto& structure : structures)
             {
                 glm::ivec3 origin = structure->structure.getOriginVoxel();
-                std::cout << "Initial: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
+                //std::cout << "Initial: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
                 origin.x -= chunkPosition.x * data.getSize().x;
                 origin.y -= chunkPosition.y * data.getSize().y;
 
@@ -145,7 +146,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 }
 
 
-                std::cout << "Post: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
+                //std::cout << "Post: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
 
                 glm::ivec3 saved = structure->structure.originVoxel;
                 structure->structure.originVoxel = origin;
