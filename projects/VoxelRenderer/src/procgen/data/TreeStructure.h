@@ -7,9 +7,8 @@ class TreeStructure
 {
 public:
     glm::ivec3 originVoxel;
-    
+
 private:
-    
     std::shared_ptr<Material> logMaterial;
     std::shared_ptr<Material> leafMaterial;
     int treeHeightVoxels;

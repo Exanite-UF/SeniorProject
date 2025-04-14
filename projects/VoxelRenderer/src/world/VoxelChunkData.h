@@ -6,7 +6,6 @@
 #include <src/world/Material.h>
 #include <src/world/VoxelChunk.h>
 
-
 class VoxelChunkData : public NonCopyable
 {
 private:

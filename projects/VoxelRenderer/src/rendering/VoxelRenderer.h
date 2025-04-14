@@ -110,7 +110,6 @@ private:
 
     float maxDepth = 10000.0;
     int maxIterations = 200;
-    
 
 public:
     int firstMipMapLevel = 0;

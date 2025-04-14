@@ -27,28 +27,27 @@ public:
     {
     }
 
-    glm::ivec2 getMaxDistanceFromOrigin(){
+    glm::ivec2 getMaxDistanceFromOrigin()
+    {
         return structure.getMaxDistanceFromOrigin();
     }
 };
-
 
 class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
 {
     friend class Singleton;
 
 private:
-    //Each level contain a map from 2D voxel positions to lists of structures at that position
-    //The higher levels span multiple of the lower levels, and they overlap
-    //Then enables structures to cross chunk boundaries
+    // Each level contain a map from 2D voxel positions to lists of structures at that position
+    // The higher levels span multiple of the lower levels, and they overlap
+    // Then enables structures to cross chunk boundaries
     std::vector<std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<StructureNode>>>> levels;
     std::vector<std::unordered_map<glm::ivec2, bool>> isGenerated;
-    std::shared_mutex levelsMTX;//Lock the levels data structure 
+    std::shared_mutex levelsMTX; // Lock the levels data structure
 
     glm::ivec3 chunkSize = glm::ivec3(0);
 
     void validateChunkSize() const;
-
 
     // Singleton needs default constructor
     explicit ChunkHierarchyManager()
@@ -103,7 +102,8 @@ public:
             throw std::runtime_error("Negative levels do not exist.");
         }
 
-        for(int i = isGenerated.size(); i <= level; i++){
+        for (int i = isGenerated.size(); i <= level; i++)
+        {
             isGenerated.emplace_back();
         }
 
@@ -111,20 +111,18 @@ public:
         isLevelGenerated[chunkPosition] = flag;
     }
 
-    //These require axis aligned voxel chunks
+    // These require axis aligned voxel chunks
 
     /// @brief Add the seed point of a structure so that it can be queried for later
     /// @param chunkSize The size of a chunk in voxels
     /// @param structureOrigin //This is the world space position of the structure (in voxels)
     /// @param structure This is the actual structure
     void addStructure(glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure);
-    
 
     /// @brief Gets all the structure seeds whose structure could appear in the requested chunk
     /// @param chunkPosition A coordinate inside the chunk in question (in voxels)
     /// @param chunkSize The size of a chunk in voxels
     std::unordered_set<std::shared_ptr<StructureNode>> getStructuresForChunk(glm::ivec2 chunkPosition);
-    
 
     void clear();
 
