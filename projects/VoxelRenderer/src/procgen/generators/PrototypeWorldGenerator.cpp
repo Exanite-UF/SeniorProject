@@ -112,7 +112,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
         {
             if (!hasGeneratedSeedNode)
             {
-                // glm::ivec3 originVoxel(chunkPosition.x * data.getSize().x, chunkPosition.y * data.getSize().y, data.getSize().z - 1);
+                // glm::ivec3 originVoxel(chunkPosition.x, chunkPosition.y, data.getSize().z - 1);
                 glm::ivec3 originVoxel(0, 0, 200);
 
                 TreeStructure tree = createRandomTreeInstance(data, glm::ivec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
@@ -129,15 +129,15 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             std::lock_guard lock(chunkHierarchyManager.mutex);
 
             // Chunk hierarchy manager is a 'cache'.
-            auto structures = chunkHierarchyManager.getStructuresForChunk(chunkPosition * data.getSize());
+            auto structures = chunkHierarchyManager.getStructuresForChunk(chunkPosition);
             std::cout << chunkPosition.x << " " << chunkPosition.y << ": " << structures.size() << std::endl;
             // Raycast down, place on surface.
             for (auto& structure : structures)
             {
                 glm::ivec3 origin = structure->structure.getOriginVoxel();
                 // std::cout << "Initial: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
-                origin.x -= chunkPosition.x * data.getSize().x;
-                origin.y -= chunkPosition.y * data.getSize().y;
+                origin.x -= chunkPosition.x;
+                origin.y -= chunkPosition.y;
 
                 while (!data.getVoxelOccupancy(origin))
                 {
@@ -213,6 +213,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     }
 
     // The axis scales are different
+    FastNoise::New<FastNoise::DomainAxisScale>();
     FastNoise::SmartNode<> source2D = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode<> source3D = FastNoise::NewFromEncodedNodeTree("JQAAAIA/AAAAPwAAAD8AAIA/CAA="); // For some reason this is the only way to set scale anisotropically
 
@@ -234,7 +235,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     std::vector<float> noiseOutput2D1(data.getSize().x * data.getSize().y);
     std::vector<float> noiseOutput2D2(data.getSize().x * data.getSize().y);
 
-    glm::vec2 offset = chunkSize * chunkPosition;
+    glm::vec2 offset = chunkPosition;
 
     fnFractal->SetSource(source2D);
     fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
@@ -281,7 +282,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                 float random3D = noiseOutput3D[index3D++];
 
                 // Calculate the threshold for filling in a voxel
-                // It use an formula that happen to give good results
+                // It use an formula that happens to give good results
                 // From the surface to the maximum height, the threshold starts at the surface probability and decays exponentially to the air probability
                 // From the z = 0 to the surface, the threshold starts a 1 and decays exponentially to the surface probablity
                 //   The rate of this decays is controlled by surfaceToBottomFalloffRate
