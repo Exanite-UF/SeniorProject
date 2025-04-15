@@ -416,7 +416,6 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
                 uint l = getOccupancyByte((p >> (1 + 2 * i)), i);
                 count += int((l & k) == 0) + int(l == 0);
             }
-
         }
 
         if (count <= firstMipMapLevel % 2)

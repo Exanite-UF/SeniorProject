@@ -31,7 +31,7 @@ public:
     std::shared_ptr<SceneComponent> scene {};
 
     bool isWorkload = false; // View toggle
-    bool useRandomNoise = true; // Noise type toggle
+    bool useIsosurfaceNoise = true; // Noise type toggle
     float fillAmount = 0.6;
     bool isRemakeNoiseRequested = false;
 

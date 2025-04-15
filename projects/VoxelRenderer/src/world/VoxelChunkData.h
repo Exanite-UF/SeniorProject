@@ -6,7 +6,6 @@
 #include <src/world/Material.h>
 #include <src/world/VoxelChunk.h>
 
-
 class VoxelChunkData : public NonCopyable
 {
 private:
@@ -30,14 +29,14 @@ private:
     friend class VoxelChunkComponent;
 
 public:
-    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
+    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool allocateMipmaps = false);
 
     [[nodiscard]] const glm::ivec3& getSize() const;
-    void setSize(const glm::ivec3& size);
-    void setSize(glm::ivec3 size, bool includeMipmaps);
+    void setSize(const glm::ivec3& size, bool generateMipmaps = true);
+    void setSizeAndMipmaps(glm::ivec3 size, bool allocateMipmaps, bool generateMipmaps = true);
 
     bool getHasMipmaps() const;
-    void setHasMipmaps(bool hasMipmaps);
+    void setHasMipmaps(bool allocateMipmaps, bool generateMipmaps = true);
 
     int getOccupancyMipmapCount() const;
     int getOccupancyLayerCount() const;
@@ -54,21 +53,25 @@ public:
     [[nodiscard]] uint16_t getVoxelMaterialIndex(const glm::ivec3& position) const;
     void setVoxelMaterialIndex(const glm::ivec3& position, uint16_t materialIndex);
 
-    std::vector<uint8_t>& getRawOccupancyMap();
-    std::vector<uint32_t>& getRawOccupancyMapIndices();
+    [[nodiscard]] std::vector<uint8_t>& getRawOccupancyMap();
+    [[nodiscard]] std::vector<uint32_t>& getRawOccupancyMapIndices();
 
-    std::vector<uint16_t>& getRawMaterialMap();
+    [[nodiscard]] std::vector<uint16_t>& getRawMaterialMap();
 
     void clearOccupancyMap();
     void clearMaterialMap();
 
     void updateMipmaps();
 
-    void copyFrom(VoxelChunk& other);
+    void copyFrom(VoxelChunk& other, bool includeMipmaps = false);
     void copyTo(VoxelChunk& other) const;
 
     void copyFrom(const VoxelChunkData& other);
     void copyTo(VoxelChunkData& other) const;
 
     void copyToLod(VoxelChunkData& lod) const;
+
+private:
+    [[nodiscard]] static uint32_t hash(uint32_t value);
+    [[nodiscard]] static uint8_t getLodSampleIndex(const glm::ivec3& position);
 };

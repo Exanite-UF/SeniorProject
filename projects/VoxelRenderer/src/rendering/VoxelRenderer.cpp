@@ -589,7 +589,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
         glUniform1i(glGetUniformLocation(primaryRayProgram, "firstMipMapLevel"), firstMipMapLevel);
         glUniform1i(glGetUniformLocation(primaryRayProgram, "maxIterations"), maxIterations);
-        
+
         for (auto& chunkComponent : chunks)
         {
             ZoneScopedN("VoxelRenderer::executePrimaryRay - Render chunk preconditions");

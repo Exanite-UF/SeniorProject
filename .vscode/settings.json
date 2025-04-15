@@ -115,6 +115,8 @@
         "xutility": "cpp",
         "*.ipp": "cpp",
         "pointers": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "string_view": "cpp",
+        "xstddef": "cpp"
     }
 }

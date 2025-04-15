@@ -206,9 +206,9 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
 
             PrototypeWorldGenerator generator(octaveSynthesizer);
             generator.setChunkSize(task->chunkSize);
-            generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0));
+            generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0) * task->chunkSize);
 
-            generator.generate(*task->chunkData, false);
+            generator.generate(*task->chunkData, state.scene, false);
         }
 
         Log::verbose(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
@@ -292,10 +292,11 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Calculate new camera chunk position
     state.cameraWorldPosition = state.scene->camera->getTransform()->getGlobalPosition();
+    state.cameraFloatChunkPosition = glm::vec2(
+        (state.cameraWorldPosition.x / settings.chunkSize.x) - 0.5f,
+        (state.cameraWorldPosition.y / settings.chunkSize.y) - 0.5f);
 
-    auto newCameraChunkPosition = glm::ivec2(glm::round(glm::vec2(
-        state.cameraWorldPosition.x / settings.chunkSize.x - 0.5f,
-        state.cameraWorldPosition.y / settings.chunkSize.y - 0.5f)));
+    auto newCameraChunkPosition = glm::ivec2(glm::round(state.cameraFloatChunkPosition));
 
     if (state.cameraChunkPosition != newCameraChunkPosition)
     {
@@ -489,32 +490,39 @@ void VoxelChunkManager::update(const float deltaTime)
     {
         ZoneScopedN("Chunk uploading and LOD generation");
 
-        auto worldChunks = state.scene->worldChunks;
-
-        // Sort by distance to camera
-        // Index 0 is the closest
-        std::sort(worldChunks.begin(), worldChunks.end(), [this](const std::shared_ptr<VoxelChunkComponent>& a, const std::shared_ptr<VoxelChunkComponent>& b)
-            {
-                auto distanceSquaredA = glm::length2(a->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
-                auto distanceSquaredB = glm::length2(b->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
-
-                return distanceSquaredA < distanceSquaredB;
-            });
-
         if (settings.isChunkLoddingEnabled)
         {
             ZoneScopedN("Chunk LOD generation");
 
+            // Use camera chunk position to determine 4 closest chunks
+            glm::vec2 cameraChunkPosition = state.cameraFloatChunkPosition;
+
+            // Floor the camera chunk position
+            // Adding one to the coordinate will define a square of chunks
+            cameraChunkPosition = glm::floor(cameraChunkPosition);
+
             // Calculate LOD level for each chunk
-            for (int i = 0; i < worldChunks.size(); ++i)
+            for (auto& activeChunkIterator : state.activeChunks)
             {
-                auto& chunk = worldChunks.at(i);
-                float chunkDistance = glm::length(chunk->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+                auto& activeChunk = activeChunkIterator.second;
+                auto& component = activeChunkIterator.second->component;
+                float chunkDistance = glm::length(component->getTransform()->getGlobalPosition() - state.cameraWorldPosition);
+
+                // Check if one of the 4 closest chunks
+                bool isClosest4Chunks = (activeChunk->chunkPosition.x >= cameraChunkPosition.x) && (activeChunk->chunkPosition.x <= cameraChunkPosition.x + 1)
+                    && (activeChunk->chunkPosition.y >= cameraChunkPosition.y) && (activeChunk->chunkPosition.y <= cameraChunkPosition.y + 1);
+
+                // Artificially decrease distance of the 4 closest chunks
+                if (isClosest4Chunks)
+                {
+                    chunkDistance *= 0.5f;
+                }
 
                 // Calculate desired LOD level
                 int lod = static_cast<int>(glm::log2(chunkDistance / settings.lodBaseDistance) / glm::log2(settings.lodDistanceScalingFactor));
 
-                int minLod = i < 4 ? 0 : 1; // Only allow the closest 4 chunks to use LOD 0
+                // Clamp LOD level
+                int minLod = isClosest4Chunks ? 0 : 1; // Only allow the closest 4 chunks to use LOD 0
                 int maxLod = 4; // Clamp max lod to 4. Beyond this, we lose too much detail
                 lod = glm::clamp(lod, minLod, maxLod);
 
@@ -523,7 +531,7 @@ void VoxelChunkManager::update(const float deltaTime)
                     lod = maxLod;
                 }
 
-                if (chunk->getChunkManagerData().desiredLod == lod)
+                if (component->getChunkManagerData().desiredLod == lod)
                 {
                     // LOD is already the same as desired OR we already have a pending command buffer submitted
                     continue;
@@ -535,8 +543,12 @@ void VoxelChunkManager::update(const float deltaTime)
                 commandBuffer.setActiveLod(lod);
                 commandBuffer.setExistsOnGpu(true);
 
-                submitCommandBuffer(chunk, commandBuffer);
-                chunk->getChunkManagerData().desiredLod = lod;
+                submitCommandBuffer(component, commandBuffer);
+                component->getChunkManagerData().desiredLod = lod;
+            }
+
+            for (int i = 0; i < state.activeChunks.size(); ++i)
+            {
             }
         }
     }

@@ -36,7 +36,7 @@ public:
         bool isChunkLoddingEnabled = true;
 
         // False prevents chunks from having their CPU-side mipmaps generated
-        bool areChunkCpuMipmapsEnabled = true;
+        bool areChunkCpuMipmapsEnabled = false; // TODO: Enable once CPU mipmap gneration is fixed
 
         // Delay before a chunk marked for unloading is actually unloaded
         float chunkUnloadTime = 1;
@@ -109,6 +109,7 @@ private:
 
         glm::vec3 cameraWorldPosition {};
         glm::ivec2 cameraChunkPosition {};
+        glm::vec2 cameraFloatChunkPosition {};
 
         // ----- Chunk loading -----
 

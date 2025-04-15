@@ -9,12 +9,11 @@
 #include <thread>
 #include <tracy/Tracy.hpp>
 
-
-VoxelChunkData::VoxelChunkData(const glm::ivec3& size, bool includeMipmaps)
+VoxelChunkData::VoxelChunkData(const glm::ivec3& size, bool allocateMipmaps)
 {
     ZoneScoped;
 
-    setSize(size, includeMipmaps);
+    setSizeAndMipmaps(size, allocateMipmaps);
 }
 
 const glm::ivec3& VoxelChunkData::getSize() const
@@ -22,12 +21,12 @@ const glm::ivec3& VoxelChunkData::getSize() const
     return data.size;
 }
 
-void VoxelChunkData::setSize(const glm::ivec3& size)
+void VoxelChunkData::setSize(const glm::ivec3& size, const bool generateMipMaps)
 {
-    setSize(size, data.hasMipmaps);
+    setSizeAndMipmaps(size, data.hasMipmaps, generateMipMaps);
 }
 
-void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
+void VoxelChunkData::setSizeAndMipmaps(glm::ivec3 size, const bool allocateMipmaps, const bool generateMipmaps)
 {
     ZoneScoped;
 
@@ -35,7 +34,7 @@ void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
     if (size.x * size.y * size.z == 0)
     {
         this->data.size = size;
-        this->data.hasMipmaps = includeMipmaps;
+        this->data.hasMipmaps = allocateMipmaps;
 
         data.occupancyMapIndices = { 0 };
         data.occupancyMap.resize(0);
@@ -53,9 +52,9 @@ void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
 
     auto previousSize = this->data.size;
     this->data.size = size;
-    this->data.hasMipmaps = includeMipmaps;
+    this->data.hasMipmaps = allocateMipmaps;
 
-    if (includeMipmaps)
+    if (allocateMipmaps)
     {
         // Store all mipmap layer data
         data.occupancyMapIndices = VoxelChunkUtility::getOccupancyMapIndices(size);
@@ -63,7 +62,7 @@ void VoxelChunkData::setSize(glm::ivec3 size, bool includeMipmaps)
 
         // Update mipmaps if there was any previously existing data
         // If there was not, then everything is just zero
-        if (previousSize != glm::ivec3(0))
+        if (generateMipmaps && previousSize != glm::ivec3(0))
         {
             updateMipmaps();
         }
@@ -83,9 +82,9 @@ bool VoxelChunkData::getHasMipmaps() const
     return data.hasMipmaps;
 }
 
-void VoxelChunkData::setHasMipmaps(bool hasMipmaps)
+void VoxelChunkData::setHasMipmaps(const bool allocateMipmaps, const bool generateMipmaps)
 {
-    setSize(data.size, hasMipmaps);
+    setSizeAndMipmaps(data.size, allocateMipmaps, generateMipmaps);
 }
 
 int VoxelChunkData::getOccupancyMipmapCount() const
@@ -309,18 +308,32 @@ void VoxelChunkData::updateMipmaps()
     }
 }
 
-void VoxelChunkData::copyFrom(VoxelChunk& other)
+void VoxelChunkData::copyFrom(VoxelChunk& other, const bool includeMipmaps)
 {
     ZoneScoped;
 
-    if (data.size != other.getSize())
+    if (includeMipmaps)
     {
-        setSize(other.getSize());
-    }
+        if (data.size != other.getSize())
+        {
+            setSizeAndMipmaps(other.getSize(), true, false);
+        }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(1), data.occupancyMap.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+    else
+    {
+        if (data.size != other.getSize())
+        {
+            setSize(other.getSize());
+        }
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getOccupancyMap().bufferId);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.occupancyMapIndices.at(data.occupancyMapIndices.size() - 1), data.occupancyMap.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, other.getMaterialMap().bufferId);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.materialMap.size() * 2, data.materialMap.data());
@@ -522,7 +535,7 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
                     // This will determine which of the valid materials we will take
                     // Ideally, we want the valid material selected to be uniformly selected and deterministic
                     // The selection process also needs to be fast
-                    uint8_t index = ((lodZ & 1) << 2) | ((lodY & 1) << 1) | ((lodX & 1) << 0);
+                    uint8_t index = getLodSampleIndex(lodPosition);
 
                     uint8_t currentBitI = 0;
                     uint8_t matchedCount = 0;
@@ -551,4 +564,19 @@ void VoxelChunkData::copyToLod(VoxelChunkData& lod) const
             }
         }
     }
+}
+
+uint32_t VoxelChunkData::hash(uint32_t value)
+{
+    value = (value ^ 61) ^ (value >> 16);
+    value = value + (value << 3);
+    value = value ^ (value >> 4);
+    value = value * 0x27d4eb2d;
+    value = value ^ (value >> 15);
+    return value;
+}
+
+uint8_t VoxelChunkData::getLodSampleIndex(const glm::ivec3& position)
+{
+    return (hash(position.x) ^ hash(position.y) ^ hash(position.z)) % 8;
 }

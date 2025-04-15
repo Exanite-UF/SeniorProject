@@ -605,10 +605,10 @@ void Renderer::increaseFirstMipMapLevel()
     voxelRenderer->firstMipMapLevel++;
 }
 
-
 void Renderer::decreaseFirstMipMapLevel()
 {
-    if(voxelRenderer->firstMipMapLevel > 0){
+    if (voxelRenderer->firstMipMapLevel > 0)
+    {
         voxelRenderer->firstMipMapLevel--;
     }
 }

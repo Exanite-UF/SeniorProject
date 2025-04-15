@@ -1,5 +1,7 @@
 #include "ChunkHierarchyManager.h"
 
+#include <src/procgen/data/TreeStructure.h>
+
 #include <glm/glm.hpp>
 #include <iostream>
 
@@ -8,10 +10,11 @@ void ChunkHierarchyManager::validateChunkSize() const
     Assert::isTrue(glm::all(glm::greaterThan(chunkSize, glm::ivec3(0))), "Chunk size must be greater that 0. You probably didn't set it.");
 }
 
-void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared_ptr<StructureNode> structure)
+void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared_ptr<Structure> structure)
 {
     validateChunkSize();
-    if (levels.size() == 0){
+    if (levels.size() == 0)
+    {
         levels.emplace_back();
         isGenerated.emplace_back();
     }
@@ -19,53 +22,52 @@ void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared
     glm::ivec2 chunkPosition = glm::floor(glm::vec2(structureOrigin) / glm::vec2(chunkSize));
     glm::ivec2 regionBasePosition = chunkPosition;
 
-    //Start with only the single chunk that this structure is directly in
+    // Start with only the single chunk that this structure is directly in
     std::unordered_set<glm::ivec2> quad = {
         chunkPosition
     };
-    
+
     glm::vec2 structureRadius = structure->getMaxDistanceFromOrigin();
     std::vector<glm::vec2> boundingBoxCorners = {
-        glm::vec2( structureRadius.x, structureRadius.y ) + glm::vec2(structureOrigin),
-        glm::vec2( structureRadius.x, -structureRadius.y ) + glm::vec2(structureOrigin),
-        glm::vec2( -structureRadius.x, -structureRadius.y ) + glm::vec2(structureOrigin),
-        glm::vec2( -structureRadius.x, structureRadius.y ) + glm::vec2(structureOrigin)
+        glm::vec2(structureRadius.x, structureRadius.y) + glm::vec2(structureOrigin),
+        glm::vec2(structureRadius.x, -structureRadius.y) + glm::vec2(structureOrigin),
+        glm::vec2(-structureRadius.x, -structureRadius.y) + glm::vec2(structureOrigin),
+        glm::vec2(-structureRadius.x, structureRadius.y) + glm::vec2(structureOrigin)
     };
-    //std::cout << "Structure Radius: " << structureRadius.x << " " << structureRadius.y << std::endl;
+    // std::cout << "Structure Radius: " << structureRadius.x << " " << structureRadius.y << std::endl;
 
-    
     int levelCounter = 0;
-    while(true)
+    while (true)
     {
         levelsMTX.lock();
-        auto& level = levels[levelCounter];//Get the current level
+        auto& level = levels[levelCounter]; // Get the current level
         auto& isGeneratedLevel = isGenerated[levelCounter];
-        
 
         glm::vec2 radiusOfRegion = glm::vec2(chunkSize) * (powf(2, levelCounter - 1) + 0.5f);
-        if(levelCounter == 0){
+        if (levelCounter == 0)
+        {
             radiusOfRegion = glm::vec2(chunkSize) / 2.f;
         }
-        //std::cout << "Radius of region: " << levelCounter << " " << radiusOfRegion.x << " " << radiusOfRegion.y << std::endl;
-        
+        // std::cout << "Radius of region: " << levelCounter << " " << radiusOfRegion.x << " " << radiusOfRegion.y << std::endl;
 
         // Case 1: structure is larger than a chunk
         // If so, then it is unable to fit in any of the chunks of this level
         if (glm::any(glm::greaterThan(structureRadius, radiusOfRegion)))
         {
-            //So proceed to the next level
+            // So proceed to the next level
             levelsMTX.unlock();
-            
+
             levelCounter++;
 
-            //If the next level does not exist, create it
-            if(levels.size() == levelCounter){
+            // If the next level does not exist, create it
+            if (levels.size() == levelCounter)
+            {
                 levels.emplace_back();
                 isGenerated.emplace_back();
             }
 
-            //Coordinate adjustment for the next level
-            regionBasePosition = glm::floor(glm::vec2(regionBasePosition) / 2.f);//I need to verify that floor(chunkPosition / pow(2, i)) == That but flooring after every divide by 2
+            // Coordinate adjustment for the next level
+            regionBasePosition = glm::floor(glm::vec2(regionBasePosition) / 2.f); // I need to verify that floor(chunkPosition / pow(2, i)) == That but flooring after every divide by 2
             quad = {
                 regionBasePosition + glm::ivec2(0, 0),
                 regionBasePosition + glm::ivec2(1, 0),
@@ -75,65 +77,66 @@ void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared
             continue;
         }
 
-        
         bool wasAdded = false;
         for (auto& regionIndex : quad)
         {
             glm::vec2 center = glm::vec2(chunkSize) * (powf(2.0, levelCounter) * glm::vec2(regionIndex) + glm::vec2(0.5));
 
-            //std::cout << "Center: " << center.x << " " << center.y << std::endl;
+            // std::cout << "Center: " << center.x << " " << center.y << std::endl;
 
-            
             // Case 2: Is the structure found entirely inside this region
 
             bool allInside = true;
             for (int j = 0; j < boundingBoxCorners.size(); j++)
             {
-                
+
                 glm::vec2& corner = boundingBoxCorners[j];
 
-                //std::cout << "Distance: " << glm::abs(corner - center).x << " " << glm::abs(corner - center).y << std::endl;
-                //If the bounding box corner is inside the region along all axes, then the corner is inside the region
-                if(!glm::all(glm::lessThanEqual(glm::abs(corner - center), glm::vec2(radiusOfRegion)))){
+                // std::cout << "Distance: " << glm::abs(corner - center).x << " " << glm::abs(corner - center).y << std::endl;
+                // If the bounding box corner is inside the region along all axes, then the corner is inside the region
+                if (!glm::all(glm::lessThanEqual(glm::abs(corner - center), glm::vec2(radiusOfRegion))))
+                {
                     allInside = false;
                 }
             }
 
-            //std::cout << "Result: " << allInside << std::endl;
+            // std::cout << "Result: " << allInside << std::endl;
 
-            //If all the corners are not inside the region, then do not add it to this region
-            if(!allInside){
+            // If all the corners are not inside the region, then do not add it to this region
+            if (!allInside)
+            {
                 continue;
             }
 
-            //At this point the structure is guaranteed to fit inside the region, so add it
+            // At this point the structure is guaranteed to fit inside the region, so add it
             wasAdded = true;
-            
+
             level[regionIndex].push_back(structure);
-            //if(!isGeneratedLevel.count(regionIndex)){
-            //    isGeneratedLevel[regionIndex] = false;
-            //}
-            
+            // if(!isGeneratedLevel.count(regionIndex)){
+            //     isGeneratedLevel[regionIndex] = false;
+            // }
         }
-        //If it was not added at this level, then try at the next level
+        // If it was not added at this level, then try at the next level
         levelsMTX.unlock();
 
-        //If it was added, stop
-        if(wasAdded){
+        // If it was added, stop
+        if (wasAdded)
+        {
             break;
         }
 
-        //If is was not added, progress to the next level
+        // If is was not added, progress to the next level
         levelCounter++;
 
-        //If the next level does not exist, create it
-        if(levels.size() == levelCounter){
+        // If the next level does not exist, create it
+        if (levels.size() == levelCounter)
+        {
             levels.emplace_back();
             isGenerated.emplace_back();
         }
 
-        //Coordinate adjustment for the next level
-        regionBasePosition = glm::floor(glm::vec2(regionBasePosition) / 2.f);//I need to verify that floor(chunkPosition / pow(2, i)) == That but flooring after every divide by 2
+        // Coordinate adjustment for the next level
+        regionBasePosition = glm::floor(glm::vec2(regionBasePosition) / 2.f); // I need to verify that floor(chunkPosition / pow(2, i)) == That but flooring after every divide by 2
         quad = {
             regionBasePosition + glm::ivec2(0, 0),
             regionBasePosition + glm::ivec2(1, 0),
@@ -143,34 +146,33 @@ void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared
     }
 }
 
-std::unordered_set<std::shared_ptr<StructureNode>> ChunkHierarchyManager::getStructuresForChunk(glm::ivec2 chunkPosition)
+std::unordered_set<std::shared_ptr<Structure>> ChunkHierarchyManager::getStructuresForChunk(glm::ivec2 chunkPosition)
 {
     validateChunkSize();
-    std::unordered_set<std::shared_ptr<StructureNode>> allStructures;
+    std::unordered_set<std::shared_ptr<Structure>> allStructures;
 
     glm::ivec2 regionBasePosition = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
 
-
-    //Start with only the single chunk that this structure is directly in
+    // Start with only the single chunk that this structure is directly in
     std::unordered_set<glm::ivec2> quad = {
         regionBasePosition
     };
 
-    //std::cout << levels.size() << std::endl;
-    //For all the levels that exist
+    // std::cout << levels.size() << std::endl;
+    // For all the levels that exist
     for (int i = 0; i < levels.size(); i++)
     {
         levelsMTX.lock_shared();
         auto& level = levels[i];
-        //For this level, check all the regions that need to be searched
+        // For this level, check all the regions that need to be searched
         for (auto& regionIndex : quad)
         {
-            //Look for region data corresponding to the target position to be searched
+            // Look for region data corresponding to the target position to be searched
             auto levelStructures = level.find(regionIndex);
 
-            //std::cout << "CHECK: " << i << " " << regionIndex.x << " " << regionIndex.y << std::endl;
+            // std::cout << "CHECK: " << i << " " << regionIndex.x << " " << regionIndex.y << std::endl;
 
-            //If data exists, copy all that data into the set of structures that were found
+            // If data exists, copy all that data into the set of structures that were found
             if (levelStructures != level.end())
             {
                 for (int j = 0; j < levelStructures->second.size(); j++)
@@ -180,8 +182,8 @@ std::unordered_set<std::shared_ptr<StructureNode>> ChunkHierarchyManager::getStr
             }
         }
 
-        //Coordinate adjustment for the next level
-        regionBasePosition = glm::floor(glm::vec2(regionBasePosition) / 2.f);//I need to verify that floor(chunkPosition / pow(2, i)) == That but flooring after every divide by 2
+        // Coordinate adjustment for the next level
+        regionBasePosition = glm::floor(glm::vec2(regionBasePosition) / 2.f); // I need to verify that floor(chunkPosition / pow(2, i)) == That but flooring after every divide by 2
         quad = {
             regionBasePosition + glm::ivec2(0, 0),
             regionBasePosition + glm::ivec2(1, 0),
@@ -206,4 +208,3 @@ void ChunkHierarchyManager::setChunkSize(glm::ivec3 size)
 {
     this->chunkSize = size;
 }
-

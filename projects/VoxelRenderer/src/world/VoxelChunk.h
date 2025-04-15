@@ -33,12 +33,12 @@ public:
 
 public:
     void updateMipMaps();
-    void generatePlaceholderData(double deltaTime, bool useRandomNoise, float fillAmount);
+    void generatePlaceholderData(double deltaTime, bool useIsosurfaceNoise, float fillAmount);
 
 private:
     double currentNoiseTime = 0; // This variable is used to determine the "seed" used by the random functions in the make noise shader
 
-    void generateNoiseOccupancyMap(double noiseTime, bool useRandomNoise, float fillAmount); // This runs the make noise shader
+    void generateNoiseOccupancyMap(double noiseTime, bool useIsosurfaceNoise, float fillAmount); // This runs the make noise shader
     void generatePlaceholderMaterialMap(); // This runs the assign material shader
 
 public:

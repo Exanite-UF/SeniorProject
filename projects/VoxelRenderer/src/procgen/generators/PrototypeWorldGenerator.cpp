@@ -29,6 +29,7 @@
 #include <tracy/Tracy.hpp>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/integer.hpp>
 
 bool hasGeneratedSeedNode = false;
 
@@ -71,54 +72,81 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
         generateTerrain(data);
 
-
         if (true)
         {
             ZoneScopedN("Generate trees");
             std::lock_guard lock(chunkHierarchyManager.mutex);
 
+            std::cout << std::floor((float)chunkPosition.x / chunkSize.x) << " " << std::floor((float)chunkPosition.y / chunkSize.y) << " is being made" << std::endl;
+
             // Decoration: Create trees by searching points. 20 trees vs 512^3 checks + caching
             // TODO: Find precise lock locations
-            if (!hasGeneratedSeedNode)
+            // GridPointSynthesizer pointSynthesizer(seed);
+            PoissonDiskPointSynthesizer pointSynthesizer(seed);
+            std::vector<glm::vec3> treeLocations;
+            std::vector<std::shared_ptr<TreeStructure>> treeStructures;
             {
-                // GridPointSynthesizer pointSynthesizer(seed);
-                PoissonDiskPointSynthesizer pointSynthesizer(seed);
-                std::vector<glm::vec3> treeLocations;
-                std::vector<TreeStructure> treeStructures;
-                {
-                    ZoneScopedN("Generate points");
+                ZoneScopedN("Generate points");
 
-                    int numPoints = 400;
-                    pointSynthesizer.generatePoints(treeLocations, numPoints);
-                    pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
-                    // Lexicographic sort
-                    // VectorUtility::lexicographicSort(treeLocations);
+                int numPoints = 20;
+                pointSynthesizer.generatePoints(treeLocations, numPoints);
+                pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
+                // Lexicographic sort
+                // VectorUtility::lexicographicSort(treeLocations);
+            }
+
+            for (int i = 0; i < treeLocations.size(); i++)
+            {
+                glm::ivec3 originVoxel((treeLocations[i].x), (treeLocations[i].y), chunkSize.z - 1);
+
+
+                while (!data.getVoxelOccupancy(originVoxel))
+                {
+                    originVoxel.z--;
+                    if (originVoxel.z == 0)
+                    {
+                        break;
+                    }
                 }
 
-                for (int i = 0; i < treeLocations.size(); i++)
+                originVoxel.x += chunkPosition.x;
+                originVoxel.y += chunkPosition.y;
+
+
+                // std::cout << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
+                auto tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
+                
+                glm::ivec2 distance = tree->getMaxDistanceFromOrigin();
+
+                std::vector<glm::ivec3> boundingBox = {
+                    originVoxel + glm::ivec3(distance.x, distance.y, 0),
+                    originVoxel + glm::ivec3(distance.x, -distance.y, 0),
+                    originVoxel + glm::ivec3(-distance.x, -distance.y, 0),
+                    originVoxel + glm::ivec3(-distance.x, distance.y, 0),
+                };
+                glm::ivec3 temp = glm::ivec3(glm::mod(glm::vec3(originVoxel), glm::vec3(chunkSize)));
+
+                bool circularGeneration = false;
+                //tree->getOverlappingChunks()
+                //Check if any of those are already generated
+                for(int j = 0; j < boundingBox.size(); j++)
                 {
-                    glm::ivec3 originVoxel(4 * (treeLocations[i].x - data.getSize().x * 0.5), 4 * (treeLocations[i].y - data.getSize().y * 0.5), 200);
+                    if(chunkHierarchyManager.isChunkGenerated(boundingBox[j], 0))
+                    {
+                        circularGeneration = true;
+                        break;
+                    }
 
-                    //std::cout << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
-                    TreeStructure tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                    chunkHierarchyManager.addStructure(originVoxel, std::make_shared<StructureNode>(tree));
                 }
-
-                hasGeneratedSeedNode = true;
-                //chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
+                
+                if(!circularGeneration)
+                {
+                    chunkHierarchyManager.addStructure(tree->getOriginVoxel(), tree);
+                }
             }
-        }
 
-        if(false){
-            if (!hasGeneratedSeedNode){
-                //glm::ivec3 originVoxel(chunkPosition.x * data.getSize().x, chunkPosition.y * data.getSize().y, data.getSize().z - 1);
-                glm::ivec3 originVoxel(0, 0, 200);
-
-                TreeStructure tree = createRandomTreeInstance(data, glm::ivec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                chunkHierarchyManager.addStructure(originVoxel, std::make_shared<StructureNode>(tree));
-                //chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
-                hasGeneratedSeedNode = true;
-            }
+            hasGeneratedSeedNode = true;
+            chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
         }
 
         if (true)
@@ -128,37 +156,38 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             std::lock_guard lock(chunkHierarchyManager.mutex);
 
             // Chunk hierarchy manager is a 'cache'.
-            auto structures = chunkHierarchyManager.getStructuresForChunk(chunkPosition * data.getSize());
+            auto structures = chunkHierarchyManager.getStructuresForChunk(chunkPosition);
             std::cout << chunkPosition.x << " " << chunkPosition.y << ": " << structures.size() << std::endl;
             // Raycast down, place on surface.
             for (auto& structure : structures)
             {
-                glm::ivec3 origin = structure->structure.getOriginVoxel();
-                //std::cout << "Initial: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
-                origin.x -= chunkPosition.x * data.getSize().x;
-                origin.y -= chunkPosition.y * data.getSize().y;
+                glm::ivec3 origin = structure->getOriginVoxel();
+                // std::cout << "Initial: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
+                origin.x -= chunkPosition.x;
+                origin.y -= chunkPosition.y;
 
-                while(!data.getVoxelOccupancy(origin)){
-                    origin.z--;
-                    if(origin.z == 0){
-                        break;
-                    }
-                }
+                //while (!data.getVoxelOccupancy(origin))
+                //{
+                //    origin.z--;
+                //    if (origin.z == 0)
+                //    {
+                //        break;
+                //    }
+                //}
 
+                // std::cout << "Post: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
 
-                //std::cout << "Post: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
+                glm::ivec3 saved = structure->getOriginVoxel();
+                structure->setOriginVoxel(origin);
 
-                glm::ivec3 saved = structure->structure.originVoxel;
-                structure->structure.originVoxel = origin;
+                // data.setVoxelOccupancy(origin, true);
+                // data.setVoxelMaterial(origin, oakLogMaterial);
 
-                //data.setVoxelOccupancy(origin, true);
-                //data.setVoxelMaterial(origin, oakLogMaterial);
+                // std::cout << structure << std::endl;
+                //  TODO: Raycast here
+                structure->generate(data);
 
-                //std::cout << structure << std::endl;
-                // TODO: Raycast here
-                structure->structure.generate(data);
-
-                structure->structure.originVoxel = saved;
+                structure->setOriginVoxel(saved);
             }
         }
     }
@@ -211,6 +240,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     }
 
     // The axis scales are different
+    FastNoise::New<FastNoise::DomainAxisScale>();
     FastNoise::SmartNode<> source2D = FastNoise::New<FastNoise::Simplex>();
     FastNoise::SmartNode<> source3D = FastNoise::NewFromEncodedNodeTree("JQAAAIA/AAAAPwAAAD8AAIA/CAA="); // For some reason this is the only way to set scale anisotropically
 
@@ -225,14 +255,14 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     fnNormalized->SetSource(fnFractal);
     fnNormalized->SetRemap(-1, 1, 0, 1);
 
-    //auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
 
     // Create an array of floats to store the noise output in
     std::vector<float> noiseOutput3D(data.getSize().x * data.getSize().y * data.getSize().z);
     std::vector<float> noiseOutput2D1(data.getSize().x * data.getSize().y);
     std::vector<float> noiseOutput2D2(data.getSize().x * data.getSize().y);
 
-    glm::vec2 offset = chunkSize * chunkPosition;
+    glm::vec2 offset = chunkPosition;
 
     fnFractal->SetSource(source2D);
     fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
@@ -256,7 +286,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     //   This counter is reset everytime air is hit (unless grass gets disabled)
     //
     // Encountering 10 non-air voxels in a row will disable grass for the rest of the column
-    
+
     for (int x = 0; x < size.x; x++)
     {
         for (int y = 0; y < size.y; y++)
@@ -279,7 +309,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                 float random3D = noiseOutput3D[index3D++];
 
                 // Calculate the threshold for filling in a voxel
-                // It use an formula that happen to give good results
+                // It use an formula that happens to give good results
                 // From the surface to the maximum height, the threshold starts at the surface probability and decays exponentially to the air probability
                 // From the z = 0 to the surface, the threshold starts a 1 and decays exponentially to the surface probablity
                 //   The rate of this decays is controlled by surfaceToBottomFalloffRate
@@ -323,18 +353,16 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
                         // Now we set the material of the voxels based on the description above
 
-                        //Grid lines
-                        //if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
+                        // Grid lines
+                        // if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
                         //{
-                        //    data.setVoxelMaterial({ x, y, z }, lights[1]);
-                        //    if (x == 0 || y == 0)
-                        //    {
-                        //        data.setVoxelMaterial({ x, y, z }, lights[2]);
-                        //    }
-                        //    continue;
-                        //}
-
-                        
+                        //     data.setVoxelMaterial({ x, y, z }, lights[1]);
+                        //     if (x == 0 || y == 0)
+                        //     {
+                        //         data.setVoxelMaterial({ x, y, z }, lights[2]);
+                        //     }
+                        //     continue;
+                        // }
 
                         // Check if grass is enabled
                         if (maxThick <= noMoreGrassDepth)
@@ -373,7 +401,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
                         // This doesn't have an occupied voxel. It's so that the debug tools have light
 
-
                         // Check if grass is enabled
                         if (maxThick <= noMoreGrassDepth)
                         {
@@ -408,10 +435,10 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
             }
         }
     }
-   
-    //auto end = std::chrono::high_resolution_clock::now();
 
-    //std::cout << std::chrono::duration<double>(end - start).count() << std::endl;
+    // auto end = std::chrono::high_resolution_clock::now();
+
+    // std::cout << std::chrono::duration<double>(end - start).count() << std::endl;
 }
 
 int PrototypeWorldGenerator::randomBetween(int min, int max)
@@ -457,7 +484,7 @@ void PrototypeWorldGenerator::generate3DEnd(VoxelChunkData& data, glm::ivec3 pos
     }
 }
 
-TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::ivec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
+std::shared_ptr<TreeStructure> PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::ivec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
 {
     std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
 
@@ -468,11 +495,11 @@ TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& 
     int leafExtentBelowZ = randomBetween(leafExtentBelowZRangeMeters.x * voxelsPerMeter, leafExtentBelowZRangeMeters.y * voxelsPerMeter);
     int leafExtentAboveZ = randomBetween(leafExtentAboveZRangeMeters.x * voxelsPerMeter, leafExtentAboveZRangeMeters.y * voxelsPerMeter);
 
-    //std::cout << "At set: " << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
-    //TODO: Fix this
-    //The origin voxel of a tree should be the actual origin, not just 2 of the 3 values
-    TreeStructure tree(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
-    //throw std::runtime_error("Not implemented correctly");
+    // std::cout << "At set: " << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
+    // TODO: Fix this
+    // The origin voxel of a tree should be the actual origin, not just 2 of the 3 values
+    auto tree = std::shared_ptr<TreeStructure>(new TreeStructure(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill));
+    // throw std::runtime_error("Not implemented correctly");
     return tree;
 }
 

@@ -3,13 +3,14 @@
 #include <memory>
 #include <src/world/VoxelChunkData.h>
 
-class TreeStructure
+#include <src/procgen/ChunkHierarchyManager.h>
+
+class TreeStructure : public Structure
 {
 public:
     glm::ivec3 originVoxel;
-    
+
 private:
-    
     std::shared_ptr<Material> logMaterial;
     std::shared_ptr<Material> leafMaterial;
     int treeHeightVoxels;
@@ -39,7 +40,11 @@ public:
         int leafExtentAboveZ,
         float leafProbabilityToFill);
 
-    void generate(VoxelChunkData& chunkData);
-    [[nodiscard]] const glm::ivec3& getOriginVoxel();
-    glm::ivec2 getMaxDistanceFromOrigin();
+    virtual void generate(VoxelChunkData& chunkData) override;
+    [[nodiscard]] virtual const glm::ivec3& getOriginVoxel() override;
+    virtual glm::ivec2 getMaxDistanceFromOrigin() override; 
+
+    virtual void setOriginVoxel(glm::ivec3 origin) override;
+
+    virtual std::vector<glm::ivec3> overlappingChunks() override;
 };

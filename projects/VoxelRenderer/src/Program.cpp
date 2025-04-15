@@ -68,9 +68,6 @@
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/VoxelChunkResources.h>
 
-
-
-
 Program::Program()
 {
     ZoneScoped;
@@ -194,7 +191,7 @@ void Program::run()
         // Create the camera GameObject
         auto cameraObject = sceneObject->createChildObject("Camera");
         auto camera = cameraObject->addComponent<CameraComponent>();
-        camera->moveSpeed = 4.317 * 8;//Set the base speed to 4.317 meter a second (minecraft walking speed. This is 9.6 miles per hour, Steve is very fast)
+        camera->moveSpeed = 4.317 * 8; // Set the base speed to 4.317 meter a second (minecraft walking speed. This is 9.6 miles per hour, Steve is very fast)
         auto cameraTransform = camera->getTransform();
         scene->setCamera(camera);
         cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
@@ -521,10 +518,12 @@ void Program::run()
                     groundCameraHeight = camera->getTransform()->getGlobalPosition().z;
                 }
 
-                if(true && isGroundMovementEnabled){
+                if (true && isGroundMovementEnabled)
+                {
                     auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
-                    //std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
-                    if(result.first > 0){
+                    // std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
+                    if (result.first > 0)
+                    {
                         groundCameraHeight = result.second.z + 1.6 * 8;
 
                         glm::vec3 camPos = camera->getTransform()->getGlobalPosition();
@@ -576,7 +575,7 @@ void Program::run()
                     {
                         std::lock_guard lock(closestChunk->getMutex());
 
-                        closestChunk->getChunk()->generatePlaceholderData(deltaTime, useRandomNoise, fillAmount);
+                        closestChunk->getChunk()->generatePlaceholderData(deltaTime, useIsosurfaceNoise, fillAmount);
                     }
 
                     if (isRemakeNoiseRequested && closestChunk->getExistsOnGpu())
@@ -584,28 +583,28 @@ void Program::run()
                         std::lock_guard lock(closestChunk->getMutex());
 
                         // The noise time (corresponds to the deltaTime parameter) should not be incremented here
-                        closestChunk->getChunk()->generatePlaceholderData(0, useRandomNoise, fillAmount);
+                        closestChunk->getChunk()->generatePlaceholderData(0, useIsosurfaceNoise, fillAmount);
                         isRemakeNoiseRequested = false;
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F6))
                     {
-                        exaniteWorldGenerator.generate(closestChunk);
+                        exaniteWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F7))
                     {
-                        exampleWorldGenerator.generate(closestChunk);
+                        exampleWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F8))
                     {
-                        prototypeWorldGenerator.generate(closestChunk);
+                        prototypeWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F9))
                     {
-                        pointSynthesizerWorldGenerator.generate(closestChunk);
+                        pointSynthesizerWorldGenerator.generate(closestChunk, scene);
                     }
                 }
 
@@ -635,7 +634,7 @@ void Program::run()
                         glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                     }
                 }
-                if (input->isKeyPressed(GLFW_KEY_ESCAPE))
+                if (input->isKeyPressed(GLFW_KEY_END))
                 {
                     glfwSetWindowShouldClose(window->getGlfwWindowHandle(), GLFW_TRUE);
                 }
@@ -645,7 +644,7 @@ void Program::run()
                 }
                 if (input->isKeyPressed(GLFW_KEY_T))
                 {
-                    useRandomNoise = !useRandomNoise;
+                    useIsosurfaceNoise = !useIsosurfaceNoise;
                     isRemakeNoiseRequested = true;
                 }
 
@@ -816,7 +815,7 @@ void Program::run()
                             ImGui::Text("S - Backward");
                             ImGui::Text("A - Left");
                             ImGui::Text("D - Right");
-                            ImGui::Text("Esc - Close Application");
+                            ImGui::Text("End - Close Application");
                             ImGui::Text("E - Iterate Noise Over Time");
                             ImGui::Text("F - Toggle Fullscreen");
                             ImGui::Text("Q - Toggle Mouse Input");
@@ -1090,39 +1089,39 @@ void Program::runLateStartupTests()
         Assert::isTrue(CGAL::make_uncertain(1).is_certain(), "Failed to call CGAL function");
     }
 
-    //{
-    //    // Test LOD generation
-    //    VoxelChunkData original(glm::ivec3(4, 4, 4));
-    //    original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
-    //    original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
-    //
-    //    VoxelChunkData lod {};
-    //
-    //    original.copyToLod(lod);
-    //    Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
-    //    Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
-    //}
-    //
-    //{
-    //    // Test mipmap generation
-    //    VoxelChunkData data(glm::ivec3(16, 16, 16));
-    //    data.setVoxelOccupancy(glm::ivec3(3, 3, 3), true);
-    //    data.setHasMipmaps(true);
-    //
-    //    Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
-    //    Assert::isTrue(data.getOccupancyLayerCount() == 2, "Expected 2 occupancy layers");
-    //    Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");
-    //    Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
-    //    Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
-    //}
+    {
+        // Test LOD generation
+        VoxelChunkData original(glm::ivec3(4, 4, 4));
+        original.setVoxelOccupancy(glm::ivec3(1, 1, 1), true);
+        original.setVoxelMaterialIndex(glm::ivec3(1, 1, 1), 7);
 
-    //runChunkHierarchyTest();
+        VoxelChunkData lod {};
+
+        original.copyToLod(lod);
+        Assert::isTrue(lod.getVoxelOccupancy(glm::ivec3(0, 0, 0)), "Expected voxel to be occupied");
+        Assert::isTrue(lod.getVoxelMaterialIndex(glm::ivec3(0, 0, 0)) == 7, "Expected voxel material index to be 7");
+    }
+
+    {
+        // Test mipmap generation
+        VoxelChunkData data(glm::ivec3(16, 16, 16));
+        data.setVoxelOccupancy(glm::ivec3(3, 3, 3), true);
+        data.setHasMipmaps(true);
+
+        Assert::isTrue(data.getHasMipmaps(), "Expected getHasMipmaps() to be true");
+        Assert::isTrue(data.getOccupancyLayerCount() == 2, "Expected 2 occupancy layers");
+        Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
+        Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
+    }
+
+    // runChunkHierarchyTest();
 }
 
-//Yes I know this include location is stupid
+// Yes I know this include location is stupid
 #include <src/procgen/ChunkHierarchyManager.h>
-#include <src/procgen/data/TreeStructure.h>
 #include <src/procgen/WorldUtility.h>
+#include <src/procgen/data/TreeStructure.h>
 
 void Program::runChunkHierarchyTest()
 {
@@ -1136,73 +1135,72 @@ void Program::runChunkHierarchyTest()
     WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
     WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
 
-    
-
-    glm::ivec2 leafSize = {8, 8};//This is the number of unit that the leaves will span
+    glm::ivec2 leafSize = { 8, 8 }; // This is the number of unit that the leaves will span
     int treeHeight = 8 * 10;
     int trunkDiameter = 4;
     float leafFillPercent = 0.5;
 
-    //Test a tree that fits in one chunk
-    if(true){
+    // Test a tree that fits in one chunk
+    if (true)
+    {
         {
             glm::ivec3 originVoxel = glm::ivec3(10, 10, 0);
-            manager.addStructure(originVoxel, std::make_shared<StructureNode>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
         }
 
         {
-            glm::ivec2 chunkPosition = {0, 0};
+            glm::ivec2 chunkPosition = { 0, 0 };
             auto temp = manager.getStructuresForChunk(chunkPosition);
-            glm::ivec3 origin = (*temp.begin())->structure.getOriginVoxel();
+            glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
             Assert::isTrue(origin.x == 10 && origin.y == 10, "Expected Tree at 10, 10 to be accessible from chunk at (0, 0).");
         }
 
         manager.clear();
     }
 
-    //Test a tree that crosses a chunk boundary
-    if(true){
+    // Test a tree that crosses a chunk boundary
+    if (true)
+    {
         {
             glm::ivec3 originVoxel = glm::ivec3(0, 0, 0);
-            manager.addStructure(originVoxel, std::make_shared<StructureNode>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
         }
 
         {
-            glm::ivec2 chunkPosition = {-1, 0};
+            glm::ivec2 chunkPosition = { -1, 0 };
             auto temp = manager.getStructuresForChunk(chunkPosition);
-            glm::ivec3 origin = (*temp.begin())->structure.getOriginVoxel();
+            glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
             Assert::isTrue(origin.x == 0 && origin.y == 0, "Expected Tree at 0, 0 to be accessible from chunk at (-1, 0).");
         }
 
         manager.clear();
     }
 
-
-    //Test a really large canopy tree
-    if(true){
-        //A really large canopy tree
-        //Should end up in at least (-3, -1) to (-1, 1)
+    // Test a really large canopy tree
+    if (true)
+    {
+        // A really large canopy tree
+        // Should end up in at least (-3, -1) to (-1, 1)
         {
             glm::ivec3 originVoxel = glm::ivec3(-757, 245, 0);
-            manager.addStructure(originVoxel, std::make_shared<StructureNode>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, 540 * 2, 540 * 2, 0, 10, leafFillPercent)));
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, 540 * 2, 540 * 2, 0, 10, leafFillPercent)));
         }
 
-        for(int i = -4; i <= 1; i++){
-            for(int j = -2; j <= 2; j++){
-                glm::ivec2 chunkPosition = {i * 512, j * 512};
+        for (int i = -4; i <= 1; i++)
+        {
+            for (int j = -2; j <= 2; j++)
+            {
+                glm::ivec2 chunkPosition = { i * 512, j * 512 };
                 auto temp = manager.getStructuresForChunk(chunkPosition);
-        
-                if(i >= -3 && i <= -1 && j >= -1 && j <= 1){
-                    glm::ivec3 origin = (*temp.begin())->structure.getOriginVoxel();
+
+                if (i >= -3 && i <= -1 && j >= -1 && j <= 1)
+                {
+                    glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
                     Assert::isTrue(origin.x == -757 && origin.y == 245, "Expected Tree at -757, 245 with radius 540 to be accessible in the rectangle (-1536, -512) to (-512, 512).");
                 }
-                
             }
         }
 
         manager.clear();
     }
-    
-
-    
 }
