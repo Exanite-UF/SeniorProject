@@ -14,27 +14,25 @@
 
 #include <iostream>
 
-
 #include <src/world/VoxelChunkData.h>
 
 class Structure
 {
 public:
-    //This is for a bounding box check, so we can add and query for structures
+    // This is for a bounding box check, so we can add and query for structures
     virtual glm::ivec2 getMaxDistanceFromOrigin() = 0;
 
-    //This is so that we can reject the structure if it will attempt to generate in an already generated chunk
+    // This is so that we can reject the structure if it will attempt to generate in an already generated chunk
     virtual std::vector<glm::ivec3> overlappingChunks() = 0;
 
-    //Gets the starting point from which the structure generates
+    // Gets the starting point from which the structure generates
     [[nodiscard]] virtual const glm::ivec3& getOriginVoxel() = 0;
     virtual void setOriginVoxel(glm::ivec3 origin) = 0;
 
-    //TODO: somehow, reject structures that overlap with already generated structures.
+    // TODO: somehow, reject structures that overlap with already generated structures.
 
-    //Instantiates the structure into the voxel data
+    // Instantiates the structure into the voxel data
     virtual void generate(VoxelChunkData& chunkData) = 0;
-
 };
 
 class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
@@ -88,24 +86,26 @@ public:
 
         glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
 
-        
         auto& isLevelGenerated = isGenerated[level];
         auto isChunkGenerated = isLevelGenerated.find(temp);
 
-        //std::cout << (isChunkGenerated != isLevelGenerated.end()) << std::endl;
+        // std::cout << (isChunkGenerated != isLevelGenerated.end()) << std::endl;
 
         if (isChunkGenerated != isLevelGenerated.end())
         {
-            if(isChunkGenerated->second){
-                //std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
-            }else{
-                //std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
+            if (isChunkGenerated->second)
+            {
+                // std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
+            }
+            else
+            {
+                // std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
             }
             return isChunkGenerated->second;
         }
         else
         {
-            //std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
+            // std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
             return false;
         }
     }
@@ -146,5 +146,4 @@ public:
     void clear();
 
     void setChunkSize(glm::ivec3 size);
-
 };

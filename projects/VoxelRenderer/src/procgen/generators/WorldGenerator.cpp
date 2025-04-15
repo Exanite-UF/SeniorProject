@@ -28,8 +28,6 @@ void WorldGenerator::generate(const std::shared_ptr<VoxelChunkComponent>& chunk,
 
     std::lock_guard lock(chunk->getMutex());
 
-
-
     auto data = std::make_shared<VoxelChunkData>(chunk->getRawChunkData().getSize());
     this->scene = scene;
     generateData(*data);

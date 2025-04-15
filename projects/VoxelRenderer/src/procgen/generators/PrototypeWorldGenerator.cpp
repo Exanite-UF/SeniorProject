@@ -99,7 +99,6 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             {
                 glm::ivec3 originVoxel((treeLocations[i].x), (treeLocations[i].y), chunkSize.z - 1);
 
-
                 while (!data.getVoxelOccupancy(originVoxel))
                 {
                     originVoxel.z--;
@@ -112,10 +111,9 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 originVoxel.x += chunkPosition.x;
                 originVoxel.y += chunkPosition.y;
 
-
                 // std::cout << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
                 auto tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                
+
                 glm::ivec2 distance = tree->getMaxDistanceFromOrigin();
 
                 std::vector<glm::ivec3> boundingBox = {
@@ -127,19 +125,18 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 glm::ivec3 temp = glm::ivec3(glm::mod(glm::vec3(originVoxel), glm::vec3(chunkSize)));
 
                 bool circularGeneration = false;
-                //tree->getOverlappingChunks()
-                //Check if any of those are already generated
-                for(int j = 0; j < boundingBox.size(); j++)
+                // tree->getOverlappingChunks()
+                // Check if any of those are already generated
+                for (int j = 0; j < boundingBox.size(); j++)
                 {
-                    if(chunkHierarchyManager.isChunkGenerated(boundingBox[j], 0))
+                    if (chunkHierarchyManager.isChunkGenerated(boundingBox[j], 0))
                     {
                         circularGeneration = true;
                         break;
                     }
-
                 }
-                
-                if(!circularGeneration)
+
+                if (!circularGeneration)
                 {
                     chunkHierarchyManager.addStructure(tree->getOriginVoxel(), tree);
                 }
@@ -166,14 +163,14 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 origin.x -= chunkPosition.x;
                 origin.y -= chunkPosition.y;
 
-                //while (!data.getVoxelOccupancy(origin))
+                // while (!data.getVoxelOccupancy(origin))
                 //{
-                //    origin.z--;
-                //    if (origin.z == 0)
-                //    {
-                //        break;
-                //    }
-                //}
+                //     origin.z--;
+                //     if (origin.z == 0)
+                //     {
+                //         break;
+                //     }
+                // }
 
                 // std::cout << "Post: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
 
@@ -257,7 +254,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
     // auto start = std::chrono::high_resolution_clock::now();
 
-
     // Create an array of floats to store the noise output in
     std::vector<float> noiseOutput3D(data.getSize().x * data.getSize().y * data.getSize().z);
     std::vector<float> noiseOutput2D1(data.getSize().x * data.getSize().y);
@@ -273,7 +269,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
         fnFractal->SetSource(source3D);
         fnNormalized->GenUniformGrid3D(noiseOutput3D.data(), 0, offset.y, offset.x, data.getSize().z, data.getSize().y, data.getSize().x, frequency3D, seed);
     }
-    
 
     int index2D1 = 0;
     int index3D = 0;
@@ -297,23 +292,23 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
         {
             for (int y = 0; y < size.y; y++)
             {
-    
+
                 float perlinNoiseSample = noiseOutput2D1[index2D1];
                 float perlinNoiseSample2 = noiseOutput2D2[index2D1++];
-    
+
                 // Calculate the maximum height and surface height
                 float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
                 float surfaceHeight = baseHeight + perlinNoiseSample * perlinNoiseSample2 * terrainMaxAmplitude;
-    
+
                 int lastAir = data.getSize().z; // track the last height at which we saw air
                 int maxThick = 0; // Keep track of the thickest consecutive region we have seen
                 int tempThick = 0; // This keeps track of the current number of consecutive non-air voxels
-    
+
                 for (int z = size.z - 1; z >= 0; z--)
                 {
-    
+
                     float random3D = noiseOutput3D[index3D++];
-    
+
                     // Calculate the threshold for filling in a voxel
                     // It use an formula that happens to give good results
                     // From the surface to the maximum height, the threshold starts at the surface probability and decays exponentially to the air probability
@@ -325,13 +320,13 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     {
                         p *= (std::exp(c * z / surfaceHeight) + b) / (1 + b);
                     }
-    
+
                     if (z == 0)
                     {
                         p = 1;
                         random3D = 0;
                     }
-    
+
                     // If the 3D noise at this point is below the threshold then fill the voxel
                     bool isOccupied = false;
                     if (random3D <= p)
@@ -339,16 +334,16 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                         isOccupied = true;
                         data.setVoxelOccupancy({ x, y, z }, true);
                     }
-    
+
                     // Set material
                     {
                         int depth = lastAir - z; // The depth is sensibly, the distance from the last air block
-    
+
                         bool isUnderground = isOccupied; // Check if we have a non-air voxel
-    
+
                         if (isUnderground)
                         {
-    
+
                             // If so, we need to to increment the number of consecutive non-air voxels
                             tempThick++;
                             // And if needed, we should update the thickest region we have seen
@@ -356,9 +351,9 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             {
                                 maxThick = tempThick;
                             }
-    
+
                             // Now we set the material of the voxels based on the description above
-    
+
                             // Grid lines
                             // if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
                             //{
@@ -369,7 +364,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             //     }
                             //     continue;
                             // }
-    
+
                             // Check if grass is enabled
                             if (maxThick <= noMoreGrassDepth)
                             {
@@ -385,9 +380,9 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                                     continue;
                                 }
                             }
-    
+
                             // The default material is stone
-    
+
                             // This is stone, I put lights in it for the caves
                             if ((rand() % 1000) / 1000.0 < 0.1)
                             {
@@ -404,9 +399,9 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                         {
                             lastAir = z; // track the last height at which we saw air
                             tempThick = 0; // Reset the consecutive non-air counter
-    
+
                             // This doesn't have an occupied voxel. It's so that the debug tools have light
-    
+
                             // Check if grass is enabled
                             if (maxThick <= noMoreGrassDepth)
                             {
@@ -422,9 +417,9 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                                     continue;
                                 }
                             }
-    
+
                             // The default material is stone
-    
+
                             // This is stone, I put lights in it for the caves
                             if ((rand() % 1000) / 1000.0 < 0.1)
                             {
@@ -442,7 +437,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
             }
         }
     }
-    
 
     // auto end = std::chrono::high_resolution_clock::now();
 
