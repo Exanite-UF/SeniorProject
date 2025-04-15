@@ -672,6 +672,8 @@ void Program::run()
                         {
                             if (ImGui::Button("Add to world"))
                             {
+                                scene->addObjectChunk(modelVoxelizer->chunkComponent);
+                                
                             }
                         }
 

@@ -309,6 +309,11 @@ void ModelVoxelizer::generateVoxelMesh()
     chunkData->setSize(glm::vec3(gridSize));
     chunkData->setHasMipmaps(false);
 
+    // VoxelChunkComponent
+    chunkComponent = std::make_shared<VoxelChunkComponent>();
+    VoxelChunkData& chunkDataRef = chunkComponent->getRawChunkData();
+    chunkDataRef.copyFrom(*chunkData.get());
+
     for (int z = 0; z < gridSize.z; ++z)
     {
         for (int y = 0; y < gridSize.y; ++y)

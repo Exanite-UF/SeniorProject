@@ -3,6 +3,7 @@
 #include <src/utilities/OpenGl.h>
 #include <src/voxelizer/Model.h>
 #include <src/world/VoxelChunkData.h>
+#include <src/world/VoxelChunkComponent.h>
 
 struct HashFunction
 {
@@ -113,6 +114,7 @@ private:
 
 public:
     bool isVoxelized = false;
+    std::shared_ptr<VoxelChunkComponent> chunkComponent {};
 
     ~ModelVoxelizer();
 
