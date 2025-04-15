@@ -82,11 +82,19 @@ public:
             return false;
         }
 
+        glm::ivec2 temp = chunkPosition / glm::ivec2(chunkSize);
+
+        
         auto& isLevelGenerated = isGenerated[level];
-        auto isChunkGenerated = isLevelGenerated.find(chunkPosition);
+        auto isChunkGenerated = isLevelGenerated.find(temp);
+
+        //std::cout << (isChunkGenerated != isLevelGenerated.end()) << std::endl;
 
         if (isChunkGenerated != isLevelGenerated.end())
         {
+            if(isChunkGenerated->second){
+                std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
+            }
             return isChunkGenerated->second;
         }
         else
@@ -107,8 +115,12 @@ public:
             isGenerated.emplace_back();
         }
 
+        glm::ivec2 temp = chunkPosition / glm::ivec2(chunkSize);
+
+        std::cout << temp.x << " " << temp.y << " Was made" << std::endl;
+
         auto& isLevelGenerated = isGenerated[level];
-        isLevelGenerated[chunkPosition] = flag;
+        isLevelGenerated[chunkPosition / glm::ivec2(chunkSize)] = flag;
     }
 
     // These require axis aligned voxel chunks
@@ -127,4 +139,5 @@ public:
     void clear();
 
     void setChunkSize(glm::ivec3 size);
+
 };
