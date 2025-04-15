@@ -84,7 +84,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             // GridPointSynthesizer pointSynthesizer(seed);
             PoissonDiskPointSynthesizer pointSynthesizer(seed);
             std::vector<glm::vec3> treeLocations;
-            std::vector<TreeStructure> treeStructures;
+            std::vector<std::shared_ptr<TreeStructure>> treeStructures;
             {
                 ZoneScopedN("Generate points");
 
@@ -114,9 +114,9 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
 
                 // std::cout << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
-                TreeStructure tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
+                auto tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
                 
-                glm::ivec2 distance = tree.getMaxDistanceFromOrigin();
+                glm::ivec2 distance = tree->getMaxDistanceFromOrigin();
 
                 std::vector<glm::ivec3> boundingBox = {
                     originVoxel + glm::ivec3(distance.x, distance.y, 0),
@@ -127,6 +127,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 glm::ivec3 temp = glm::ivec3(glm::mod(glm::vec3(originVoxel), glm::vec3(chunkSize)));
 
                 bool circularGeneration = false;
+                //tree->getOverlappingChunks()
+                //Check if any of those are already generated
                 for(int j = 0; j < boundingBox.size(); j++)
                 {
                     if(chunkHierarchyManager.isChunkGenerated(boundingBox[j], 0))
@@ -139,26 +141,12 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 
                 if(!circularGeneration)
                 {
-                    chunkHierarchyManager.addStructure(tree.originVoxel, std::make_shared<StructureNode>(tree));
+                    chunkHierarchyManager.addStructure(tree->getOriginVoxel(), tree);
                 }
             }
 
             hasGeneratedSeedNode = true;
             chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
-        }
-
-        if (false)
-        {
-            if (!hasGeneratedSeedNode)
-            {
-                // glm::ivec3 originVoxel(chunkPosition.x, chunkPosition.y, data.getSize().z - 1);
-                glm::ivec3 originVoxel(0, 0, 200);
-
-                TreeStructure tree = createRandomTreeInstance(data, glm::ivec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                chunkHierarchyManager.addStructure(originVoxel, std::make_shared<StructureNode>(tree));
-                // chunkHierarchyManager.setChunkGenerated(chunkPosition, 0, true);
-                hasGeneratedSeedNode = true;
-            }
         }
 
         if (true)
@@ -173,7 +161,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             // Raycast down, place on surface.
             for (auto& structure : structures)
             {
-                glm::ivec3 origin = structure->structure.getOriginVoxel();
+                glm::ivec3 origin = structure->getOriginVoxel();
                 // std::cout << "Initial: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
                 origin.x -= chunkPosition.x;
                 origin.y -= chunkPosition.y;
@@ -189,17 +177,17 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
                 // std::cout << "Post: " << origin.x << " " << origin.y << " " << origin.z << std::endl;
 
-                glm::ivec3 saved = structure->structure.originVoxel;
-                structure->structure.originVoxel = origin;
+                glm::ivec3 saved = structure->getOriginVoxel();
+                structure->setOriginVoxel(origin);
 
                 // data.setVoxelOccupancy(origin, true);
                 // data.setVoxelMaterial(origin, oakLogMaterial);
 
                 // std::cout << structure << std::endl;
                 //  TODO: Raycast here
-                structure->structure.generate(data);
+                structure->generate(data);
 
-                structure->structure.originVoxel = saved;
+                structure->setOriginVoxel(saved);
             }
         }
     }
@@ -496,7 +484,7 @@ void PrototypeWorldGenerator::generate3DEnd(VoxelChunkData& data, glm::ivec3 pos
     }
 }
 
-TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::ivec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
+std::shared_ptr<TreeStructure> PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::ivec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial)
 {
     std::srand(seed + chunkPosition.x + chunkPosition.y * 10 + chunkPosition.z * 100 + originVoxel.x * 11 + originVoxel.y * 11);
 
@@ -510,7 +498,7 @@ TreeStructure PrototypeWorldGenerator::createRandomTreeInstance(VoxelChunkData& 
     // std::cout << "At set: " << originVoxel.x << " " << originVoxel.y << " " << originVoxel.z << std::endl;
     // TODO: Fix this
     // The origin voxel of a tree should be the actual origin, not just 2 of the 3 values
-    TreeStructure tree(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill);
+    auto tree = std::shared_ptr<TreeStructure>(new TreeStructure(originVoxel, logMaterial, leafMaterial, treeHeightVoxels, treeWidthVoxels, leafWidthX, leafWidthY, leafExtentBelowZ, leafExtentAboveZ, leafProbabilityToFill));
     // throw std::runtime_error("Not implemented correctly");
     return tree;
 }

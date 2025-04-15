@@ -1,9 +1,10 @@
-#include <src/procgen/data/TreeStructure.h>
+#include "TreeStructure.h"
 
 #include <algorithm>
 #include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkUtility.h>
 #include <tracy/Tracy.hpp>
+
 
 TreeStructure::TreeStructure(
     glm::ivec3 originVoxel,
@@ -69,6 +70,17 @@ glm::ivec2 TreeStructure::getMaxDistanceFromOrigin()
     return maxDistanceFromOrigin;
 }
 
+void TreeStructure::setOriginVoxel(glm::ivec3 origin)
+{
+    this->originVoxel = origin;
+}
+
+std::vector<glm::ivec3> TreeStructure::overlappingChunks()
+{
+    std::cout << "Implement me" << std::endl;
+    throw std::runtime_error("Implement me.");
+    return std::vector<glm::ivec3>();
+}
 void TreeStructure::generateRectangle(VoxelChunkData& chunkData, glm::vec3 originVoxel, std::shared_ptr<Material>& material, int widthX, int widthY, int height)
 {
     int widthXOffset = widthX / 2;

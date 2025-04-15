@@ -1145,13 +1145,13 @@ void Program::runChunkHierarchyTest()
     {
         {
             glm::ivec3 originVoxel = glm::ivec3(10, 10, 0);
-            manager.addStructure(originVoxel, std::make_shared<StructureNode>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
         }
 
         {
             glm::ivec2 chunkPosition = { 0, 0 };
             auto temp = manager.getStructuresForChunk(chunkPosition);
-            glm::ivec3 origin = (*temp.begin())->structure.getOriginVoxel();
+            glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
             Assert::isTrue(origin.x == 10 && origin.y == 10, "Expected Tree at 10, 10 to be accessible from chunk at (0, 0).");
         }
 
@@ -1163,13 +1163,13 @@ void Program::runChunkHierarchyTest()
     {
         {
             glm::ivec3 originVoxel = glm::ivec3(0, 0, 0);
-            manager.addStructure(originVoxel, std::make_shared<StructureNode>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
         }
 
         {
             glm::ivec2 chunkPosition = { -1, 0 };
             auto temp = manager.getStructuresForChunk(chunkPosition);
-            glm::ivec3 origin = (*temp.begin())->structure.getOriginVoxel();
+            glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
             Assert::isTrue(origin.x == 0 && origin.y == 0, "Expected Tree at 0, 0 to be accessible from chunk at (-1, 0).");
         }
 
@@ -1183,7 +1183,7 @@ void Program::runChunkHierarchyTest()
         // Should end up in at least (-3, -1) to (-1, 1)
         {
             glm::ivec3 originVoxel = glm::ivec3(-757, 245, 0);
-            manager.addStructure(originVoxel, std::make_shared<StructureNode>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, 540 * 2, 540 * 2, 0, 10, leafFillPercent)));
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, 540 * 2, 540 * 2, 0, 10, leafFillPercent)));
         }
 
         for (int i = -4; i <= 1; i++)
@@ -1195,7 +1195,7 @@ void Program::runChunkHierarchyTest()
 
                 if (i >= -3 && i <= -1 && j >= -1 && j <= 1)
                 {
-                    glm::ivec3 origin = (*temp.begin())->structure.getOriginVoxel();
+                    glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
                     Assert::isTrue(origin.x == -757 && origin.y == 245, "Expected Tree at -757, 245 with radius 540 to be accessible in the rectangle (-1536, -512) to (-512, 512).");
                 }
             }
