@@ -31,6 +31,8 @@ public:
     {
         return structure.getMaxDistanceFromOrigin();
     }
+
+    std::vector<glm::ivec3> overlappingChunks() {return std::vector<glm::ivec3>();};
 };
 
 class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
@@ -82,7 +84,7 @@ public:
             return false;
         }
 
-        glm::ivec2 temp = chunkPosition / glm::ivec2(chunkSize);
+        glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
 
         
         auto& isLevelGenerated = isGenerated[level];
@@ -93,12 +95,15 @@ public:
         if (isChunkGenerated != isLevelGenerated.end())
         {
             if(isChunkGenerated->second){
-                std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
+                //std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
+            }else{
+                //std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
             }
             return isChunkGenerated->second;
         }
         else
         {
+            //std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
             return false;
         }
     }
@@ -115,7 +120,7 @@ public:
             isGenerated.emplace_back();
         }
 
-        glm::ivec2 temp = chunkPosition / glm::ivec2(chunkSize);
+        glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
 
         std::cout << temp.x << " " << temp.y << " Was made" << std::endl;
 

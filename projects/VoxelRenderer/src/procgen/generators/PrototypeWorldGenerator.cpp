@@ -29,6 +29,7 @@
 #include <tracy/Tracy.hpp>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/integer.hpp>
 
 bool hasGeneratedSeedNode = false;
 
@@ -76,6 +77,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
             ZoneScopedN("Generate trees");
             std::lock_guard lock(chunkHierarchyManager.mutex);
 
+            std::cout << std::floor((float)chunkPosition.x / chunkSize.x) << " " << std::floor((float)chunkPosition.y / chunkSize.y) << " is being made" << std::endl;
+
             // Decoration: Create trees by searching points. 20 trees vs 512^3 checks + caching
             // TODO: Find precise lock locations
             // GridPointSynthesizer pointSynthesizer(seed);
@@ -121,6 +124,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                     originVoxel + glm::ivec3(-distance.x, -distance.y, 0),
                     originVoxel + glm::ivec3(-distance.x, distance.y, 0),
                 };
+                glm::ivec3 temp = glm::ivec3(glm::mod(glm::vec3(originVoxel), glm::vec3(chunkSize)));
 
                 bool circularGeneration = false;
                 for(int j = 0; j < boundingBox.size(); j++)
@@ -130,6 +134,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                         circularGeneration = true;
                         break;
                     }
+
                 }
                 
                 if(!circularGeneration)
