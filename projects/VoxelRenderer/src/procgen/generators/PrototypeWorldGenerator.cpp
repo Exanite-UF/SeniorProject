@@ -257,19 +257,23 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
     // auto start = std::chrono::high_resolution_clock::now();
 
+
     // Create an array of floats to store the noise output in
     std::vector<float> noiseOutput3D(data.getSize().x * data.getSize().y * data.getSize().z);
     std::vector<float> noiseOutput2D1(data.getSize().x * data.getSize().y);
     std::vector<float> noiseOutput2D2(data.getSize().x * data.getSize().y);
 
     glm::vec2 offset = chunkPosition;
+    {
+        ZoneScopedN("Generate Noise");
+        fnFractal->SetSource(source2D);
+        fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
+        fnNormalized->GenUniformGrid2D(noiseOutput2D2.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 2);
 
-    fnFractal->SetSource(source2D);
-    fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
-    fnNormalized->GenUniformGrid2D(noiseOutput2D2.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 2);
-
-    fnFractal->SetSource(source3D);
-    fnNormalized->GenUniformGrid3D(noiseOutput3D.data(), 0, offset.y, offset.x, data.getSize().z, data.getSize().y, data.getSize().x, frequency3D, seed);
+        fnFractal->SetSource(source3D);
+        fnNormalized->GenUniformGrid3D(noiseOutput3D.data(), 0, offset.y, offset.x, data.getSize().z, data.getSize().y, data.getSize().x, frequency3D, seed);
+    }
+    
 
     int index2D1 = 0;
     int index3D = 0;
@@ -287,154 +291,158 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     //
     // Encountering 10 non-air voxels in a row will disable grass for the rest of the column
 
-    for (int x = 0; x < size.x; x++)
     {
-        for (int y = 0; y < size.y; y++)
+        ZoneScopedN("Use Noise");
+        for (int x = 0; x < size.x; x++)
         {
-
-            float perlinNoiseSample = noiseOutput2D1[index2D1];
-            float perlinNoiseSample2 = noiseOutput2D2[index2D1++];
-
-            // Calculate the maximum height and surface height
-            float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
-            float surfaceHeight = baseHeight + perlinNoiseSample * perlinNoiseSample2 * terrainMaxAmplitude;
-
-            int lastAir = data.getSize().z; // track the last height at which we saw air
-            int maxThick = 0; // Keep track of the thickest consecutive region we have seen
-            int tempThick = 0; // This keeps track of the current number of consecutive non-air voxels
-
-            for (int z = size.z - 1; z >= 0; z--)
+            for (int y = 0; y < size.y; y++)
             {
-
-                float random3D = noiseOutput3D[index3D++];
-
-                // Calculate the threshold for filling in a voxel
-                // It use an formula that happens to give good results
-                // From the surface to the maximum height, the threshold starts at the surface probability and decays exponentially to the air probability
-                // From the z = 0 to the surface, the threshold starts a 1 and decays exponentially to the surface probablity
-                //   The rate of this decays is controlled by surfaceToBottomFalloffRate
-                //   Higher values means deeper caves
-                float p = std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));
-                if (surfaceProbability < 1)
+    
+                float perlinNoiseSample = noiseOutput2D1[index2D1];
+                float perlinNoiseSample2 = noiseOutput2D2[index2D1++];
+    
+                // Calculate the maximum height and surface height
+                float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
+                float surfaceHeight = baseHeight + perlinNoiseSample * perlinNoiseSample2 * terrainMaxAmplitude;
+    
+                int lastAir = data.getSize().z; // track the last height at which we saw air
+                int maxThick = 0; // Keep track of the thickest consecutive region we have seen
+                int tempThick = 0; // This keeps track of the current number of consecutive non-air voxels
+    
+                for (int z = size.z - 1; z >= 0; z--)
                 {
-                    p *= (std::exp(c * z / surfaceHeight) + b) / (1 + b);
-                }
-
-                if (z == 0)
-                {
-                    p = 1;
-                    random3D = 0;
-                }
-
-                // If the 3D noise at this point is below the threshold then fill the voxel
-                bool isOccupied = false;
-                if (random3D <= p)
-                {
-                    isOccupied = true;
-                    data.setVoxelOccupancy({ x, y, z }, true);
-                }
-
-                // Set material
-                {
-                    int depth = lastAir - z; // The depth is sensibly, the distance from the last air block
-
-                    bool isUnderground = isOccupied; // Check if we have a non-air voxel
-
-                    if (isUnderground)
+    
+                    float random3D = noiseOutput3D[index3D++];
+    
+                    // Calculate the threshold for filling in a voxel
+                    // It use an formula that happens to give good results
+                    // From the surface to the maximum height, the threshold starts at the surface probability and decays exponentially to the air probability
+                    // From the z = 0 to the surface, the threshold starts a 1 and decays exponentially to the surface probablity
+                    //   The rate of this decays is controlled by surfaceToBottomFalloffRate
+                    //   Higher values means deeper caves
+                    float p = std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));
+                    if (surfaceProbability < 1)
                     {
-
-                        // If so, we need to to increment the number of consecutive non-air voxels
-                        tempThick++;
-                        // And if needed, we should update the thickest region we have seen
-                        if (tempThick > maxThick)
-                        {
-                            maxThick = tempThick;
-                        }
-
-                        // Now we set the material of the voxels based on the description above
-
-                        // Grid lines
-                        // if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
-                        //{
-                        //     data.setVoxelMaterial({ x, y, z }, lights[1]);
-                        //     if (x == 0 || y == 0)
-                        //     {
-                        //         data.setVoxelMaterial({ x, y, z }, lights[2]);
-                        //     }
-                        //     continue;
-                        // }
-
-                        // Check if grass is enabled
-                        if (maxThick <= noMoreGrassDepth)
-                        {
-                            // If so, try to place grass or dirt
-                            if (depth <= grassDepth)
-                            {
-                                data.setVoxelMaterial({ x, y, z }, grassMaterial);
-                                continue;
-                            }
-                            else if (depth <= dirtDepth)
-                            {
-                                data.setVoxelMaterial({ x, y, z }, dirtMaterial);
-                                continue;
-                            }
-                        }
-
-                        // The default material is stone
-
-                        // This is stone, I put lights in it for the caves
-                        if ((rand() % 1000) / 1000.0 < 0.1)
-                        {
-                            data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
-                            continue;
-                        }
-                        else
-                        {
-                            data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
-                            continue;
-                        }
+                        p *= (std::exp(c * z / surfaceHeight) + b) / (1 + b);
                     }
-                    else
+    
+                    if (z == 0)
                     {
-                        lastAir = z; // track the last height at which we saw air
-                        tempThick = 0; // Reset the consecutive non-air counter
-
-                        // This doesn't have an occupied voxel. It's so that the debug tools have light
-
-                        // Check if grass is enabled
-                        if (maxThick <= noMoreGrassDepth)
+                        p = 1;
+                        random3D = 0;
+                    }
+    
+                    // If the 3D noise at this point is below the threshold then fill the voxel
+                    bool isOccupied = false;
+                    if (random3D <= p)
+                    {
+                        isOccupied = true;
+                        data.setVoxelOccupancy({ x, y, z }, true);
+                    }
+    
+                    // Set material
+                    {
+                        int depth = lastAir - z; // The depth is sensibly, the distance from the last air block
+    
+                        bool isUnderground = isOccupied; // Check if we have a non-air voxel
+    
+                        if (isUnderground)
                         {
-                            // If so, try to place grass or dirt
-                            if (depth <= grassDepth)
+    
+                            // If so, we need to to increment the number of consecutive non-air voxels
+                            tempThick++;
+                            // And if needed, we should update the thickest region we have seen
+                            if (tempThick > maxThick)
                             {
-                                data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                                maxThick = tempThick;
+                            }
+    
+                            // Now we set the material of the voxels based on the description above
+    
+                            // Grid lines
+                            // if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
+                            //{
+                            //     data.setVoxelMaterial({ x, y, z }, lights[1]);
+                            //     if (x == 0 || y == 0)
+                            //     {
+                            //         data.setVoxelMaterial({ x, y, z }, lights[2]);
+                            //     }
+                            //     continue;
+                            // }
+    
+                            // Check if grass is enabled
+                            if (maxThick <= noMoreGrassDepth)
+                            {
+                                // If so, try to place grass or dirt
+                                if (depth <= grassDepth)
+                                {
+                                    data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                                    continue;
+                                }
+                                else if (depth <= dirtDepth)
+                                {
+                                    data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                                    continue;
+                                }
+                            }
+    
+                            // The default material is stone
+    
+                            // This is stone, I put lights in it for the caves
+                            if ((rand() % 1000) / 1000.0 < 0.1)
+                            {
+                                data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
                                 continue;
                             }
-                            else if (depth <= dirtDepth)
+                            else
                             {
-                                data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                                data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
                                 continue;
                             }
-                        }
-
-                        // The default material is stone
-
-                        // This is stone, I put lights in it for the caves
-                        if ((rand() % 1000) / 1000.0 < 0.1)
-                        {
-                            data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
-                            continue;
                         }
                         else
                         {
-                            data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
-                            continue;
+                            lastAir = z; // track the last height at which we saw air
+                            tempThick = 0; // Reset the consecutive non-air counter
+    
+                            // This doesn't have an occupied voxel. It's so that the debug tools have light
+    
+                            // Check if grass is enabled
+                            if (maxThick <= noMoreGrassDepth)
+                            {
+                                // If so, try to place grass or dirt
+                                if (depth <= grassDepth)
+                                {
+                                    data.setVoxelMaterial({ x, y, z }, grassMaterial);
+                                    continue;
+                                }
+                                else if (depth <= dirtDepth)
+                                {
+                                    data.setVoxelMaterial({ x, y, z }, dirtMaterial);
+                                    continue;
+                                }
+                            }
+    
+                            // The default material is stone
+    
+                            // This is stone, I put lights in it for the caves
+                            if ((rand() % 1000) / 1000.0 < 0.1)
+                            {
+                                data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
+                                continue;
+                            }
+                            else
+                            {
+                                data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
+                                continue;
+                            }
                         }
                     }
                 }
             }
         }
     }
+    
 
     // auto end = std::chrono::high_resolution_clock::now();
 
