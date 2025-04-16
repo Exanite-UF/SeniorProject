@@ -16,10 +16,12 @@ protected:
     glm::ivec3 chunkPosition = glm::ivec3(0);
     std::shared_ptr<SceneComponent> scene = nullptr;
 
-    virtual void generateData(VoxelChunkData& data) = 0;
-
 public:
     explicit WorldGenerator();
+
+    // Directly generates the data into the provided VoxelChunkData
+    // It's recommended to use the generate() methods instead
+    virtual void generateData(VoxelChunkData& data) = 0;
 
     // Most generators expect the provided VoxelChunkData to be already cleared
     // clearData is mainly used to avoid clearing a cleared VoxelChunkData
