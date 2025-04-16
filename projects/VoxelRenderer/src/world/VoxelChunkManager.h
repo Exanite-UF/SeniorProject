@@ -180,4 +180,5 @@ protected:
 
 private:
     bool isChunkVisible(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera) const;
+    void cleanupCancelledCommandBuffers();
 };

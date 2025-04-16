@@ -250,6 +250,8 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
         ZoneScopedN("Chunk modification task");
 
+        cleanupCancelledCommandBuffers();
+
         // Take some work
         auto task = modificationThreadState.pendingTasks.front();
         modificationThreadState.pendingTasks.pop_front();
@@ -447,43 +449,47 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Chunk data readback from worker threads
     {
-        std::unique_lock completedTasksLock(loadingThreadState.completedTasksMutex, std::defer_lock);
-        if (completedTasksLock.try_lock())
+        // Avoid using all of the chunk modification threads for chunk loading purposes
+        if (getNotStartedCommandBufferCount() < std::max(4, static_cast<int>(modificationThreadState.threads.size() * 0.75f)))
         {
-            ZoneScopedN("Chunk load task readback");
-
-            while (!loadingThreadState.completedTasks.empty())
+            std::unique_lock completedTasksLock(loadingThreadState.completedTasksMutex, std::defer_lock);
+            if (completedTasksLock.try_lock())
             {
-                ZoneScopedN("Chunk modification task creation");
+                ZoneScopedN("Chunk load task readback");
 
-                const auto task = loadingThreadState.completedTasks.front();
-                loadingThreadState.completedTasks.pop();
-
-                auto chunkIterator = state.activeChunks.find(task->chunkPosition);
-                if (chunkIterator == state.activeChunks.end())
+                while (!loadingThreadState.completedTasks.empty())
                 {
-                    // Chunk no longer exists (was probably unloaded)
-                    // Throw the data away
+                    ZoneScopedN("Chunk modification task creation");
 
-                    continue;
-                }
+                    const auto task = loadingThreadState.completedTasks.front();
+                    loadingThreadState.completedTasks.pop();
 
-                auto& chunk = chunkIterator->second;
-                chunk->isLoading = false;
+                    auto chunkIterator = state.activeChunks.find(task->chunkPosition);
+                    if (chunkIterator == state.activeChunks.end())
+                    {
+                        // Chunk no longer exists (was probably unloaded)
+                        // Throw the data away
 
-                {
-                    VoxelChunkCommandBuffer commandBuffer {};
-                    commandBuffer.setSize(settings.chunkSize);
-                    commandBuffer.copyFrom(task->chunkData);
+                        continue;
+                    }
 
-                    submitCommandBuffer(chunk->component, commandBuffer);
-                }
+                    auto& chunk = chunkIterator->second;
+                    chunk->isLoading = false;
 
-                {
-                    VoxelChunkCommandBuffer commandBuffer {};
-                    commandBuffer.setEnableCpuMipmaps(settings.areChunkCpuMipmapsEnabled);
+                    {
+                        VoxelChunkCommandBuffer commandBuffer {};
+                        commandBuffer.setSize(settings.chunkSize);
+                        commandBuffer.copyFrom(task->chunkData);
 
-                    submitCommandBuffer(chunk->component, commandBuffer);
+                        submitCommandBuffer(chunk->component, commandBuffer);
+                    }
+
+                    {
+                        VoxelChunkCommandBuffer commandBuffer {};
+                        commandBuffer.setEnableCpuMipmaps(settings.areChunkCpuMipmapsEnabled);
+
+                        submitCommandBuffer(chunk->component, commandBuffer);
+                    }
                 }
             }
         }
@@ -500,15 +506,12 @@ void VoxelChunkManager::update(const float deltaTime)
         }
     }
 
-    // Chunk uploading and LOD generation
+    // Chunk LOD selection
     {
-        ZoneScopedN("Chunk uploading and LOD generation");
+        ZoneScopedN("Chunk LOD selection");
 
-        // Second part of condition is to avoid submitting an excessive amount of command buffers
-        if (settings.isChunkLoddingEnabled && getNotStartedCommandBufferCount() < 100)
+        if (settings.isChunkLoddingEnabled)
         {
-            ZoneScopedN("Chunk LOD generation");
-
             // Use camera chunk position to determine 4 closest chunks
             glm::vec2 cameraChunkPosition = state.cameraFloatChunkPosition;
 
@@ -974,7 +977,17 @@ int VoxelChunkManager::getNotStartedCommandBufferCount()
 {
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
+    cleanupCancelledCommandBuffers();
+
     return modificationThreadState.pendingTasks.size();
+}
+
+void VoxelChunkManager::cleanupCancelledCommandBuffers()
+{
+    std::erase_if(modificationThreadState.pendingTasks, [](const std::shared_ptr<ChunkModificationTask>& task)
+        {
+            return task->cancellationToken.isCancellationRequested();
+        });
 }
 
 std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const CancellationToken& cancellationToken)
@@ -982,6 +995,8 @@ std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::share
     ZoneScoped;
 
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
+
+    cleanupCancelledCommandBuffers();
 
     auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer, cancellationToken);
     task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());
