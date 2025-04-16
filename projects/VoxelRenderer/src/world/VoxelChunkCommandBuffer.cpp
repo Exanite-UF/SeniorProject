@@ -166,7 +166,7 @@ void VoxelChunkCommandBuffer::mergeInto(VoxelChunkCommandBuffer& other) const
     }
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const std::weak_ptr<CancellationToken>& cancellationToken) const
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const CancellationToken& cancellationToken) const
 {
     CommandApplicator applicator(this, component, scene, gpuUploadMutex, cancellationToken);
     applicator.apply();
@@ -177,7 +177,7 @@ VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(
     const std::shared_ptr<VoxelChunkComponent>& component,
     const std::shared_ptr<SceneComponent>& scene,
     std::mutex& gpuUploadMutex,
-    const std::weak_ptr<CancellationToken>& cancellationToken)
+    const CancellationToken& cancellationToken)
 {
     // Inputs
     this->commandBuffer = commandBuffer;
@@ -524,7 +524,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         }
 
         // Abort if requested
-        if (cancellationToken.expired())
+        if (cancellationToken.isCancellationRequested())
         {
             return;
         }
@@ -592,7 +592,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
             return;
         }
 
-        if (cancellationToken.expired())
+        if (cancellationToken.isCancellationRequested())
         {
             return;
         }

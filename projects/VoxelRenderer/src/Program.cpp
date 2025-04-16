@@ -981,9 +981,16 @@ void Program::runEarlyStartupTests()
 
     {
         // Make sure CancellationToken works as expected
-        std::weak_ptr<CancellationToken> neverCreated {};
+        CancellationToken defaultToken {};
+        Assert::isTrue(!defaultToken.isCancellationRequested(), "The default cancellation token should never be cancelled");
 
-        Assert::isTrue(!neverCreated.expired(), "CancellationToken was never created, but has expired");
+        CancellationTokenSource source {};
+
+        auto validToken = source.getCancellationToken();
+        Assert::isTrue(!validToken.isCancellationRequested(), "The cancellation token source has not requested cancellation yet");
+
+        source.requestCancellation();
+        Assert::isTrue(validToken.isCancellationRequested(), "The cancellation token source has already requested cancellation");
     }
 }
 

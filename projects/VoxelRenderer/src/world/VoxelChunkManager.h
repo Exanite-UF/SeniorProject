@@ -61,10 +61,10 @@ private:
 
         std::promise<void> promise {};
         std::shared_future<void> future {};
-        std::weak_ptr<CancellationToken> cancellationToken {};
+        CancellationToken cancellationToken {};
         PendingTasks<void> dependencies;
 
-        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer, const std::weak_ptr<CancellationToken>& cancellationToken);
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer, const CancellationToken& cancellationToken);
     };
 
     struct ChunkLoadTask
@@ -168,7 +168,7 @@ public:
     void showDebugMenu();
 
     // Can be called from any thread
-    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, bool allowMerge = false, const std::weak_ptr<CancellationToken>& cancellationToken = {});
+    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, bool allowMerge = false, const CancellationToken& cancellationToken = {});
 
     ~VoxelChunkManager() override;
 

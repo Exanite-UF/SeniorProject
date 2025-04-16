@@ -32,7 +32,7 @@ VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
     const std::shared_ptr<SceneComponent>& scene,
     const VoxelChunkCommandBuffer& commandBuffer,
-    const std::weak_ptr<CancellationToken>& cancellationToken)
+    const CancellationToken& cancellationToken)
 {
     ZoneScoped;
 
@@ -538,8 +538,8 @@ void VoxelChunkManager::update(const float deltaTime)
                 }
 
                 // Create cancellation token
-                auto token = std::make_shared<CancellationToken>();
-                component->getChunkManagerData().lodCancellationToken = token;
+                auto tokenSource = CancellationTokenSource();
+                component->getChunkManagerData().lodCancellationToken = tokenSource;
 
                 // Update state
                 component->getChunkManagerData().desiredLod = lod;
@@ -550,7 +550,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 commandBuffer.setActiveLod(lod);
                 commandBuffer.setExistsOnGpu(true);
 
-                submitCommandBuffer(component, commandBuffer, true, token);
+                submitCommandBuffer(component, commandBuffer, true, tokenSource.getCancellationToken());
             }
 
             for (int i = 0; i < state.activeChunks.size(); ++i)
@@ -959,7 +959,7 @@ void VoxelChunkManager::showDebugMenu()
     }
 }
 
-std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const bool allowMerge, const std::weak_ptr<CancellationToken>& cancellationToken)
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const bool allowMerge, const CancellationToken& cancellationToken)
 {
     ZoneScoped;
 

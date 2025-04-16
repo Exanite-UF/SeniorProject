@@ -63,7 +63,7 @@ public:
     void updateMipmaps();
 
     void copyFrom(VoxelChunk& other, bool includeMipmaps = false);
-    void copyTo(VoxelChunk& other, const std::weak_ptr<CancellationToken>& cancellationToken = {}) const;
+    void copyTo(VoxelChunk& other, const CancellationToken& cancellationToken = {}) const;
 
     void copyFrom(const VoxelChunkData& other);
     void copyTo(VoxelChunkData& other) const;

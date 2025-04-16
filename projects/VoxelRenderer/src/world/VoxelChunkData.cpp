@@ -341,7 +341,7 @@ void VoxelChunkData::copyFrom(VoxelChunk& other, const bool includeMipmaps)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void VoxelChunkData::copyTo(VoxelChunk& other, const std::weak_ptr<CancellationToken>& cancellationToken) const
+void VoxelChunkData::copyTo(VoxelChunk& other, const CancellationToken& cancellationToken) const
 {
     ZoneScoped;
 
@@ -361,7 +361,7 @@ void VoxelChunkData::copyTo(VoxelChunk& other, const std::weak_ptr<CancellationT
         {
             ZoneScopedN("Chunked occupancy data upload");
 
-            if (cancellationToken.expired())
+            if (cancellationToken.isCancellationRequested())
             {
                 return;
             }
@@ -382,7 +382,7 @@ void VoxelChunkData::copyTo(VoxelChunk& other, const std::weak_ptr<CancellationT
         }
     }
 
-    if (cancellationToken.expired())
+    if (cancellationToken.isCancellationRequested())
     {
         return;
     }
@@ -399,7 +399,7 @@ void VoxelChunkData::copyTo(VoxelChunk& other, const std::weak_ptr<CancellationT
         {
             ZoneScopedN("Chunked material data upload");
 
-            if (cancellationToken.expired())
+            if (cancellationToken.isCancellationRequested())
             {
                 return;
             }

@@ -43,7 +43,7 @@ public:
         int requestedActiveLod = 0; // The active LOD level, as requested by the user. This may be higher than what is used.
         int requestedMaxLod = 0; // The max LOD level, as requested by the user. This may be higher than the number of LODs that can be generated.
 
-        std::shared_ptr<CancellationToken> lodCancellationToken {};
+        CancellationTokenSource lodCancellationToken {};
 
         // For caching
         bool isPendingDestroy = false;
