@@ -24,12 +24,11 @@
 #include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
-
-#include <fstream>
 
 #include <src/Content.h>
 #include <src/Program.h>
@@ -38,6 +37,9 @@
 #include <src/graphics/ShaderManager.h>
 #include <src/graphics/TextureData.h>
 #include <src/graphics/TextureManager.h>
+#include <src/procgen/ChunkHierarchyManager.h>
+#include <src/procgen/WorldUtility.h>
+#include <src/procgen/data/TreeStructure.h>
 #include <src/procgen/generators/ExampleWorldGenerator.h>
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
 #include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
@@ -1117,11 +1119,6 @@ void Program::runLateStartupTests()
 
     // runChunkHierarchyTest();
 }
-
-// Yes I know this include location is stupid
-#include <src/procgen/ChunkHierarchyManager.h>
-#include <src/procgen/WorldUtility.h>
-#include <src/procgen/data/TreeStructure.h>
 
 void Program::runChunkHierarchyTest()
 {
