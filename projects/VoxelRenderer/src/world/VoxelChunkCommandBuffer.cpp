@@ -585,6 +585,11 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
             component->chunk = std::move(localGpuData);
             chunkManagerData.activeLod = lodToActivate;
             component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
+
+            // Invalidate motion vectors
+            component->getRendererData().previousPosition = {};
+            component->getRendererData().previousRotation = {};
+            component->getRendererData().previousScale = {};
         }
     }
 }
