@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glm/vec3.hpp>
-
 #include <memory>
 
 #include <src/Constants.h>
