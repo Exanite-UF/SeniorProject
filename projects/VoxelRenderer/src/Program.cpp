@@ -40,8 +40,8 @@
 #include <src/procgen/ChunkHierarchyManager.h>
 #include <src/procgen/WorldUtility.h>
 #include <src/procgen/data/TreeStructure.h>
-#include <src/procgen/generators/ExampleWorldGenerator.h>
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
+#include <src/procgen/generators/MaterialBlockWorldGenerator.h>
 #include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
@@ -341,7 +341,7 @@ void Program::run()
         bool shouldRenderPathTrace = true; // TODO: Currently unused?
 
         // Procedural Generation
-        ExampleWorldGenerator exampleWorldGenerator {};
+        MaterialBlockWorldGenerator materialBlockWorldGenerator {};
         ExaniteWorldGenerator exaniteWorldGenerator {};
 
         int seed = 0;
@@ -591,12 +591,12 @@ void Program::run()
 
                     if (input->isKeyPressed(GLFW_KEY_F6))
                     {
-                        exaniteWorldGenerator.generate(closestChunk, scene);
+                        materialBlockWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F7))
                     {
-                        exampleWorldGenerator.generate(closestChunk, scene);
+                        exaniteWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F8))
@@ -801,8 +801,8 @@ void Program::run()
                         }
                         case 2:
                         {
+                            materialBlockWorldGenerator.showDebugMenu();
                             exaniteWorldGenerator.showDebugMenu();
-                            exampleWorldGenerator.showDebugMenu();
                             octaveWorldGenerator.showDebugMenu();
                             prototypeWorldGenerator.showDebugMenu();
                             pointSynthesizerWorldGenerator.showDebugMenu();

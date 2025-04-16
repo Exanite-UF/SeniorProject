@@ -1,4 +1,4 @@
-#include "ExaniteWorldGenerator.h"
+#include "MaterialBlockWorldGenerator.h"
 
 #include <imgui/imgui.h>
 #include <src/utilities/Assert.h>
@@ -6,7 +6,7 @@
 #include <src/world/MaterialManager.h>
 #include <tracy/Tracy.hpp>
 
-void ExaniteWorldGenerator::generateData(VoxelChunkData& data)
+void MaterialBlockWorldGenerator::generateData(VoxelChunkData& data)
 {
     ZoneScoped;
 
@@ -60,13 +60,13 @@ void ExaniteWorldGenerator::generateData(VoxelChunkData& data)
     }
 }
 
-void ExaniteWorldGenerator::showDebugMenu()
+void MaterialBlockWorldGenerator::showDebugMenu()
 {
-    ImGui::PushID("ExaniteWorldGenerator");
+    ImGui::PushID("MaterialBlockWorldGenerator");
     {
-        if (ImGui::CollapsingHeader("Exanite's Generator (F7)"))
+        if (ImGui::CollapsingHeader("Material Block Generator (F6)"))
         {
-            ImGui::Text("This generator is used by Exanite for testing purposes");
+            ImGui::Text("This generator is used to test material palette solving");
         }
     }
     ImGui::PopID();

@@ -2,11 +2,8 @@
 
 #include <src/procgen/generators/WorldGenerator.h>
 
-class ExampleWorldGenerator : public WorldGenerator
+class MaterialBlockWorldGenerator : public WorldGenerator
 {
-private:
-    std::string materialKey = "dirt";
-
 protected:
     void generateData(VoxelChunkData& data) override;
 

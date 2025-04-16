@@ -4,9 +4,6 @@
 
 class ExaniteWorldGenerator : public WorldGenerator
 {
-private:
-    std::string materialKey = "dirt";
-
 protected:
     void generateData(VoxelChunkData& data) override;
 
