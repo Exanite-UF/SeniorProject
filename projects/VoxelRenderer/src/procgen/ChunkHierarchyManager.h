@@ -51,84 +51,11 @@ private:
 
     void validateChunkSize() const;
 
-    // Singleton needs default constructor
-    explicit ChunkHierarchyManager()
-        : ChunkHierarchyManager(0)
-    {
-    }
-
-    explicit ChunkHierarchyManager(uint32_t levelCount)
-    {
-        for (int i = 0; i < levelCount; i++)
-        {
-            std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<Structure>>> level;
-            levels.push_back(level);
-
-            std::unordered_map<glm::ivec2, bool> isLevelGenerated;
-            isGenerated.push_back(isLevelGenerated);
-        }
-    }
-
 public:
     std::mutex mutex;
 
-    bool isChunkGenerated(glm::ivec2 chunkPosition, int level)
-    {
-        if (level < 0)
-        {
-            throw std::runtime_error("Negative levels do not exist.");
-        }
-
-        if (level >= isGenerated.size())
-        {
-            return false;
-        }
-
-        glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
-
-        auto& isLevelGenerated = isGenerated[level];
-        auto isChunkGenerated = isLevelGenerated.find(temp);
-
-        // std::cout << (isChunkGenerated != isLevelGenerated.end()) << std::endl;
-
-        if (isChunkGenerated != isLevelGenerated.end())
-        {
-            if (isChunkGenerated->second)
-            {
-                // std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
-            }
-            else
-            {
-                // std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
-            }
-            return isChunkGenerated->second;
-        }
-        else
-        {
-            // std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
-            return false;
-        }
-    }
-
-    void setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag)
-    {
-        if (level < 0)
-        {
-            throw std::runtime_error("Negative levels do not exist.");
-        }
-
-        for (int i = isGenerated.size(); i <= level; i++)
-        {
-            isGenerated.emplace_back();
-        }
-
-        glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
-
-        std::cout << temp.x << " " << temp.y << " Was made" << std::endl;
-
-        auto& isLevelGenerated = isGenerated[level];
-        isLevelGenerated[chunkPosition / glm::ivec2(chunkSize)] = flag;
-    }
+    bool isChunkGenerated(glm::ivec2 chunkPosition, int level);
+    void setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag);
 
     // These require axis aligned voxel chunks
 

@@ -10,6 +10,64 @@ void ChunkHierarchyManager::validateChunkSize() const
     Assert::isTrue(glm::all(glm::greaterThan(chunkSize, glm::ivec3(0))), "Chunk size must be greater that 0. You probably didn't set it.");
 }
 
+bool ChunkHierarchyManager::isChunkGenerated(glm::ivec2 chunkPosition, int level)
+{
+    if (level < 0)
+    {
+        throw std::runtime_error("Negative levels do not exist.");
+    }
+
+    if (level >= isGenerated.size())
+    {
+        return false;
+    }
+
+    glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
+
+    auto& isLevelGenerated = isGenerated[level];
+    auto isChunkGenerated = isLevelGenerated.find(temp);
+
+    // std::cout << (isChunkGenerated != isLevelGenerated.end()) << std::endl;
+
+    if (isChunkGenerated != isLevelGenerated.end())
+    {
+        if (isChunkGenerated->second)
+        {
+            // std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
+        }
+        else
+        {
+            // std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
+        }
+        return isChunkGenerated->second;
+    }
+    else
+    {
+        // std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
+        return false;
+    }
+}
+
+void ChunkHierarchyManager::setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag)
+{
+    if (level < 0)
+    {
+        throw std::runtime_error("Negative levels do not exist.");
+    }
+
+    for (int i = isGenerated.size(); i <= level; i++)
+    {
+        isGenerated.emplace_back();
+    }
+
+    glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
+
+    std::cout << temp.x << " " << temp.y << " Was made" << std::endl;
+
+    auto& isLevelGenerated = isGenerated[level];
+    isLevelGenerated[chunkPosition / glm::ivec2(chunkSize)] = flag;
+}
+
 void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared_ptr<Structure> structure)
 {
     validateChunkSize();
