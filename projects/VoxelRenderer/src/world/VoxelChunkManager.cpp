@@ -257,6 +257,11 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
         // Unlock the mutex
         pendingRequestsLock.unlock();
 
+        if (task->cancellationToken.isCancellationRequested())
+        {
+            return;
+        }
+
         try
         {
             // Wait for any dependencies to finish
@@ -499,7 +504,8 @@ void VoxelChunkManager::update(const float deltaTime)
     {
         ZoneScopedN("Chunk uploading and LOD generation");
 
-        if (settings.isChunkLoddingEnabled)
+        // Second part of condition is to avoid submitting an excessive amount of command buffers
+        if (settings.isChunkLoddingEnabled && getNotStartedCommandBufferCount() < 100)
         {
             ZoneScopedN("Chunk LOD generation");
 
@@ -962,6 +968,13 @@ void VoxelChunkManager::showDebugMenu()
             }
         }
     }
+}
+
+int VoxelChunkManager::getNotStartedCommandBufferCount()
+{
+    std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
+
+    return modificationThreadState.pendingTasks.size();
 }
 
 std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const CancellationToken& cancellationToken)

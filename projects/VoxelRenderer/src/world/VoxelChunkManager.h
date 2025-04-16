@@ -168,6 +168,9 @@ public:
     void showDebugMenu();
 
     // Can be called from any thread
+    int getNotStartedCommandBufferCount();
+
+    // Can be called from any thread
     std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const CancellationToken& cancellationToken = {});
 
     ~VoxelChunkManager() override;
