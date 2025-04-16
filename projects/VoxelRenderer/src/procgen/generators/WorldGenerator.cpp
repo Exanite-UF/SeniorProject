@@ -8,7 +8,7 @@
 
 WorldGenerator::WorldGenerator() = default;
 
-void WorldGenerator::generate(VoxelChunkData& data, std::shared_ptr<SceneComponent> scene, const bool clearData)
+void WorldGenerator::generate(VoxelChunkData& data, const std::shared_ptr<SceneComponent>& scene, const bool clearData)
 {
     ZoneScoped;
 
@@ -22,7 +22,7 @@ void WorldGenerator::generate(VoxelChunkData& data, std::shared_ptr<SceneCompone
     generateData(data);
 }
 
-void WorldGenerator::generate(const std::shared_ptr<VoxelChunkComponent>& chunk, std::shared_ptr<SceneComponent> scene)
+void WorldGenerator::generate(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<SceneComponent>& scene)
 {
     ZoneScoped;
 

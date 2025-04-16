@@ -23,8 +23,8 @@ public:
 
     // Most generators expect the provided VoxelChunkData to be already cleared
     // clearData is mainly used to avoid clearing a cleared VoxelChunkData
-    void generate(VoxelChunkData& data, std::shared_ptr<SceneComponent> scene, bool clearData = true);
-    void generate(const std::shared_ptr<VoxelChunkComponent>& chunk, std::shared_ptr<SceneComponent> scene); // Mainly for testing purposes
+    void generate(VoxelChunkData& data, const std::shared_ptr<SceneComponent>& scene, bool clearData = true);
+    void generate(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<SceneComponent>& scene); // Mainly for testing purposes
 
     virtual void showDebugMenu() = 0;
 
