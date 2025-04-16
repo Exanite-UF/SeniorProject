@@ -8,7 +8,7 @@
 
 WorldGenerator::WorldGenerator() = default;
 
-void WorldGenerator::generate(VoxelChunkData& data, const bool clearData)
+void WorldGenerator::generate(VoxelChunkData& data, const std::shared_ptr<SceneComponent>& scene, const bool clearData)
 {
     ZoneScoped;
 
@@ -18,16 +18,18 @@ void WorldGenerator::generate(VoxelChunkData& data, const bool clearData)
         data.clearMaterialMap();
     }
 
+    this->scene = scene;
     generateData(data);
 }
 
-void WorldGenerator::generate(const std::shared_ptr<VoxelChunkComponent>& chunk)
+void WorldGenerator::generate(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<SceneComponent>& scene)
 {
     ZoneScoped;
 
     std::lock_guard lock(chunk->getMutex());
 
     auto data = std::make_shared<VoxelChunkData>(chunk->getRawChunkData().getSize());
+    this->scene = scene;
     generateData(*data);
 
     VoxelChunkCommandBuffer commandBuffer {};

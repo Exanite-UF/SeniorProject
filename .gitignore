@@ -3,4 +3,6 @@
 /out/
 
 .idea/
-.vscode/
+.vscode/**
+
+!.vscode/settings.json

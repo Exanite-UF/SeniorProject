@@ -1,3 +1,5 @@
+#include "Program.h"
+
 #include <src/utilities/ImGui.h>
 #include <src/utilities/OpenGl.h>
 
@@ -22,12 +24,11 @@
 #include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
-
-#include <fstream>
 
 #include <src/Content.h>
 #include <src/Program.h>
@@ -36,11 +37,16 @@
 #include <src/graphics/ShaderManager.h>
 #include <src/graphics/TextureData.h>
 #include <src/graphics/TextureManager.h>
+#include <src/procgen/ChunkHierarchyManager.h>
+#include <src/procgen/WorldUtility.h>
+#include <src/procgen/data/TreeStructure.h>
 #include <src/procgen/generators/ExampleWorldGenerator.h>
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
+#include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
 #include <src/procgen/generators/WorldGenerator.h>
+#include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOpenSimplexNoiseSynthesizer.h>
 #include <src/rendering/AsynchronousReprojection.h>
@@ -187,9 +193,10 @@ void Program::run()
         // Create the camera GameObject
         auto cameraObject = sceneObject->createChildObject("Camera");
         auto camera = cameraObject->addComponent<CameraComponent>();
+        camera->moveSpeed = 4.317 * 8; // Set the base speed to 4.317 meter a second (minecraft walking speed. This is 9.6 miles per hour, Steve is very fast)
         auto cameraTransform = camera->getTransform();
         scene->setCamera(camera);
-        cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 1.25));
+        cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
 
         // Initialize the chunk manager
         voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
@@ -197,7 +204,7 @@ void Program::run()
         // Create the renderer
         Renderer renderer(window, offscreenContext);
 
-        float renderRatio = 1.f;
+        float renderRatio = 0.66666666f;
         float targetReprojectionFPS = 20;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
@@ -342,12 +349,19 @@ void Program::run()
         float persistence = 0.5;
         auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
         auto openSimplexSynthesizer = std::make_shared<TextureOpenSimplexNoiseSynthesizer>(seed);
+        auto poissonDiskPointSynthesizer = std::make_shared<PoissonDiskPointSynthesizer>(seed);
 
         TextureHeightmapWorldGenerator octaveWorldGenerator(openSimplexSynthesizer);
         octaveWorldGenerator.setChunkSize(chunkSize);
 
         PrototypeWorldGenerator prototypeWorldGenerator(octaveSynthesizer);
         prototypeWorldGenerator.setChunkSize(chunkSize);
+
+        PointSynthesizerWorldGenerator pointSynthesizerWorldGenerator(poissonDiskPointSynthesizer);
+        pointSynthesizerWorldGenerator.setChunkSize(chunkSize);
+
+        // IMGUI Menu
+        bool showMenuGUI = false;
 
         // Model Previewer
         std::shared_ptr<ModelPreviewer> modelPreviewer = std::make_shared<ModelPreviewer>();
@@ -500,6 +514,38 @@ void Program::run()
                     cameraTransform->addGlobalPosition(static_cast<float>(deltaTime * camera->moveSpeed) * -cameraUpMoveDirection);
                 }
 
+                if (input->isKeyPressed(GLFW_KEY_J))
+                {
+                    isGroundMovementEnabled = !isGroundMovementEnabled;
+                    groundCameraHeight = camera->getTransform()->getGlobalPosition().z;
+                }
+
+                if (true && isGroundMovementEnabled)
+                {
+                    auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
+                    // std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
+                    if (result.first > 0)
+                    {
+                        groundCameraHeight = result.second.z + 1.6 * 8;
+
+                        glm::vec3 camPos = camera->getTransform()->getGlobalPosition();
+                        float p = 1 - std::exp(-groundCameraSnapSpeed * deltaTime);
+                        camPos.z = ((1 - p) * camPos.z + p * groundCameraHeight);
+
+                        camera->getTransform()->setGlobalPosition(camPos);
+                    }
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_EQUAL))
+                {
+                    renderer.increaseFirstMipMapLevel();
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_MINUS))
+                {
+                    renderer.decreaseFirstMipMapLevel();
+                }
+
                 if (input->isKeyPressed(GLFW_KEY_G))
                 {
                     renderer.toggleAsynchronousReprojection();
@@ -545,17 +591,22 @@ void Program::run()
 
                     if (input->isKeyPressed(GLFW_KEY_F6))
                     {
-                        exaniteWorldGenerator.generate(closestChunk);
+                        exaniteWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F7))
                     {
-                        exampleWorldGenerator.generate(closestChunk);
+                        exampleWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F8))
                     {
-                        prototypeWorldGenerator.generate(closestChunk);
+                        prototypeWorldGenerator.generate(closestChunk, scene);
+                    }
+
+                    if (input->isKeyPressed(GLFW_KEY_F9))
+                    {
+                        pointSynthesizerWorldGenerator.generate(closestChunk, scene);
                     }
                 }
 
@@ -754,6 +805,7 @@ void Program::run()
                             exampleWorldGenerator.showDebugMenu();
                             octaveWorldGenerator.showDebugMenu();
                             prototypeWorldGenerator.showDebugMenu();
+                            pointSynthesizerWorldGenerator.showDebugMenu();
 
                             voxelChunkManager.showDebugMenu();
 
@@ -773,6 +825,8 @@ void Program::run()
                             ImGui::Text("G - Toggle Reprojection");
                             ImGui::Text("V - Toggle Bounce Count");
                             ImGui::Text("B - Pause/Unpause Rendering");
+                            ImGui::Text("J - Toggle ground camera");
+                            ImGui::Text("+/- Change viewable mip map level");
                             ImGui::Text("Mouse Scroll - Change Move Speed");
                             ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
                             ImGui::Text("Alt + Mouse Scroll - Change Render Resolution");
@@ -1061,5 +1115,92 @@ void Program::runLateStartupTests()
         Assert::isTrue(data.getOccupancyMipmapCount() == 1, "Expected 1 occupancy mipmap layers");
         Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(3, 3, 3), 0), "Expected voxel to be occupied (level 0)");
         Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
+    }
+
+    if (false)
+    {
+        runChunkHierarchyTest();
+    }
+}
+
+void Program::runChunkHierarchyTest()
+{
+    auto& manager = ChunkHierarchyManager::getInstance();
+    manager.setChunkSize(glm::ivec3(512));
+
+    auto& materialManager = MaterialManager::getInstance();
+
+    std::shared_ptr<Material> oakLogMaterial;
+    std::shared_ptr<Material> oakLeafMaterial;
+    WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
+    WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
+
+    glm::ivec2 leafSize = { 8, 8 }; // This is the number of unit that the leaves will span
+    int treeHeight = 8 * 10;
+    int trunkDiameter = 4;
+    float leafFillPercent = 0.5;
+
+    // Test a tree that fits in one chunk
+    if (true)
+    {
+        {
+            glm::ivec3 originVoxel = glm::ivec3(10, 10, 0);
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
+        }
+
+        {
+            glm::ivec2 chunkPosition = { 0, 0 };
+            auto temp = manager.getStructuresForChunk(chunkPosition);
+            glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
+            Assert::isTrue(origin.x == 10 && origin.y == 10, "Expected Tree at 10, 10 to be accessible from chunk at (0, 0).");
+        }
+
+        manager.clear();
+    }
+
+    // Test a tree that crosses a chunk boundary
+    if (true)
+    {
+        {
+            glm::ivec3 originVoxel = glm::ivec3(0, 0, 0);
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, leafSize.x, leafSize.y, 0, 10, leafFillPercent)));
+        }
+
+        {
+            glm::ivec2 chunkPosition = { -1, 0 };
+            auto temp = manager.getStructuresForChunk(chunkPosition);
+            glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
+            Assert::isTrue(origin.x == 0 && origin.y == 0, "Expected Tree at 0, 0 to be accessible from chunk at (-1, 0).");
+        }
+
+        manager.clear();
+    }
+
+    // Test a really large canopy tree
+    if (true)
+    {
+        // A really large canopy tree
+        // Should end up in at least (-3, -1) to (-1, 1)
+        {
+            glm::ivec3 originVoxel = glm::ivec3(-757, 245, 0);
+            manager.addStructure(originVoxel, std::make_shared<TreeStructure>(TreeStructure(originVoxel, oakLogMaterial, oakLeafMaterial, treeHeight, trunkDiameter, 540 * 2, 540 * 2, 0, 10, leafFillPercent)));
+        }
+
+        for (int i = -4; i <= 1; i++)
+        {
+            for (int j = -2; j <= 2; j++)
+            {
+                glm::ivec2 chunkPosition = { i * 512, j * 512 };
+                auto temp = manager.getStructuresForChunk(chunkPosition);
+
+                if (i >= -3 && i <= -1 && j >= -1 && j <= 1)
+                {
+                    glm::ivec3 origin = (*temp.begin())->getOriginVoxel();
+                    Assert::isTrue(origin.x == -757 && origin.y == 245, "Expected Tree at -757, 245 with radius 540 to be accessible in the rectangle (-1536, -512) to (-512, 512).");
+                }
+            }
+        }
+
+        manager.clear();
     }
 }

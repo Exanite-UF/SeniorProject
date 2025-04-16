@@ -35,7 +35,7 @@ private:
 
     int currentTexture = 0;
 
-    void applyProcess(std::size_t processID, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
+    void applyProcess(std::size_t processID, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint miscTexture);
 
     void makeTextures();
 
@@ -44,7 +44,7 @@ private:
     friend class Renderer;
 
 public:
-    void applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint materialTexture);
+    void applyAllProcesses(const glm::ivec2& outputResolution, GLuint colorTexture, GLuint positionTexture, GLuint normalTexture, GLuint miscTexture);
 
     GLuint getOutputTexture();
 

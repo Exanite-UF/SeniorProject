@@ -206,9 +206,9 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
 
             PrototypeWorldGenerator generator(octaveSynthesizer);
             generator.setChunkSize(task->chunkSize);
-            generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0));
+            generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0) * task->chunkSize);
 
-            generator.generate(*task->chunkData, false);
+            generator.generate(*task->chunkData, state.scene, false);
         }
 
         Log::verbose(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));

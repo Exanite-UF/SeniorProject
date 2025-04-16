@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <src/Constants.h>
+#include <src/world/SceneComponent.h>
 #include <src/world/VoxelChunkComponent.h>
 #include <src/world/VoxelChunkData.h>
 
@@ -13,6 +14,7 @@ class WorldGenerator : public NonCopyable
 protected:
     glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
     glm::ivec3 chunkPosition = glm::ivec3(0);
+    std::shared_ptr<SceneComponent> scene = nullptr;
 
     virtual void generateData(VoxelChunkData& data) = 0;
 
@@ -21,8 +23,8 @@ public:
 
     // Most generators expect the provided VoxelChunkData to be already cleared
     // clearData is mainly used to avoid clearing a cleared VoxelChunkData
-    void generate(VoxelChunkData& data, bool clearData = true);
-    void generate(const std::shared_ptr<VoxelChunkComponent>& chunk); // Mainly for testing purposes
+    void generate(VoxelChunkData& data, const std::shared_ptr<SceneComponent>& scene, bool clearData = true);
+    void generate(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<SceneComponent>& scene); // Mainly for testing purposes
 
     virtual void showDebugMenu() = 0;
 

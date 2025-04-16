@@ -30,7 +30,7 @@ MaterialManager::MaterialManager()
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;
+        material->roughness = 0.7;
     }
 
     {
@@ -39,7 +39,7 @@ MaterialManager::MaterialManager()
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;
+        material->roughness = 0.7;
     }
 
     {
@@ -48,7 +48,7 @@ MaterialManager::MaterialManager()
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;
+        material->roughness = 0.7;
 
         material->textureScale = glm::vec2(16, 16);
         material->albedoTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/11635-v7.jpg", TextureType::ColorOnly);
@@ -62,7 +62,7 @@ MaterialManager::MaterialManager()
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;
+        material->roughness = 0.7;
     }
 
     {
@@ -71,7 +71,7 @@ MaterialManager::MaterialManager()
         material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
-        material->roughness = 1;
+        material->roughness = 0.7;
 
         material->textureScale = glm::vec2(16, 16);
         material->albedoTexture = TextureManager::getInstance().loadTexture("content/MaterialTextures/11635-v7.jpg", TextureType::ColorOnly);
@@ -80,7 +80,7 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("blue_light", "Blue Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::htmlToLinear("#09e4e8");
+        material->emission = ColorUtility::htmlToLinear("#09e4e8") * 0.5f;
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
@@ -89,7 +89,7 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("red_light", "Red Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::htmlToLinear("#ff0000");
+        material->emission = ColorUtility::htmlToLinear("#ff0000") * 0.5f;
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
@@ -98,7 +98,7 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("yellow_light", "Yellow Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::htmlToLinear("#ffff00");
+        material->emission = ColorUtility::htmlToLinear("#ffff00") * 0.5f;
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
@@ -107,7 +107,38 @@ MaterialManager::MaterialManager()
     {
         auto& material = createMaterial("green_light", "Green Light");
         material->albedo = glm::vec3(1);
-        material->emission = ColorUtility::htmlToLinear("#00ff00");
+        material->emission = ColorUtility::htmlToLinear("#00ff00") * 0.5f;
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
+        auto& material = createMaterial("white_light", "White Light");
+        material->albedo = glm::vec3(1);
+        material->emission = ColorUtility::htmlToLinear("#ffffff") * 0.5f;
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 1;
+    }
+
+    {
+        auto& material = createMaterial("limestone", "Limestone");
+        material->albedo = glm::vec3(0.7);
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 0.7;
+    }
+
+    // Generate colors for greyscale
+    std::string greyscalePrefix = "greyscale_";
+    std::string greyscaleName = "Greyscale ";
+    for (int i = 0; i <= 255; i++)
+    {
+        auto& material = createMaterial(greyscalePrefix + std::to_string(i), greyscaleName + std::to_string(i));
+        material->albedo = glm::vec3((float)i / 255);
+        material->emission = glm::vec3(0);
         material->metallic = 0;
         material->metallicAlbedo = glm::vec3(0);
         material->roughness = 1;
