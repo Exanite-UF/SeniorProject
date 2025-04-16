@@ -1117,7 +1117,10 @@ void Program::runLateStartupTests()
         Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
     }
 
-    // runChunkHierarchyTest();
+    if (false)
+    {
+        runChunkHierarchyTest();
+    }
 }
 
 void Program::runChunkHierarchyTest()
