@@ -4,7 +4,6 @@
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/procgen/synthesizers/TextureDataSynthesizer.h>
 
-// TODO: Idea: Reduce octaves for farther away positions ~ level of detail
 class PrototypeWorldGenerator : public WorldGenerator
 {
 private:
