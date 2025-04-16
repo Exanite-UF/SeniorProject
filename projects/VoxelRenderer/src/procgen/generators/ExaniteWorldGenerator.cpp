@@ -35,6 +35,7 @@ void ExaniteWorldGenerator::generateData(VoxelChunkData& data)
     auto dirtMaterial = MaterialManager::getInstance().getMaterialByKey("dirt");
     auto grassMaterial = MaterialManager::getInstance().getMaterialByKey("grass");
     auto roadMaterial = MaterialManager::getInstance().getMaterialByKey("asphalt");
+    auto roadBorderMaterial = MaterialManager::getInstance().getMaterialByKey("white_light");
 
     int stoneEnd = 10;
     int dirtEnd = 14;
@@ -95,7 +96,16 @@ void ExaniteWorldGenerator::generateData(VoxelChunkData& data)
             if (isRoadX || isRoadY)
             {
                 data.setVoxelOccupancy(localPosition, true);
-                data.setVoxelMaterial(glm::ivec3(x, y, groundHeight), roadMaterial);
+                data.setVoxelMaterial(glm::ivec3(x, y, groundHeight - 1), roadMaterial);
+            }
+
+            auto isRoadBorderX = effectivePosition.x == buildingWidth + spacingWidth || effectivePosition.x == buildingWidth + spacingWidth + roadWidth;
+            auto isRoadBorderY = effectivePosition.y == buildingWidth + spacingWidth || effectivePosition.y == buildingWidth + spacingWidth + roadWidth;
+
+            if ((isRoadBorderX || isRoadBorderY) && !(isRoadX || isRoadY))
+            {
+                data.setVoxelOccupancy(localPosition, true);
+                data.setVoxelMaterial(glm::ivec3(x, y, groundHeight), roadBorderMaterial);
             }
         }
     }
