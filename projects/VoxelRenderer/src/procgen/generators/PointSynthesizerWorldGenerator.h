@@ -2,7 +2,6 @@
 
 #include <src/procgen/generators/WorldGenerator.h>
 #include <src/procgen/synthesizers/PointSynthesizer.h>
-#include <src/utilities/VectorUtility.h>
 
 class PointSynthesizerWorldGenerator : public WorldGenerator
 {
@@ -15,6 +14,7 @@ protected:
     void generateData(VoxelChunkData& data) override;
 
 public:
-    PointSynthesizerWorldGenerator(const std::shared_ptr<PointSynthesizer>& pointSynthesizer);
+    explicit PointSynthesizerWorldGenerator(const std::shared_ptr<PointSynthesizer>& pointSynthesizer);
+
     void showDebugMenu() override;
 };

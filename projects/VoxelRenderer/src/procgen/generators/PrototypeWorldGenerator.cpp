@@ -23,7 +23,6 @@
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
-#include <src/utilities/VectorUtility.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
 #include <tracy/Tracy.hpp>
@@ -92,7 +91,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 pointSynthesizer.generatePoints(treeLocations, numPoints);
                 pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
                 // Lexicographic sort
-                // VectorUtility::lexicographicSort(treeLocations);
+                // GeometryUtility::lexicographicSort(treeLocations);
             }
 
             for (int i = 0; i < treeLocations.size(); i++)
