@@ -552,10 +552,6 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 submitCommandBuffer(component, commandBuffer, true, tokenSource.getCancellationToken());
             }
-
-            for (int i = 0; i < state.activeChunks.size(); ++i)
-            {
-            }
         }
     }
 }
