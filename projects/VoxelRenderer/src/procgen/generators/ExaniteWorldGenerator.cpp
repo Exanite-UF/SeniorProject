@@ -111,21 +111,21 @@ void ExaniteWorldGenerator::generateData(VoxelChunkData& data)
     }
 
     // Generate buildings
-    auto maxBuildingsThatCanFit = glm::ivec2((glm::ivec2(chunkSize) / structurePeriod) + 2);
-    auto worldStartPosition = glm::ivec2((chunkPosition / structurePeriod) * structurePeriod) - structurePeriod;
-    for (int y = 0; y < maxBuildingsThatCanFit.y; ++y)
-    {
-        for (int x = 0; x < maxBuildingsThatCanFit.x; ++x)
-        {
-            auto worldCornerPosition = glm::ivec3(worldStartPosition.x, worldStartPosition.y, 0) + glm::ivec3(structurePeriod * x, structurePeriod * y, groundHeight);
-            auto localCornerPosition = worldCornerPosition - chunkPosition;
-
-            srand(hash(glm::ivec2(worldCornerPosition.x, worldCornerPosition.y)));
-            int buildingHeight = (rand() % (buildingMaxHeight - buildingMinHeight)) + buildingMinHeight;
-
-            generateBuilding(data, localCornerPosition, glm::ivec3(buildingWidth, buildingWidth, buildingHeight));
-        }
-    }
+    // auto maxBuildingsThatCanFit = glm::ivec2((glm::ivec2(chunkSize) / structurePeriod) + 2);
+    // auto worldStartPosition = glm::ivec2((chunkPosition / structurePeriod) * structurePeriod) - structurePeriod;
+    // for (int y = 0; y < maxBuildingsThatCanFit.y; ++y)
+    // {
+    //     for (int x = 0; x < maxBuildingsThatCanFit.x; ++x)
+    //     {
+    //         auto worldCornerPosition = glm::ivec3(worldStartPosition.x, worldStartPosition.y, 0) + glm::ivec3(structurePeriod * x, structurePeriod * y, groundHeight);
+    //         auto localCornerPosition = worldCornerPosition - chunkPosition;
+    //
+    //         srand(hash(glm::ivec2(worldCornerPosition.x, worldCornerPosition.y)));
+    //         int buildingHeight = (rand() % (buildingMaxHeight - buildingMinHeight)) + buildingMinHeight;
+    //
+    //         generateBuilding(data, localCornerPosition, glm::ivec3(buildingWidth, buildingWidth, buildingHeight));
+    //     }
+    // }
 }
 
 void ExaniteWorldGenerator::showDebugMenu()

@@ -154,6 +154,10 @@ public:
 
     void clear();
 
+    // This will copy the commands of this command buffer into the other command buffer.
+    // The commands of this buffer will be placed AFTER the commands of the other buffer.
+    void mergeInto(VoxelChunkCommandBuffer& other) const;
+
 private:
     class CommandApplicator
     {

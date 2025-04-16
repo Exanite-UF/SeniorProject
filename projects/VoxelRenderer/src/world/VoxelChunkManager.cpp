@@ -38,6 +38,8 @@ VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     this->component = component;
     this->scene = scene;
     this->commandBuffer = commandBuffer;
+
+    future = promise.get_future().share();
 }
 
 VoxelChunkManager::ChunkLoadTask::ChunkLoadTask(const glm::ivec2& chunkPosition, const glm::ivec3& chunkSize)
@@ -248,7 +250,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
         // Take some work
         auto task = modificationThreadState.pendingTasks.front();
-        modificationThreadState.pendingTasks.pop();
+        modificationThreadState.pendingTasks.pop_front();
 
         // Unlock the mutex
         pendingRequestsLock.unlock();
@@ -539,7 +541,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 commandBuffer.setActiveLod(lod);
                 commandBuffer.setExistsOnGpu(true);
 
-                submitCommandBuffer(component, commandBuffer);
+                submitCommandBuffer(component, commandBuffer, true);
                 component->getChunkManagerData().desiredLod = lod;
             }
 
@@ -949,22 +951,43 @@ void VoxelChunkManager::showDebugMenu()
     }
 }
 
-std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer)
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const bool allowMerge)
 {
     ZoneScoped;
 
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
+    if (allowMerge)
+    {
+        // Try merge with an existing task
+        for (int i = modificationThreadState.pendingTasks.size() - 1; i >= 0; --i)
+        {
+            auto task = modificationThreadState.pendingTasks.at(i);
+
+            // Find compatible task to merge into
+            if (task->component == component)
+            {
+                // Merge
+                commandBuffer.mergeInto(task->commandBuffer);
+
+                Log::verbose(std::format("Submitted and merged voxel chunk command buffer. {} global not started. {} pending for chunk", modificationThreadState.pendingTasks.size(), component->getChunkManagerData().pendingTasks.getPending().size()));
+
+                // Return future of existing task
+                return task->future;
+            }
+        }
+    }
+
+    // Otherwise, create a new task
     auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
     task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());
 
-    auto sharedFuture = task->promise.get_future().share();
-    component->getChunkManagerData().pendingTasks.addPending(sharedFuture);
+    component->getChunkManagerData().pendingTasks.addPending(task->future);
 
-    modificationThreadState.pendingTasks.emplace(task);
+    modificationThreadState.pendingTasks.push_back(task);
     modificationThreadState.pendingTasksCondition.notify_one();
 
-    Log::verbose("Submitted voxel chunk command buffer");
+    Log::verbose(std::format("Submitted voxel chunk command buffer. {} global not started. {} pending for chunk", modificationThreadState.pendingTasks.size(), component->getChunkManagerData().pendingTasks.getPending().size()));
 
-    return sharedFuture;
+    return task->future;
 }

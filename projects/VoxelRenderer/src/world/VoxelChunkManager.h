@@ -36,7 +36,7 @@ public:
         bool isChunkLoddingEnabled = true;
 
         // False prevents chunks from having their CPU-side mipmaps generated
-        bool areChunkCpuMipmapsEnabled = false; // TODO: Enable once CPU mipmap gneration is fixed
+        bool areChunkCpuMipmapsEnabled = false; // TODO: Enable once CPU mipmap generation is fixed
 
         // Delay before a chunk marked for unloading is actually unloaded
         float chunkUnloadTime = 1;
@@ -58,7 +58,9 @@ private:
         std::shared_ptr<VoxelChunkComponent> component {};
         std::shared_ptr<SceneComponent> scene {};
         VoxelChunkCommandBuffer commandBuffer {};
+
         std::promise<void> promise {};
+        std::shared_future<void> future {};
         PendingTasks<void> dependencies;
 
         explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer);
@@ -140,7 +142,7 @@ private:
 
         std::condition_variable_any pendingTasksCondition {};
         std::recursive_mutex pendingTasksMutex {};
-        std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
+        std::deque<std::shared_ptr<ChunkModificationTask>> pendingTasks {}; // Deque is used to allow indexing, but pendingTasks is used as a queue
 
         // Allow only one thread to upload at a time
         // Used to limit the amount of uploads, mutual exclusion isn't required
@@ -165,7 +167,7 @@ public:
     void showDebugMenu();
 
     // Can be called from any thread
-    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
+    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, bool allowMerge = false);
 
     ~VoxelChunkManager() override;
 
