@@ -6,6 +6,9 @@
 
 class PrototypeWorldGenerator : public WorldGenerator
 {
+protected:
+    void generateData(VoxelChunkData& data) override;
+
 private:
     std::shared_ptr<TextureDataSynthesizer> textureDataSynthesizer;
     std::shared_ptr<TextureDataA> textureData;
@@ -47,7 +50,6 @@ private:
     float leafProbabilityToFill = 0.6;
 
     std::shared_ptr<TreeStructure> createRandomTreeInstance(VoxelChunkData& chunkData, glm::ivec3 chunkPosition, glm::ivec3 originVoxel, int seed, std::shared_ptr<Material>& logMaterial, std::shared_ptr<Material>& leafMaterial);
-    void generateData(VoxelChunkData& data) override;
 
     void generateTerrain(VoxelChunkData& data);
 

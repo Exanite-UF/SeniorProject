@@ -17,6 +17,7 @@
 
 #include <src/gameobjects/GameObject.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
+#include <src/procgen/generators/VoxelChunkManagerWorldGenerator.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/Assert.h>
 #include <src/utilities/ColorUtility.h>
@@ -199,12 +200,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
 
             MeasureElapsedTimeScope scope(std::format("Chunk generation for chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
-            int seed = 0;
-            int octaves = 3;
-            float persistence = 0.5;
-            auto octaveSynthesizer = std::make_shared<TextureOctaveNoiseSynthesizer>(seed, octaves, persistence);
-
-            PrototypeWorldGenerator generator(octaveSynthesizer);
+            VoxelChunkManagerWorldGenerator generator {};
             generator.setChunkSize(task->chunkSize);
             generator.setChunkPosition(glm::ivec3(task->chunkPosition, 0) * task->chunkSize);
 
