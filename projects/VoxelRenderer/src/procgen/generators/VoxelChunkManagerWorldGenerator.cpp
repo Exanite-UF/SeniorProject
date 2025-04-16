@@ -37,6 +37,9 @@ void VoxelChunkManagerWorldGenerator::generateData(VoxelChunkData& data)
         case 1:
         {
             ExaniteWorldGenerator generator {};
+            generator.setChunkSize(getChunkSize());
+            generator.setChunkPosition(getChunkPosition());
+
             generator.generateData(data);
 
             break;
