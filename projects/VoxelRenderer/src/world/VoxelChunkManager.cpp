@@ -550,7 +550,7 @@ void VoxelChunkManager::update(const float deltaTime)
                 commandBuffer.setActiveLod(lod);
                 commandBuffer.setExistsOnGpu(true);
 
-                submitCommandBuffer(component, commandBuffer, true, tokenSource.getCancellationToken());
+                submitCommandBuffer(component, commandBuffer, tokenSource.getCancellationToken());
             }
         }
     }
@@ -955,34 +955,12 @@ void VoxelChunkManager::showDebugMenu()
     }
 }
 
-std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const bool allowMerge, const CancellationToken& cancellationToken)
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const CancellationToken& cancellationToken)
 {
     ZoneScoped;
 
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
-    if (allowMerge)
-    {
-        // Try merge with an existing task
-        for (int i = modificationThreadState.pendingTasks.size() - 1; i >= 0; --i)
-        {
-            auto task = modificationThreadState.pendingTasks.at(i);
-
-            // Find compatible task to merge into
-            if (task->component == component)
-            {
-                // Merge
-                commandBuffer.mergeInto(task->commandBuffer);
-
-                Log::verbose(std::format("Submitted and merged voxel chunk command buffer. {} global not started. {} pending for chunk", modificationThreadState.pendingTasks.size(), component->getChunkManagerData().pendingTasks.getPending().size()));
-
-                // Return future of existing task
-                return task->future;
-            }
-        }
-    }
-
-    // Otherwise, create a new task
     auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer, cancellationToken);
     task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());
 
