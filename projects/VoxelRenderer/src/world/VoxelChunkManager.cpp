@@ -521,7 +521,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 // Clamp LOD level
                 int minLod = isClosest4Chunks ? 0 : 1; // Only allow the closest 4 chunks to use LOD 0
-                int maxLod = 4; // Clamp max lod to 4. Beyond this, we lose too much detail
+                int maxLod = 6; // Clamp max lod to 6
                 lod = glm::clamp(lod, minLod, maxLod);
 
                 if (settings.lodDistanceScalingFactor <= 1)
