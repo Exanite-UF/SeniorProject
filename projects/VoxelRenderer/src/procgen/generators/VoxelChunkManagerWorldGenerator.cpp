@@ -17,6 +17,12 @@ void VoxelChunkManagerWorldGenerator::generateData(VoxelChunkData& data)
     PrototypeWorldGenerator generator(octaveSynthesizer);
     generator.setChunkSize(getChunkSize());
     generator.setChunkPosition(getChunkPosition());
+
+    // Technically, this should call generateData, but generateData is private
+    // AND generateData doesn't allow all of the necessary parameters to be specified
+    //
+    // This is an issue with the WorldGenerator API, but requires a decent refactor
+    // We also don't know if we need access to the SceneComponent pointer (we really shouldn't). It's also a cyclic dependency.
     generator.generate(data, scene, false);
 }
 
