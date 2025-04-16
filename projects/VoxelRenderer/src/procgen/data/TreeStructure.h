@@ -42,7 +42,7 @@ public:
 
     virtual void generate(VoxelChunkData& chunkData) override;
     [[nodiscard]] virtual const glm::ivec3& getOriginVoxel() override;
-    virtual glm::ivec2 getMaxDistanceFromOrigin() override; 
+    virtual glm::ivec2 getMaxDistanceFromOrigin() override;
 
     virtual void setOriginVoxel(glm::ivec3 origin) override;
 
