@@ -259,7 +259,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
         if (task->cancellationToken.isCancellationRequested())
         {
-            return;
+            break;
         }
 
         try
