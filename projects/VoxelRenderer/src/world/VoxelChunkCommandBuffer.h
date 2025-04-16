@@ -167,8 +167,6 @@ private:
         std::shared_ptr<VoxelChunkComponent> component;
         std::shared_ptr<SceneComponent> scene;
 
-        CancellationToken cancellationToken {};
-
         // ----- Synchronization -----
 
         std::unique_lock<std::shared_mutex> componentLock;
@@ -192,7 +190,7 @@ private:
         bool shouldEnableCpuMipmaps = false;
 
     public:
-        explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const CancellationToken& cancellationToken);
+        explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex);
 
         void apply();
 
@@ -203,5 +201,5 @@ private:
     };
 
     // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
-    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const CancellationToken& cancellationToken) const;
+    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const;
 };
