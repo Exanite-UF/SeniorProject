@@ -60,7 +60,7 @@ void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
 
 void PointSynthesizerWorldGenerator::showDebugMenu()
 {
-    ImGui::PushID("PrototypeWorldGenerator");
+    ImGui::PushID("PointSynthesizerWorldGenerator");
     {
         if (ImGui::CollapsingHeader("Poisson Disk Visual Generator (F9)"))
         {
