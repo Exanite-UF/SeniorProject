@@ -350,7 +350,16 @@ void VoxelChunkManager::update(const float deltaTime)
         {
             std::lock_guard lock(loadingThreadState.pendingTasksMutex);
 
-            for (auto chunkToLoad : chunksToLoad)
+            std::vector sortedChunksToLoad(chunksToLoad.begin(), chunksToLoad.end());
+            std::sort(sortedChunksToLoad.begin(), sortedChunksToLoad.end(), [this](const glm::ivec2& a, const glm::ivec2& b)
+                {
+                    auto distanceToA = glm::length2(state.cameraFloatChunkPosition - glm::vec2(a));
+                    auto distanceToB = glm::length2(state.cameraFloatChunkPosition - glm::vec2(b));
+
+                    return distanceToA < distanceToB;
+                });
+
+            for (auto chunkToLoad : sortedChunksToLoad)
             {
                 ZoneScopedN("Chunk load");
 
