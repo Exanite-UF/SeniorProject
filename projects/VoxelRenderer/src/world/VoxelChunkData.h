@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <src/threading/CancellationToken.h>
 
 #include <src/utilities/Moveable.h>
 #include <src/world/Material.h>
@@ -62,7 +63,7 @@ public:
     void updateMipmaps();
 
     void copyFrom(VoxelChunk& other, bool includeMipmaps = false);
-    void copyTo(VoxelChunk& other) const;
+    void copyTo(VoxelChunk& other, const std::weak_ptr<CancellationToken>& cancellationToken = {}) const;
 
     void copyFrom(const VoxelChunkData& other);
     void copyTo(VoxelChunkData& other) const;

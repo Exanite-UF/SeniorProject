@@ -166,18 +166,25 @@ void VoxelChunkCommandBuffer::mergeInto(VoxelChunkCommandBuffer& other) const
     }
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const std::weak_ptr<CancellationToken>& cancellationToken) const
 {
-    CommandApplicator applicator(this, component, scene, gpuUploadMutex);
+    CommandApplicator applicator(this, component, scene, gpuUploadMutex, cancellationToken);
     applicator.apply();
 }
 
-VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex)
+VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(
+    const VoxelChunkCommandBuffer* commandBuffer,
+    const std::shared_ptr<VoxelChunkComponent>& component,
+    const std::shared_ptr<SceneComponent>& scene,
+    std::mutex& gpuUploadMutex,
+    const std::weak_ptr<CancellationToken>& cancellationToken)
 {
     // Inputs
     this->commandBuffer = commandBuffer;
     this->component = component;
     this->scene = scene;
+
+    this->cancellationToken = cancellationToken;
 
     // Synchronization
     componentLock = std::move(std::unique_lock(component->getMutex()));
@@ -510,8 +517,14 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         const VoxelChunkData& lod = lodToActivate == 0 ? component->chunkData : *chunkManagerData.lods.at(lodToActivate - 1);
         const auto lodSize = lod.getSize();
 
-        // Break if size is not 0
+        // Abort if size is not 0
         if (lodSize.x == 0 || lodSize.y == 0 || lodSize.z == 0)
+        {
+            return;
+        }
+
+        // Abort if requested
+        if (cancellationToken.expired())
         {
             return;
         }
@@ -568,7 +581,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
             // Upload
             {
                 std::lock_guard lockGpuUpload(gpuUploadLock);
-                lod.copyTo(**gpuData);
+                lod.copyTo(**gpuData, cancellationToken);
             }
         }
         componentLock.lock();
@@ -576,6 +589,11 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         {
             Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
+            return;
+        }
+
+        if (cancellationToken.expired())
+        {
             return;
         }
 

@@ -31,13 +31,15 @@
 VoxelChunkManager::ChunkModificationTask::ChunkModificationTask(
     const std::shared_ptr<VoxelChunkComponent>& component,
     const std::shared_ptr<SceneComponent>& scene,
-    const VoxelChunkCommandBuffer& commandBuffer)
+    const VoxelChunkCommandBuffer& commandBuffer,
+    const std::weak_ptr<CancellationToken>& cancellationToken)
 {
     ZoneScoped;
 
     this->component = component;
     this->scene = scene;
     this->commandBuffer = commandBuffer;
+    this->cancellationToken = cancellationToken;
 
     future = promise.get_future().share();
 }
@@ -266,7 +268,7 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
                 MeasureElapsedTimeScope scope(std::format("Apply chunk command buffer"), Log::Verbose);
                 Log::verbose("Applying chunk command buffer");
-                task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex);
+                task->commandBuffer.apply(task->component, task->scene, modificationThreadState.gpuUploadMutex, task->cancellationToken);
             }
 
             // Complete the promise
@@ -535,14 +537,20 @@ void VoxelChunkManager::update(const float deltaTime)
                     continue;
                 }
 
+                // Create cancellation token
+                auto token = std::make_shared<CancellationToken>();
+                component->getChunkManagerData().lodCancellationToken = token;
+
+                // Update state
+                component->getChunkManagerData().desiredLod = lod;
+
                 // Submit command buffer
                 VoxelChunkCommandBuffer commandBuffer {};
                 commandBuffer.setMaxLod(maxLod);
                 commandBuffer.setActiveLod(lod);
                 commandBuffer.setExistsOnGpu(true);
 
-                submitCommandBuffer(component, commandBuffer, true);
-                component->getChunkManagerData().desiredLod = lod;
+                submitCommandBuffer(component, commandBuffer, true, token);
             }
 
             for (int i = 0; i < state.activeChunks.size(); ++i)
@@ -951,7 +959,7 @@ void VoxelChunkManager::showDebugMenu()
     }
 }
 
-std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const bool allowMerge)
+std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const bool allowMerge, const std::weak_ptr<CancellationToken>& cancellationToken)
 {
     ZoneScoped;
 
@@ -979,7 +987,7 @@ std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::share
     }
 
     // Otherwise, create a new task
-    auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer);
+    auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer, cancellationToken);
     task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());
 
     component->getChunkManagerData().pendingTasks.addPending(task->future);

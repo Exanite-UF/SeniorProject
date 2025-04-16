@@ -978,6 +978,13 @@ void Program::runEarlyStartupTests()
         testEvent.flush();
         Assert::isTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
     }
+
+    {
+        // Make sure CancellationToken works as expected
+        std::weak_ptr<CancellationToken> neverCreated {};
+
+        Assert::isTrue(!neverCreated.expired(), "CancellationToken was never created, but has expired");
+    }
 }
 
 void Program::runLateStartupTests()

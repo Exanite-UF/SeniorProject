@@ -7,6 +7,7 @@
 #include <shared_mutex>
 
 #include <src/gameobjects/Component.h>
+#include <src/threading/CancellationToken.h>
 #include <src/threading/PendingTasks.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
@@ -41,6 +42,8 @@ public:
         int activeLod = 0; // The actual LOD level. This is limited by the possible amount of LODs that can be generated.
         int requestedActiveLod = 0; // The active LOD level, as requested by the user. This may be higher than what is used.
         int requestedMaxLod = 0; // The max LOD level, as requested by the user. This may be higher than the number of LODs that can be generated.
+
+        std::shared_ptr<CancellationToken> lodCancellationToken {};
 
         // For caching
         bool isPendingDestroy = false;
