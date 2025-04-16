@@ -214,7 +214,7 @@ void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
         Log::verbose(std::format("Generated chunk at ({}, {})", task->chunkPosition.x, task->chunkPosition.y));
 
         // Acquire completed requests mutex
-        std::unique_lock completedRequestsLock(loadingThreadState.completedTasksMutex);
+        std::unique_lock completedTasksLock(loadingThreadState.completedTasksMutex);
 
         // Publish completed request
         loadingThreadState.completedTasks.push(task);
@@ -447,8 +447,8 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Chunk data readback from worker threads
     {
-        std::unique_lock completedRequestsLock(loadingThreadState.completedTasksMutex, std::defer_lock);
-        if (completedRequestsLock.try_lock())
+        std::unique_lock completedTasksLock(loadingThreadState.completedTasksMutex, std::defer_lock);
+        if (completedTasksLock.try_lock())
         {
             ZoneScopedN("Chunk load task readback");
 
