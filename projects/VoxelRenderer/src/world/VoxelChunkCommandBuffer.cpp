@@ -84,18 +84,107 @@ void VoxelChunkCommandBuffer::clear()
     setMaxLodCommands.clear();
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
+void VoxelChunkCommandBuffer::mergeInto(VoxelChunkCommandBuffer& other) const
 {
-    CommandApplicator applicator(this, component, scene, gpuUploadMutex);
+    for (const auto entry : commands)
+    {
+        switch (entry.type)
+        {
+            case SetSize:
+            {
+                auto command = setSizeCommands.at(entry.index);
+                other.setSize(command.size);
+
+                break;
+            }
+            case SetOccupancy:
+            {
+                auto command = setOccupancyCommands.at(entry.index);
+                other.setVoxelOccupancy(command.position, command.isOccupied);
+
+                break;
+            }
+            case SetMaterial:
+            {
+                auto command = setMaterialCommands.at(entry.index);
+                other.setVoxelMaterialIndex(command.position, command.materialIndex);
+
+                break;
+            }
+            case ClearOccupancy:
+            {
+                other.clearOccupancyMap();
+
+                break;
+            }
+            case ClearMaterial:
+            {
+                other.clearMaterialMap();
+
+                break;
+            }
+            case Copy:
+            {
+                auto command = copyCommands.at(entry.index);
+                other.copyFrom(command.source);
+
+                break;
+            }
+            case SetExistsOnGpu:
+            {
+                auto command = setExistsOnGpuCommands.at(entry.index);
+                other.setExistsOnGpu(command.existsOnGpu);
+
+                break;
+            }
+            case SetEnableCpuMipmaps:
+            {
+                auto command = setEnableCpuMipmapsCommands.at(entry.index);
+                other.setEnableCpuMipmaps(command.enableCpuMipmaps);
+
+                break;
+            }
+            case SetActiveLod:
+            {
+                auto command = setActiveLodCommands.at(entry.index);
+                other.setActiveLod(command.activeLod);
+
+                break;
+            }
+            case SetMaxLod:
+            {
+                auto command = setMaxLodCommands.at(entry.index);
+                other.setMaxLod(command.maxLod, command.maxLod);
+
+                break;
+            }
+            default:
+            {
+                throw std::runtime_error("Invalid or unimplemented command");
+            }
+        }
+    }
+}
+
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const CancellationToken& cancellationToken) const
+{
+    CommandApplicator applicator(this, component, scene, gpuUploadMutex, cancellationToken);
     applicator.apply();
 }
 
-VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex)
+VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(
+    const VoxelChunkCommandBuffer* commandBuffer,
+    const std::shared_ptr<VoxelChunkComponent>& component,
+    const std::shared_ptr<SceneComponent>& scene,
+    std::mutex& gpuUploadMutex,
+    const CancellationToken& cancellationToken)
 {
     // Inputs
     this->commandBuffer = commandBuffer;
     this->component = component;
     this->scene = scene;
+
+    this->cancellationToken = cancellationToken;
 
     // Synchronization
     componentLock = std::move(std::unique_lock(component->getMutex()));
@@ -263,6 +352,10 @@ void VoxelChunkCommandBuffer::CommandApplicator::apply()
 
                 break;
             }
+            default:
+            {
+                throw std::runtime_error("Invalid or unimplemented command");
+            }
         }
     }
 
@@ -424,8 +517,14 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         const VoxelChunkData& lod = lodToActivate == 0 ? component->chunkData : *chunkManagerData.lods.at(lodToActivate - 1);
         const auto lodSize = lod.getSize();
 
-        // Break if size is not 0
+        // Abort if size is not 0
         if (lodSize.x == 0 || lodSize.y == 0 || lodSize.z == 0)
+        {
+            return;
+        }
+
+        // Abort if requested
+        if (cancellationToken.isCancellationRequested())
         {
             return;
         }
@@ -482,7 +581,7 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
             // Upload
             {
                 std::lock_guard lockGpuUpload(gpuUploadLock);
-                lod.copyTo(**gpuData);
+                lod.copyTo(**gpuData, cancellationToken);
             }
         }
         componentLock.lock();
@@ -490,6 +589,11 @@ void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
         {
             Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
 
+            return;
+        }
+
+        if (cancellationToken.isCancellationRequested())
+        {
             return;
         }
 

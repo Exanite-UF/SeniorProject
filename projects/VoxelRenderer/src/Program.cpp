@@ -978,6 +978,20 @@ void Program::runEarlyStartupTests()
         testEvent.flush();
         Assert::isTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
     }
+
+    {
+        // Make sure CancellationToken works as expected
+        CancellationToken defaultToken {};
+        Assert::isTrue(!defaultToken.isCancellationRequested(), "The default cancellation token should never be cancelled");
+
+        CancellationTokenSource source {};
+
+        auto validToken = source.getCancellationToken();
+        Assert::isTrue(!validToken.isCancellationRequested(), "The cancellation token source has not requested cancellation yet");
+
+        source.requestCancellation();
+        Assert::isTrue(validToken.isCancellationRequested(), "The cancellation token source has already requested cancellation");
+    }
 }
 
 void Program::runLateStartupTests()
