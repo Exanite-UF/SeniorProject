@@ -449,47 +449,43 @@ void VoxelChunkManager::update(const float deltaTime)
 
     // Chunk data readback from worker threads
     {
-        // Avoid using all of the chunk modification threads for chunk loading purposes
-        if (getNotStartedCommandBufferCount() < std::max(4, static_cast<int>(modificationThreadState.threads.size() * 0.75f)))
+        std::unique_lock completedTasksLock(loadingThreadState.completedTasksMutex, std::defer_lock);
+        if (completedTasksLock.try_lock())
         {
-            std::unique_lock completedTasksLock(loadingThreadState.completedTasksMutex, std::defer_lock);
-            if (completedTasksLock.try_lock())
+            ZoneScopedN("Chunk load task readback");
+
+            while (!loadingThreadState.completedTasks.empty())
             {
-                ZoneScopedN("Chunk load task readback");
+                ZoneScopedN("Chunk modification task creation");
 
-                while (!loadingThreadState.completedTasks.empty())
+                const auto task = loadingThreadState.completedTasks.front();
+                loadingThreadState.completedTasks.pop();
+
+                auto chunkIterator = state.activeChunks.find(task->chunkPosition);
+                if (chunkIterator == state.activeChunks.end())
                 {
-                    ZoneScopedN("Chunk modification task creation");
+                    // Chunk no longer exists (was probably unloaded)
+                    // Throw the data away
 
-                    const auto task = loadingThreadState.completedTasks.front();
-                    loadingThreadState.completedTasks.pop();
+                    continue;
+                }
 
-                    auto chunkIterator = state.activeChunks.find(task->chunkPosition);
-                    if (chunkIterator == state.activeChunks.end())
-                    {
-                        // Chunk no longer exists (was probably unloaded)
-                        // Throw the data away
+                auto& chunk = chunkIterator->second;
+                chunk->isLoading = false;
 
-                        continue;
-                    }
+                {
+                    VoxelChunkCommandBuffer commandBuffer {};
+                    commandBuffer.setSize(settings.chunkSize);
+                    commandBuffer.copyFrom(task->chunkData);
 
-                    auto& chunk = chunkIterator->second;
-                    chunk->isLoading = false;
+                    submitCommandBuffer(chunk->component, commandBuffer);
+                }
 
-                    {
-                        VoxelChunkCommandBuffer commandBuffer {};
-                        commandBuffer.setSize(settings.chunkSize);
-                        commandBuffer.copyFrom(task->chunkData);
+                {
+                    VoxelChunkCommandBuffer commandBuffer {};
+                    commandBuffer.setEnableCpuMipmaps(settings.areChunkCpuMipmapsEnabled);
 
-                        submitCommandBuffer(chunk->component, commandBuffer);
-                    }
-
-                    {
-                        VoxelChunkCommandBuffer commandBuffer {};
-                        commandBuffer.setEnableCpuMipmaps(settings.areChunkCpuMipmapsEnabled);
-
-                        submitCommandBuffer(chunk->component, commandBuffer);
-                    }
+                    submitCommandBuffer(chunk->component, commandBuffer);
                 }
             }
         }
