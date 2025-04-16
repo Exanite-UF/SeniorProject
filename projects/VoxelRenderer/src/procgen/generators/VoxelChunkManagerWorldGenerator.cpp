@@ -10,7 +10,7 @@ void VoxelChunkManagerWorldGenerator::generateData(VoxelChunkData& data)
     // You can define which generator the VoxelChunkManager should use here
     // This decouples the VoxelChunkManager from the WorldGenerator it should use
 
-    constexpr int activeGenerator = 1;
+    constexpr int activeGenerator = 0;
 
     switch (activeGenerator)
     {
