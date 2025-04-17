@@ -2,6 +2,8 @@
 #include <src/gameobjects/TransformComponent.h>
 #include <src/graphics/ShaderProgram.h>
 #include <src/voxelizer/ModelVoxelizer.h>
+#include <src/world/VoxelChunkCommandBuffer.h>
+#include <src/world/VoxelChunkManager.h>
 
 ModelVoxelizer::~ModelVoxelizer() = default;
 
@@ -307,18 +309,7 @@ void ModelVoxelizer::generateVoxelMesh()
     glm::vec3 gridCenter = minBounds + (glm::vec3(gridSize) * 0.5f);
 
     // VoxelChunkData
-    chunkData = std::make_shared<VoxelChunkData>();
-    chunkData->setSize(glm::vec3(gridSize));
-    chunkData->setHasMipmaps(false);
-
-    // VoxelChunkComponent
-    // Pass along scene object
-    auto voxelChunkObject = sceneObject->createChildObject();
-    chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
-    chunkComponent->getTransform()->addGlobalPosition(gridCenter);
-    VoxelChunkData& chunkDataRef = chunkComponent->getRawChunkData();
-    chunkDataRef.copyFrom(*chunkData.get());
-
+    chunkData = std::make_shared<VoxelChunkData>(gridSize);
     for (int z = 0; z < gridSize.z; ++z)
     {
         for (int y = 0; y < gridSize.y; ++y)
@@ -326,7 +317,6 @@ void ModelVoxelizer::generateVoxelMesh()
             for (int x = 0; x < gridSize.x; ++x)
             {
                 chunkData->setVoxelOccupancy(glm::ivec3(x, y, z), voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]);
-                chunkData->setVoxelMaterialIndex(glm::ivec3(x, y, z), 0); // Set default material index (0)
                 if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
                 {
                     glm::vec3 voxelWorldPosition = minBounds + glm::vec3(x, y, z);
@@ -336,6 +326,18 @@ void ModelVoxelizer::generateVoxelMesh()
             }
         }
     }
+
+    // VoxelChunkComponent
+    // Pass along scene object
+    auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
+    chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
+    chunkComponent->getTransform()->addGlobalPosition(gridCenter);
+
+    VoxelChunkCommandBuffer commandBuffer {};
+    commandBuffer.copyFrom(chunkData);
+    commandBuffer.setExistsOnGpu(true);
+
+    VoxelChunkManager::getInstance().submitCommandBuffer(chunkComponent, commandBuffer);
 
     isVoxelized = true;
     std::cout << "VOXELIZED!" << std::endl;
