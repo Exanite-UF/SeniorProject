@@ -24,18 +24,22 @@ public:
 
         // The distance at which chunks begin to be loaded on a separate thread
         int loadDistance = 1;
-
-        // This defines the number of full size chunked that can be uploaded
-        // This is a float because LODed chunks take up less memory
-        float chunkUploadBudget = 9;
+        float lodBaseDistance = 256;
+        float lodDistanceScalingFactor = 2.0f;
 
         // ----- Chunks -----
 
         // False prevents chunks from loading and unloading
         bool isChunkLoadingEnabled = true;
 
+        // False prevents chunks from having their LODs generated and used
+        bool isChunkLoddingEnabled = true;
+
+        // False prevents chunks from having their CPU-side mipmaps generated
+        bool areChunkCpuMipmapsEnabled = false; // TODO: Enable once CPU mipmap generation is fixed
+
         // Delay before a chunk marked for unloading is actually unloaded
-        float chunkUnloadTime = 0; // TODO: This should be 1 after LODs are added
+        float chunkUnloadTime = 1;
 
         glm::ivec3 chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
@@ -54,10 +58,13 @@ private:
         std::shared_ptr<VoxelChunkComponent> component {};
         std::shared_ptr<SceneComponent> scene {};
         VoxelChunkCommandBuffer commandBuffer {};
+
         std::promise<void> promise {};
+        std::shared_future<void> future {};
+        CancellationToken cancellationToken {};
         PendingTasks<void> dependencies;
 
-        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer);
+        explicit ChunkModificationTask(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, const VoxelChunkCommandBuffer& commandBuffer, const CancellationToken& cancellationToken);
     };
 
     struct ChunkLoadTask
@@ -79,7 +86,7 @@ private:
 
         bool isLoading = true;
 
-        bool isUnloading = false;
+        bool isUnloading = false; // TODO: This variable does the same thing as VoxelChunkComponent's isPendingDestroy
         float timeSpentWaitingForUnload = 0;
 
         std::shared_ptr<SceneComponent> scene {};
@@ -105,6 +112,7 @@ private:
 
         glm::vec3 cameraWorldPosition {};
         glm::ivec2 cameraChunkPosition {};
+        glm::vec2 cameraFloatChunkPosition {};
 
         // ----- Chunk loading -----
 
@@ -135,7 +143,7 @@ private:
 
         std::condition_variable_any pendingTasksCondition {};
         std::recursive_mutex pendingTasksMutex {};
-        std::queue<std::shared_ptr<ChunkModificationTask>> pendingTasks {};
+        std::deque<std::shared_ptr<ChunkModificationTask>> pendingTasks {}; // Deque is used to allow indexing, but pendingTasks is used as a queue
 
         // Allow only one thread to upload at a time
         // Used to limit the amount of uploads, mutual exclusion isn't required
@@ -160,7 +168,10 @@ public:
     void showDebugMenu();
 
     // Can be called from any thread
-    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer);
+    int getNotStartedCommandBufferCount();
+
+    // Can be called from any thread
+    std::shared_future<void> submitCommandBuffer(const std::shared_ptr<VoxelChunkComponent>& component, const VoxelChunkCommandBuffer& commandBuffer, const CancellationToken& cancellationToken = {});
 
     ~VoxelChunkManager() override;
 
@@ -169,4 +180,5 @@ protected:
 
 private:
     bool isChunkVisible(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera) const;
+    void cleanupCancelledCommandBuffers();
 };

@@ -1,5 +1,7 @@
 #include "VoxelChunkCommandBuffer.h"
 
+#include <glm/gtc/integer.hpp>
+#include <src/utilities/Assert.h>
 #include <src/utilities/Log.h>
 #include <tracy/Tracy.hpp>
 
@@ -43,18 +45,163 @@ void VoxelChunkCommandBuffer::copyFrom(const std::shared_ptr<VoxelChunkData>& da
     copyCommands.emplace_back(data);
 }
 
-void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu, const bool writeToGpu)
+void VoxelChunkCommandBuffer::setExistsOnGpu(const bool existsOnGpu)
 {
     commands.emplace_back(SetExistsOnGpu, setExistsOnGpuCommands.size());
-    setExistsOnGpuCommands.emplace_back(existsOnGpu, writeToGpu);
+    setExistsOnGpuCommands.emplace_back(existsOnGpu);
 }
 
-void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const
+void VoxelChunkCommandBuffer::setEnableCpuMipmaps(bool enableCpuMipmaps)
+{
+    commands.emplace_back(SetEnableCpuMipmaps, setEnableCpuMipmapsCommands.size());
+    setEnableCpuMipmapsCommands.emplace_back(enableCpuMipmaps);
+}
+
+void VoxelChunkCommandBuffer::setActiveLod(int activeLod)
+{
+    commands.emplace_back(SetActiveLod, setActiveLodCommands.size());
+    setActiveLodCommands.emplace_back(activeLod);
+}
+
+void VoxelChunkCommandBuffer::setMaxLod(int maxLod, bool trim)
+{
+    commands.emplace_back(SetMaxLod, setMaxLodCommands.size());
+    setMaxLodCommands.emplace_back(maxLod, trim);
+}
+
+void VoxelChunkCommandBuffer::clear()
 {
     ZoneScoped;
 
-    // Acquire lock for component, but not for the scene
-    std::unique_lock lockComponent(component->getMutex());
+    commands.clear();
+    setSizeCommands.clear();
+    setOccupancyCommands.clear();
+    setMaterialCommands.clear();
+    copyCommands.clear();
+    setExistsOnGpuCommands.clear();
+    setEnableCpuMipmapsCommands.clear();
+    setActiveLodCommands.clear();
+    setMaxLodCommands.clear();
+}
+
+void VoxelChunkCommandBuffer::mergeInto(VoxelChunkCommandBuffer& other) const
+{
+    for (const auto entry : commands)
+    {
+        switch (entry.type)
+        {
+            case SetSize:
+            {
+                auto command = setSizeCommands.at(entry.index);
+                other.setSize(command.size);
+
+                break;
+            }
+            case SetOccupancy:
+            {
+                auto command = setOccupancyCommands.at(entry.index);
+                other.setVoxelOccupancy(command.position, command.isOccupied);
+
+                break;
+            }
+            case SetMaterial:
+            {
+                auto command = setMaterialCommands.at(entry.index);
+                other.setVoxelMaterialIndex(command.position, command.materialIndex);
+
+                break;
+            }
+            case ClearOccupancy:
+            {
+                other.clearOccupancyMap();
+
+                break;
+            }
+            case ClearMaterial:
+            {
+                other.clearMaterialMap();
+
+                break;
+            }
+            case Copy:
+            {
+                auto command = copyCommands.at(entry.index);
+                other.copyFrom(command.source);
+
+                break;
+            }
+            case SetExistsOnGpu:
+            {
+                auto command = setExistsOnGpuCommands.at(entry.index);
+                other.setExistsOnGpu(command.existsOnGpu);
+
+                break;
+            }
+            case SetEnableCpuMipmaps:
+            {
+                auto command = setEnableCpuMipmapsCommands.at(entry.index);
+                other.setEnableCpuMipmaps(command.enableCpuMipmaps);
+
+                break;
+            }
+            case SetActiveLod:
+            {
+                auto command = setActiveLodCommands.at(entry.index);
+                other.setActiveLod(command.activeLod);
+
+                break;
+            }
+            case SetMaxLod:
+            {
+                auto command = setMaxLodCommands.at(entry.index);
+                other.setMaxLod(command.maxLod, command.maxLod);
+
+                break;
+            }
+            default:
+            {
+                throw std::runtime_error("Invalid or unimplemented command");
+            }
+        }
+    }
+}
+
+void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const CancellationToken& cancellationToken) const
+{
+    CommandApplicator applicator(this, component, scene, gpuUploadMutex, cancellationToken);
+    applicator.apply();
+}
+
+VoxelChunkCommandBuffer::CommandApplicator::CommandApplicator(
+    const VoxelChunkCommandBuffer* commandBuffer,
+    const std::shared_ptr<VoxelChunkComponent>& component,
+    const std::shared_ptr<SceneComponent>& scene,
+    std::mutex& gpuUploadMutex,
+    const CancellationToken& cancellationToken)
+{
+    // Inputs
+    this->commandBuffer = commandBuffer;
+    this->component = component;
+    this->scene = scene;
+
+    this->cancellationToken = cancellationToken;
+
+    // Synchronization
+    componentLock = std::move(std::unique_lock(component->getMutex()));
+    gpuUploadLock = std::move(std::unique_lock(gpuUploadMutex, std::defer_lock));
+
+    // Change tracking
+    lodRegenerationStartIndex = component->getChunkManagerData().lods.size();
+
+    // Initialize desired states
+    this->shouldExistOnGpu = component->getExistsOnGpu();
+    this->shouldEnableCpuMipmaps = component->getChunkData().getHasMipmaps();
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::apply()
+{
+    ZoneScoped;
+
     if (!component->getIsPartOfWorld())
     {
         Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
@@ -63,12 +210,9 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
     }
 
     auto& chunkData = component->getRawChunkData();
+    auto& chunkManagerData = component->getChunkManagerData();
 
-    // TODO: Track exact changes for optimized CPU -> GPU copies
-    // Change tracking
-    bool isGpuUpToDate = true;
-
-    for (const auto entry : commands)
+    for (const auto entry : commandBuffer->commands)
     {
         switch (entry.type)
         {
@@ -76,10 +220,12 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetSize");
 
-                auto command = setSizeCommands.at(entry.index);
+                auto command = commandBuffer->setSizeCommands.at(entry.index);
                 chunkData.setSize(command.size);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
+                shouldCompletelyRegenerateMipmaps = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -87,10 +233,18 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetOccupancy");
 
-                auto command = setOccupancyCommands.at(entry.index);
+                auto command = commandBuffer->setOccupancyCommands.at(entry.index);
                 chunkData.setVoxelOccupancy(command.position, command.isOccupied);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
+
+                // TODO: Incrementally update mipmaps
+                // TODO: Incrementally update LODs
+                {
+                    // TODO: Don't do this
+                    shouldCompletelyRegenerateMipmaps = true;
+                    lodRegenerationStartIndex = 0;
+                }
 
                 break;
             }
@@ -98,10 +252,16 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaterial");
 
-                auto command = setMaterialCommands.at(entry.index);
+                auto command = commandBuffer->setMaterialCommands.at(entry.index);
                 chunkData.setVoxelMaterialIndex(command.position, command.materialIndex);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
+
+                // TODO: Incrementally update LODs
+                {
+                    // TODO: Don't do this
+                    lodRegenerationStartIndex = 0;
+                }
 
                 break;
             }
@@ -111,7 +271,9 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 chunkData.clearOccupancyMap();
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
+                shouldCompletelyRegenerateMipmaps = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -121,7 +283,8 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
 
                 chunkData.clearMaterialMap();
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -129,10 +292,12 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - Copy");
 
-                auto command = copyCommands.at(entry.index);
+                auto command = commandBuffer->copyCommands.at(entry.index);
                 chunkData.copyFrom(*command.source);
 
-                isGpuUpToDate = false;
+                shouldCompletelyWriteToGpu = true;
+                shouldCompletelyRegenerateMipmaps = true;
+                lodRegenerationStartIndex = 0;
 
                 break;
             }
@@ -140,67 +305,304 @@ void VoxelChunkCommandBuffer::apply(const std::shared_ptr<VoxelChunkComponent>& 
             {
                 ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu");
 
-                auto command = setExistsOnGpuCommands.at(entry.index);
+                // This command is deferred until the very end of the command buffer execution
+                const auto command = commandBuffer->setExistsOnGpuCommands.at(entry.index);
+                shouldExistOnGpu = command.existsOnGpu;
 
-                // Never write to GPU using setExistsOnGpu, we can handle it better here
-                component->setExistsOnGpu(command.existsOnGpu, false);
+                shouldCompletelyWriteToGpu = true;
 
-                // Write if needed
-                if (command.existsOnGpu && command.writeToGpu)
+                break;
+            }
+            case SetEnableCpuMipmaps:
+            {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetEnableCpuMipmaps");
+
+                // This command is deferred until the very end of the command buffer execution
+                const auto command = commandBuffer->setEnableCpuMipmapsCommands.at(entry.index);
+                shouldEnableCpuMipmaps = command.enableCpuMipmaps;
+
+                break;
+            }
+            case SetActiveLod:
+            {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetActiveLod");
+
+                // This command is deferred until the very end of the command buffer execution
+                const auto command = commandBuffer->setActiveLodCommands.at(entry.index);
+                Assert::isTrue(chunkManagerData.requestedMaxLod >= command.activeLod, "Requested LOD has not been generated");
+
+                chunkManagerData.requestedActiveLod = command.activeLod;
+
+                break;
+            }
+            case SetMaxLod:
+            {
+                ZoneScopedN("VoxelChunkCommandBuffer::apply - SetMaxLod");
+
+                // This command is deferred until the very end of the command buffer execution
+                const auto command = commandBuffer->setMaxLodCommands.at(entry.index);
+                if (command.trim)
                 {
-                    ZoneScopedN("VoxelChunkCommandBuffer::apply - SetExistsOnGpu - Write to GPU");
-
-                    // We only need shared access because we are modifying a GPU resource
-                    // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
-                    lockComponent.unlock();
-                    {
-                        std::shared_lock sharedLockComponent(component->getMutex());
-                        if (!component->getIsPartOfWorld())
-                        {
-                            Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 1). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                            return;
-                        }
-
-                        {
-                            std::lock_guard lockGpuUpload(gpuUploadMutex);
-                            chunkData.copyTo(*component->getChunk());
-                        }
-
-                        isGpuUpToDate = true;
-                    }
-
-                    lockComponent.lock();
-                    if (!component->getIsPartOfWorld())
-                    {
-                        Log::warning("Failed to apply VoxelChunkCommandBuffer::SetExistsOnGpu command (lock 2). VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
-
-                        return;
-                    }
+                    chunkManagerData.requestedMaxLod = command.maxLod;
+                }
+                else
+                {
+                    chunkManagerData.requestedMaxLod = glm::max(chunkManagerData.requestedMaxLod, command.maxLod);
                 }
 
                 break;
             }
+            default:
+            {
+                throw std::runtime_error("Invalid or unimplemented command");
+            }
         }
     }
 
-    if (!isGpuUpToDate && component->getExistsOnGpu())
-    {
-        ZoneScopedN("VoxelChunkCommandBuffer::apply - Write to GPU");
-
-        {
-            std::lock_guard lockGpuUpload(gpuUploadMutex);
-            chunkData.copyTo(*component->getChunk());
-        }
-    }
+    updateMaxLod();
+    updateGpu();
+    updateMipmaps();
 }
 
-void VoxelChunkCommandBuffer::clear()
+void VoxelChunkCommandBuffer::CommandApplicator::updateMipmaps()
 {
     ZoneScoped;
 
-    setSizeCommands.clear();
-    setOccupancyCommands.clear();
-    setMaterialCommands.clear();
-    copyCommands.clear();
+    if (!component->getIsPartOfWorld())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+        return;
+    }
+
+    auto& chunkData = component->getRawChunkData();
+
+    if (shouldEnableCpuMipmaps != component->getRawChunkData().getHasMipmaps())
+    {
+        shouldCompletelyRegenerateMipmaps = true;
+    }
+
+    if (!shouldCompletelyRegenerateMipmaps)
+    {
+        return;
+    }
+
+    // We only need shared access since only one command buffer is applied at a time per chunk
+    // This allows the renderer and other code to keep using the chunk as normal
+    componentLock.unlock();
+    {
+        std::shared_lock sharedComponentLock(component->getMutex());
+        if (!component->getIsPartOfWorld())
+        {
+            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+            return;
+        }
+
+        chunkData.setHasMipmaps(shouldEnableCpuMipmaps);
+    }
+    componentLock.lock();
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::updateMaxLod()
+{
+    ZoneScoped;
+
+    if (!component->getIsPartOfWorld())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+        return;
+    }
+
+    auto& chunkManagerData = component->getChunkManagerData();
+
+    // Calculate max possible LOD
+    const int minSideLength = glm::min(glm::min(component->chunkData.getSize().x, component->chunkData.getSize().y), component->chunkData.getSize().z);
+    const int maxPossibleLod = minSideLength == 0 ? 0 : (glm::log2(minSideLength) - 1);
+
+    // Update max LODs
+    const int maxLodLevels = glm::min(chunkManagerData.requestedMaxLod, maxPossibleLod);
+    auto& lods = chunkManagerData.lods;
+
+    // Trim LOD count if needed
+    while (lods.size() > maxLodLevels)
+    {
+        lods.pop_back();
+    }
+
+    // Add new LODs as needed
+    while (lods.size() < maxLodLevels)
+    {
+        lods.emplace_back(std::make_shared<VoxelChunkData>());
+    }
+
+    // Regenerate LODs as needed
+    if (lodRegenerationStartIndex < lods.size())
+    {
+        // We only need shared access since only one command buffer is applied at a time per chunk
+        // This allows the renderer and other code to keep using the chunk as normal
+        componentLock.unlock();
+        {
+            std::shared_lock sharedComponentLock(component->getMutex());
+            if (!component->getIsPartOfWorld())
+            {
+                Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                return;
+            }
+
+            for (int i = lodRegenerationStartIndex; i < lods.size(); ++i)
+            {
+                auto& previousLod = i > 0 ? *lods.at(i - 1) : component->chunkData;
+                auto newLod = lods.at(i);
+
+                previousLod.copyToLod(*newLod);
+            }
+
+#if DEBUG
+            for (int i = 0; i < lods.size(); ++i)
+            {
+                Assert::isTrue(lods.at(i)->getSize() != glm::ivec3(0), "LOD has 0 size");
+            }
+#endif
+        }
+        componentLock.lock();
+    }
+
+    lodRegenerationStartIndex = lods.size();
+}
+
+void VoxelChunkCommandBuffer::CommandApplicator::updateGpu()
+{
+    ZoneScoped;
+
+    if (!component->getIsPartOfWorld())
+    {
+        Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+        return;
+    }
+
+    auto& chunkManagerData = component->getChunkManagerData();
+
+    if (!shouldExistOnGpu && component->getExistsOnGpu())
+    {
+        // Deallocate and exit
+        component->deallocateGpuData();
+
+        shouldCompletelyWriteToGpu = true;
+
+        return;
+    }
+
+    // Calculate which LOD should be activated
+    const int lodToActivate = glm::min(chunkManagerData.requestedActiveLod, static_cast<int>(chunkManagerData.lods.size()));
+    const int previousActiveLod = chunkManagerData.activeLod;
+    if (lodToActivate != previousActiveLod)
+    {
+        shouldCompletelyWriteToGpu = true;
+    }
+
+    if (!shouldCompletelyWriteToGpu)
+    {
+        // GPU is already up to date, skip writing to the GPU
+        return;
+    }
+
+    // Write to the GPU
+    {
+        // Find active LOD and upload it to the GPU
+        // We don't generate the LOD here
+        const VoxelChunkData& lod = lodToActivate == 0 ? component->chunkData : *chunkManagerData.lods.at(lodToActivate - 1);
+        const auto lodSize = lod.getSize();
+
+        // Abort if size is not 0
+        if (lodSize.x == 0 || lodSize.y == 0 || lodSize.z == 0)
+        {
+            return;
+        }
+
+        // Abort if requested
+        if (cancellationToken.isCancellationRequested())
+        {
+            return;
+        }
+
+        // This is a pointer to a unique pointer because we either use the existing VoxelChunk or allocate a new one
+        // We use the existing VoxelChunk if possible, but that's not ideal in all cases
+        //
+        // If we need to resize the VoxelChunk, the resized VoxelChunk will have uninitialized data until we are done writing to it
+        // This uninitialized data will be used by the renderer and cause a visual flash where uninitialized chunk data is displayed
+        //
+        // We want to avoid this flash, so we allocate a separate VoxelChunk and write our data there
+        // After writing the data, we replace the VoxelChunk that the renderer uses
+        const std::unique_ptr<VoxelChunk>* gpuData;
+        std::unique_ptr<VoxelChunk> localGpuData; // Don't use. Only used for initialization purposes in the if statement below.
+        if (component->getExistsOnGpu() && component->getChunk()->getSize() == lodSize)
+        {
+            // Existing data exists and does not need a resize
+            // We will use it directly
+            gpuData = &component->getChunk();
+        }
+        else
+        {
+            // Cannot use existing data
+            // We will allocate a new VoxelChunk
+            localGpuData = std::make_unique<VoxelChunk>(lodSize, false);
+            gpuData = &localGpuData;
+        }
+
+        // We only need shared access because we are modifying a GPU resource
+        // Writing takes a while so this is an optimization to prevent acquiring exclusive access for a long time when we don't need it
+        componentLock.unlock();
+        {
+            std::shared_lock sharedComponentLock(component->getMutex());
+            if (!component->getIsPartOfWorld())
+            {
+                Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+                return;
+            }
+
+            // Check if unique pointer is valid
+            // The dereference is because gpuData is a pointer to a unique pointer
+            if (!*gpuData)
+            {
+                // Note that this case cannot happen when the VoxelChunkComponent
+                // is only modified by the chunk modification threads.
+                //
+                // This is because the chunk modification threads respect command buffer submission order.
+                Log::error("Attempted to write to an invalid unique pointer. This is unexpected and is probably a synchronization error.");
+
+                return;
+            }
+
+            // Upload
+            {
+                std::lock_guard lockGpuUpload(gpuUploadLock);
+                lod.copyTo(**gpuData, cancellationToken);
+            }
+        }
+        componentLock.lock();
+        if (!component->getIsPartOfWorld())
+        {
+            Log::warning("Failed to apply VoxelChunkCommandBuffer. VoxelChunkComponent is no longer part of the world. This warning usually can be ignored.");
+
+            return;
+        }
+
+        if (cancellationToken.isCancellationRequested())
+        {
+            return;
+        }
+
+        // Replace the VoxelChunk used by the component if needed
+        if (localGpuData)
+        {
+            component->chunk = std::move(localGpuData);
+            chunkManagerData.activeLod = lodToActivate;
+            component->getTransform()->setLocalScale(glm::vec3(glm::pow(2, lodToActivate)));
+        }
+    }
 }

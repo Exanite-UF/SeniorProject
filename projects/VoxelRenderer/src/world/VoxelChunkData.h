@@ -1,7 +1,9 @@
 #pragma once
 
 #include <memory>
+#include <src/threading/CancellationToken.h>
 
+#include <src/utilities/Moveable.h>
 #include <src/world/Material.h>
 #include <src/world/VoxelChunk.h>
 
@@ -26,17 +28,23 @@ private:
     Data data;
 
 public:
-    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool includeMipmaps = false);
+    explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool allocateMipmaps = false);
 
     [[nodiscard]] const glm::ivec3& getSize() const;
-    void setSize(const glm::ivec3& size);
-    void setSize(glm::ivec3 size, bool includeMipmaps);
+    void setSize(const glm::ivec3& size, bool generateMipmaps = true);
+    void setSizeAndMipmaps(glm::ivec3 size, bool allocateMipmaps, bool generateMipmaps = true);
 
     bool getHasMipmaps() const;
-    void setHasMipmaps(bool hasMipmaps);
+    void setHasMipmaps(bool allocateMipmaps, bool generateMipmaps = true);
+
+    int getOccupancyMipmapCount() const;
+    int getOccupancyLayerCount() const;
 
     [[nodiscard]] bool getVoxelOccupancy(const glm::ivec3& position) const;
     void setVoxelOccupancy(const glm::ivec3& position, bool isOccupied);
+
+    [[nodiscard]] bool getMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, int level) const;
+    void setMipmapVoxelOccupancy(const glm::ivec3& positionInLevel, int level, bool isOccupied);
 
     [[nodiscard]] const std::shared_ptr<Material>& getVoxelMaterial(const glm::ivec3& position) const;
     void setVoxelMaterial(const glm::ivec3& position, const std::shared_ptr<Material>& material);
@@ -44,19 +52,25 @@ public:
     [[nodiscard]] uint16_t getVoxelMaterialIndex(const glm::ivec3& position) const;
     void setVoxelMaterialIndex(const glm::ivec3& position, uint16_t materialIndex);
 
-    std::vector<uint8_t>& getRawOccupancyMap();
-    std::vector<uint32_t>& getRawOccupancyMapIndices();
+    [[nodiscard]] std::vector<uint8_t>& getRawOccupancyMap();
+    [[nodiscard]] std::vector<uint32_t>& getRawOccupancyMapIndices();
 
-    std::vector<uint16_t>& getRawMaterialMap();
+    [[nodiscard]] std::vector<uint16_t>& getRawMaterialMap();
 
     void clearOccupancyMap();
     void clearMaterialMap();
 
     void updateMipmaps();
 
-    void copyFrom(VoxelChunk& chunk);
-    void copyTo(VoxelChunk& chunk);
+    void copyFrom(VoxelChunk& other, bool includeMipmaps = false);
+    void copyTo(VoxelChunk& other, const CancellationToken& cancellationToken = {}) const;
 
-    void copyFrom(const VoxelChunkData& data);
-    void copyTo(VoxelChunkData& data) const;
+    void copyFrom(const VoxelChunkData& other);
+    void copyTo(VoxelChunkData& other) const;
+
+    void copyToLod(VoxelChunkData& lod) const;
+
+private:
+    [[nodiscard]] static uint32_t hash(uint32_t value);
+    [[nodiscard]] static uint8_t getLodSampleIndex(const glm::ivec3& position);
 };

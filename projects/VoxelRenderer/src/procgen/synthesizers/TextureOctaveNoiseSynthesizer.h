@@ -12,7 +12,7 @@ private:
 
 public:
     TextureOctaveNoiseSynthesizer(int seed, int octaves, float persistence);
-    void generate(std::shared_ptr<TextureData>& textureData) override;
+    void generate(std::shared_ptr<TextureDataA>& textureData) override;
     void showDebugMenu() override;
     std::function<float(float)> mapperTo01() override;
 };

@@ -15,7 +15,7 @@ class TextureDataSynthesizer
     float seed;
 
 public:
-    virtual void generate(std::shared_ptr<TextureData>& textureData) = 0;
+    virtual void generate(std::shared_ptr<TextureDataA>& textureData) = 0;
     virtual void showDebugMenu() = 0;
     virtual std::function<float(float)> mapperTo01() = 0;
 };

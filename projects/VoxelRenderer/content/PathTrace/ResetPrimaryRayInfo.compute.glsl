@@ -1,4 +1,6 @@
 #version 460 core
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+#extension GL_NV_gpu_shader5 : enable
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -17,10 +19,10 @@ layout(std430, binding = 1) buffer RayPosition
     coherent restrict float rayPosition[];
 };
 
-//[roughness, motion x, motion y, hue]
-layout(std430, binding = 2) buffer RayMisc
+//[x, y, z]
+layout(std430, binding = 2) buffer RayMaterialUV
 {
-    coherent restrict float rayMisc[];
+    coherent restrict float rayMaterialUV[];
 };
 
 layout(std430, binding = 5) buffer RayStartPosition
@@ -36,7 +38,7 @@ vec3 getRayPosition(ivec3 coord)
 
 layout(std430, binding = 6) buffer RayDirection
 {
-    float rayDirection[];
+    float16_t rayDirection[];
 };
 
 vec3 getRayDirection(ivec3 coord)
@@ -50,7 +52,12 @@ void main()
 {
     ivec3 texelCoord = ivec3(gl_GlobalInvocationID.xyz);
 
-    int index = 3 * (texelCoord.x + texelCoord.y * resolution.x);
+    int index = 2 * (texelCoord.x + texelCoord.y * resolution.x);
+
+    rayMaterialUV[index + 0] = 0;
+    rayMaterialUV[index + 1] = 0;
+
+    index = 4 * (texelCoord.x + texelCoord.y * resolution.x);
 
     rayNormal[index + 0] = 0;
     rayNormal[index + 1] = 0;
@@ -60,11 +67,4 @@ void main()
     rayPosition[index + 0] = rayPos.x;
     rayPosition[index + 1] = rayPos.y;
     rayPosition[index + 2] = rayPos.z;
-
-    index = 4 * (texelCoord.x + texelCoord.y * resolution.x);
-
-    rayMisc[index + 0] = -1; // By default the primary ray hits a material with negative roughness
-    // rayMisc[index + 1] = 0; // these need to persist
-    // rayMisc[index + 2] = 0; // these need to persist
-    rayMisc[index + 3] = 0;
 }

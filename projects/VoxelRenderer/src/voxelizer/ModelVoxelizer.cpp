@@ -1,7 +1,7 @@
-#include <src/graphics/ShaderProgram.h>
-#include <src/voxelizer/ModelVoxelizer.h>
 #include <src/gameobjects/GameObject.h>
 #include <src/gameobjects/TransformComponent.h>
+#include <src/graphics/ShaderProgram.h>
+#include <src/voxelizer/ModelVoxelizer.h>
 
 ModelVoxelizer::~ModelVoxelizer() = default;
 

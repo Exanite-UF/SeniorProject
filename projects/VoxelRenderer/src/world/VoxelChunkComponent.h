@@ -7,6 +7,7 @@
 #include <shared_mutex>
 
 #include <src/gameobjects/Component.h>
+#include <src/threading/CancellationToken.h>
 #include <src/threading/PendingTasks.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
@@ -30,19 +31,32 @@ public:
         glm::vec3 previousScale;
     };
 
-    // Used primarily by the chunk modification threads
-    struct ModificationData
+    // Used primarily by the chunk manager
+    struct ChunkManagerData
     {
+        // Used by chunk modification threads
         PendingTasks<void> pendingTasks {};
+
+        // Used by LODing system
+        std::vector<std::shared_ptr<VoxelChunkData>> lods {};
+        int activeLod = 0; // The actual LOD level. This is limited by the possible amount of LODs that can be generated.
+        int requestedActiveLod = 0; // The active LOD level, as requested by the user. This may be higher than what is used.
+        int requestedMaxLod = 0; // The max LOD level, as requested by the user. This may be higher than the number of LODs that can be generated.
+
+        CancellationTokenSource lodCancellationToken {};
+
+        // For caching
+        bool isPendingDestroy = false;
+        bool isUploadDesired = false;
+        int desiredLod = 0;
     };
 
 private:
     std::optional<std::unique_ptr<VoxelChunk>> chunk; // Primarily accessed by render and chunk modification thread
     VoxelChunkData chunkData {}; // Primarily accessed by chunk modification thread
 
-    std::atomic<bool> existsOnGpu = false;
     RendererData rendererData {};
-    ModificationData modificationData {};
+    ChunkManagerData chunkManagerData {};
 
     std::shared_mutex mutex {};
 
@@ -63,18 +77,24 @@ public:
     // Prefer using a command buffer instead
     VoxelChunkData& getRawChunkData();
 
-    // Unsynchronized
+    // This method itself is unsynchronized
+    // See struct declaration for additional rules
     RendererData& getRendererData();
 
     // This method itself is unsynchronized
     // See struct declaration for additional rules
-    ModificationData& getModificationData();
+    ChunkManagerData& getChunkManagerData();
 
     bool getExistsOnGpu() const;
+
+    std::pair<float, glm::vec3> raycast(glm::vec3 start, glm::vec3 direction, float currentDepth);
 
 protected:
     void onRemovingFromWorld() override;
 
 private:
-    void setExistsOnGpu(bool existsOnGpu, bool writeToGpu = true);
+    void allocateGpuData(const glm::ivec3& size);
+    void deallocateGpuData();
+
+    std::uint8_t getOccupancyByte(glm::ivec3 coord, int mipMapTexture);
 };

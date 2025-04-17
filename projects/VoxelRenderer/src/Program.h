@@ -18,6 +18,8 @@ private:
     // Use this if things like OpenGL need to have been initialized
     static void runLateStartupTests();
 
+    static void runChunkHierarchyTest();
+
 public:
     std::shared_ptr<GlfwContext> offscreenContext {};
     std::vector<std::shared_ptr<GlfwContext>> chunkModificationThreadContexts {};
@@ -29,10 +31,13 @@ public:
     std::shared_ptr<SceneComponent> scene {};
 
     bool isWorkload = false; // View toggle
-    bool useRandomNoise = true; // Noise type toggle
+    bool useIsosurfaceNoise = true; // Noise type toggle
     float fillAmount = 0.6;
     bool isRemakeNoiseRequested = false;
 
+    bool isGroundMovementEnabled = false;
+    float groundCameraHeight = 0;
+    float groundCameraSnapSpeed = 10;
     // Fps counter
     float fpsCycleTimer = 0;
 
@@ -41,6 +46,8 @@ public:
 
     float currentRenderFps = 0;
     float averagedRenderDeltaTime = 0;
+
+    float frameTimePerPixel = -1;
 
     Program();
     ~Program() override;

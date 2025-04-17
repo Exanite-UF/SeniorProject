@@ -2,8 +2,8 @@
 
 #include <src/utilities/OpenGl.h>
 #include <src/voxelizer/Model.h>
-#include <src/world/VoxelChunkData.h>
 #include <src/world/VoxelChunkComponent.h>
+#include <src/world/VoxelChunkData.h>
 
 struct HashFunction
 {
@@ -124,7 +124,7 @@ public:
     std::shared_ptr<VoxelChunkData> getChunkData();
     void voxelizeModel(int option = 0);
     void setSceneObject(std::shared_ptr<GameObject> sceneObject) { this->sceneObject = sceneObject; }
-    std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; } 
+    std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; }
 
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
 };

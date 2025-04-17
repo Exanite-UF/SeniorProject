@@ -90,10 +90,10 @@ private:
 
     // These are used to triple buffer the data displayed by asynchronous reprojection
     GLuint latestColorTexture = 0;
-    std::array<GLuint, 3> colorTextures {};
-    std::array<GLuint, 3> positionTextures {};
-    std::array<GLuint, 3> normalTextures {};
-    std::array<GLuint, 3> miscTextures {};
+    std::array<GLuint, 3> colorTextures {}; //(r, g, b, a)
+    std::array<GLuint, 3> positionTextures {}; //(x, y, z) world space
+    std::array<GLuint, 3> normalTextures {}; //(x, y, z) camera space
+    std::array<GLuint, 3> miscTextures {}; //(material hash 1, motion x, motion y, material hash 2)
 
 private:
     std::shared_ptr<SceneComponent> scene = nullptr;
@@ -113,10 +113,10 @@ private:
     std::recursive_mutex outputLock {};
     glm::ivec2 outputResolution {};
     GLuint outputDepthTexture {};
-    GLuint outputColorTexture {};
-    GLuint outputPositionTexture {};
-    GLuint outputNormalTexture {};
-    GLuint outputMiscTexture {};
+    GLuint outputColorTexture {}; //(r, g, b, a)
+    GLuint outputPositionTexture {}; //(x, y, z) world space (This seems to break when toggling reprojection)
+    GLuint outputNormalTexture {}; //(x, y, z) camera space
+    GLuint outputMiscTexture {}; //(material hash 1, motion x, motion y, material hash 2)
 
     // Asserts that the calling thread is the owning thread of the framebuffers
     // Will crash on failure
@@ -187,4 +187,7 @@ public:
     bool isRenderingPaused();
 
     bool isRenderingAsynchronously();
+
+    void increaseFirstMipMapLevel();
+    void decreaseFirstMipMapLevel();
 };

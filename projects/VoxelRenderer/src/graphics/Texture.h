@@ -19,6 +19,8 @@ private:
 
     bool _isCubemap;
 
+    friend class TextureManager;
+
 public:
     explicit Texture(GLuint textureId, TextureType type, glm::ivec2 size, bool isCubemap);
 
@@ -30,4 +32,7 @@ public:
     TextureType getType();
 
     bool isCubemap() const;
+
+    // This needs to be run on the offscreen context
+    void makeBindlessHandle();
 };

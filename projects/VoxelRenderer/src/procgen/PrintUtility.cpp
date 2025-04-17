@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-void PrintUtility::printTexture(std::shared_ptr<TextureData>& textureData, std::function<float(float)> mapTo01, const std::string& filename)
+void PrintUtility::printTexture(std::shared_ptr<TextureDataA>& textureData, std::function<float(float)> mapTo01, const std::string& filename)
 {
     int width = textureData->getSize().x;
     int height = textureData->getSize().y;

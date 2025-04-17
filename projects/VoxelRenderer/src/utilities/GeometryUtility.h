@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <vector>
 
 class GeometryUtility
@@ -17,4 +18,6 @@ public:
     static std::vector<glm::vec2> getConvexHull(std::vector<glm::vec2> vertices);
 
     static bool isPointInsideConvexPolygon(const glm::vec2& point, const std::vector<glm::vec2>& vertices);
+
+    static void lexicographicSort(std::vector<glm::vec3>& points);
 };

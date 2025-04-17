@@ -22,10 +22,10 @@ layout(location = 4) out vec4 out_position; // positionHistoryTexture
 vec4 safeVec4(vec4 v, vec4 fallback)
 {
     return vec4(
-        isnan(v.r) ? fallback.r : v.r,
-        isnan(v.g) ? fallback.g : v.g,
-        isnan(v.b) ? fallback.b : v.b,
-        isnan(v.a) ? fallback.a : v.a);
+        isnan(v.r) || isinf(v.r) ? fallback.r : v.r,
+        isnan(v.g) || isinf(v.g) ? fallback.g : v.g,
+        isnan(v.b) || isinf(v.b) ? fallback.b : v.b,
+        isnan(v.a) || isinf(v.a) ? fallback.a : v.a);
 }
 
 vec3 hueToRGB(float hue)
@@ -82,7 +82,6 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
     vec2 aspectRatio = vec2(1, float(resolution.y) / resolution.x);
     vec3 color = texture(inputColor, uv).xyz;
     vec2 tempMaterial = texture(inputMotion, uv).xw;
-    vec4 material = vec4(tempMaterial.x, hueToRGB(tempMaterial.y));
 
     vec2 depthGradient = normal.x / vec2(-normal.y, normal.z);
     depthGradient = -(depthGradient * clipPosition.x + vec2(-clipPosition.y, clipPosition.z)) * (cameraFovTan * aspectRatio) / pow((cameraFovTan * aspectRatio) * (2 * uv - 1) + depthGradient, vec2(2));
@@ -100,6 +99,8 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
     {
         for (int j = 0; j < 5; j++)
         {
+            // if(i != 2 || j != 2) continue;
+
             vec2 offset = vec2(i - 2, j - 2);
             vec2 coord = (uv * resolution + offset) / resolution;
 
@@ -107,13 +108,16 @@ vec3 waveletIteration(sampler2D inputColor, sampler2D inputVariance, sampler2D i
             vec3 otherNormal = texture(inputNormal, coord).xyz;
             vec3 otherColor = texture(inputColor, coord).xyz;
             vec3 otherVariance = texture(inputVariance, coord).xyz;
-            tempMaterial = texture(inputMotion, coord).xw;
-            vec4 otherMaterial = vec4(tempMaterial.x, hueToRGB(tempMaterial.y));
+            vec2 otherMaterial = texture(inputMotion, coord).xw;
 
             float weightZ = exp(-abs(otherClipPosition.x - clipPosition.x) / (paramDepthRejection * abs(dot(depthGradient, offset)) + 0.000001));
             float weightN = pow(max(0, dot(normal, otherNormal)), paramNormalRejection);
             float weightL = exp(-abs(dot(otherColor, luminanceVector) - dot(color, luminanceVector)) / (paramLuminanceRejection * sqrt(luminanceVariance) + 0.000001));
-            float weightM = exp(-paramRoughnessRejection * length(material - otherMaterial));
+            float weightM = 1;
+            if (!all(equal(otherMaterial, tempMaterial)))
+            {
+                weightM = 0;
+            }
             float weight = weightZ * weightN * weightL * weightM;
 
             float multiplier = kernel[i] * kernel[j];

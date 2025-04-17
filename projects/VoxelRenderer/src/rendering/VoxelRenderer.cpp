@@ -51,7 +51,7 @@ void VoxelRenderer::remakeTextures()
 
     normalBuffer.setSize(size1D);
     positionBuffer.setSize(size1D);
-    miscBuffer.setSize(size1D);
+    materialUVBuffer.setSize(size1D);
     materialBuffer.setSize(size1D);
     primaryDirection.setSize(size1D);
     secondaryDirection.setSize(size1D);
@@ -231,6 +231,9 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         glUniform1i(glGetUniformLocation(fullCastProgram, "shadingRate"), shadingRate);
         glUniform2i(glGetUniformLocation(fullCastProgram, "inputOffset"), offset.x, offset.y);
 
+        glUniform1i(glGetUniformLocation(fullCastProgram, "firstMipMapLevel"), firstMipMapLevel);
+        glUniform1i(glGetUniformLocation(fullCastProgram, "maxIterations"), maxIterations);
+
         for (auto& chunkComponent : chunks)
         {
             ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk preconditions");
@@ -297,7 +300,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
 
     glUseProgram(0);
 
@@ -336,7 +338,8 @@ void VoxelRenderer::resetPrimaryRayInfo()
 
     normalBuffer.bind(0);
     positionBuffer.bind(1);
-    miscBuffer.bind(2);
+    materialUVBuffer.bind(2);
+
     if (whichStartBuffer)
     {
         rayStartBuffer1.bind(5);
@@ -360,7 +363,8 @@ void VoxelRenderer::resetPrimaryRayInfo()
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
+    materialUVBuffer.unbind();
+
     if (whichStartBuffer)
     {
         rayStartBuffer1.unbind();
@@ -558,7 +562,7 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     normalBuffer.bind(8);
     positionBuffer.bind(9);
-    miscBuffer.bind(10);
+    materialUVBuffer.bind(10);
 
     materialBuffer.bind(11);
     secondaryDirection.bind(12);
@@ -582,6 +586,9 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
         glUniform1i(glGetUniformLocation(primaryRayProgram, "whichAccumulatingVector"), whichMotionVectors);
         glUniform1i(glGetUniformLocation(primaryRayProgram, "whichDepth"), whichDepth);
+
+        glUniform1i(glGetUniformLocation(primaryRayProgram, "firstMipMapLevel"), firstMipMapLevel);
+        glUniform1i(glGetUniformLocation(primaryRayProgram, "maxIterations"), maxIterations);
 
         for (auto& chunkComponent : chunks)
         {
@@ -656,12 +663,11 @@ void VoxelRenderer::executePrimaryRay(const std::vector<std::shared_ptr<VoxelChu
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
+    materialUVBuffer.unbind();
 
     materialBuffer.unbind();
     secondaryDirection.unbind();
     motionVectors.unbind();
-    // sampleDirection.unbind();
 
     afterCast(maxDepth);
 
@@ -690,7 +696,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     normalBuffer.bind(1);
     positionBuffer.bind(2);
-    miscBuffer.bind(3);
+    materialUVBuffer.bind(3);
 
     materialBuffer.bind(4);
     primaryDirection.bind(5);
@@ -768,7 +774,7 @@ void VoxelRenderer::render(const GLuint& framebuffer, const std::array<GLenum, 4
 
     normalBuffer.unbind();
     positionBuffer.unbind();
-    miscBuffer.unbind();
+    materialUVBuffer.unbind();
 
     materialBuffer.unbind();
     primaryDirection.unbind();
