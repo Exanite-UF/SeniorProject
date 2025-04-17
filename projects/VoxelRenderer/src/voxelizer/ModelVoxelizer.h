@@ -57,6 +57,7 @@ private:
 
     // Chunk Data
     std::shared_ptr<VoxelChunkData> chunkData {};
+    std::shared_ptr<GameObject> sceneObject {};
 
     void setupBoundingBox();
 
@@ -122,6 +123,8 @@ public:
     std::shared_ptr<Model> getModel();
     std::shared_ptr<VoxelChunkData> getChunkData();
     void voxelizeModel(int option = 0);
+    void setSceneObject(std::shared_ptr<GameObject> sceneObject) { this->sceneObject = sceneObject; }
+    std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; } 
 
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
 };

@@ -327,6 +327,7 @@ void Program::run()
     // Model Previewer
     std::shared_ptr<ModelPreviewer> modelPreviewer = std::make_shared<ModelPreviewer>();
     std::shared_ptr<ModelVoxelizer> modelVoxelizer = std::make_shared<ModelVoxelizer>();
+    modelVoxelizer->setSceneObject(sceneObject);
     bool isModelLoaded = false;
     bool isModelVoxelized = false;
 
@@ -672,8 +673,7 @@ void Program::run()
                         {
                             if (ImGui::Button("Add to world"))
                             {
-                                scene->addObjectChunk(modelVoxelizer->chunkComponent);
-                                
+                                scene->addObjectChunk(modelVoxelizer->getChunkComponent());
                             }
                         }
 

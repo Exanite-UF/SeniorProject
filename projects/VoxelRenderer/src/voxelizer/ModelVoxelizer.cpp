@@ -1,5 +1,7 @@
 #include <src/graphics/ShaderProgram.h>
 #include <src/voxelizer/ModelVoxelizer.h>
+#include <src/gameobjects/GameObject.h>
+#include <src/gameobjects/TransformComponent.h>
 
 ModelVoxelizer::~ModelVoxelizer() = default;
 
@@ -310,7 +312,10 @@ void ModelVoxelizer::generateVoxelMesh()
     chunkData->setHasMipmaps(false);
 
     // VoxelChunkComponent
-    chunkComponent = std::make_shared<VoxelChunkComponent>();
+    // Pass along scene object
+    auto voxelChunkObject = sceneObject->createChildObject();
+    chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>(true);
+    chunkComponent->getTransform()->addGlobalPosition(gridCenter);
     VoxelChunkData& chunkDataRef = chunkComponent->getRawChunkData();
     chunkDataRef.copyFrom(*chunkData.get());
 
