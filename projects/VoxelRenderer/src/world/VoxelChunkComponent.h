@@ -74,7 +74,10 @@ public:
     const VoxelChunkData& getChunkData();
 
     // Requires mutex exclusive access
+    // Do NOT use unless you know what you are doing
     // Prefer using a command buffer instead
+    //
+    // Improper access to this will result in data inconsistencies
     VoxelChunkData& getRawChunkData();
 
     // This method itself is unsynchronized
