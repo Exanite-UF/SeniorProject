@@ -266,8 +266,12 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
         try
         {
-            // Wait for any dependencies to finish
-            task->dependencies.waitForPending();
+            {
+                ZoneScopedN("Wait for dependencies");
+
+                // Wait for any dependencies to finish
+                task->dependencies.waitForPending();
+            }
 
             // Apply the chunk command buffer
             {
