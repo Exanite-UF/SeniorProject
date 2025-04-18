@@ -277,7 +277,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                 // From the z = 0 to the surface, the threshold starts a 1 and decays exponentially to the surface probablity
                 //   The rate of this decays is controlled by surfaceToBottomFalloffRate
                 //   Higher values means deeper caves
-                float p = std::exp(1 - ((float)z)/data.getSize().z) - 1;//std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));
+                float p = std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));
                 if (surfaceProbability < 1)
                 {
                     p *= (std::exp(c * z / surfaceHeight) + b) / (1 + b);
