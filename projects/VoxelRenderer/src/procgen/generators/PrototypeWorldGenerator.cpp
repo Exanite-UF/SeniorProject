@@ -48,23 +48,9 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     std::vector<std::shared_ptr<Material>> lights;
 
     {
-        ZoneScopedN("Get Materials");
-        WorldUtility::tryGetMaterial("stone", materialManager, stoneMaterial);
-        WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
-        WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
+        ZoneScopedN("Get Structure Materials");
         WorldUtility::tryGetMaterial("oak_log", materialManager, oakLogMaterial);
         WorldUtility::tryGetMaterial("oak_leaf", materialManager, oakLeafMaterial);
-
-        lights.emplace_back();
-        WorldUtility::tryGetMaterial("white_light", materialManager, lights.back());
-        lights.emplace_back();
-        WorldUtility::tryGetMaterial("blue_light", materialManager, lights.back());
-        lights.emplace_back();
-        WorldUtility::tryGetMaterial("red_light", materialManager, lights.back());
-        lights.emplace_back();
-        WorldUtility::tryGetMaterial("yellow_light", materialManager, lights.back());
-        lights.emplace_back();
-        WorldUtility::tryGetMaterial("green_light", materialManager, lights.back());
     }
 
     {
@@ -161,23 +147,12 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 origin.x -= chunkPosition.x;
                 origin.y -= chunkPosition.y;
 
-                //while (!data.getVoxelOccupancy(origin))
-                //{
-                //    origin.z--;
-                //    if (origin.z == 0)
-                //    {
-                //        break;
-                //    }
-                //}
-
-                //VectorUtility::printVec3("Post:", origin);
                 glm::ivec3 saved = structure->getOriginVoxel();
                 structure->setOriginVoxel(origin);
 
                 // std::cout << structure << std::endl;
-                //  TODO: Raycast here
+                // TODO: Raycast here
                 structure->generate(data);
-
                 structure->setOriginVoxel(saved);
             }
         }
@@ -191,12 +166,12 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     // Precalculate some numbers that will be used a lot
     // They don't really have names, they are just components of expressions (The expressions have explainable purposes)
 
-    // parameters that control how fast the density falls off below the surface
+    // Parameters that control how fast the density falls off below the surface
     float a = 1 - std::exp(-surfaceToBottomFalloffRate);
     float b = -surfaceProbability / (surfaceProbability - 1) * a;
     float c = std::log(surfaceProbability * (1 - a));
 
-    // Used to calcualted probability above the surface
+    // Used to calculated probability above the surface
     float d = std::log(airProbability / surfaceProbability);
 
     // Load a set of materials to use
@@ -205,13 +180,11 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     std::shared_ptr<Material> stoneMaterial;
     std::shared_ptr<Material> dirtMaterial;
     std::shared_ptr<Material> grassMaterial;
-    std::shared_ptr<Material> oakLogMaterial;
-    std::shared_ptr<Material> oakLeafMaterial;
     std::shared_ptr<Material> limestoneMaterial;
     std::vector<std::shared_ptr<Material>> lights;
 
     {
-        ZoneScopedN("Get Materials");
+        ZoneScopedN("Get Terrain Materials");
         WorldUtility::tryGetMaterial("stone", materialManager, stoneMaterial);
         WorldUtility::tryGetMaterial("dirt", materialManager, dirtMaterial);
         WorldUtility::tryGetMaterial("grass", materialManager, grassMaterial);
@@ -282,9 +255,9 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     {
         for (int y = 0; y < size.y; y++)
         {
-
             float perlinNoiseSample = noiseOutput2D1[index2D1];
-            float perlinNoiseSample2 = noiseOutput2D2[index2D1++];
+            float perlinNoiseSample2 = noiseOutput2D2[index2D1];
+            index2D1++;
 
             // Calculate the maximum height and surface height
             float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
@@ -296,7 +269,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
             for (int z = size.z - 1; z >= 0; z--)
             {
-
                 float random3D = noiseOutput3D[index3D++];
 
                 // Calculate the threshold for filling in a voxel
@@ -305,7 +277,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                 // From the z = 0 to the surface, the threshold starts a 1 and decays exponentially to the surface probablity
                 //   The rate of this decays is controlled by surfaceToBottomFalloffRate
                 //   Higher values means deeper caves
-                float p = std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));
+                float p = std::exp(1 - ((float)z)/data.getSize().z) - 1;//std::min(1.f, std::exp(d * (float)(z - surfaceHeight) / (maxHeight - surfaceHeight)));
                 if (surfaceProbability < 1)
                 {
                     p *= (std::exp(c * z / surfaceHeight) + b) / (1 + b);
