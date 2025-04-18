@@ -262,8 +262,8 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     {
         ZoneScopedN("Generate Noise");
         fnFractal->SetSource(source2D);
-        fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
-        fnNormalized->GenUniformGrid2D(noiseOutput2D2.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 2);
+        fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.x, offset.y, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
+        fnNormalized->GenUniformGrid2D(noiseOutput2D2.data(), offset.x, offset.y, data.getSize().y, data.getSize().x, frequency2D, seed + 2);
 
         fnFractal->SetSource(source3D);
         fnNormalized->GenUniformGrid3D(noiseOutput3D.data(), 0, offset.y, offset.x, data.getSize().z, data.getSize().y, data.getSize().x, frequency3D, seed);
@@ -271,6 +271,11 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
 
     int index2D1 = 0;
     int index3D = 0;
+
+    std::vector<int> lastAir;
+    std::vector<int> maxThick;
+    std::vector<int> tempThick;
+
 
     glm::ivec3 size = data.getSize();
     // Set the occupancy data of the voxel chunk
@@ -292,8 +297,8 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
             for (int y = 0; y < size.y; y++)
             {
 
-                float perlinNoiseSample = noiseOutput2D1[index2D1];
-                float perlinNoiseSample2 = noiseOutput2D2[index2D1++];
+                float perlinNoiseSample = noiseOutput2D1[x + data.getSize().x * y];
+                float perlinNoiseSample2 = noiseOutput2D2[x + data.getSize().x * y];
 
                 // Calculate the maximum height and surface height
                 float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
