@@ -1,9 +1,9 @@
 #pragma once
 
-#include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
-#include <vector>
+#include <glm/vec3.hpp>
 #include <string>
+#include <vector>
 
 class VectorUtility
 {

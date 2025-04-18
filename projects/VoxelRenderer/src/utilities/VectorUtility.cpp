@@ -1,8 +1,8 @@
 #include <src/utilities/VectorUtility.h>
 
 #include <algorithm>
-#include <sstream>
 #include <src/utilities/Log.h>
+#include <sstream>
 
 void VectorUtility::printVec2(std::string name, glm::vec2 position)
 {
