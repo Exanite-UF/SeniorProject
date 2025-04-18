@@ -785,7 +785,7 @@ void main()
         vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
 
         // If a sun ray could hit the sun, then try
-        
+
         if (sunAngularSize > 0 && dot(normal, sunDirection) > 0.0)
         {
             float p = 0.1;
@@ -813,7 +813,6 @@ void main()
                 nextDirection.w = 1 / ((1 - p) / nextDirection.w);
             }
         }
-        
 
         setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
         setRayPosition(texelCoord, position); // Set where the ray should start from next
