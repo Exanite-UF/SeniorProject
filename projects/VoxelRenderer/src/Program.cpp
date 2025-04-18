@@ -165,9 +165,10 @@ void Program::run()
         scene = sceneObject->addComponent<SceneComponent>();
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
-        auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
-        // auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
-        scene->setSkybox(skybox);
+        bool whichSkybox = false;
+        auto skybox2 = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
+        auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
+        scene->setSkybox(skybox2);
 
         // Generate static, noise-based placeholder chunks for testing purposes
         if (false)
@@ -584,6 +585,19 @@ void Program::run()
                     renderer.setBounces(numberOfBounces);
                 }
 
+
+                if (input->isKeyPressed(GLFW_KEY_L))
+                {
+                    whichSkybox = !whichSkybox;
+                    if(whichSkybox){
+                        scene->setSkybox(skybox);
+                    }else{
+                        scene->setSkybox(skybox2);
+                    }                    
+                }
+                
+
+
                 std::shared_ptr<VoxelChunkComponent> closestChunk {};
                 if (scene->tryGetClosestWorldChunk(closestChunk))
                 {
@@ -840,6 +854,7 @@ void Program::run()
                             ImGui::Text("V - Toggle Bounce Count");
                             ImGui::Text("B - Pause/Unpause Rendering");
                             ImGui::Text("J - Toggle ground camera");
+                            ImGui::Text("L - Toggle skybox");
                             ImGui::Text("+/- Change viewable mip map level");
                             ImGui::Text("Mouse Scroll - Change Move Speed");
                             ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
