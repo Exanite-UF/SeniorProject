@@ -136,6 +136,5 @@ public:
 
     void clearResources();
 
-    void setVoxelResolution(int resolution) { gridResolution = resolution; }   
-
+    void setVoxelResolution(int resolution) { gridResolution = resolution; }
 };

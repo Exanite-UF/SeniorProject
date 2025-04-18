@@ -1,11 +1,11 @@
+#include <random>
 #include <src/gameobjects/GameObject.h>
 #include <src/gameobjects/TransformComponent.h>
 #include <src/graphics/ShaderProgram.h>
 #include <src/voxelizer/ModelVoxelizer.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkCommandBuffer.h>
 #include <src/world/VoxelChunkManager.h>
-#include <src/world/MaterialManager.h>
-#include <random>
 
 ModelVoxelizer::~ModelVoxelizer() = default;
 
@@ -413,7 +413,8 @@ void ModelVoxelizer::addToWorld(glm::vec3 position, glm::quat rotation)
     VoxelChunkManager::getInstance().submitCommandBuffer(chunkComponent, commandBuffer);
 }
 
-void ModelVoxelizer::clearResources() {
+void ModelVoxelizer::clearResources()
+{
     // Reset shared pointers
     loadedModel.reset();
     chunkData.reset();
@@ -428,21 +429,24 @@ void ModelVoxelizer::clearResources() {
     voxelMesh.clear();
     activeVoxels.clear();
 
-
     // Reset OpenGL buffers
-    if (voxelVAO) {
+    if (voxelVAO)
+    {
         glDeleteVertexArrays(1, &voxelVAO);
         voxelVAO = 0;
     }
-    if (voxelVBO) {
+    if (voxelVBO)
+    {
         glDeleteBuffers(1, &voxelVBO);
         voxelVBO = 0;
     }
-    if (voxelEBO) {
+    if (voxelEBO)
+    {
         glDeleteBuffers(1, &voxelEBO);
         voxelEBO = 0;
     }
-    if (instanceVBO) {
+    if (instanceVBO)
+    {
         glDeleteBuffers(1, &instanceVBO);
         instanceVBO = 0;
     }
@@ -455,4 +459,3 @@ void ModelVoxelizer::clearResources() {
     maxBounds = glm::vec3(0.0f);
     isVoxelized = false;
 }
-
