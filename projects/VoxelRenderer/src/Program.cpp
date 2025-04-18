@@ -752,21 +752,26 @@ void Program::run()
                         }
                         case 1:
                         {
-                            std::string modelFileName = "content/Triangulation/suzanne.obj";
+                            std::string modelFilePath = "content/Triangulation/suzanne.obj";
+                            static std::string modelFileName;
 
-                            if (ImGui::Button("Import Model..."))
+                            if (!isModelLoaded)
                             {
-                                fileDialog.Open();
+                                if (ImGui::Button("Import Model..."))
+                                {
+                                    fileDialog.Open();
+                                }
+                                
                             }
-                            
                             fileDialog.Display();
 
                             if (fileDialog.HasSelected())
                             {
-                                modelFileName = fileDialog.GetSelected().string();
+                                modelFilePath = fileDialog.GetSelected().string();
+                                modelFileName = std::filesystem::path(modelFilePath).filename().string();
                                 fileDialog.ClearSelected();
                                 showOriginalModelMenu = !showOriginalModelMenu;
-                                modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFileName);
+                                modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFilePath);
                                 isModelLoaded = true;
                             }
 
@@ -777,6 +782,8 @@ void Program::run()
 
                             if (isModelLoaded)
                             {
+                                ImGui::Text("Model: %s", modelFileName.c_str());
+                                ImGui::Spacing();
                                 ImGui::Text("Voxel Resolution");
                                 ImGui::Indent(indentSize);
                                 static int comboIndex = 0;
@@ -806,6 +813,7 @@ void Program::run()
 
                                 if (!isModelVoxelized)
                                 {
+                                    ImGui::Spacing();
                                     if (ImGui::Button("Voxelize Model"))
                                     {
                                         
@@ -823,6 +831,7 @@ void Program::run()
 
                             if (modelVoxelizer->isVoxelized)
                             {
+                                ImGui::Spacing();
                                 if (ImGui::Button("Add to world"))
                                 {
                                     modelVoxelizer->addToWorld();
@@ -836,6 +845,7 @@ void Program::run()
                             
                             if (isModelVoxelized)
                             {
+                                ImGui::Spacing();
                                 if (ImGui::Button("New Model"))
                                 {
                                     isModelLoaded = false;
@@ -844,6 +854,7 @@ void Program::run()
                                 }
                             }
                             
+                            ImGui::Spacing();
                             if (ImGui::Button("Clear All"))
                             {
                                 for (auto& Component : scene->getObjectChunks())
