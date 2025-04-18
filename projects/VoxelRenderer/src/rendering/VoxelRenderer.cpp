@@ -234,10 +234,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         glUniform1i(glGetUniformLocation(fullCastProgram, "firstMipMapLevel"), firstMipMapLevel);
         glUniform1i(glGetUniformLocation(fullCastProgram, "maxIterations"), maxIterations);
 
-        std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
-        glUniform1f(glGetUniformLocation(fullCastProgram, "sunAngularSize"), skybox->getSunAngularSize());
-        glUniform3fv(glGetUniformLocation(fullCastProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
-
         for (auto& chunkComponent : chunks)
         {
             ZoneScopedN("VoxelRenderer::executeRayTrace - Render chunk preconditions");
