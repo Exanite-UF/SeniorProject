@@ -383,7 +383,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             // The default material is stone
 
                             // This is stone, I put lights in it for the caves
-                            if ((rand() % 1000) / 1000.0 < 0.1)
+                            if ((rand() % 1000) / 1000.0 < 0.001)
                             {
                                 data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
                                 continue;
@@ -420,7 +420,7 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             // The default material is stone
 
                             // This is stone, I put lights in it for the caves
-                            if ((rand() % 1000) / 1000.0 < 0.1)
+                            if ((rand() % 1000) / 1000.0 < 0.001)
                             {
                                 data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
                                 continue;
