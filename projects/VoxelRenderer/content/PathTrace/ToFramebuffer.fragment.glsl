@@ -613,7 +613,16 @@ void main()
         miscOutput.x = -1;
     }
 
-    fragColor = vec4(vec3(normal.x) / 100, 1);//vec4(light / samples + firstHitEmission, 1);
+    float iterations = normal.x;
+    int cutoff = 50;
+
+    if(iterations > cutoff){
+        fragColor = vec4(vec3(1, 1 - (iterations - cutoff) / cutoff, 1 - (iterations - cutoff) / cutoff), 1);//vec4(hueToRGB(-(iterations - 100) / 256 + 0.313725490196), 1);
+    }else{
+        fragColor = vec4(vec3(iterations) / cutoff, 1);//vec4(light / samples + firstHitEmission, 1);
+    }
+
+    
     // fragColor = vec4(vec3(length(position - cameraPosition) / 1000), 1);
     posBuffer = position;
     miscBuffer = miscOutput;

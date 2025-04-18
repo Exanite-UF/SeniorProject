@@ -23,7 +23,7 @@ public:
         // ----- Rendering -----
 
         // The distance at which chunks begin to be loaded on a separate thread
-        int loadDistance = 1;
+        int loadDistance = 0;
         float lodBaseDistance = 256;
         float lodDistanceScalingFactor = 2.0f;
 

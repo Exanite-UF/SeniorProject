@@ -409,6 +409,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         }
         else
         {
+            //occupancyMapLayerCount
             for (int i = firstMipMapLevel / 2; i <= occupancyMapLayerCount; i++)
             {
                 ivec3 p2 = (p >> (2 * i)) & 1;
