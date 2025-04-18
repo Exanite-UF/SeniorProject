@@ -276,7 +276,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     std::vector<int> maxThick;
     std::vector<int> tempThick;
 
-
     glm::ivec3 size = data.getSize();
     // Set the occupancy data of the voxel chunk
 
@@ -355,7 +354,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             {
                                 maxThick = tempThick;
                             }
-
                         }
                         else
                         {

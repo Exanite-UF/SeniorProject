@@ -230,7 +230,7 @@ void Program::run()
         // Create the renderer
         Renderer renderer(window, offscreenContext);
 
-        float renderRatio = 1.f;//0.66666666f;
+        float renderRatio = 1.f; // 0.66666666f;
         float targetReprojectionFPS = 20;
         bool isAutomaticResolutionAdjustmentEnabled = false;
         // Render resolution can be set separately from display resolution
