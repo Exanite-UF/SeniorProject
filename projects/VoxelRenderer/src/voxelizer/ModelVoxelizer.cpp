@@ -4,6 +4,8 @@
 #include <src/voxelizer/ModelVoxelizer.h>
 #include <src/world/VoxelChunkCommandBuffer.h>
 #include <src/world/VoxelChunkManager.h>
+#include <src/world/MaterialManager.h>
+#include <random>
 
 ModelVoxelizer::~ModelVoxelizer() = default;
 
@@ -308,6 +310,8 @@ void ModelVoxelizer::generateVoxelMesh()
     activeVoxels.clear();
     glm::vec3 gridCenter = minBounds + (glm::vec3(gridSize) * 0.5f);
 
+    static std::random_device rd;
+
     // VoxelChunkData
     chunkData = std::make_shared<VoxelChunkData>(gridSize);
     for (int z = 0; z < gridSize.z; ++z)
@@ -316,7 +320,11 @@ void ModelVoxelizer::generateVoxelMesh()
         {
             for (int x = 0; x < gridSize.x; ++x)
             {
+                static std::mt19937 gen(rd()); // Mersenne Twister RNG
+                std::uniform_int_distribution<uint16_t> dis(0, static_cast<uint16_t>(Constants::VoxelChunk::maxMaterialCount - 1));
+                uint16_t randomizedIndex = dis(gen);
                 chunkData->setVoxelOccupancy(glm::ivec3(x, y, z), voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]);
+                chunkData->setVoxelMaterial(glm::ivec3(x, y, z), MaterialManager::getInstance().getMaterialByIndex(randomizedIndex));
                 if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
                 {
                     glm::vec3 voxelWorldPosition = minBounds + glm::vec3(x, y, z);

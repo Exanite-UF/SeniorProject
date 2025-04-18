@@ -183,7 +183,7 @@ void ModelPreviewer::closeWindowVoxel()
 {
     // Signal thead to stop
     voxelThreadRunning = false;
-
+    
     // Ensure window gets closed
     if (voxelWindow)
     {
