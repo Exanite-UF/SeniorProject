@@ -5,7 +5,6 @@
 #include <src/world/VoxelChunkUtility.h>
 #include <tracy/Tracy.hpp>
 
-
 TreeStructure::TreeStructure(
     glm::ivec3 originVoxel,
     std::shared_ptr<Material> logMaterial,

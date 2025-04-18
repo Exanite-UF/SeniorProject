@@ -131,6 +131,15 @@ MaterialManager::MaterialManager()
         material->roughness = 0.7;
     }
 
+    {
+        auto& material = createMaterial("asphalt", "Asphalt");
+        material->albedo = glm::vec3(0.01);
+        material->emission = glm::vec3(0);
+        material->metallic = 0;
+        material->metallicAlbedo = glm::vec3(0);
+        material->roughness = 0.9;
+    }
+
     // Generate colors for greyscale
     std::string greyscalePrefix = "greyscale_";
     std::string greyscaleName = "Greyscale ";

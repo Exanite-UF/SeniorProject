@@ -154,6 +154,10 @@ public:
 
     void clear();
 
+    // This will copy the commands of this command buffer into the other command buffer.
+    // The commands of this buffer will be placed AFTER the commands of the other buffer.
+    void mergeInto(VoxelChunkCommandBuffer& other) const;
+
 private:
     class CommandApplicator
     {
@@ -162,6 +166,8 @@ private:
         const VoxelChunkCommandBuffer* commandBuffer;
         std::shared_ptr<VoxelChunkComponent> component;
         std::shared_ptr<SceneComponent> scene;
+
+        CancellationToken cancellationToken {};
 
         // ----- Synchronization -----
 
@@ -186,7 +192,7 @@ private:
         bool shouldEnableCpuMipmaps = false;
 
     public:
-        explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex);
+        explicit CommandApplicator(const VoxelChunkCommandBuffer* commandBuffer, const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const CancellationToken& cancellationToken);
 
         void apply();
 
@@ -197,5 +203,5 @@ private:
     };
 
     // Warning: apply() will acquire the relevant mutexes. Do not acquire them yourself.
-    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex) const;
+    void apply(const std::shared_ptr<VoxelChunkComponent>& component, const std::shared_ptr<SceneComponent>& scene, std::mutex& gpuUploadMutex, const CancellationToken& cancellationToken) const;
 };

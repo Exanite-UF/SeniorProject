@@ -14,27 +14,25 @@
 
 #include <iostream>
 
-
 #include <src/world/VoxelChunkData.h>
 
 class Structure
 {
 public:
-    //This is for a bounding box check, so we can add and query for structures
+    // This is for a bounding box check, so we can add and query for structures
     virtual glm::ivec2 getMaxDistanceFromOrigin() = 0;
 
-    //This is so that we can reject the structure if it will attempt to generate in an already generated chunk
+    // This is so that we can reject the structure if it will attempt to generate in an already generated chunk
     virtual std::vector<glm::ivec3> overlappingChunks() = 0;
 
-    //Gets the starting point from which the structure generates
+    // Gets the starting point from which the structure generates
     [[nodiscard]] virtual const glm::ivec3& getOriginVoxel() = 0;
     virtual void setOriginVoxel(glm::ivec3 origin) = 0;
 
-    //TODO: somehow, reject structures that overlap with already generated structures.
+    // TODO: somehow, reject structures that overlap with already generated structures.
 
-    //Instantiates the structure into the voxel data
+    // Instantiates the structure into the voxel data
     virtual void generate(VoxelChunkData& chunkData) = 0;
-
 };
 
 class ChunkHierarchyManager : public Singleton<ChunkHierarchyManager>
@@ -53,82 +51,11 @@ private:
 
     void validateChunkSize() const;
 
-    // Singleton needs default constructor
-    explicit ChunkHierarchyManager()
-        : ChunkHierarchyManager(0)
-    {
-    }
-
-    explicit ChunkHierarchyManager(uint32_t levelCount)
-    {
-        for (int i = 0; i < levelCount; i++)
-        {
-            std::unordered_map<glm::ivec2, std::vector<std::shared_ptr<Structure>>> level;
-            levels.push_back(level);
-
-            std::unordered_map<glm::ivec2, bool> isLevelGenerated;
-            isGenerated.push_back(isLevelGenerated);
-        }
-    }
-
 public:
     std::mutex mutex;
 
-    bool isChunkGenerated(glm::ivec2 chunkPosition, int level)
-    {
-        if (level < 0)
-        {
-            throw std::runtime_error("Negative levels do not exist.");
-        }
-
-        if (level >= isGenerated.size())
-        {
-            return false;
-        }
-
-        glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
-
-        
-        auto& isLevelGenerated = isGenerated[level];
-        auto isChunkGenerated = isLevelGenerated.find(temp);
-
-        //std::cout << (isChunkGenerated != isLevelGenerated.end()) << std::endl;
-
-        if (isChunkGenerated != isLevelGenerated.end())
-        {
-            if(isChunkGenerated->second){
-                //std::cout << temp.x << " " << temp.y << " Rejected" << std::endl;
-            }else{
-                //std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
-            }
-            return isChunkGenerated->second;
-        }
-        else
-        {
-            //std::cout << temp.x << " " << temp.y << " Accepted" << std::endl;
-            return false;
-        }
-    }
-
-    void setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag)
-    {
-        if (level < 0)
-        {
-            throw std::runtime_error("Negative levels do not exist.");
-        }
-
-        for (int i = isGenerated.size(); i <= level; i++)
-        {
-            isGenerated.emplace_back();
-        }
-
-        glm::ivec2 temp = glm::floor(glm::vec2(chunkPosition) / glm::vec2(chunkSize));
-
-        std::cout << temp.x << " " << temp.y << " Was made" << std::endl;
-
-        auto& isLevelGenerated = isGenerated[level];
-        isLevelGenerated[chunkPosition / glm::ivec2(chunkSize)] = flag;
-    }
+    bool isChunkGenerated(glm::ivec2 chunkPosition, int level);
+    void setChunkGenerated(glm::ivec2 chunkPosition, int level, bool flag);
 
     // These require axis aligned voxel chunks
 
@@ -146,5 +73,4 @@ public:
     void clear();
 
     void setChunkSize(glm::ivec3 size);
-
 };

@@ -23,7 +23,6 @@
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
-#include <src/utilities/VectorUtility.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
 #include <tracy/Tracy.hpp>
@@ -77,6 +76,8 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 int numPoints = 20;
                 pointSynthesizer.generatePoints(treeLocations, numPoints);
                 pointSynthesizer.rescalePointsToChunkSize(treeLocations, data);
+                // Lexicographic sort
+                // GeometryUtility::lexicographicSort(treeLocations);
             }
 
             for (int i = 0; i < treeLocations.size(); i++)
@@ -97,7 +98,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
 
                 // VectorUtility::printVec3("Origin Voxel", originVoxel);
                 auto tree = createRandomTreeInstance(data, glm::vec3(0), originVoxel, seed, oakLogMaterial, oakLeafMaterial);
-                
+
                 glm::ivec2 distance = tree->getMaxDistanceFromOrigin();
 
                 std::vector<glm::ivec3> boundingBox = {
@@ -108,19 +109,18 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
                 };
 
                 bool circularGeneration = false;
-                //tree->getOverlappingChunks()
-                //Check if any of those are already generated
-                for(int j = 0; j < boundingBox.size(); j++)
+                // tree->getOverlappingChunks()
+                // Check if any of those are already generated
+                for (int j = 0; j < boundingBox.size(); j++)
                 {
-                    if(chunkHierarchyManager.isChunkGenerated(boundingBox[j], 0))
+                    if (chunkHierarchyManager.isChunkGenerated(boundingBox[j], 0))
                     {
                         circularGeneration = true;
                         break;
                     }
-
                 }
-                
-                if(!circularGeneration)
+
+                if (!circularGeneration)
                 {
                     chunkHierarchyManager.addStructure(tree->getOriginVoxel(), tree);
                 }
@@ -159,8 +159,7 @@ void PrototypeWorldGenerator::generateData(VoxelChunkData& data)
     }
 }
 
-void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
-{
+void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data) {
     ZoneScopedN("Generate terrain");
 
     // Precalculate some numbers that will be used a lot
@@ -227,13 +226,15 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     std::vector<float> noiseOutput2D2(data.getSize().x * data.getSize().y);
 
     glm::vec2 offset = chunkPosition;
+    {
+        ZoneScopedN("Generate Noise");
+        fnFractal->SetSource(source2D);
+        fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
+        fnNormalized->GenUniformGrid2D(noiseOutput2D2.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 2);
 
-    fnFractal->SetSource(source2D);
-    fnNormalized->GenUniformGrid2D(noiseOutput2D1.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 1);
-    fnNormalized->GenUniformGrid2D(noiseOutput2D2.data(), offset.y, offset.x, data.getSize().y, data.getSize().x, frequency2D, seed + 2);
-
-    fnFractal->SetSource(source3D);
-    fnNormalized->GenUniformGrid3D(noiseOutput3D.data(), 0, offset.y, offset.x, data.getSize().z, data.getSize().y, data.getSize().x, frequency3D, seed);
+        fnFractal->SetSource(source3D);
+        fnNormalized->GenUniformGrid3D(noiseOutput3D.data(), 0, offset.y, offset.x, data.getSize().z, data.getSize().y, data.getSize().x, frequency3D, seed);
+    }
 
     int index2D1 = 0;
     int index3D = 0;
@@ -251,7 +252,9 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     //
     // Encountering 10 non-air voxels in a row will disable grass for the rest of the column
 
-    for (int x = 0; x < size.x; x++)
+    {
+        ZoneScopedN("Use Noise");
+        for (int x = 0; x < size.x; x++)
     {
         for (int y = 0; y < size.y; y++)
         {
@@ -314,48 +317,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             maxThick = tempThick;
                         }
 
-                        // Now we set the material of the voxels based on the description above
-
-                        // Grid lines
-                        // if (z % 8 == 0 || x % 8 == 0 || y % 8 == 0)
-                        //{
-                        //     data.setVoxelMaterial({ x, y, z }, lights[1]);
-                        //     if (x == 0 || y == 0)
-                        //     {
-                        //         data.setVoxelMaterial({ x, y, z }, lights[2]);
-                        //     }
-                        //     continue;
-                        // }
-
-                        // Check if grass is enabled
-                        if (maxThick <= noMoreGrassDepth)
-                        {
-                            // If so, try to place grass or dirt
-                            if (depth <= grassDepth)
-                            {
-                                data.setVoxelMaterial({ x, y, z }, grassMaterial);
-                                continue;
-                            }
-                            else if (depth <= dirtDepth)
-                            {
-                                data.setVoxelMaterial({ x, y, z }, dirtMaterial);
-                                continue;
-                            }
-                        }
-
-                        // The default material is stone
-
-                        // This is stone, I put lights in it for the caves
-                        if ((rand() % 1000) / 1000.0 < 0.1)
-                        {
-                            data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
-                            continue;
-                        }
-                        else
-                        {
-                            data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
-                            continue;
-                        }
                     }
                     else
                     {
@@ -363,41 +324,45 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                         tempThick = 0; // Reset the consecutive non-air counter
 
                         // This doesn't have an occupied voxel. It's so that the debug tools have light
+                    }
 
-                        // Check if grass is enabled
-                        if (maxThick <= noMoreGrassDepth)
+                    // Now we set the material of the voxels based on the description above
+
+                    // Check if grass is enabled
+                    if (maxThick <= noMoreGrassDepth)
+                    {
+                        // If so, try to place grass or dirt
+                        if (depth <= grassDepth)
                         {
-                            // If so, try to place grass or dirt
-                            if (depth <= grassDepth)
-                            {
-                                data.setVoxelMaterial({ x, y, z }, grassMaterial);
-                                continue;
-                            }
-                            else if (depth <= dirtDepth)
-                            {
-                                data.setVoxelMaterial({ x, y, z }, dirtMaterial);
-                                continue;
-                            }
-                        }
-
-                        // The default material is stone
-
-                        // This is stone, I put lights in it for the caves
-                        if ((rand() % 1000) / 1000.0 < 0.1)
-                        {
-                            data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
+                            data.setVoxelMaterial({ x, y, z }, grassMaterial);
                             continue;
                         }
-                        else
+                        else if (depth <= dirtDepth)
                         {
-                            data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
+                            data.setVoxelMaterial({ x, y, z }, dirtMaterial);
                             continue;
                         }
+                    }
+
+                    // The default material is stone
+
+                    // This is stone, I put lights in it for the caves
+                    if ((rand() % 1000) / 1000.0 < 0.04)
+                    {
+                        data.setVoxelMaterial({ x, y, z }, lights.at(rand() % 5)); // Candy lights!
+                        continue;
+                    }
+                    else
+                    {
+                        data.setVoxelMaterial({ x, y, z }, limestoneMaterial);
+                        continue;
                     }
                 }
             }
         }
     }
+    }
+}
 
     // auto end = std::chrono::high_resolution_clock::now();
 

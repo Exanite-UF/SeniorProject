@@ -88,3 +88,12 @@ bool GeometryUtility::isPointInsideConvexPolygon(const glm::vec2& point, const s
 
     return true;
 }
+
+// O(nlogn) sort
+void GeometryUtility::lexicographicSort(std::vector<glm::vec3>& points)
+{
+    std::sort(points.begin(), points.end(), [](const glm::vec3& a, const glm::vec3& b)
+        {
+            return a.x < b.x || (a.x == b.x && a.y < b.y) || (a.x == b.x && a.y == b.y && a.z < b.z);
+        });
+}

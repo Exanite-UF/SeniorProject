@@ -12,7 +12,7 @@ public:
         if (!materialManager.tryGetMaterialByKey(materialKey, outMaterial))
         {
             outMaterial = materialManager.getMaterialByIndex(0);
-            Log::information("Failed to find material with id '" + materialKey + "'. Using default material '" + outMaterial->getKey() + "' instead.");
+            Log::error("Failed to find material with id '" + materialKey + "'. Using default material '" + outMaterial->getKey() + "' instead.");
             return false;
         }
 

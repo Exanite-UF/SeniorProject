@@ -24,12 +24,11 @@
 #include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
-
-#include <fstream>
 
 #include <src/Content.h>
 #include <src/Program.h>
@@ -38,8 +37,11 @@
 #include <src/graphics/ShaderManager.h>
 #include <src/graphics/TextureData.h>
 #include <src/graphics/TextureManager.h>
-#include <src/procgen/generators/ExampleWorldGenerator.h>
+#include <src/procgen/ChunkHierarchyManager.h>
+#include <src/procgen/WorldUtility.h>
+#include <src/procgen/data/TreeStructure.h>
 #include <src/procgen/generators/ExaniteWorldGenerator.h>
+#include <src/procgen/generators/MaterialBlockWorldGenerator.h>
 #include <src/procgen/generators/PointSynthesizerWorldGenerator.h>
 #include <src/procgen/generators/PrototypeWorldGenerator.h>
 #include <src/procgen/generators/TextureHeightmapWorldGenerator.h>
@@ -163,10 +165,6 @@ void Program::run()
         scene = sceneObject->addComponent<SceneComponent>();
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
-        auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
-        // auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
-        scene->setSkybox(skybox);
-
         // Generate static, noise-based placeholder chunks for testing purposes
         if (false)
         {
@@ -188,13 +186,43 @@ void Program::run()
             }
         }
 
+        int skyboxIndex = false;
+        std::vector<std::shared_ptr<SkyboxComponent>> skyboxes {};
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt"));
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt"));
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox-night/skyboxIndirect.txt", "content/skybox-night/skyboxSettings.txt"));
+
+        scene->setSkybox(skyboxes.at(0));
+
         // Create the camera GameObject
         auto cameraObject = sceneObject->createChildObject("Camera");
         auto camera = cameraObject->addComponent<CameraComponent>();
         camera->moveSpeed = 4.317 * 8; // Set the base speed to 4.317 meter a second (minecraft walking speed. This is 9.6 miles per hour, Steve is very fast)
         auto cameraTransform = camera->getTransform();
         scene->setCamera(camera);
-        cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
+        // cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
+
+        if (false)
+        {
+            cameraTransform->setGlobalPosition(glm::vec3(-391, 90, 79));
+
+            camera->rotation.y -= 0.349065850399;
+            camera->rotation.x += 0.0174532925199; // 0.523598775598;
+            camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
+
+            cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+        }
+
+        if (true)
+        {
+            cameraTransform->setGlobalPosition(glm::vec3(-635, 76, 214));
+
+            camera->rotation.y -= -0.785398163397;
+            camera->rotation.x += 0.523598775598;
+            camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
+
+            cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+        }
 
         // Initialize the chunk manager
         voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
@@ -202,8 +230,9 @@ void Program::run()
         // Create the renderer
         Renderer renderer(window, offscreenContext);
 
-        float renderRatio = 0.66666666f;
+        float renderRatio = 1;
         float targetReprojectionFPS = 20;
+        bool isAutomaticResolutionAdjustmentEnabled = false;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
@@ -339,7 +368,7 @@ void Program::run()
         bool shouldRenderPathTrace = true; // TODO: Currently unused?
 
         // Procedural Generation
-        ExampleWorldGenerator exampleWorldGenerator {};
+        MaterialBlockWorldGenerator materialBlockWorldGenerator {};
         ExaniteWorldGenerator exaniteWorldGenerator {};
 
         int seed = 0;
@@ -371,17 +400,20 @@ void Program::run()
         renderer.startAsynchronousReprojection();
 
         // Adjust render ratio to meet performance target
-        window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS](Window* window, int a, int b)
+        window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS, &isAutomaticResolutionAdjustmentEnabled](Window* window, int a, int b)
             {
-                float pixels = window->size.x * window->size.y;
-                if (frameTimePerPixel > 0)
+                if (isAutomaticResolutionAdjustmentEnabled)
                 {
-                    renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
-                }
+                    float pixels = window->size.x * window->size.y;
+                    if (frameTimePerPixel > 0)
+                    {
+                        renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                    }
 
-                if (renderRatio > 1)
-                {
-                    renderRatio = 1;
+                    if (renderRatio > 1)
+                    {
+                        renderRatio = 1;
+                    }
                 }
             });
 
@@ -423,18 +455,35 @@ void Program::run()
                         frameTimePerPixel = weight * frameTimePerPixel + (1 - weight) * newSample;
                     }
 
-                    // The performace is unusable, update the fps
-                    if (currentRenderFps < 15)
+                    if (isAutomaticResolutionAdjustmentEnabled)
                     {
-                        float pixels = window->size.x * window->size.y;
-                        if (frameTimePerPixel > 0)
+                        // The performace is unusable, update the fps
+                        if (currentRenderFps < 15)
                         {
-                            renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                            float pixels = window->size.x * window->size.y;
+                            if (frameTimePerPixel > 0)
+                            {
+                                renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                            }
+
+                            if (renderRatio > 1)
+                            {
+                                renderRatio = 1;
+                            }
                         }
 
-                        if (renderRatio > 1)
+                        if (currentRenderFps > 60)
                         {
-                            renderRatio = 1;
+                            float pixels = window->size.x * window->size.y;
+                            if (frameTimePerPixel > 0)
+                            {
+                                renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                            }
+
+                            if (renderRatio > 1)
+                            {
+                                renderRatio = 1;
+                            }
                         }
                     }
                 }
@@ -518,7 +567,7 @@ void Program::run()
                     groundCameraHeight = camera->getTransform()->getGlobalPosition().z;
                 }
 
-                if (true && isGroundMovementEnabled)
+                if (isGroundMovementEnabled)
                 {
                     auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
                     // std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
@@ -568,6 +617,12 @@ void Program::run()
                     renderer.setBounces(numberOfBounces);
                 }
 
+                if (input->isKeyPressed(GLFW_KEY_L))
+                {
+                    skyboxIndex = (skyboxIndex + 1) % skyboxes.size();
+                    scene->setSkybox(skyboxes.at(skyboxIndex));
+                }
+
                 std::shared_ptr<VoxelChunkComponent> closestChunk {};
                 if (scene->tryGetClosestWorldChunk(closestChunk))
                 {
@@ -589,12 +644,12 @@ void Program::run()
 
                     if (input->isKeyPressed(GLFW_KEY_F6))
                     {
-                        exaniteWorldGenerator.generate(closestChunk, scene);
+                        materialBlockWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F7))
                     {
-                        exampleWorldGenerator.generate(closestChunk, scene);
+                        exaniteWorldGenerator.generate(closestChunk, scene);
                     }
 
                     if (input->isKeyPressed(GLFW_KEY_F8))
@@ -799,8 +854,8 @@ void Program::run()
                         }
                         case 2:
                         {
+                            materialBlockWorldGenerator.showDebugMenu();
                             exaniteWorldGenerator.showDebugMenu();
-                            exampleWorldGenerator.showDebugMenu();
                             octaveWorldGenerator.showDebugMenu();
                             prototypeWorldGenerator.showDebugMenu();
                             pointSynthesizerWorldGenerator.showDebugMenu();
@@ -824,6 +879,7 @@ void Program::run()
                             ImGui::Text("V - Toggle Bounce Count");
                             ImGui::Text("B - Pause/Unpause Rendering");
                             ImGui::Text("J - Toggle ground camera");
+                            ImGui::Text("L - Toggle skybox");
                             ImGui::Text("+/- Change viewable mip map level");
                             ImGui::Text("Mouse Scroll - Change Move Speed");
                             ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
@@ -976,6 +1032,20 @@ void Program::runEarlyStartupTests()
         testEvent.flush();
         Assert::isTrue(counter == 5, "Incorrect buffered event implementation: counter should equal 5");
     }
+
+    {
+        // Make sure CancellationToken works as expected
+        CancellationToken defaultToken {};
+        Assert::isTrue(!defaultToken.isCancellationRequested(), "The default cancellation token should never be cancelled");
+
+        CancellationTokenSource source {};
+
+        auto validToken = source.getCancellationToken();
+        Assert::isTrue(!validToken.isCancellationRequested(), "The cancellation token source has not requested cancellation yet");
+
+        source.requestCancellation();
+        Assert::isTrue(validToken.isCancellationRequested(), "The cancellation token source has already requested cancellation");
+    }
 }
 
 void Program::runLateStartupTests()
@@ -1115,13 +1185,11 @@ void Program::runLateStartupTests()
         Assert::isTrue(data.getMipmapVoxelOccupancy(glm::ivec3(0, 0, 0), 1), "Expected voxel to be occupied (level 1)");
     }
 
-    // runChunkHierarchyTest();
+    if (false)
+    {
+        runChunkHierarchyTest();
+    }
 }
-
-// Yes I know this include location is stupid
-#include <src/procgen/ChunkHierarchyManager.h>
-#include <src/procgen/WorldUtility.h>
-#include <src/procgen/data/TreeStructure.h>
 
 void Program::runChunkHierarchyTest()
 {

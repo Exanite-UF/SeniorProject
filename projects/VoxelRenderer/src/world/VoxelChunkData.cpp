@@ -3,6 +3,7 @@
 #include <chrono>
 #include <glm/gtc/integer.hpp>
 #include <set>
+#include <src/threading/CancellationToken.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkUtility.h>
 #include <stdexcept>
@@ -340,7 +341,7 @@ void VoxelChunkData::copyFrom(VoxelChunk& other, const bool includeMipmaps)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void VoxelChunkData::copyTo(VoxelChunk& other) const
+void VoxelChunkData::copyTo(VoxelChunk& other, const CancellationToken& cancellationToken) const
 {
     ZoneScoped;
 
@@ -360,6 +361,11 @@ void VoxelChunkData::copyTo(VoxelChunk& other) const
         {
             ZoneScopedN("Chunked occupancy data upload");
 
+            if (cancellationToken.isCancellationRequested())
+            {
+                return;
+            }
+
             uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
             int offset = i * uploadChunkSize;
 
@@ -376,6 +382,11 @@ void VoxelChunkData::copyTo(VoxelChunk& other) const
         }
     }
 
+    if (cancellationToken.isCancellationRequested())
+    {
+        return;
+    }
+
     // Update mipmaps
     // This doesn't block the OpenGL driver
     other.updateMipMaps();
@@ -387,6 +398,11 @@ void VoxelChunkData::copyTo(VoxelChunk& other) const
         for (int i = 0; i < uploadChunkCount; ++i)
         {
             ZoneScopedN("Chunked material data upload");
+
+            if (cancellationToken.isCancellationRequested())
+            {
+                return;
+            }
 
             uint64_t remainingByteCount = byteCount - i * uploadChunkSize;
             int offset = i * uploadChunkSize;

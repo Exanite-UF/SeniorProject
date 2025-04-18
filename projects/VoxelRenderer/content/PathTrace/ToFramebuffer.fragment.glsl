@@ -501,7 +501,7 @@ void main()
     temporalResevoirDirection = getSampleDirection(previousTexelCoord);
     temporalResevoirWeights = getSampleWeights(previousTexelCoord);
 
-    if (any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || depthDifference > 1)
+    if (true || any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || depthDifference > 1)
     {
         temporalResevoirRadiance *= 0;
         temporalResevoirDirection *= 0;

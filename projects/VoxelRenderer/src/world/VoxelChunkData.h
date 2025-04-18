@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <src/threading/CancellationToken.h>
 
 #include <src/utilities/Moveable.h>
 #include <src/world/Material.h>
@@ -25,8 +26,6 @@ private:
     };
 
     Data data;
-
-    friend class VoxelChunkComponent;
 
 public:
     explicit VoxelChunkData(const glm::ivec3& size = glm::ivec3(0), bool allocateMipmaps = false);
@@ -64,7 +63,7 @@ public:
     void updateMipmaps();
 
     void copyFrom(VoxelChunk& other, bool includeMipmaps = false);
-    void copyTo(VoxelChunk& other) const;
+    void copyTo(VoxelChunk& other, const CancellationToken& cancellationToken = {}) const;
 
     void copyFrom(const VoxelChunkData& other);
     void copyTo(VoxelChunkData& other) const;

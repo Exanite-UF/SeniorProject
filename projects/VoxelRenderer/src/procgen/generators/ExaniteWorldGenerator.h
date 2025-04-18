@@ -4,12 +4,10 @@
 
 class ExaniteWorldGenerator : public WorldGenerator
 {
-private:
-    std::string materialKey = "dirt";
+public:
+    void generateData(VoxelChunkData& data) override;
+    void showDebugMenu() override;
 
 protected:
-    void generateData(VoxelChunkData& data) override;
-
-public:
-    void showDebugMenu() override;
+    void generateBuilding(VoxelChunkData& data, const glm::ivec3& cornerPosition, const glm::ivec3& size);
 };
