@@ -702,7 +702,12 @@ void main()
     setRayDepth(texelCoord, hit.dist); // Update the nearest distance
     setFirstHitOldDepth(texelCoord, hit.dist);
     setFirstHitPosition(texelCoord, hit.hitLocation);
-    setFirstHitNormal(texelCoord, normalize(hit.normal));
+    //setFirstHitNormal(texelCoord, normalize(hit.normal));
+
+
+    setFirstHitNormal(texelCoord, vec3(hit.iterations));
+
+
 
     // Calculate motion vectors
     {

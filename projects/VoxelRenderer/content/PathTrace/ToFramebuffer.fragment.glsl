@@ -510,6 +510,7 @@ void main()
 
     // Update ReSTIR resevoir
     // Also uses the samples directly for this pixel
+    /*
     {
         int radius = 1;
         if (voxelMaterial.roughness < 0.01)
@@ -572,6 +573,7 @@ void main()
             }
         }
     }
+    */
 
     // Sample from ReSTIR resevoir
     {
@@ -591,7 +593,7 @@ void main()
         setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
     }
 
-    normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
+    //normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
 
     // normal is now in camera space
     //(1, 0, 0) away from the camera
@@ -611,7 +613,7 @@ void main()
         miscOutput.x = -1;
     }
 
-    fragColor = vec4(light / samples + firstHitEmission, 1);
+    fragColor = vec4(vec3(normal.x) / 100, 1);//vec4(light / samples + firstHitEmission, 1);
     // fragColor = vec4(vec3(length(position - cameraPosition) / 1000), 1);
     posBuffer = position;
     miscBuffer = miscOutput;

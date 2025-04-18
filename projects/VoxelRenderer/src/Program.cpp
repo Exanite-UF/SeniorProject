@@ -234,7 +234,7 @@ void Program::run()
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
-        int numberOfBounces = 3;
+        int numberOfBounces = 0;
         renderer.setBounces(numberOfBounces);
 
         // Configure post processing
