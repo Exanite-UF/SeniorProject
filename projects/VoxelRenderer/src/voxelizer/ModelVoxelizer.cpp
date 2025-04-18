@@ -327,21 +327,6 @@ void ModelVoxelizer::generateVoxelMesh()
         }
     }
 
-    // VoxelChunkComponent
-    // Pass along scene object
-    auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
-    chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
-    chunkComponent->getTransform()->addGlobalPosition(gridCenter);
-    
-    glm::quat rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    chunkComponent->getTransform()->addGlobalRotation(rotation);
-
-    VoxelChunkCommandBuffer commandBuffer {};
-    commandBuffer.copyFrom(chunkData);
-    commandBuffer.setExistsOnGpu(true);
-
-    VoxelChunkManager::getInstance().submitCommandBuffer(chunkComponent, commandBuffer);
-
     isVoxelized = true;
     std::cout << "VOXELIZED!" << std::endl;
 }
@@ -390,6 +375,34 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
     }
     glBindVertexArray(0);
+}
+
+void ModelVoxelizer::addToWorld(glm::vec3 position, glm::quat rotation)
+{
+    // VoxelChunkComponent
+    // Pass along scene object
+    auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
+    chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
+
+    // Set Default Position and Rotation
+    if (position == glm::vec3(0.0f))
+    {
+        position = cameraTransform->getGlobalPosition() + cameraTransform->getForwardDirection() * 50.0f;
+    }
+    if (rotation == glm::quat(1.0f, 0.0f, 0.0f, 0.0f))
+    {
+        rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    }
+
+    chunkComponent->getTransform()->addGlobalPosition(position);
+    chunkComponent->getTransform()->addGlobalRotation(rotation);
+
+    // Send to World
+    VoxelChunkCommandBuffer commandBuffer {};
+    commandBuffer.copyFrom(chunkData);
+    commandBuffer.setExistsOnGpu(true);
+
+    VoxelChunkManager::getInstance().submitCommandBuffer(chunkComponent, commandBuffer);
 }
 
 void ModelVoxelizer::clearResources() {

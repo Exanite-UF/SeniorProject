@@ -365,6 +365,7 @@ void Program::run()
         std::shared_ptr<ModelPreviewer> modelPreviewer = std::make_shared<ModelPreviewer>();
         std::shared_ptr<ModelVoxelizer> modelVoxelizer = std::make_shared<ModelVoxelizer>();
         modelVoxelizer->setSceneObject(sceneObject);
+        modelVoxelizer->setSceneCameraTransform(cameraTransform);
         bool isModelLoaded = false;
         bool isModelVoxelized = false;
 
@@ -375,9 +376,10 @@ void Program::run()
             ImGuiFileBrowserFlags_SkipItemsCausingError |
             ImGuiFileBrowserFlags_EditPathString
         );
-        
+
         fileDialog.SetTitle("Import Model...");
         fileDialog.SetTypeFilters({ ".fbx", ".obj" });
+        fileDialog.SetPwd("content/Triangulation");
 
         renderer.setScene(scene);
         renderer.startAsynchronousReprojection();
@@ -804,6 +806,7 @@ void Program::run()
                             {
                                 if (ImGui::Button("Add to world"))
                                 {
+                                    modelVoxelizer->addToWorld();
                                     scene->addObjectChunk(modelVoxelizer->getChunkComponent());
                                 }
                             }
