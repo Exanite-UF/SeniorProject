@@ -218,6 +218,12 @@ void Window::setWindowed()
     glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowedPosition.x, lastWindowedPosition.y, lastWindowedSize.x, lastWindowedSize.y, 0);
 }
 
+void Window::setWindowed(int width, int height)
+{
+    lastWindowedSize = glm::i32vec2(width, height);
+    glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowedPosition.x, lastWindowedPosition.y, lastWindowedSize.x, lastWindowedSize.y, 0);
+}
+
 GLFWmonitor* Window::getCurrentMonitor(GLFWwindow* window)
 {
     int nmonitors, i;
