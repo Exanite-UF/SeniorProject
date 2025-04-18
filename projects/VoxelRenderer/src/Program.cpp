@@ -369,7 +369,13 @@ void Program::run()
         bool isModelVoxelized = false;
 
         //File Browser Setup
-        ImGui::FileBrowser fileDialog;
+        ImGui::FileBrowser fileDialog(
+            ImGuiFileBrowserFlags_CloseOnEsc | 
+            ImGuiFileBrowserFlags_ConfirmOnEnter |
+            ImGuiFileBrowserFlags_SkipItemsCausingError |
+            ImGuiFileBrowserFlags_EditPathString
+        );
+        
         fileDialog.SetTitle("Import Model...");
         fileDialog.SetTypeFilters({ ".fbx", ".obj" });
 
@@ -777,6 +783,15 @@ void Program::run()
                                         modelPreviewer->closeWindowVoxel();
                                         isModelVoxelized = false;
                                     }
+                                }
+
+                                if (ImGui::Button("Clear Model"))
+                                {
+                                    isModelLoaded = false;
+                                    isModelVoxelized = false;
+
+                                    modelPreviewer->clearResources();
+                                    modelVoxelizer->clearResources();
                                 }
                             }
                             ImGui::PopStyleColor(3);

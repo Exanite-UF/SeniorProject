@@ -191,3 +191,24 @@ void ModelPreviewer::closeWindowVoxel()
         voxelThread.join();
     }
 }
+
+void ModelPreviewer::clearResources()
+{
+    // Close Windows and Threads
+    if (triangleThreadRunning)
+    {
+        closeWindowTriangle();
+    }
+
+    if (voxelThreadRunning)
+    {
+        closeWindowVoxel();
+    }
+
+    triangleWindow.reset();
+    voxelWindow.reset();
+    loadedModel.reset();
+    modelVoxelizer.reset();
+    triangleShader.reset();
+    voxelShader.reset();
+}

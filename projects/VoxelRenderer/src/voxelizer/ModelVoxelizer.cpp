@@ -391,3 +391,41 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     }
     glBindVertexArray(0);
 }
+
+void ModelVoxelizer::clearResources() {
+    // Reset shared pointers
+    loadedModel.reset();
+    chunkData.reset();
+    chunkComponent.reset();
+
+    // Clear vectors
+    voxelGrid.clear();
+    voxelMesh.clear();
+    activeVoxels.clear();
+
+    // Reset OpenGL buffers
+    if (voxelVAO) {
+        glDeleteVertexArrays(1, &voxelVAO);
+        voxelVAO = 0;
+    }
+    if (voxelVBO) {
+        glDeleteBuffers(1, &voxelVBO);
+        voxelVBO = 0;
+    }
+    if (voxelEBO) {
+        glDeleteBuffers(1, &voxelEBO);
+        voxelEBO = 0;
+    }
+    if (instanceVBO) {
+        glDeleteBuffers(1, &instanceVBO);
+        instanceVBO = 0;
+    }
+
+    // Reset other variables
+    gridResolution = 0;
+    gridSize = glm::ivec3(0);
+    voxelSize = glm::vec3(0.0f);
+    minBounds = glm::vec3(0.0f);
+    maxBounds = glm::vec3(0.0f);
+    isVoxelized = false;
+}

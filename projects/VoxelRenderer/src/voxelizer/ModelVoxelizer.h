@@ -127,4 +127,6 @@ public:
     std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; }
 
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
+
+    void clearResources();
 };

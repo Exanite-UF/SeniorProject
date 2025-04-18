@@ -51,4 +51,6 @@ public:
 
     void closeWindowTriangle();
     void closeWindowVoxel();
+
+    void clearResources();
 };
