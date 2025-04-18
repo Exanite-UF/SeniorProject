@@ -186,10 +186,13 @@ void Program::run()
             }
         }
 
-        bool whichSkybox = false;
-        auto skybox2 = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
-        auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
-        scene->setSkybox(skybox2);
+        int skyboxIndex = false;
+        std::vector<std::shared_ptr<SkyboxComponent>> skyboxes {};
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt"));
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt"));
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox-night/skyboxIndirect.txt", "content/skybox-night/skyboxSettings.txt"));
+
+        scene->setSkybox(skyboxes.at(0));
 
         // Create the camera GameObject
         auto cameraObject = sceneObject->createChildObject("Camera");
@@ -617,15 +620,8 @@ void Program::run()
 
                 if (input->isKeyPressed(GLFW_KEY_L))
                 {
-                    whichSkybox = !whichSkybox;
-                    if (whichSkybox)
-                    {
-                        scene->setSkybox(skybox);
-                    }
-                    else
-                    {
-                        scene->setSkybox(skybox2);
-                    }
+                    skyboxIndex = (skyboxIndex + 1) % skyboxes.size();
+                    scene->setSkybox(skyboxes.at(skyboxIndex));
                 }
 
                 std::shared_ptr<VoxelChunkComponent> closestChunk {};
