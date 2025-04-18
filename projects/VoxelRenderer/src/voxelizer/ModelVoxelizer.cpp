@@ -332,6 +332,9 @@ void ModelVoxelizer::generateVoxelMesh()
     auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
     chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
     chunkComponent->getTransform()->addGlobalPosition(gridCenter);
+    
+    glm::quat rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    chunkComponent->getTransform()->addGlobalRotation(rotation);
 
     VoxelChunkCommandBuffer commandBuffer {};
     commandBuffer.copyFrom(chunkData);
