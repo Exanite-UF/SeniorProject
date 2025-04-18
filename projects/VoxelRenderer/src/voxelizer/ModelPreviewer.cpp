@@ -2,6 +2,9 @@
 #include <src/Content.h>
 #include <src/graphics/ShaderManager.h>
 #include <src/voxelizer/ModelPreviewer.h>
+#include <src/utilities/OpenGl.h>
+#include <src/windowing/Window.h>
+#include <src/windowing/GLFWContext.h> // Include the header for GLFWWindow
 #include <thread>
 
 ModelPreviewer::~ModelPreviewer()
@@ -202,13 +205,19 @@ void ModelPreviewer::clearResources()
 
     if (voxelThreadRunning)
     {
+        GLFWwindow* curContext = glfwGetCurrentContext();
+        voxelWindow->makeContextCurrent();
+        modelVoxelizer->clearResources();
+        if (curContext)
+        {
+            glfwMakeContextCurrent(curContext);
+        }
         closeWindowVoxel();
     }
 
     triangleWindow.reset();
     voxelWindow.reset();
     loadedModel.reset();
-    modelVoxelizer.reset();
     triangleShader.reset();
     voxelShader.reset();
 }

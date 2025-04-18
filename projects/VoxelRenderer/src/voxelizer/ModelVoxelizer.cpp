@@ -383,6 +383,7 @@ void ModelVoxelizer::addToWorld(glm::vec3 position, glm::quat rotation)
     // Pass along scene object
     auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
     chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
+    allChunkComponents.push_back(chunkComponent);
 
     // Set Default Position and Rotation
     if (position == glm::vec3(0.0f))
@@ -409,12 +410,17 @@ void ModelVoxelizer::clearResources() {
     // Reset shared pointers
     loadedModel.reset();
     chunkData.reset();
-    chunkComponent.reset();
+
+    for (auto& chunkComponent : allChunkComponents)
+    {
+        chunkComponent.reset();
+    }
 
     // Clear vectors
     voxelGrid.clear();
     voxelMesh.clear();
     activeVoxels.clear();
+
 
     // Reset OpenGL buffers
     if (voxelVAO) {
@@ -435,7 +441,7 @@ void ModelVoxelizer::clearResources() {
     }
 
     // Reset other variables
-    gridResolution = 0;
+
     gridSize = glm::ivec3(0);
     voxelSize = glm::vec3(0.0f);
     minBounds = glm::vec3(0.0f);

@@ -55,6 +55,7 @@ private:
     unsigned int instanceVBO {};
     std::vector<glm::vec3> activeVoxels {};
     std::shared_ptr<TransformComponent> cameraTransform {};
+    std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponents {};
 
     // Chunk Data
     std::shared_ptr<VoxelChunkData> chunkData {};
@@ -127,7 +128,8 @@ public:
     void setSceneObject(std::shared_ptr<GameObject> sceneObject) { this->sceneObject = sceneObject; }
     void setSceneCameraTransform(std::shared_ptr<TransformComponent> cameraTransform) { this->cameraTransform = cameraTransform; }
     std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; }
-
+    std::vector<std::shared_ptr<VoxelChunkComponent>> getChunkComponents() { return allChunkComponents; }
+    
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
 
     void addToWorld(glm::vec3 position = glm::vec3(0.0f), glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f));

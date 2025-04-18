@@ -792,8 +792,12 @@ void Program::run()
                                     isModelLoaded = false;
                                     isModelVoxelized = false;
 
-                                    modelPreviewer->clearResources();
-                                    modelVoxelizer->clearResources();
+                                    for (auto& Component : modelVoxelizer->getChunkComponents())
+                                    {
+                                        scene->removeObjectChunk(Component);
+                                    }
+
+                                    //modelPreviewer->clearResources();
                                 }
                             }
                             ImGui::PopStyleColor(3);
