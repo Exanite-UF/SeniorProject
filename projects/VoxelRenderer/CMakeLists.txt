@@ -51,7 +51,7 @@ endif()
 add_custom_target(VoxelRenderer_CopyContent)
 add_custom_command(
     TARGET VoxelRenderer_CopyContent POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     ${CMAKE_CURRENT_SOURCE_DIR}/content
     $<TARGET_FILE_DIR:VoxelRenderer>/content
 )
