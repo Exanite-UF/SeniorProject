@@ -409,7 +409,7 @@ RayHit findIntersection(vec3 rayPos, vec3 rayDir, int maxIterations, float curre
         }
         else
         {
-            //occupancyMapLayerCount
+            // occupancyMapLayerCount
             for (int i = firstMipMapLevel / 2; i <= occupancyMapLayerCount; i++)
             {
                 ivec3 p2 = (p >> (2 * i)) & 1;
@@ -703,12 +703,9 @@ void main()
     setRayDepth(texelCoord, hit.dist); // Update the nearest distance
     setFirstHitOldDepth(texelCoord, hit.dist);
     setFirstHitPosition(texelCoord, hit.hitLocation);
-    //setFirstHitNormal(texelCoord, normalize(hit.normal));
-
+    // setFirstHitNormal(texelCoord, normalize(hit.normal));
 
     setFirstHitNormal(texelCoord, vec3(hit.iterations));
-
-
 
     // Calculate motion vectors
     {
@@ -791,7 +788,7 @@ void main()
         vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
 
         // If a sun ray could hit the sun, then try
-        
+
         if (sunAngularSize > 0 && dot(normal, sunDirection) > 0.0)
         {
             float p = 0.1;
@@ -819,7 +816,6 @@ void main()
                 nextDirection.w = 1 / ((1 - p) / nextDirection.w);
             }
         }
-        
 
         setSecondaryDirection(texelCoord, vec4(normalize(nextDirection.xyz), nextDirection.w));
         setRayPosition(texelCoord, position); // Set where the ray should start from next

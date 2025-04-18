@@ -197,41 +197,40 @@ void Program::run()
         camera->moveSpeed = 4.317 * 8; // Set the base speed to 4.317 meter a second (minecraft walking speed. This is 9.6 miles per hour, Steve is very fast)
         auto cameraTransform = camera->getTransform();
         scene->setCamera(camera);
-        //cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
+        // cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
 
-        if(false){
-            cameraTransform->setGlobalPosition(glm::vec3(-391,90,79));
+        if (false)
+        {
+            cameraTransform->setGlobalPosition(glm::vec3(-391, 90, 79));
 
             camera->rotation.y -= 0.349065850399;
-            camera->rotation.x += 0.0174532925199;//0.523598775598;
+            camera->rotation.x += 0.0174532925199; // 0.523598775598;
             camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
-    
+
             cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
         }
-        
 
-        if(false){
+        if (false)
+        {
             cameraTransform->setGlobalPosition(glm::vec3(-635, 76, 214));
 
             camera->rotation.y -= -0.785398163397;
             camera->rotation.x += 0.523598775598;
             camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
-    
+
             cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
         }
 
-
-        if(true){
+        if (true)
+        {
             cameraTransform->setGlobalPosition(glm::vec3(-635, 76, 214));
 
             camera->rotation.y -= -2.35619449019;
             camera->rotation.x += 0.174532925199;
             camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
-    
+
             cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
         }
-        
-
 
         // Initialize the chunk manager
         voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
@@ -411,19 +410,19 @@ void Program::run()
         // Adjust render ratio to meet performance target
         window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS, &isAutomaticResolutionAdjustmentEnabled](Window* window, int a, int b)
             {
-                if(isAutomaticResolutionAdjustmentEnabled){
+                if (isAutomaticResolutionAdjustmentEnabled)
+                {
                     float pixels = window->size.x * window->size.y;
                     if (frameTimePerPixel > 0)
                     {
                         renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
                     }
-    
+
                     if (renderRatio > 1)
                     {
                         renderRatio = 1;
                     }
                 }
-                
             });
 
         while (!glfwWindowShouldClose(window->getGlfwWindowHandle()))
@@ -464,7 +463,8 @@ void Program::run()
                         frameTimePerPixel = weight * frameTimePerPixel + (1 - weight) * newSample;
                     }
 
-                    if(isAutomaticResolutionAdjustmentEnabled){
+                    if (isAutomaticResolutionAdjustmentEnabled)
+                    {
                         // The performace is unusable, update the fps
                         if (currentRenderFps < 15)
                         {
@@ -494,7 +494,6 @@ void Program::run()
                             }
                         }
                     }
-                    
                 }
 
                 // This lets you find the resolution at which 30fps is possible

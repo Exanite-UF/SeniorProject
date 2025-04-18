@@ -350,7 +350,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             {
                                 maxThick = tempThick;
                             }
-
                         }
                         else
                         {

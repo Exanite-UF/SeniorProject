@@ -593,7 +593,7 @@ void main()
         setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
     }
 
-    //normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
+    // normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
 
     // normal is now in camera space
     //(1, 0, 0) away from the camera
@@ -616,13 +616,15 @@ void main()
     float iterations = normal.x;
     int cutoff = 50;
 
-    if(iterations > cutoff){
-        fragColor = vec4(vec3(1, 1 - (iterations - cutoff) / cutoff, 1 - (iterations - cutoff) / cutoff), 1);//vec4(hueToRGB(-(iterations - 100) / 256 + 0.313725490196), 1);
-    }else{
-        fragColor = vec4(vec3(iterations) / cutoff, 1);//vec4(light / samples + firstHitEmission, 1);
+    if (iterations > cutoff)
+    {
+        fragColor = vec4(vec3(1, 1 - (iterations - cutoff) / cutoff, 1 - (iterations - cutoff) / cutoff), 1); // vec4(hueToRGB(-(iterations - 100) / 256 + 0.313725490196), 1);
+    }
+    else
+    {
+        fragColor = vec4(vec3(iterations) / cutoff, 1); // vec4(light / samples + firstHitEmission, 1);
     }
 
-    
     // fragColor = vec4(vec3(length(position - cameraPosition) / 1000), 1);
     posBuffer = position;
     miscBuffer = miscOutput;
