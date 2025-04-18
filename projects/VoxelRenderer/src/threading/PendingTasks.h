@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <future>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 template <typename T>
@@ -69,6 +70,8 @@ std::vector<std::shared_future<T>> PendingTasks<T>::getPending()
 template <typename T>
 void PendingTasks<T>::waitForPending()
 {
+    ZoneScoped;
+
     // Must use while statement since more tasks could have been added during the wait
     while (true)
     {
