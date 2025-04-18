@@ -276,7 +276,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     std::vector<int> _maxThick;
     std::vector<int> _tempThick;
 
-
     glm::ivec3 size = data.getSize();
     // Set the occupancy data of the voxel chunk
 
@@ -290,22 +289,26 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
     //
     // Encountering 10 non-air voxels in a row will disable grass for the rest of the column
 
-    
     {
 
         ZoneScopedN("Use Noise");
 
-        for (int y = 0; y < size.y; y++){
-            for (int x = 0; x < size.x; x++){
+        for (int y = 0; y < size.y; y++)
+        {
+            for (int x = 0; x < size.x; x++)
+            {
                 _lastAir.push_back(size.z);
                 _maxThick.push_back(0);
                 _tempThick.push_back(0);
             }
         }
 
-        for (int z = size.z - 1; z >= 0; z--){
-            for (int y = 0; y < size.y; y++){
-                for (int x = 0; x < size.x; x++){
+        for (int z = size.z - 1; z >= 0; z--)
+        {
+            for (int y = 0; y < size.y; y++)
+            {
+                for (int x = 0; x < size.x; x++)
+                {
                     int index = x + size.x * y;
                     float perlinNoiseSample = noiseOutput2D1[index];
                     float perlinNoiseSample2 = noiseOutput2D2[index];
@@ -314,13 +317,11 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                     float maxHeight = baseHeight + perlinNoiseSample * terrainMaxAmplitude;
                     float surfaceHeight = baseHeight + perlinNoiseSample * perlinNoiseSample2 * terrainMaxAmplitude;
 
-
                     int& lastAir = _lastAir[index]; // track the last height at which we saw air
                     int& maxThick = _maxThick[index]; // Keep track of the thickest consecutive region we have seen
                     int& tempThick = _tempThick[index]; // This keeps track of the current number of consecutive non-air voxels
 
                     float random3D = noiseOutput3D[index3D++];
-
 
                     // Calculate the threshold for filling in a voxel
                     // It use an formula that happens to give good results
@@ -364,7 +365,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             {
                                 maxThick = tempThick;
                             }
-
                         }
                         else
                         {
@@ -406,9 +406,6 @@ void PrototypeWorldGenerator::generateTerrain(VoxelChunkData& data)
                             continue;
                         }
                     }
-
-
-
                 }
             }
         }
