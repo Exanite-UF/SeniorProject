@@ -1,6 +1,7 @@
 #include "Program.h"
 
 #include <src/utilities/ImGui.h>
+#include <src/utilities/ImFileBrowser.h>
 #include <src/utilities/OpenGl.h>
 
 #include <tracy/Tracy.hpp>
@@ -367,6 +368,11 @@ void Program::run()
         bool isModelLoaded = false;
         bool isModelVoxelized = false;
 
+        //File Browser Setup
+        ImGui::FileBrowser fileDialog;
+        fileDialog.SetTitle("Import Model...");
+        fileDialog.SetTypeFilters({ ".fbx", ".obj" });
+
         renderer.setScene(scene);
         renderer.startAsynchronousReprojection();
 
@@ -724,28 +730,22 @@ void Program::run()
                         }
                         case 1:
                         {
-                            // Should be relative path
-                            // std::string modelFileName = "../../content/Triangulation/suzanne.obj";
                             std::string modelFileName = "content/Triangulation/suzanne.obj";
 
-                            ImGui::Text("Please choose a file.");
-                            ImGui::Indent(indentSize);
-                            ImGui::PushID("ModelKey");
-                            ImGui::InputText("", &modelFileName);
-                            ImGui::PopID();
-                            ImGui::Unindent(indentSize);
-
-                            // Triangle Mesh Preview
-                            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.750f, 0.625f, 0.5f));
-                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.129f, 0.460f, 0.405f, 0.5f));
-                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
-                            if (ImGui::Button("Import & Preview Model"))
+                            if (ImGui::Button("Import Model..."))
                             {
-                                // static std::string lastFile = modelFileName;
+                                fileDialog.Open();
+                            }
+                            
+                            fileDialog.Display();
+
+                            if (fileDialog.HasSelected())
+                            {
+                                modelFileName = fileDialog.GetSelected().string();
+                                fileDialog.ClearSelected();
                                 showOriginalModelMenu = !showOriginalModelMenu;
                                 if (showOriginalModelMenu)
                                 {
-                                    // make this set and load model so that the VAO/VBO work on same thread
                                     modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFileName);
                                     isModelLoaded = true;
                                 }
@@ -755,7 +755,6 @@ void Program::run()
                                     isModelLoaded = false;
                                 }
                             }
-                            ImGui::PopStyleColor(3);
 
                             // Voxel Mesh Preview
                             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.770f, 0.372f, 0.0f, 0.5f));
