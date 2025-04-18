@@ -451,6 +451,20 @@ void Program::run()
                             renderRatio = 1;
                         }
                     }
+
+                    if (currentRenderFps > 60)
+                    {
+                        float pixels = window->size.x * window->size.y;
+                        if (frameTimePerPixel > 0)
+                        {
+                            renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                        }
+
+                        if (renderRatio > 1)
+                        {
+                            renderRatio = 1;
+                        }
+                    }
                 }
 
                 // This lets you find the resolution at which 30fps is possible
@@ -532,7 +546,7 @@ void Program::run()
                     groundCameraHeight = camera->getTransform()->getGlobalPosition().z;
                 }
 
-                if (true && isGroundMovementEnabled)
+                if (isGroundMovementEnabled)
                 {
                     auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
                     // std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
