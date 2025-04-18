@@ -19,7 +19,7 @@ GlfwContext::GlfwContext(const std::string& contextName, bool isWindow, const Gl
     glfwWindowHint(GLFW_VISIBLE, isWindow ? GLFW_TRUE : GLFW_FALSE); // Show window only if the context is to be used for a window
 
     // Create window/context
-    auto windowSize = isWindow ? glm::ivec2(1920, 1080) : glm::ivec2(1, 1);
+    auto windowSize = isWindow ? glm::ivec2(1280, 720) : glm::ivec2(1, 1);
     auto shareWithHandle = shareWith != nullptr ? shareWith->glfwWindowHandle : nullptr;
     glfwWindowHandle = glfwCreateWindow(windowSize.x, windowSize.y, "", nullptr, shareWithHandle);
     if (glfwWindowHandle == nullptr)
