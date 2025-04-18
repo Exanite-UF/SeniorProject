@@ -4,6 +4,7 @@
 
 #include <glm/glm.hpp>
 #include <iostream>
+#include <src/procgen/WorldUtility.h>
 
 void ChunkHierarchyManager::validateChunkSize() const
 {
@@ -48,6 +49,7 @@ void ChunkHierarchyManager::addStructure(glm::ivec3 structureOrigin, std::shared
         {
             radiusOfRegion = glm::vec2(chunkSize) / 2.f;
         }
+        
         // std::cout << "Radius of region: " << levelCounter << " " << radiusOfRegion.x << " " << radiusOfRegion.y << std::endl;
 
         // Case 1: structure is larger than a chunk

@@ -2,6 +2,7 @@
 
 #include <src/utilities/Log.h>
 #include <src/world/MaterialManager.h>
+#include <src/utilities/Log.h>
 
 class WorldUtility
 {
