@@ -804,21 +804,16 @@ void Program::run()
                                 }
                                 ImGui::Unindent(indentSize);
 
-                                if (ImGui::Button("Voxelize Model"))
+                                if (!isModelVoxelized)
                                 {
-                                    
-                                    modelPreviewer->createVoxelWindow(window, modelVoxelizer);
-                                    isModelVoxelized = true;
+                                    if (ImGui::Button("Voxelize Model"))
+                                    {
+                                        
+                                        modelPreviewer->createVoxelWindow(window, modelVoxelizer);
+                                        isModelVoxelized = true;
+                                    }
                                 }
-
                                 
-
-                                if (ImGui::Button("New Model"))
-                                {
-                                    isModelLoaded = false;
-                                    isModelVoxelized = false;
-                                    modelPreviewer->clearResources();
-                                }
                             }
                             ImGui::PopStyleColor(3);
 
@@ -826,7 +821,7 @@ void Program::run()
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.313f, 0.450f, 0.310f, 0.5f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
 
-                            if (isModelVoxelized)
+                            if (modelVoxelizer->isVoxelized)
                             {
                                 if (ImGui::Button("Add to world"))
                                 {
@@ -834,7 +829,21 @@ void Program::run()
                                     scene->addObjectChunk(modelVoxelizer->getChunkComponent());
                                 }
                             }
-
+                            else if (isModelVoxelized)
+                            {
+                                ImGui::Text("Loading...");
+                            }
+                            
+                            if (isModelVoxelized)
+                            {
+                                if (ImGui::Button("New Model"))
+                                {
+                                    isModelLoaded = false;
+                                    isModelVoxelized = false;
+                                    modelPreviewer->clearResources();
+                                }
+                            }
+                            
                             if (ImGui::Button("Clear All"))
                             {
                                 for (auto& Component : scene->getObjectChunks())
