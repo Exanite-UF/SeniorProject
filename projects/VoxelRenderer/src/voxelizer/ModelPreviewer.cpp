@@ -25,7 +25,7 @@ void ModelPreviewer::createTriangleWindow(const std::shared_ptr<Window>& mainWin
 {
     if (triangleThreadRunning)
     {
-        return;
+        closeWindowTriangle();
     }
 
     this->modelVoxelizer = modelVoxelizer;
@@ -78,7 +78,7 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
 {
     if (voxelThreadRunning)
     {
-        return;
+        closeWindowVoxel();
     }
 
     this->modelVoxelizer = modelVoxelizer;

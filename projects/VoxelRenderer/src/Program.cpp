@@ -766,16 +766,8 @@ void Program::run()
                                 modelFileName = fileDialog.GetSelected().string();
                                 fileDialog.ClearSelected();
                                 showOriginalModelMenu = !showOriginalModelMenu;
-                                if (showOriginalModelMenu)
-                                {
-                                    modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFileName);
-                                    isModelLoaded = true;
-                                }
-                                else
-                                {
-                                    modelPreviewer->closeWindowTriangle();
-                                    isModelLoaded = false;
-                                }
+                                modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFileName);
+                                isModelLoaded = true;
                             }
 
                             // Voxel Mesh Preview
@@ -785,33 +777,17 @@ void Program::run()
 
                             if (isModelLoaded)
                             {
-                                if (ImGui::Button("Voxelize & Preview Model"))
+                                if (ImGui::Button("Voxelize Model"))
                                 {
-                                    showVoxelizedModelMenu = !showVoxelizedModelMenu;
-
-                                    if (showVoxelizedModelMenu)
-                                    {
-                                        modelPreviewer->createVoxelWindow(window, modelVoxelizer);
-                                        isModelVoxelized = true;
-                                    }
-                                    else
-                                    {
-                                        modelPreviewer->closeWindowVoxel();
-                                        isModelVoxelized = false;
-                                    }
+                                    modelPreviewer->createVoxelWindow(window, modelVoxelizer);
+                                    isModelVoxelized = true;
                                 }
 
-                                if (ImGui::Button("Clear Model"))
+                                if (ImGui::Button("New Model"))
                                 {
                                     isModelLoaded = false;
                                     isModelVoxelized = false;
-
-                                    for (auto& Component : modelVoxelizer->getChunkComponents())
-                                    {
-                                        scene->removeObjectChunk(Component);
-                                    }
-
-                                    //modelPreviewer->clearResources();
+                                    modelPreviewer->clearResources();
                                 }
                             }
                             ImGui::PopStyleColor(3);
@@ -826,6 +802,14 @@ void Program::run()
                                 {
                                     modelVoxelizer->addToWorld();
                                     scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                }
+                            }
+
+                            if (ImGui::Button("Clear All"))
+                            {
+                                for (auto& Component : scene->getObjectChunks())
+                                {
+                                    scene->removeObjectChunk(Component);
                                 }
                             }
 
