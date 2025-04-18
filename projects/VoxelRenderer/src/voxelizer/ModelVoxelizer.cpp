@@ -47,7 +47,6 @@ void ModelVoxelizer::setupBoundingBox()
     minBounds -= glm::vec3(1.0f);
     maxBounds += glm::vec3(1.0f);
 
-    gridResolution = 64;
     gridSize = glm::ivec3(gridResolution);
     voxelSize = (maxBounds - minBounds) / glm::vec3(gridSize);
     voxelGrid = std::vector<bool>(gridSize.x * gridSize.y * gridSize.z, false);
@@ -320,7 +319,7 @@ void ModelVoxelizer::generateVoxelMesh()
         {
             for (int x = 0; x < gridSize.x; ++x)
             {
-                static std::mt19937 gen(rd()); // Mersenne Twister RNG
+                static std::mt19937 gen(rd());
                 std::uniform_int_distribution<uint16_t> dis(0, static_cast<uint16_t>(Constants::VoxelChunk::maxMaterialCount - 1));
                 uint16_t randomizedIndex = dis(gen);
                 chunkData->setVoxelOccupancy(glm::ivec3(x, y, z), voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]);
@@ -456,3 +455,4 @@ void ModelVoxelizer::clearResources() {
     maxBounds = glm::vec3(0.0f);
     isVoxelized = false;
 }
+

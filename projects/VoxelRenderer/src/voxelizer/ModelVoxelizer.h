@@ -39,7 +39,7 @@ class ModelVoxelizer
 
 private:
     std::shared_ptr<Model> loadedModel {};
-    int gridResolution {};
+    int gridResolution = 64;
     glm::ivec3 gridSize {};
     glm::vec3 voxelSize {};
     std::vector<bool> voxelGrid {};
@@ -129,10 +129,13 @@ public:
     void setSceneCameraTransform(std::shared_ptr<TransformComponent> cameraTransform) { this->cameraTransform = cameraTransform; }
     std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; }
     std::vector<std::shared_ptr<VoxelChunkComponent>> getChunkComponents() { return allChunkComponents; }
-    
+
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
 
     void addToWorld(glm::vec3 position = glm::vec3(0.0f), glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
 
     void clearResources();
+
+    void setVoxelResolution(int resolution) { gridResolution = resolution; }   
+
 };

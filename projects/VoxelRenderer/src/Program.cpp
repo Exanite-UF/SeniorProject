@@ -777,11 +777,41 @@ void Program::run()
 
                             if (isModelLoaded)
                             {
+                                ImGui::Text("Voxel Resolution");
+                                ImGui::Indent(indentSize);
+                                static int comboIndex = 0;
+                                static const char* comboItems[] = { "x16", "x32", "x64", "x128", "x256" };
+                                if (ImGui::Combo("Res", &comboIndex, comboItems, IM_ARRAYSIZE(comboItems)))
+                                {
+                                    switch (comboIndex)
+                                    {
+                                        case 0:
+                                            modelVoxelizer->setVoxelResolution(16);
+                                            break;
+                                        case 1:
+                                            modelVoxelizer->setVoxelResolution(32);
+                                            break;
+                                        case 2:
+                                            modelVoxelizer->setVoxelResolution(64);
+                                            break;
+                                        case 3:
+                                            modelVoxelizer->setVoxelResolution(128);
+                                            break;
+                                        case 4:
+                                            modelVoxelizer->setVoxelResolution(256);
+                                            break;
+                                    }
+                                }
+                                ImGui::Unindent(indentSize);
+
                                 if (ImGui::Button("Voxelize Model"))
                                 {
+                                    
                                     modelPreviewer->createVoxelWindow(window, modelVoxelizer);
                                     isModelVoxelized = true;
                                 }
+
+                                
 
                                 if (ImGui::Button("New Model"))
                                 {
