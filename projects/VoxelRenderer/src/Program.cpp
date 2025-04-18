@@ -165,13 +165,8 @@ void Program::run()
         scene = sceneObject->addComponent<SceneComponent>();
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
-        bool whichSkybox = false;
-        auto skybox2 = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
-        auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
-        scene->setSkybox(skybox2);
-
         // Generate static, noise-based placeholder chunks for testing purposes
-        if (false)
+        if (true)
         {
             voxelChunkManager.settings.isChunkLoadingEnabled = false;
             voxelChunkManager.settings.enableCulling = false;
@@ -190,6 +185,11 @@ void Program::run()
                 }
             }
         }
+
+        bool whichSkybox = false;
+        auto skybox2 = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
+        auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
+        scene->setSkybox(skybox2);
 
         // Create the camera GameObject
         auto cameraObject = sceneObject->createChildObject("Camera");
@@ -585,18 +585,18 @@ void Program::run()
                     renderer.setBounces(numberOfBounces);
                 }
 
-
                 if (input->isKeyPressed(GLFW_KEY_L))
                 {
                     whichSkybox = !whichSkybox;
-                    if(whichSkybox){
+                    if (whichSkybox)
+                    {
                         scene->setSkybox(skybox);
-                    }else{
+                    }
+                    else
+                    {
                         scene->setSkybox(skybox2);
-                    }                    
+                    }
                 }
-                
-
 
                 std::shared_ptr<VoxelChunkComponent> closestChunk {};
                 if (scene->tryGetClosestWorldChunk(closestChunk))
