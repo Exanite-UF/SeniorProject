@@ -1,7 +1,7 @@
 #include "Program.h"
 
-#include <src/utilities/ImGui.h>
 #include <src/utilities/ImFileBrowser.h>
+#include <src/utilities/ImGui.h>
 #include <src/utilities/OpenGl.h>
 
 #include <tracy/Tracy.hpp>
@@ -369,13 +369,9 @@ void Program::run()
         bool isModelLoaded = false;
         bool isModelVoxelized = false;
 
-        //File Browser Setup
+        // File Browser Setup
         ImGui::FileBrowser fileDialog(
-            ImGuiFileBrowserFlags_CloseOnEsc | 
-            ImGuiFileBrowserFlags_ConfirmOnEnter |
-            ImGuiFileBrowserFlags_SkipItemsCausingError |
-            ImGuiFileBrowserFlags_EditPathString
-        );
+            ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_ConfirmOnEnter | ImGuiFileBrowserFlags_SkipItemsCausingError | ImGuiFileBrowserFlags_EditPathString);
 
         fileDialog.SetTitle("Import Model...");
         fileDialog.SetTypeFilters({ ".fbx", ".obj" });
@@ -761,7 +757,6 @@ void Program::run()
                                 {
                                     fileDialog.Open();
                                 }
-                                
                             }
                             fileDialog.Display();
 
@@ -816,12 +811,11 @@ void Program::run()
                                     ImGui::Spacing();
                                     if (ImGui::Button("Voxelize Model"))
                                     {
-                                        
+
                                         modelPreviewer->createVoxelWindow(window, modelVoxelizer);
                                         isModelVoxelized = true;
                                     }
                                 }
-                                
                             }
                             ImGui::PopStyleColor(3);
 
@@ -842,7 +836,7 @@ void Program::run()
                             {
                                 ImGui::Text("Loading...");
                             }
-                            
+
                             if (isModelVoxelized)
                             {
                                 ImGui::Spacing();
@@ -853,7 +847,7 @@ void Program::run()
                                     modelPreviewer->clearResources();
                                 }
                             }
-                            
+
                             ImGui::Spacing();
                             if (ImGui::Button("Clear All"))
                             {

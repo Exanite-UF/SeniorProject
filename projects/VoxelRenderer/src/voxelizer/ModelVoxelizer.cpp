@@ -1,25 +1,27 @@
 #include <src/gameobjects/GameObject.h>
 #include <src/gameobjects/TransformComponent.h>
 #include <src/graphics/ShaderProgram.h>
-#include <src/voxelizer/ModelVoxelizer.h>
-#include <src/world/VoxelChunkCommandBuffer.h>
-#include <src/world/VoxelChunkManager.h>
-#include <src/world/MaterialManager.h>
 #include <src/utilities/OpenGl.h>
+#include <src/voxelizer/ModelVoxelizer.h>
 #include <src/windowing/GLFWContext.h>
 #include <src/windowing/Window.h>
-
+#include <src/world/MaterialManager.h>
+#include <src/world/VoxelChunkCommandBuffer.h>
+#include <src/world/VoxelChunkManager.h>
 
 #include <random>
 
-//Helper
-bool isExtensionSupported(const char* extensionName) {
+// Helper
+bool isExtensionSupported(const char* extensionName)
+{
     GLint numExtensions;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
 
-    for (GLint i = 0; i < numExtensions; ++i) {
+    for (GLint i = 0; i < numExtensions; ++i)
+    {
         const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
-        if (std::strcmp(ext, extensionName) == 0) {
+        if (std::strcmp(ext, extensionName) == 0)
+        {
             return true;
         }
     }
@@ -225,14 +227,15 @@ void ModelVoxelizer::performConservativeRasterization()
     glUniform3fv(gridSizeLoc, 1, glm::value_ptr(glm::vec3(gridSize)));
     glUniform3fv(minBoundsLoc, 1, glm::value_ptr(minBounds));
     glUniform3fv(maxBoundsLoc, 1, glm::value_ptr(maxBounds));
-    if (gridSizeLoc == -1 || minBoundsLoc == -1 || maxBoundsLoc == -1) {
+    if (gridSizeLoc == -1 || minBoundsLoc == -1 || maxBoundsLoc == -1)
+    {
         std::cerr << "Error: Failed to get uniform location for one or more uniforms." << std::endl;
     }
-        
+
     // Render from the X-axis
     glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "projection"), 1, GL_FALSE, glm::value_ptr(projectionX));
     glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "view"), 1, GL_FALSE, glm::value_ptr(viewX));
-    
+
     renderModelForRasterization();
 
     // Render from the Y-axis
@@ -247,30 +250,32 @@ void ModelVoxelizer::performConservativeRasterization()
 
     glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
 
-
     std::vector<unsigned int> voxelData(gridSize.x * gridSize.y * gridSize.z);
 
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
     glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, voxelData.data());
     GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
+    if (error != GL_NO_ERROR)
+    {
         std::cerr << "OpenGL Error: " << error << std::endl;
     }
 
     voxelGrid.clear();
     voxelGrid.resize(gridSize.x * gridSize.y * gridSize.z, false);
 
-    // Map the 1D texture data to the 3D voxel grid
-    #pragma omp parallel for collapse(3) schedule(dynamic)
-    for (int z = 0; z < gridSize.z; ++z) {
-        for (int y = 0; y < gridSize.y; ++y) {
-            for (int x = 0; x < gridSize.x; ++x) {
+// Map the 1D texture data to the 3D voxel grid
+#pragma omp parallel for collapse(3) schedule(dynamic)
+    for (int z = 0; z < gridSize.z; ++z)
+    {
+        for (int y = 0; y < gridSize.y; ++y)
+        {
+            for (int x = 0; x < gridSize.x; ++x)
+            {
                 int index = z * (gridSize.x * gridSize.y) + y * gridSize.x + x;
                 voxelGrid[index] = (voxelData[index] > 0);
             }
         }
     }
-    
 }
 
 void ModelVoxelizer::setupModelForRasterization()
@@ -292,15 +297,19 @@ void ModelVoxelizer::setupModelForRasterization()
     // Counter
     int modelVertexCount = 0;
 
-    #pragma omp parallel for
-    for (size_t i = 0; i < loadedModel->meshes.size(); ++i) {
+#pragma omp parallel for
+    for (size_t i = 0; i < loadedModel->meshes.size(); ++i)
+    {
         const Mesh& mesh = loadedModel->meshes[i];
 
-        #pragma omp critical
+#pragma omp critical
         {
             vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
             std::transform(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices),
-                        [modelVertexCount](unsigned int index) { return index + modelVertexCount; });
+                [modelVertexCount](unsigned int index)
+                {
+                    return index + modelVertexCount;
+                });
             modelVertexCount += mesh.vertices.size();
         }
     }
@@ -339,7 +348,6 @@ void ModelVoxelizer::renderModelForRasterization()
     glBindVertexArray(0);
 }
 
-
 void ModelVoxelizer::voxelizeModel()
 {
     printf("VOXELIZING\n");
@@ -352,10 +360,13 @@ void ModelVoxelizer::voxelizeModel()
 
     // Check if user has NVidia GPU and if conservative rasterization is supported
 
-    if (isExtensionSupported("GL_NV_conservative_raster")) {
+    if (isExtensionSupported("GL_NV_conservative_raster"))
+    {
         printf("Conservative rasterization supported\n");
         performConservativeRasterization();
-    } else {
+    }
+    else
+    {
         printf("Conservative rasterization not supported\n");
         triangleVoxelization(voxelGrid);
     }
@@ -470,12 +481,10 @@ void ModelVoxelizer::generateVoxelMesh()
 
     static std::random_device rd;
 
-
-
     // VoxelChunkData
     chunkData = std::make_shared<VoxelChunkData>(gridSize);
 
-    #pragma omp parallel for collapse(3) schedule(dynamic)
+#pragma omp parallel for collapse(3) schedule(dynamic)
     for (int z = 0; z < gridSize.z; ++z)
     {
         for (int y = 0; y < gridSize.y; ++y)
@@ -507,7 +516,6 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     {
         return;
     }
-
 
     shader->use();
 
@@ -577,7 +585,8 @@ void ModelVoxelizer::addToWorld(glm::vec3 position, glm::quat rotation)
     VoxelChunkManager::getInstance().submitCommandBuffer(chunkComponent, commandBuffer);
 }
 
-void ModelVoxelizer::clearResources() {
+void ModelVoxelizer::clearResources()
+{
     // Reset shared pointers
     loadedModel.reset();
     chunkData.reset();
@@ -592,21 +601,24 @@ void ModelVoxelizer::clearResources() {
     voxelMesh.clear();
     activeVoxels.clear();
 
-
     // Reset OpenGL buffers
-    if (voxelVAO) {
+    if (voxelVAO)
+    {
         glDeleteVertexArrays(1, &voxelVAO);
         voxelVAO = 0;
     }
-    if (voxelVBO) {
+    if (voxelVBO)
+    {
         glDeleteBuffers(1, &voxelVBO);
         voxelVBO = 0;
     }
-    if (voxelEBO) {
+    if (voxelEBO)
+    {
         glDeleteBuffers(1, &voxelEBO);
         voxelEBO = 0;
     }
-    if (instanceVBO) {
+    if (instanceVBO)
+    {
         glDeleteBuffers(1, &instanceVBO);
         instanceVBO = 0;
     }
@@ -619,4 +631,3 @@ void ModelVoxelizer::clearResources() {
     maxBounds = glm::vec3(0.0f);
     isVoxelized = false;
 }
-
