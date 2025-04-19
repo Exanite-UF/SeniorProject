@@ -7,8 +7,16 @@
 #include <src/windowing/GLFWContext.h> // Include the header for GLFWWindow
 #include <thread>
 
+
+
+ModelPreviewer::ModelPreviewer()
+{
+    //rasterizationShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathRasterization, Content::Triangulation::fragShaderPathRasterization);
+}
+
 ModelPreviewer::~ModelPreviewer()
 {
+    rasterizationShader.reset();
     closeWindowTriangle();
     closeWindowVoxel();
 }
@@ -19,6 +27,7 @@ void ModelPreviewer::setModel(const std::shared_ptr<Model>& model)
 
     triangleShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathTriangle, Content::Triangulation::fragShaderPathTriangle);
     voxelShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathVoxel, Content::Triangulation::fragShaderPathVoxel);
+
 }
 
 void ModelPreviewer::createTriangleWindow(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath)
@@ -87,7 +96,10 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
     // Create Voxel Window in the main thread
     voxelWindow = std::make_shared<Window>("Voxelizer voxel window", mainWindow.get(), false, false);
     voxelWindow->setWindowed(300, 300);
-
+    if (!glewIsSupported("GL_ARB_shader_image_load_store")) {
+        std::cerr << "GL_ARB_shader_image_load_store is not supported!" << std::endl;
+    }
+    
     // Restore original context
     mainWindow->makeContextCurrent();
 
@@ -95,7 +107,9 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
     voxelThread = std::thread([this, modelVoxelizer]()
         {
             voxelWindow->makeContextCurrent();
-
+            rasterizationShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathRasterization, Content::Triangulation::fragShaderPathRasterization);
+            modelVoxelizer->rasterizationShader = rasterizationShader;
+        
             printf("STARTING RENDER LOOP\n");
 
             // generate voxels
@@ -149,6 +163,7 @@ void ModelPreviewer::renderTriangleWindow()
 void ModelPreviewer::renderVoxelWindow()
 {
     glEnable(GL_DEPTH_TEST);
+
     glClearColor(0.2f, 0.2f, 0.2f, 0);
     glClearDepth(1);
     glDepthFunc(GL_LESS);

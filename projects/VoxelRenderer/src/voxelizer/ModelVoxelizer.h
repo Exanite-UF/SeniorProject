@@ -46,6 +46,7 @@ private:
     glm::vec3 minBounds {};
     glm::vec3 maxBounds {};
 
+
     std::vector<Vertex> voxelMesh {};
 
     // Voxel Rendering
@@ -53,9 +54,29 @@ private:
     unsigned int voxelVBO {};
     unsigned int voxelEBO {};
     unsigned int instanceVBO {};
+
+    // Model Rendering for Rasterization
+    unsigned int modelVAO {};
+    unsigned int modelVBO {};
+    unsigned int modelEBO {};
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+
+    // Conservative Rasterization Algorithm
+    unsigned int voxelTexture {};
+    glm::mat4 projectionX {};
+    glm::mat4 projectionY {};
+    glm::mat4 projectionZ {};
+    glm::mat4 viewX {};
+    glm::mat4 viewY {};
+    glm::mat4 viewZ {};
+
+
     std::vector<glm::vec3> activeVoxels {};
     std::shared_ptr<TransformComponent> cameraTransform {};
     std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponents {};
+
+
 
     // Chunk Data
     std::shared_ptr<VoxelChunkData> chunkData {};
@@ -111,7 +132,9 @@ private:
 
     void triangleVoxelization(std::vector<bool>& voxels);
 
-    void raymarchVoxelization(std::vector<bool>& voxels);
+    void performConservativeRasterization();
+    void setupModelForRasterization(); // Setup the model for conservative rasterization
+    void renderModelForRasterization(); // Render the model for conservative rasterization
 
     void generateVoxelMesh();
 
@@ -121,10 +144,12 @@ public:
 
     ~ModelVoxelizer();
 
+    std::shared_ptr<ShaderProgram> rasterizationShader {};
+
     void loadModel(char* path);
     std::shared_ptr<Model> getModel();
     std::shared_ptr<VoxelChunkData> getChunkData();
-    void voxelizeModel(int option = 0);
+    void voxelizeModel();
     void setSceneObject(std::shared_ptr<GameObject> sceneObject) { this->sceneObject = sceneObject; }
     void setSceneCameraTransform(std::shared_ptr<TransformComponent> cameraTransform) { this->cameraTransform = cameraTransform; }
     std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; }

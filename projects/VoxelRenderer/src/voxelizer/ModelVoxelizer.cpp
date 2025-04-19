@@ -5,7 +5,26 @@
 #include <src/world/VoxelChunkCommandBuffer.h>
 #include <src/world/VoxelChunkManager.h>
 #include <src/world/MaterialManager.h>
+#include <src/utilities/OpenGl.h>
+#include <src/windowing/GLFWContext.h>
+#include <src/windowing/Window.h>
+
+
 #include <random>
+
+//Helper
+bool isExtensionSupported(const char* extensionName) {
+    GLint numExtensions;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
+    for (GLint i = 0; i < numExtensions; ++i) {
+        const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+        if (std::strcmp(ext, extensionName) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
 ModelVoxelizer::~ModelVoxelizer() = default;
 
@@ -38,14 +57,18 @@ void ModelVoxelizer::setupBoundingBox()
         }
     }
 
-    // Centering
-    // glm::vec3 boundingBoxCenter = (minBounds + maxBounds) * 0.5f;
-    // minBounds -= boundingBoxCenter;
-    // maxBounds -= boundingBoxCenter;
-
     // Padding
     minBounds -= glm::vec3(1.0f);
     maxBounds += glm::vec3(1.0f);
+
+    // Orthographic Projection Matrices
+    projectionX = glm::ortho(minBounds.y, maxBounds.y, minBounds.z, maxBounds.z, minBounds.x, maxBounds.x);
+    projectionY = glm::ortho(minBounds.x, maxBounds.x, minBounds.z, maxBounds.z, minBounds.y, maxBounds.y);
+    projectionZ = glm::ortho(minBounds.x, maxBounds.x, minBounds.y, maxBounds.y, minBounds.z, maxBounds.z);
+
+    viewX = glm::lookAt(glm::vec3(maxBounds.x, 0.0f, 0.0f), glm::vec3(minBounds.x, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    viewY = glm::lookAt(glm::vec3(0.0f, maxBounds.y, 0.0f), glm::vec3(0.0f, minBounds.y, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    viewZ = glm::lookAt(glm::vec3(0.0f, 0.0f, maxBounds.z), glm::vec3(0.0f, 0.0f, minBounds.z), glm::vec3(0.0f, 1.0f, 0.0f));
 
     gridSize = glm::ivec3(gridResolution);
     voxelSize = (maxBounds - minBounds) / glm::vec3(gridSize);
@@ -128,7 +151,6 @@ bool ModelVoxelizer::triangleIntersection(const Triangle& tri, const glm::vec3& 
     return triangleBoxOverlap(boxCenter, boxHalfSize, tri.vertices);
 }
 
-// FIX WITH BVH
 void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
 {
     printf("TRIANGLE VOXELIZATION BEGIN\n");
@@ -185,11 +207,140 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
     printf("TRIANGLE VOXELIZATION DONE\n");
 }
 
-void ModelVoxelizer::raymarchVoxelization(std::vector<bool>& voxels)
+void ModelVoxelizer::performConservativeRasterization()
 {
+    setupModelForRasterization();
+
+    glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+
+    // Bind the 3D texture for writing
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32UI);
+
+    rasterizationShader->use();
+
+    GLint gridSizeLoc = glGetUniformLocation(rasterizationShader->programId, "gridSize");
+    GLint minBoundsLoc = glGetUniformLocation(rasterizationShader->programId, "minBounds");
+    GLint maxBoundsLoc = glGetUniformLocation(rasterizationShader->programId, "maxBounds");
+
+    glUniform3fv(gridSizeLoc, 1, glm::value_ptr(glm::vec3(gridSize)));
+    glUniform3fv(minBoundsLoc, 1, glm::value_ptr(minBounds));
+    glUniform3fv(maxBoundsLoc, 1, glm::value_ptr(maxBounds));
+    if (gridSizeLoc == -1 || minBoundsLoc == -1 || maxBoundsLoc == -1) {
+        std::cerr << "Error: Failed to get uniform location for one or more uniforms." << std::endl;
+    }
+        
+    // Render from the X-axis
+    glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "projection"), 1, GL_FALSE, glm::value_ptr(projectionX));
+    glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "view"), 1, GL_FALSE, glm::value_ptr(viewX));
+    
+    renderModelForRasterization();
+
+    // Render from the Y-axis
+    glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "projection"), 1, GL_FALSE, glm::value_ptr(projectionY));
+    glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "view"), 1, GL_FALSE, glm::value_ptr(viewY));
+    renderModelForRasterization();
+
+    // Render from the Z-axis
+    glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "projection"), 1, GL_FALSE, glm::value_ptr(projectionZ));
+    glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "view"), 1, GL_FALSE, glm::value_ptr(viewZ));
+    renderModelForRasterization();
+
+    glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
+
+
+    std::vector<unsigned int> voxelData(gridSize.x * gridSize.y * gridSize.z);
+
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, voxelData.data());
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cerr << "OpenGL Error: " << error << std::endl;
+    }
+
+    voxelGrid.clear();
+    voxelGrid.resize(gridSize.x * gridSize.y * gridSize.z, false);
+
+    // Map the 1D texture data to the 3D voxel grid
+    #pragma omp parallel for collapse(3) schedule(dynamic)
+    for (int z = 0; z < gridSize.z; ++z) {
+        for (int y = 0; y < gridSize.y; ++y) {
+            for (int x = 0; x < gridSize.x; ++x) {
+                int index = z * (gridSize.x * gridSize.y) + y * gridSize.x + x;
+                voxelGrid[index] = (voxelData[index] > 0);
+            }
+        }
+    }
+    
 }
 
-void ModelVoxelizer::voxelizeModel(int option)
+void ModelVoxelizer::setupModelForRasterization()
+{
+    glGenTextures(1, &voxelTexture);
+    glGenVertexArrays(1, &modelVAO);
+    glGenBuffers(1, &modelVBO);
+    glGenBuffers(1, &modelEBO);
+
+    // Cube Texture
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32UI, gridSize.x, gridSize.y, gridSize.z, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    // Counter
+    int modelVertexCount = 0;
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < loadedModel->meshes.size(); ++i) {
+        const Mesh& mesh = loadedModel->meshes[i];
+
+        #pragma omp critical
+        {
+            vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
+            std::transform(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices),
+                        [modelVertexCount](unsigned int index) { return index + modelVertexCount; });
+            modelVertexCount += mesh.vertices.size();
+        }
+    }
+    glBindVertexArray(modelVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, modelVBO);
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    // vertex positions
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, position)));
+    // vertex normals
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, normal)));
+    // vertex texture coords
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, uv)));
+
+    glBindVertexArray(0);
+    vertices.clear();
+    indices.clear();
+}
+
+void ModelVoxelizer::renderModelForRasterization()
+{
+    // Bind the VAO for the model
+    glBindVertexArray(modelVAO);
+
+    // Issue the draw call
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+    // Unbind the VAO
+    glBindVertexArray(0);
+}
+
+
+void ModelVoxelizer::voxelizeModel()
 {
     printf("VOXELIZING\n");
     if (!loadedModel)
@@ -199,7 +350,15 @@ void ModelVoxelizer::voxelizeModel(int option)
 
     setupBoundingBox();
 
-    triangleVoxelization(voxelGrid);
+    // Check if user has NVidia GPU and if conservative rasterization is supported
+
+    if (isExtensionSupported("GL_NV_conservative_raster")) {
+        printf("Conservative rasterization supported\n");
+        performConservativeRasterization();
+    } else {
+        printf("Conservative rasterization not supported\n");
+        triangleVoxelization(voxelGrid);
+    }
 
     generateVoxelMesh();
 }
@@ -311,8 +470,12 @@ void ModelVoxelizer::generateVoxelMesh()
 
     static std::random_device rd;
 
+
+
     // VoxelChunkData
     chunkData = std::make_shared<VoxelChunkData>(gridSize);
+
+    #pragma omp parallel for collapse(3) schedule(dynamic)
     for (int z = 0; z < gridSize.z; ++z)
     {
         for (int y = 0; y < gridSize.y; ++y)
@@ -344,6 +507,7 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     {
         return;
     }
+
 
     shader->use();
 
