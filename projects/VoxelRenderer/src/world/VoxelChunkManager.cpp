@@ -87,6 +87,38 @@ VoxelChunkManager::ActiveWorldChunk::~ActiveWorldChunk()
     scene.reset();
 }
 
+VoxelChunkManager::TrackedThread::TrackedThread(const std::function<void()>& threadEntrypoint)
+{
+    isRunning = true;
+    thread = std::thread([&]()
+        {
+            try
+            {
+                threadEntrypoint();
+
+                {
+                    std::lock_guard lock(mutex);
+                    isRunning = false;
+                }
+            }
+            catch (...)
+            {
+                {
+                    std::lock_guard lock(mutex);
+                    isRunning = false;
+                }
+
+                throw;
+            }
+        });
+}
+
+bool VoxelChunkManager::TrackedThread::getIsRunning()
+{
+    std::lock_guard lock(mutex);
+    return isRunning;
+}
+
 VoxelChunkManager::~VoxelChunkManager() = default;
 
 void VoxelChunkManager::onSingletonDestroy()
@@ -121,13 +153,22 @@ void VoxelChunkManager::onSingletonDestroy()
 
     for (auto& thread : modificationThreadState.threads)
     {
-        if (thread.joinable())
+        if (thread->thread.joinable())
         {
-            thread.join();
+            thread->thread.join();
         }
     }
 
     Log::information("Successfully cleaned up VoxelChunkManager");
+}
+
+void VoxelChunkManager::createModificationThread()
+{
+    int threadId = modificationThreadState.threads.size();
+    modificationThreadState.threads.emplace(std::make_shared<TrackedThread>([this, threadId]()
+        {
+            chunkModificationThreadEntrypoint(threadId);
+        }));
 }
 
 void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene, const std::vector<std::shared_ptr<GlfwContext>>& modificationThreadContexts)
@@ -153,15 +194,34 @@ void VoxelChunkManager::initialize(const std::shared_ptr<SceneComponent>& scene,
 
     // Create chunk modification threads
     {
-        auto modificationThreadCount = modificationThreadContexts.size(); // Note: Each thread must have its own GlfwContext.
-        Log::information(std::format("Starting VoxelChunkManager {} chunk modification threads", modificationThreadCount));
-        for (int i = 0; i < modificationThreadCount; ++i)
+        // Note: Each thread must have its own GlfwContext
+        int concurrency = modificationThreadContexts.size();
+
+        modificationThreadState.concurrencyCount = concurrency;
+        modificationThreadState.activeSemaphore = std::make_shared<std::counting_semaphore<64>>(concurrency);
+
+        Log::information(std::format("Starting VoxelChunkManager {} chunk modification threads", concurrency));
+        for (int i = 0; i < concurrency; ++i)
         {
-            modificationThreadState.threads.push_back(std::thread(&VoxelChunkManager::chunkModificationThreadEntrypoint, this, modificationThreadState.threads.size()));
+            createModificationThread();
         }
     }
 
     Log::information("Initialized VoxelChunkManager");
+}
+
+VoxelChunkManager::WaitingForDependenciesCounter::WaitingForDependenciesCounter(ModificationThreadState* state)
+{
+    this->state = state;
+
+    std::lock_guard lock(state->threadManagementMutex);
+    state->waitingForDependencyCount++;
+}
+
+VoxelChunkManager::WaitingForDependenciesCounter::~WaitingForDependenciesCounter()
+{
+    std::lock_guard lock(state->threadManagementMutex);
+    state->waitingForDependencyCount--;
 }
 
 void VoxelChunkManager::chunkLoadingThreadEntrypoint(const int threadId)
@@ -227,7 +287,16 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 {
     tracy::SetThreadName(std::format("Chunk modification {}", threadId).c_str());
 
-    Log::debug("Started VoxelChunkManager chunk modification thread");
+    // Extra threads are added when more than concurrencyCount threads are waiting/sleeping
+    bool isExtraThread = threadId > modificationThreadState.concurrencyCount;
+    if (isExtraThread)
+    {
+        Log::debug("Started extra VoxelChunkManager chunk modification thread");
+    }
+    else
+    {
+        Log::debug("Started VoxelChunkManager chunk modification thread");
+    }
 
     state.modificationThreadContexts.at(threadId)->makeContextCurrent();
 
@@ -269,6 +338,9 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
             {
                 ZoneScopedN("Wait for dependencies");
 
+                // This automatically increments and decrements the waiting counter
+                WaitingForDependenciesCounter counter(&modificationThreadState);
+
                 // Wait for any dependencies to finish
                 task->dependencies.waitForPending();
             }
@@ -292,9 +364,22 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
             throw;
         }
+
+        // Exit if this is an "extra" thread
+        if (threadId > modificationThreadState.concurrencyCount)
+        {
+            break;
+        }
     }
 
-    Log::debug("Stopped VoxelChunkManager chunk modification thread");
+    if (isExtraThread)
+    {
+        Log::debug("Stopped extra VoxelChunkManager chunk modification thread");
+    }
+    else
+    {
+        Log::debug("Stopped VoxelChunkManager chunk modification thread");
+    }
 }
 
 void VoxelChunkManager::update(const float deltaTime)
@@ -975,6 +1060,8 @@ void VoxelChunkManager::showDebugMenu()
 
 int VoxelChunkManager::getNotStartedCommandBufferCount()
 {
+    ZoneScoped;
+
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
     cleanupCancelledCommandBuffers();
@@ -984,6 +1071,8 @@ int VoxelChunkManager::getNotStartedCommandBufferCount()
 
 void VoxelChunkManager::cleanupCancelledCommandBuffers()
 {
+    ZoneScoped;
+
     std::erase_if(modificationThreadState.pendingTasks, [](const std::shared_ptr<ChunkModificationTask>& task)
         {
             return task->cancellationToken.isCancellationRequested();
@@ -997,6 +1086,25 @@ std::shared_future<void> VoxelChunkManager::submitCommandBuffer(const std::share
     std::lock_guard lockPendingTasks(modificationThreadState.pendingTasksMutex);
 
     cleanupCancelledCommandBuffers();
+
+    // TODO: Disabled for now. Enabling will crash since each thread needs their own OpenGL context
+    // To enable this, we first need to dynamically reassign OpenGL contexts
+    if (false)
+    {
+        std::lock_guard threadManagementLock(modificationThreadState.threadManagementMutex);
+
+        std::erase_if(modificationThreadState.threads, [](const std::shared_ptr<TrackedThread>& thread)
+            {
+                return !thread->getIsRunning();
+            });
+
+        if ((modificationThreadState.threads.size() - modificationThreadState.waitingForDependencyCount) <= modificationThreadState.concurrencyCount)
+        {
+            // Too many threads are waiting
+            // Create temporary modification thread to handle the extra work
+            createModificationThread();
+        }
+    }
 
     auto task = std::make_shared<ChunkModificationTask>(component, state.scene, commandBuffer, cancellationToken);
     task->dependencies.addPending(component->getChunkManagerData().pendingTasks.getPending());

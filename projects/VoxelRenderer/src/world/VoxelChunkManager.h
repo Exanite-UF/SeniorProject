@@ -6,6 +6,7 @@
 #include <memory>
 #include <queue>
 #include <src/Constants.h>
+#include <unordered_set>
 
 #include <src/threading/PendingTasks.h>
 #include <src/utilities/Singleton.h>
@@ -95,6 +96,22 @@ private:
         ~ActiveWorldChunk() override;
     };
 
+    // Helper class for tracking whether a thread has exited
+    class TrackedThread : public NonCopyable
+    {
+    public:
+        std::thread thread {};
+
+    private:
+        std::mutex mutex {};
+        std::atomic<bool> isRunning = false;
+
+    public:
+        explicit TrackedThread(const std::function<void()>& threadEntrypoint);
+
+        bool getIsRunning();
+    };
+
     struct ManagerState
     {
     public:
@@ -128,8 +145,8 @@ private:
     public:
         std::vector<std::thread> threads {};
 
-        std::condition_variable pendingTasksCondition {};
         std::mutex pendingTasksMutex {};
+        std::condition_variable pendingTasksCondition {};
         std::queue<std::shared_ptr<ChunkLoadTask>> pendingTasks {};
 
         std::mutex completedTasksMutex {};
@@ -139,15 +156,38 @@ private:
     struct ModificationThreadState
     {
     public:
-        std::vector<std::thread> threads {};
+        // The number of threads that can be actively working
+        // The total number of threads can be higher
+        std::atomic<int> concurrencyCount = 0;
 
-        std::condition_variable_any pendingTasksCondition {};
+        // The number of threads that are waiting for dependencies
+        // This does not include threads limited by the activeSemaphore
+        int waitingForDependencyCount = 0;
+
+        std::unordered_set<std::shared_ptr<TrackedThread>> threads {};
+
+        std::mutex threadManagementMutex {};
+        std::shared_ptr<std::counting_semaphore<64>> activeSemaphore; // Used to limit the number of actively working threads
+
+    public:
         std::recursive_mutex pendingTasksMutex {};
+        std::condition_variable_any pendingTasksCondition {};
         std::deque<std::shared_ptr<ChunkModificationTask>> pendingTasks {}; // Deque is used to allow indexing, but pendingTasks is used as a queue
 
+    public:
         // Allow only one thread to upload at a time
         // Used to limit the amount of uploads, mutual exclusion isn't required
         std::mutex gpuUploadMutex {};
+    };
+
+    class WaitingForDependenciesCounter
+    {
+    private:
+        ModificationThreadState* state {};
+
+    public:
+        explicit WaitingForDependenciesCounter(ModificationThreadState* state);
+        ~WaitingForDependenciesCounter();
     };
 
 public:
@@ -180,5 +220,10 @@ protected:
 
 private:
     bool isChunkVisible(const std::shared_ptr<VoxelChunkComponent>& chunk, const std::shared_ptr<CameraComponent>& camera) const;
+
+    // Must manually synchronize
     void cleanupCancelledCommandBuffers();
+
+    // Must manually synchronize
+    void createModificationThread();
 };
