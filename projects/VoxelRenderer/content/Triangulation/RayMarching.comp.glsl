@@ -2,9 +2,9 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(r32ui, binding = 0) uniform uimage3D voxelTexture;
+layout(binding = 0, r32ui) uniform uimage3D voxelTexture;
 
-layout(std140, binding = 1) buffer TriangleBuffer
+layout(binding = 1, std140) buffer TriangleBuffer
 {
     vec3 triangles[];
 };
@@ -55,9 +55,13 @@ void main()
     vec3 normalized = (vec3(voxelCoord) + 0.5) / vec3(gridSize);
     vec3 worldPos = mix(minBounds, maxBounds, normalized);
 
+    //vec3 boundsSize = maxBounds - minBounds;
+    //vec3 voxelSize = boundsSize / vec3(gridSize);
+    //vec3 worldPos = minBounds + vec3(gl_GlobalInvocationID) * voxelSize + voxelSize * 0.5;
+
 
     // Ray Setup
-    vec3 rayOrigin = worldPos + vec3(0.0, 0.0, 1.0);
+    vec3 rayOrigin = worldPos + vec3(0.0, 0.0, (maxBounds.z - minBounds.z) / gridSize.z);
     vec3 rayDir = normalize(vec3(0.0, 0.0, -1.0));
 
 
@@ -70,7 +74,12 @@ void main()
         float t;
         if (intersectRayTriangle(rayOrigin, rayDir, v0, v1, v2, t))
         {
-            imageAtomicAdd(voxelTexture, voxelCoord, 1);
+            //imageAtomicAdd(voxelTexture, voxelCoord, 1);
+            //imageAtomicAdd(voxelTexture, uvec3(voxelCoord), 1u);
+            //imageStore(voxelTexture, ivec3(voxelCoord), uvec4(1));
+            //uvec3 coord = uvec3(voxelCoord.x, voxelCoord.y, voxelCoord.z);
+            //imageAtomicAdd(voxelTexture, coord, uint(1));
+
         }
     }
 }
