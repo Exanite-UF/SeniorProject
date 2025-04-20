@@ -64,5 +64,6 @@ public:
         constexpr static std::string_view fragShaderPathVoxel = "content/Triangulation/Voxel.fragment.glsl";
         constexpr static std::string_view vertShaderPathRasterization = "content/Triangulation/ConservativeRasterization.vertex.glsl";
         constexpr static std::string_view fragShaderPathRasterization = "content/Triangulation/ConservativeRasterization.fragment.glsl";
+        constexpr static std::string_view compShaderPathRayMarch = "content/Triangulation/RayMarching.comp.glsl";
     };
 };

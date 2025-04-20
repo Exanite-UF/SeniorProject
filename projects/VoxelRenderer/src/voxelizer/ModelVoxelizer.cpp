@@ -253,8 +253,8 @@ void ModelVoxelizer::setupModelForRasterization()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     // vertex positions
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, position)));
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, position)));
 
     glBindVertexArray(0);
 }
@@ -340,6 +340,72 @@ void ModelVoxelizer::performConservativeRasterization()
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
+void ModelVoxelizer::performRayMarchingVoxelization()
+{
+    // Gather Triangles
+    std::vector<Triangle> triangles = loadedModel->getTriangles();
+    std::vector<glm::vec3> triangleVertices(triangles.size() * 3);
+
+    for (const Triangle& tri : triangles) {
+        triangleVertices.push_back(tri.vertices[0].position);
+        triangleVertices.push_back(tri.vertices[1].position);
+        triangleVertices.push_back(tri.vertices[2].position);
+    }
+
+    // Generate Buffer Objects
+    glGenBuffers(1, &triangleSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, triangleSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, triangleVertices.size() * sizeof(glm::vec3), triangleVertices.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, triangleSSBO);
+
+    glGenTextures(1, &voxelTexture);
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32UI, gridSize.x, gridSize.y, gridSize.z, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cerr << "OpenGL Error: " << error << std::endl;
+    }
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
+
+
+    rayMarchingShader->use();
+
+    int triCount = static_cast<int>(triangleVertices.size() / 3);
+    glUniform1i(glGetUniformLocation(rayMarchingShader->programId, "triCount"), triCount);
+
+    GLint gridSizeLoc = glGetUniformLocation(rasterizationShader->programId, "gridSize");
+    GLint minBoundsLoc = glGetUniformLocation(rasterizationShader->programId, "minBounds");
+    GLint maxBoundsLoc = glGetUniformLocation(rasterizationShader->programId, "maxBounds");
+
+    glUniform3fv(gridSizeLoc, 1, glm::value_ptr(glm::vec3(gridSize)));
+    glUniform3fv(minBoundsLoc, 1, glm::value_ptr(minBounds));
+    glUniform3fv(maxBoundsLoc, 1, glm::value_ptr(maxBounds));
+    if (gridSizeLoc == -1 || minBoundsLoc == -1 || maxBoundsLoc == -1) {
+        std::cerr << "Error: Failed to get uniform location for one or more uniforms." << std::endl;
+    }
+
+    glm::ivec3 dispatch = (gridSize + glm::ivec3(7)) / glm::ivec3(8); // Round up to the nearest multiple of 8
+    glDispatchCompute(dispatch.x, dispatch.y, dispatch.z);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    std::vector<unsigned int> voxelData(gridSize.x * gridSize.y * gridSize.z);
+
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, voxelData.data());
+    std::cout << "Voxel (0, 0, 0): " << voxelData[0] << std::endl;
+
+    for (size_t i = 0; i < voxelData.size(); ++i) {
+        voxelGrid[i] = (voxelData[i] > 0);
+    }
+}
+
 
 void ModelVoxelizer::voxelizeModel()
 {
@@ -353,13 +419,17 @@ void ModelVoxelizer::voxelizeModel()
 
     // Check if user has NVidia GPU and if conservative rasterization is supported
 
-    if (isExtensionSupported("GL_NV_conservative_raster")) {
-        printf("Conservative rasterization supported\n");
-        performConservativeRasterization();
-    } else {
-        printf("Conservative rasterization not supported\n");
-        triangleVoxelization(voxelGrid);
-    }
+    //if (isExtensionSupported("GL_NV_conservative_raster")) {
+    //    printf("Conservative rasterization supported\n");
+    //    performConservativeRasterization();
+    //} else {
+    //    printf("Conservative rasterization not supported\n");
+    //    triangleVoxelization(voxelGrid);
+    //}
+
+    performRayMarchingVoxelization();
+
+
 
     generateVoxelMesh();
 }

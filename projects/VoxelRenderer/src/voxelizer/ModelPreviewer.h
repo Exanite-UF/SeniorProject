@@ -35,11 +35,11 @@ private:
     std::shared_ptr<ShaderProgram> triangleShader {};
     std::shared_ptr<ShaderProgram> voxelShader {};
     std::shared_ptr<ShaderProgram> rasterizationShader {};
+    std::shared_ptr<ShaderProgram> rayMarchingShader {};
 
     std::shared_ptr<ModelVoxelizer> modelVoxelizer {};
 
 public:
-    ModelPreviewer();
     ~ModelPreviewer();
 
     // Set instead of load since the voxelizer should be the one to load

@@ -55,6 +55,9 @@ private:
     unsigned int voxelEBO {};
     unsigned int instanceVBO {};
 
+    // Ray Marching
+    unsigned int triangleSSBO {};
+
     // Model Rendering for Rasterization
     unsigned int modelVAO {};
     unsigned int modelVBO {};
@@ -136,6 +139,8 @@ private:
     void setupModelForRasterization(); // Setup the model for conservative rasterization
     void renderModelForRasterization(); // Render the model for conservative rasterization
 
+    void performRayMarchingVoxelization();
+
     void generateVoxelMesh();
 
 public:
@@ -145,6 +150,7 @@ public:
     ~ModelVoxelizer();
 
     std::shared_ptr<ShaderProgram> rasterizationShader {};
+    std::shared_ptr<ShaderProgram> rayMarchingShader {};
 
     void loadModel(char* path);
     std::shared_ptr<Model> getModel();
