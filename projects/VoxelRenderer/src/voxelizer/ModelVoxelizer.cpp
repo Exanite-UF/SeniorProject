@@ -207,14 +207,76 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
     printf("TRIANGLE VOXELIZATION DONE\n");
 }
 
+
+void ModelVoxelizer::setupModelForRasterization()
+{
+    glGenTextures(1, &voxelTexture);
+    glGenVertexArrays(1, &modelVAO);
+    glGenBuffers(1, &modelVBO);
+    glGenBuffers(1, &modelEBO);
+
+    // Cube Texture
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32UI, gridSize.x, gridSize.y, gridSize.z, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cerr << "OpenGL Error: " << error << std::endl;
+    }
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    // Counter
+    int modelVertexCount = 0;
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < loadedModel->meshes.size(); ++i) {
+        const Mesh& mesh = loadedModel->meshes[i];
+
+        #pragma omp critical
+        {
+            vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
+            std::transform(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices),
+                        [modelVertexCount](unsigned int index) { return index + modelVertexCount; });
+            modelVertexCount += mesh.vertices.size();
+        }
+    }
+    
+    glBindVertexArray(modelVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, modelVBO);
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    // vertex positions
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, position)));
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+}
+
+void ModelVoxelizer::renderModelForRasterization()
+{
+    // Issue the draw call
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+}
+
+
 void ModelVoxelizer::performConservativeRasterization()
 {
     setupModelForRasterization();
 
     glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+    glDisable(GL_DEPTH_TEST);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
     // Bind the 3D texture for writing
-    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32UI);
+    glBindVertexArray(modelVAO);
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
     rasterizationShader->use();
 
@@ -245,13 +307,16 @@ void ModelVoxelizer::performConservativeRasterization()
     glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "view"), 1, GL_FALSE, glm::value_ptr(viewZ));
     renderModelForRasterization();
 
-    glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
+    glBindVertexArray(0);
 
 
     std::vector<unsigned int> voxelData(gridSize.x * gridSize.y * gridSize.z);
 
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
     glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, voxelData.data());
+    std::cout << "Voxel (0, 0, 0): " << voxelData[0] << std::endl;
+
+    glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
         std::cerr << "OpenGL Error: " << error << std::endl;
@@ -271,72 +336,8 @@ void ModelVoxelizer::performConservativeRasterization()
         }
     }
     
-}
-
-void ModelVoxelizer::setupModelForRasterization()
-{
-    glGenTextures(1, &voxelTexture);
-    glGenVertexArrays(1, &modelVAO);
-    glGenBuffers(1, &modelVBO);
-    glGenBuffers(1, &modelEBO);
-
-    // Cube Texture
-    glBindTexture(GL_TEXTURE_3D, voxelTexture);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32UI, gridSize.x, gridSize.y, gridSize.z, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    // Counter
-    int modelVertexCount = 0;
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < loadedModel->meshes.size(); ++i) {
-        const Mesh& mesh = loadedModel->meshes[i];
-
-        #pragma omp critical
-        {
-            vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
-            std::transform(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices),
-                        [modelVertexCount](unsigned int index) { return index + modelVertexCount; });
-            modelVertexCount += mesh.vertices.size();
-        }
-    }
-    glBindVertexArray(modelVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, modelVBO);
-
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    // vertex positions
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, position)));
-    // vertex normals
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, normal)));
-    // vertex texture coords
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, uv)));
-
-    glBindVertexArray(0);
-    vertices.clear();
-    indices.clear();
-}
-
-void ModelVoxelizer::renderModelForRasterization()
-{
-    // Bind the VAO for the model
-    glBindVertexArray(modelVAO);
-
-    // Issue the draw call
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-
-    // Unbind the VAO
-    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
 
