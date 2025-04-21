@@ -413,9 +413,9 @@ void Program::run()
         renderer.startAsynchronousReprojection();
 
         // Adjust render ratio to meet performance target
-        window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS, &isAutomaticResolutionAdjustmentEnabled](Window* window, int a, int b)
+        window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS, &isAutomaticResolutionAdjustmentEnabled, &renderer](Window* window, int a, int b)
             {
-                if (isAutomaticResolutionAdjustmentEnabled)
+                if (isAutomaticResolutionAdjustmentEnabled && !renderer.isRenderingPaused())
                 {
                     float pixels = window->size.x * window->size.y;
                     if (frameTimePerPixel > 0)
@@ -462,17 +462,20 @@ void Program::run()
                 {
                     auto temp = renderer.getRenderResolution();
                     float newSample = averagedRenderDeltaTime / (temp.x * temp.y);
-                    if (frameTimePerPixel < 0)
-                    {
-                        frameTimePerPixel = newSample;
+                    if(!renderer.isRenderingPaused() && !std::isinf(newSample) && !std::isnan(newSample)){
+                        if (frameTimePerPixel < 0)
+                        {
+                            frameTimePerPixel = newSample;
+                        }
+                        else
+                        {
+                            float weight = pow(0.9, rendersThisCycle);
+                            frameTimePerPixel = weight * frameTimePerPixel + (1 - weight) * newSample;
+                        }
                     }
-                    else
-                    {
-                        float weight = pow(0.9, rendersThisCycle);
-                        frameTimePerPixel = weight * frameTimePerPixel + (1 - weight) * newSample;
-                    }
+                    
 
-                    if (isAutomaticResolutionAdjustmentEnabled)
+                    if (isAutomaticResolutionAdjustmentEnabled && !renderer.isRenderingPaused())
                     {
                         // The performace is unusable, update the fps
                         if (currentRenderFps < 15)
@@ -622,6 +625,8 @@ void Program::run()
                 if (input->isKeyPressed(GLFW_KEY_B))
                 {
                     renderer.toggleRendering();
+
+                    
                 }
 
                 if (input->isKeyPressed(GLFW_KEY_V))
