@@ -7,6 +7,7 @@
 
 #include <src/gameobjects/Component.h>
 #include <src/world/CameraComponent.h>
+#include <src/world/RaycastHit.h>
 #include <src/world/SkyboxComponent.h>
 #include <src/world/VoxelChunkComponent.h>
 
@@ -61,5 +62,5 @@ public:
     void setSkybox(const std::shared_ptr<SkyboxComponent>& skybox);
     std::shared_ptr<SkyboxComponent> getSkybox();
 
-    std::pair<float, glm::vec3> raycast(glm::vec3 start, glm::vec3 direction);
+    RaycastHit raycast(glm::vec3 start, glm::vec3 direction);
 };
