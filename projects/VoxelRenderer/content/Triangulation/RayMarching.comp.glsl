@@ -54,12 +54,8 @@ void main()
     vec3 normalized = (vec3(voxelCoord) + 0.5) / vec3(gridSize);
     vec3 worldPos = mix(minBounds, maxBounds, normalized);
 
-    // vec3 boundsSize = maxBounds - minBounds;
-    // vec3 voxelSize = boundsSize / vec3(gridSize);
-    // vec3 worldPos = minBounds + vec3(gl_GlobalInvocationID) * voxelSize + voxelSize * 0.5;
-
     // Ray Setup
-    vec3 rayOrigin = worldPos + vec3(0.0, 0.0, (maxBounds.z - minBounds.z) / gridSize.z);
+    vec3 rayOrigin = vec3(worldPos.x, worldPos.y, maxBounds.z + 0.1);
     vec3 rayDir = normalize(vec3(0.0, 0.0, -1.0));
 
     for (int i = 0; i < triCount; i++)
@@ -72,8 +68,6 @@ void main()
         if (intersectRayTriangle(rayOrigin, rayDir, v0, v1, v2, t))
         {
             imageAtomicAdd(voxelTexture, voxelCoord, 1u);
-            // imageAtomicAdd(voxelTexture, uvec3(voxelCoord), 1u);
-            // imageStore(voxelTexture, ivec3(voxelCoord), uvec4(1));
         }
     }
 }
