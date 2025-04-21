@@ -381,6 +381,8 @@ void Program::run()
         fileDialog.SetTypeFilters({ ".fbx", ".obj" });
         fileDialog.SetPwd("content/Triangulation");
 
+        bool isCursorCaptured = false;
+
         renderer.setScene(scene);
         renderer.startAsynchronousReprojection();
 
@@ -493,13 +495,18 @@ void Program::run()
             {
                 if (!inputManager->cursorEnteredThisFrame)
                 {
+                    int mode = glfwGetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR);
+
                     auto mouseDelta = input->getMouseDelta();
 
-                    camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
-                    camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
-                    camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
+                    if (isCursorCaptured)
+                    {
+                        camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
+                        camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
+                        camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
 
-                    cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+                        cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+                    }          
                 }
                 else
                 {
@@ -656,10 +663,12 @@ void Program::run()
                     if (mode == GLFW_CURSOR_DISABLED)
                     {
                         glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                        isCursorCaptured = false;
                     }
                     else
                     {
                         glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                        isCursorCaptured = true;
                     }
                 }
                 if (input->isKeyPressed(GLFW_KEY_END))
@@ -794,6 +803,7 @@ void Program::run()
                                     {
                                         case 0:
                                             modelVoxelizer->setVoxelResolution(16);
+                                            std::cout << "Voxel Resolution: 16" << std::endl;
                                             break;
                                         case 1:
                                             modelVoxelizer->setVoxelResolution(32);
@@ -832,10 +842,37 @@ void Program::run()
                             if (modelVoxelizer->isVoxelized)
                             {
                                 ImGui::Spacing();
-                                if (ImGui::Button("Add to world"))
+                                //if (ImGui::Button("Add to world"))
+                                //{
+                                //    modelVoxelizer->addToWorld();
+                                //    scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                //}
+                                ImGui::Text("Left click to add to world.");
+                                if (input->isButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && isCursorCaptured)
                                 {
-                                    modelVoxelizer->addToWorld();
-                                    scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                    if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL))
+                                    {
+                                        glm::vec3 position = cameraTransform->getGlobalPosition() + cameraTransform->getForwardDirection() * 50.0f;
+                                        glm::quat initialRotationZ = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+                                        glm::quat initialRotationY = glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+                                        glm::vec3 targetPoint = cameraTransform->getGlobalPosition();
+                                        glm::vec3 direction = glm::normalize(targetPoint - position);
+                                        glm::vec3 up = cameraTransform->getUpDirection(); // Or compute from transform
+                                        glm::quat lookAtRotation = glm::quatLookAt(direction, up);
+
+                                        glm::quat finalRotation = lookAtRotation * initialRotationY;
+
+                                        modelVoxelizer->addToWorld(position, finalRotation);
+                                        std::cout << "Position: " << position.x << " " << position.y << " " << position.z << std::endl;
+                                        scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                    }
+                                    else
+                                    {
+                                        modelVoxelizer->addToWorld();
+                                        scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                    }
+                                    std::cout << "Left mouse button clicked!" << std::endl;
                                 }
                             }
                             else if (isModelVoxelized)

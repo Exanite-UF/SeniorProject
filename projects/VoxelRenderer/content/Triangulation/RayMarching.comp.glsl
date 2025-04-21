@@ -2,7 +2,7 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(binding = 0, r32ui) uniform uimage3D voxelTexture;
+layout(binding = 0, r32ui) uniform coherent uimage3D voxelTexture;
 
 layout(binding = 1, std140) buffer TriangleBuffer
 {
@@ -74,11 +74,9 @@ void main()
         float t;
         if (intersectRayTriangle(rayOrigin, rayDir, v0, v1, v2, t))
         {
-            //imageAtomicAdd(voxelTexture, voxelCoord, 1);
+            imageAtomicAdd(voxelTexture, voxelCoord, 1u);
             //imageAtomicAdd(voxelTexture, uvec3(voxelCoord), 1u);
             //imageStore(voxelTexture, ivec3(voxelCoord), uvec4(1));
-            //uvec3 coord = uvec3(voxelCoord.x, voxelCoord.y, voxelCoord.z);
-            //imageAtomicAdd(voxelTexture, coord, uint(1));
 
         }
     }

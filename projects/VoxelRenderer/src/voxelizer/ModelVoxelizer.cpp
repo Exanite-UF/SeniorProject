@@ -238,7 +238,7 @@ void ModelVoxelizer::performRayMarchingVoxelization()
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32UI);
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
 
 
@@ -419,6 +419,7 @@ void ModelVoxelizer::generateVoxelMesh()
                 uint16_t randomizedIndex = dis(gen);
                 chunkData->setVoxelOccupancy(glm::ivec3(x, y, z), voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]);
                 chunkData->setVoxelMaterial(glm::ivec3(x, y, z), MaterialManager::getInstance().getMaterialByIndex(randomizedIndex));
+                
                 if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
                 {
                     glm::vec3 voxelWorldPosition = minBounds + glm::vec3(x, y, z);
@@ -486,6 +487,14 @@ void ModelVoxelizer::addToWorld(glm::vec3 position, glm::quat rotation)
     // Pass along scene object
     auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
     chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
+
+    //static std::random_device rd;
+    //static std::mt19937 gen(rd());
+    //std::uniform_int_distribution<uint16_t> dis(0, static_cast<uint16_t>(Constants::VoxelChunk::maxMaterialCount - 1));
+    //uint16_t randomizedIndex = dis(gen);
+    //MaterialManager::getInstance().getMaterialByIndex(randomizedIndex)
+
+
     allChunkComponents.push_back(chunkComponent);
 
     // Set Default Position and Rotation
