@@ -2,33 +2,30 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
+#include <format>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
 #include <FastNoise/FastNoise.h>
-#include <PerlinNoise/PerlinNoise.hpp>
-
 #include <FastNoiseLite/FastNoiseLite.h>
-#include <cstdlib>
-#include <format>
+#include <PerlinNoise/PerlinNoise.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/integer.hpp>
+#include <tracy/Tracy.hpp>
+
 #include <src/procgen/ChunkHierarchyManager.h>
 #include <src/procgen/PrintUtility.h>
 #include <src/procgen/WorldUtility.h>
-#include <src/procgen/data/FlatArrayData.h>
-#include <src/procgen/generators/PrototypeWorldGenerator.h>
-#include <src/procgen/synthesizers/GridPointSynthesizer.h>
 #include <src/procgen/synthesizers/PoissonDiskPointSynthesizer.h>
 #include <src/procgen/synthesizers/TextureOctaveNoiseSynthesizer.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/Log.h>
+#include <src/utilities/VectorUtility.h>
 #include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkData.h>
-#include <tracy/Tracy.hpp>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/integer.hpp>
 
 bool hasGeneratedSeedNode = false;
 

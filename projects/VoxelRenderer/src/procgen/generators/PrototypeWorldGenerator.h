@@ -40,7 +40,7 @@ private:
     int noMoreGrassDepth = 10;
 
     // Trees
-    int voxelsPerMeter = 4; 
+    int voxelsPerMeter = 4;
     glm::vec2 treeHeightRangeMeters = { 5, 7 }; // Height of trunk
     glm::vec2 treeWidthRangeMeters = { 1, 1 }; // Width of chunk (square)
     glm::vec2 leafWidthXRangeMeters = { 4, 6 };
