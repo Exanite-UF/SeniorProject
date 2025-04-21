@@ -17,4 +17,7 @@ void main()
     {
         imageAtomicAdd(voxelTexture, voxelCoord, 1);
     }
+
 }
+
+
