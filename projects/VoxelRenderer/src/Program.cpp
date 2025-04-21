@@ -381,7 +381,7 @@ void Program::run()
         );
 
         fileDialog.SetTitle("Import Model...");
-        fileDialog.SetTypeFilters({ ".fbx", ".obj" });
+        fileDialog.SetTypeFilters({ ".fbx", ".obj", ".dae", ".blend", ".glTF", ".3ds", ".ply" });
         fileDialog.SetPwd("content/Triangulation");
 
         bool isCursorCaptured = false;

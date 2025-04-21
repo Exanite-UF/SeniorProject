@@ -12,6 +12,7 @@
 
 ModelPreviewer::~ModelPreviewer()
 {
+    rasterizationShader.reset();
     rayMarchingShader.reset();
     closeWindowTriangle();
     closeWindowVoxel();
@@ -103,6 +104,9 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
     voxelThread = std::thread([this, modelVoxelizer]()
         {
             voxelWindow->makeContextCurrent();
+            
+            rasterizationShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathRasterization, Content::Triangulation::fragShaderPathRasterization);
+            modelVoxelizer->rasterizationShader = rasterizationShader;
 
             rayMarchingShader = ShaderManager::getInstance().getComputeProgram(Content::Triangulation::compShaderPathRayMarch);
             modelVoxelizer->rayMarchingShader = rayMarchingShader;

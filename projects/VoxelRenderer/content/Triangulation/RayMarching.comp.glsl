@@ -61,7 +61,7 @@ void main()
 
 
     // Ray Setup
-    vec3 rayOrigin = worldPos + vec3(0.0, 0.0, (maxBounds.z - minBounds.z) / gridSize.z);
+    vec3 rayOrigin = vec3(worldPos.x, worldPos.y, maxBounds.z + 0.1);
     vec3 rayDir = normalize(vec3(0.0, 0.0, -1.0));
 
 

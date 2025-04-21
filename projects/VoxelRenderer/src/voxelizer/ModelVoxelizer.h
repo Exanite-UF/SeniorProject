@@ -67,6 +67,13 @@ private:
 
     // Conservative Rasterization Algorithm
     unsigned int voxelTexture {};
+    glm::mat4 projectionX {};
+    glm::mat4 projectionY {};
+    glm::mat4 projectionZ {};
+    glm::mat4 viewX {};
+    glm::mat4 viewY {};
+    glm::mat4 viewZ {};
+
 
     std::vector<glm::vec3> activeVoxels {};
     std::shared_ptr<TransformComponent> cameraTransform {};
@@ -127,6 +134,10 @@ private:
 
     void triangleVoxelization(std::vector<bool>& voxels);
 
+    void performConservativeRasterization();
+    void setupModelForRasterization(); // Setup the model for conservative rasterization
+    void renderModelForRasterization(); // Render the model for conservative rasterization
+
     void performRayMarchingVoxelization();
 
     void generateVoxelMesh();
@@ -137,6 +148,7 @@ public:
 
     ~ModelVoxelizer();
 
+    std::shared_ptr<ShaderProgram> rasterizationShader {};
     std::shared_ptr<ShaderProgram> rayMarchingShader {};
 
     void loadModel(char* path);
