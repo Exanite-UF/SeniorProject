@@ -894,10 +894,27 @@ void Program::run()
                                     modelPreviewer->clearResources();
                                 }
                             }
+
+                            // Ray Cast
+
                             
                             ImGui::Spacing();
                             if (allChunkComponentsInScene.size() > 0)
                             {
+                                if (input->isButtonPressed(GLFW_MOUSE_BUTTON_RIGHT) && isCursorCaptured)
+                                {
+                                    RaycastHit result = scene->raycast(cameraTransform->getGlobalPosition(), cameraTransform->getForwardDirection());
+                                    if (result.isValid)
+                                    {
+                                        std::shared_ptr<VoxelChunkComponent> hitChunk = result.object->getComponent<VoxelChunkComponent>();
+                                        scene->removeObjectChunk(hitChunk);
+                                        allChunkComponentsInScene.erase(std::remove(allChunkComponentsInScene.begin(), allChunkComponentsInScene.end(), hitChunk), allChunkComponentsInScene.end());
+                                    }
+                                    else
+                                    {
+                                        std::cout << "Raycast did not hit any object." << std::endl;
+                                    }
+                                }
                                 ImGui::Text("Objects in world: %d", allChunkComponentsInScene.size());
                                 if (ImGui::Button("Clear All"))
                                 {
