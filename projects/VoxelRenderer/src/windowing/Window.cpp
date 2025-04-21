@@ -1,7 +1,7 @@
 #include <stdexcept>
 
-#include <src/windowing/Window.h>
 #include <src/Content.h>
+#include <src/windowing/Window.h>
 
 Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enableImGui, bool isMainWindow)
     : GlfwContext(contextName, true, shareWith)
