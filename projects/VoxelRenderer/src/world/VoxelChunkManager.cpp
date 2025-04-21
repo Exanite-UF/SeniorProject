@@ -266,8 +266,12 @@ void VoxelChunkManager::chunkModificationThreadEntrypoint(const int threadId)
 
         try
         {
-            // Wait for any dependencies to finish
-            task->dependencies.waitForPending();
+            {
+                ZoneScopedN("Wait for dependencies");
+
+                // Wait for any dependencies to finish
+                task->dependencies.waitForPending();
+            }
 
             // Apply the chunk command buffer
             {
@@ -537,7 +541,7 @@ void VoxelChunkManager::update(const float deltaTime)
 
                 // Clamp LOD level
                 int minLod = isClosest4Chunks ? 0 : 1; // Only allow the closest 4 chunks to use LOD 0
-                int maxLod = 6; // Clamp max lod to 6
+                int maxLod = 4; // Clamp max lod to 4
                 lod = glm::clamp(lod, minLod, maxLod);
 
                 if (settings.lodDistanceScalingFactor <= 1)

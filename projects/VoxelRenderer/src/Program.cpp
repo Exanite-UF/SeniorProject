@@ -166,10 +166,6 @@ void Program::run()
         scene = sceneObject->addComponent<SceneComponent>();
         auto chunkSize = Constants::VoxelChunkComponent::chunkSize;
 
-        auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt");
-        // auto skybox = sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt");
-        scene->setSkybox(skybox);
-
         // Generate static, noise-based placeholder chunks for testing purposes
         if (false)
         {
@@ -191,13 +187,43 @@ void Program::run()
             }
         }
 
+        int skyboxIndex = false;
+        std::vector<std::shared_ptr<SkyboxComponent>> skyboxes {};
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox2/skyboxIndirect.txt", "content/skybox2/skyboxSettings.txt"));
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox/skyboxIndirect.txt", "content/skybox/skyboxSettings.txt"));
+        skyboxes.push_back(sceneObject->addComponent<SkyboxComponent>("content/skybox-night/skyboxIndirect.txt", "content/skybox-night/skyboxSettings.txt"));
+
+        scene->setSkybox(skyboxes.at(0));
+
         // Create the camera GameObject
         auto cameraObject = sceneObject->createChildObject("Camera");
         auto camera = cameraObject->addComponent<CameraComponent>();
         camera->moveSpeed = 4.317 * 8; // Set the base speed to 4.317 meter a second (minecraft walking speed. This is 9.6 miles per hour, Steve is very fast)
         auto cameraTransform = camera->getTransform();
         scene->setCamera(camera);
-        cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
+        // cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
+
+        if (false)
+        {
+            cameraTransform->setGlobalPosition(glm::vec3(-391, 90, 79));
+
+            camera->rotation.y -= 0.349065850399;
+            camera->rotation.x += 0.0174532925199; // 0.523598775598;
+            camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
+
+            cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+        }
+
+        if (true)
+        {
+            cameraTransform->setGlobalPosition(glm::vec3(-635, 76, 214));
+
+            camera->rotation.y -= -0.785398163397;
+            camera->rotation.x += 0.523598775598;
+            camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
+
+            cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+        }
 
         // Initialize the chunk manager
         voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
@@ -205,8 +231,9 @@ void Program::run()
         // Create the renderer
         Renderer renderer(window, offscreenContext);
 
-        float renderRatio = 0.66666666f;
+        float renderRatio = 1.f; // 0.66666666f;
         float targetReprojectionFPS = 20;
+        bool isAutomaticResolutionAdjustmentEnabled = false;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
@@ -386,17 +413,20 @@ void Program::run()
         renderer.startAsynchronousReprojection();
 
         // Adjust render ratio to meet performance target
-        window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS](Window* window, int a, int b)
+        window->windowSizeEvent.subscribePermanently([&renderRatio, this, targetReprojectionFPS, &isAutomaticResolutionAdjustmentEnabled](Window* window, int a, int b)
             {
-                float pixels = window->size.x * window->size.y;
-                if (frameTimePerPixel > 0)
+                if (isAutomaticResolutionAdjustmentEnabled)
                 {
-                    renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
-                }
+                    float pixels = window->size.x * window->size.y;
+                    if (frameTimePerPixel > 0)
+                    {
+                        renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                    }
 
-                if (renderRatio > 1)
-                {
-                    renderRatio = 1;
+                    if (renderRatio > 1)
+                    {
+                        renderRatio = 1;
+                    }
                 }
             });
 
@@ -438,32 +468,35 @@ void Program::run()
                         frameTimePerPixel = weight * frameTimePerPixel + (1 - weight) * newSample;
                     }
 
-                    // The performace is unusable, update the fps
-                    if (currentRenderFps < 15)
+                    if (isAutomaticResolutionAdjustmentEnabled)
                     {
-                        float pixels = window->size.x * window->size.y;
-                        if (frameTimePerPixel > 0)
+                        // The performace is unusable, update the fps
+                        if (currentRenderFps < 15)
                         {
-                            renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                            float pixels = window->size.x * window->size.y;
+                            if (frameTimePerPixel > 0)
+                            {
+                                renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                            }
+
+                            if (renderRatio > 1)
+                            {
+                                renderRatio = 1;
+                            }
                         }
 
-                        if (renderRatio > 1)
+                        if (currentRenderFps > 60)
                         {
-                            renderRatio = 1;
-                        }
-                    }
+                            float pixels = window->size.x * window->size.y;
+                            if (frameTimePerPixel > 0)
+                            {
+                                renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
+                            }
 
-                    if (currentRenderFps > 60)
-                    {
-                        float pixels = window->size.x * window->size.y;
-                        if (frameTimePerPixel > 0)
-                        {
-                            renderRatio = std::sqrt((1.0 / targetReprojectionFPS) / (frameTimePerPixel * pixels)); // Used to control the render resolution relative to the window resolution
-                        }
-
-                        if (renderRatio > 1)
-                        {
-                            renderRatio = 1;
+                            if (renderRatio > 1)
+                            {
+                                renderRatio = 1;
+                            }
                         }
                     }
                 }
@@ -599,6 +632,12 @@ void Program::run()
                     }
 
                     renderer.setBounces(numberOfBounces);
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_L))
+                {
+                    skyboxIndex = (skyboxIndex + 1) % skyboxes.size();
+                    scene->setSkybox(skyboxes.at(skyboxIndex));
                 }
 
                 std::shared_ptr<VoxelChunkComponent> closestChunk {};
@@ -988,6 +1027,7 @@ void Program::run()
                             ImGui::Text("V - Toggle Bounce Count");
                             ImGui::Text("B - Pause/Unpause Rendering");
                             ImGui::Text("J - Toggle ground camera");
+                            ImGui::Text("L - Toggle skybox");
                             ImGui::Text("+/- Change viewable mip map level");
                             ImGui::Text("Mouse Scroll - Change Move Speed");
                             ImGui::Text("Ctrl + Mouse Scroll - Change Noise Fill");
