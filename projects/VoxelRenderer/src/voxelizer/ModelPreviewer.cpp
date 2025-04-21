@@ -48,7 +48,7 @@ void ModelPreviewer::createTriangleWindow(const std::shared_ptr<Window>& mainWin
             setModel(modelVoxelizer->getModel());
 
             // Render Loop
-            while (triangleThreadRunning)
+            while (triangleThreadRunning && triangleWindow && !glfwWindowShouldClose(triangleWindow->getGlfwWindowHandle()))
             {
                 // Limit FPS
                 static auto last_frame = std::chrono::steady_clock::now();
@@ -101,7 +101,7 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
     voxelThread = std::thread([this, modelVoxelizer]()
         {
             voxelWindow->makeContextCurrent();
-            
+
             rasterizationShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathRasterization, Content::Triangulation::fragShaderPathRasterization);
             modelVoxelizer->rasterizationShader = rasterizationShader;
 
@@ -114,7 +114,7 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
             modelVoxelizer->voxelizeModel();
 
             // Render Loop
-            while (voxelThreadRunning)
+            while (voxelThreadRunning && voxelWindow && !glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
             {
                 // Limit FPS
                 static auto last_frame = std::chrono::steady_clock::now();
@@ -190,6 +190,8 @@ void ModelPreviewer::closeWindowTriangle()
     {
         triangleThread.join();
     }
+
+    triangleWindow.reset();
 }
 
 void ModelPreviewer::closeWindowVoxel()
@@ -208,6 +210,8 @@ void ModelPreviewer::closeWindowVoxel()
     {
         voxelThread.join();
     }
+
+    voxelWindow.reset();
 }
 
 void ModelPreviewer::clearResources()

@@ -458,14 +458,16 @@ void Program::run()
                 currentRenderFps = rendersThisCycle / fpsCycleTimer;
                 averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
 
-                if(std::isnan(frameTimePerPixel) || std::isinf(frameTimePerPixel)){
+                if (std::isnan(frameTimePerPixel) || std::isinf(frameTimePerPixel))
+                {
                     frameTimePerPixel = -1;
                 }
 
                 {
                     auto temp = renderer.getRenderResolution();
                     float newSample = averagedRenderDeltaTime / (temp.x * temp.y);
-                    if(!renderer.isRenderingPaused() && !std::isinf(newSample) && !std::isnan(newSample)){
+                    if (!renderer.isRenderingPaused() && !std::isinf(newSample) && !std::isnan(newSample))
+                    {
                         if (frameTimePerPixel < 0)
                         {
                             frameTimePerPixel = newSample;
@@ -476,7 +478,6 @@ void Program::run()
                             frameTimePerPixel = weight * frameTimePerPixel + (1 - weight) * newSample;
                         }
                     }
-                    
 
                     if (isAutomaticResolutionAdjustmentEnabled && !renderer.isRenderingPaused())
                     {
@@ -628,8 +629,6 @@ void Program::run()
                 if (input->isKeyPressed(GLFW_KEY_B))
                 {
                     renderer.toggleRendering();
-
-                    
                 }
 
                 if (input->isKeyPressed(GLFW_KEY_V))

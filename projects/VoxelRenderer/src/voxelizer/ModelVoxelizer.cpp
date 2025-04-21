@@ -227,7 +227,8 @@ void ModelVoxelizer::setupModelForRasterization()
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R32UI, gridSize.x, gridSize.y, gridSize.z, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
     GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
+    if (error != GL_NO_ERROR)
+    {
         std::cerr << "OpenGL Error: " << error << std::endl;
     }
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -239,15 +240,19 @@ void ModelVoxelizer::setupModelForRasterization()
     // Counter
     int modelVertexCount = 0;
 
-    #pragma omp parallel for
-    for (size_t i = 0; i < loadedModel->meshes.size(); ++i) {
+#pragma omp parallel for
+    for (size_t i = 0; i < loadedModel->meshes.size(); ++i)
+    {
         const Mesh& mesh = loadedModel->meshes[i];
 
-        #pragma omp critical
+#pragma omp critical
         {
             vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
             std::transform(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices),
-                        [modelVertexCount](unsigned int index) { return index + modelVertexCount; });
+                [modelVertexCount](unsigned int index)
+                {
+                    return index + modelVertexCount;
+                });
             modelVertexCount += mesh.vertices.size();
         }
     }
@@ -267,7 +272,8 @@ void ModelVoxelizer::setupModelForRasterization()
     glBindVertexArray(0);
 
     GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR) {
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
         std::cerr << "OpenGL Error during setupModelForRasterization: " << err << std::endl;
     }
 }
@@ -294,7 +300,6 @@ void ModelVoxelizer::performConservativeRasterization()
     glDisable(GL_DEPTH_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-
     rasterizationShader->use();
 
     GLint gridSizeLoc = glGetUniformLocation(rasterizationShader->programId, "gridSize");
@@ -304,14 +309,15 @@ void ModelVoxelizer::performConservativeRasterization()
     glUniform3fv(gridSizeLoc, 1, glm::value_ptr(glm::vec3(gridSize)));
     glUniform3fv(minBoundsLoc, 1, glm::value_ptr(minBounds));
     glUniform3fv(maxBoundsLoc, 1, glm::value_ptr(maxBounds));
-    if (gridSizeLoc == -1 || minBoundsLoc == -1 || maxBoundsLoc == -1) {
+    if (gridSizeLoc == -1 || minBoundsLoc == -1 || maxBoundsLoc == -1)
+    {
         std::cerr << "Error: Failed to get uniform location for one or more uniforms." << std::endl;
     }
-        
+
     // Render from the X-axis
     glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "projection"), 1, GL_FALSE, glm::value_ptr(projectionX));
     glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "view"), 1, GL_FALSE, glm::value_ptr(viewX));
-    
+
     renderModelForRasterization();
 
     // Render from the Y-axis
@@ -324,7 +330,6 @@ void ModelVoxelizer::performConservativeRasterization()
     glUniformMatrix4fv(glGetUniformLocation(rasterizationShader->programId, "view"), 1, GL_FALSE, glm::value_ptr(viewZ));
     renderModelForRasterization();
 
-
     std::vector<unsigned int> voxelData(gridSize.x * gridSize.y * gridSize.z);
 
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
@@ -333,29 +338,31 @@ void ModelVoxelizer::performConservativeRasterization()
 
     glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
     GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
+    if (error != GL_NO_ERROR)
+    {
         std::cerr << "OpenGL Error: " << error << std::endl;
     }
 
     voxelGrid.clear();
     voxelGrid.resize(gridSize.x * gridSize.y * gridSize.z, false);
 
-    // Map the 1D texture data to the 3D voxel grid
-    #pragma omp parallel for collapse(3) schedule(dynamic)
-    for (int z = 0; z < gridSize.z; ++z) {
-        for (int y = 0; y < gridSize.y; ++y) {
-            for (int x = 0; x < gridSize.x; ++x) {
+// Map the 1D texture data to the 3D voxel grid
+#pragma omp parallel for collapse(3) schedule(dynamic)
+    for (int z = 0; z < gridSize.z; ++z)
+    {
+        for (int y = 0; y < gridSize.y; ++y)
+        {
+            for (int x = 0; x < gridSize.x; ++x)
+            {
                 int index = z * (gridSize.x * gridSize.y) + y * gridSize.x + x;
                 voxelGrid[index] = (voxelData[index] > 0);
             }
         }
     }
-    
+
     glEnable(GL_DEPTH_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
-
-
 
 void ModelVoxelizer::performRayMarchingVoxelization()
 {
@@ -442,9 +449,12 @@ void ModelVoxelizer::voxelizeModel()
     setupBoundingBox();
 
     triangleVoxelization(voxelGrid);
-    if (isExtensionSupported("GL_NV_conservative_raster")) {
+    if (isExtensionSupported("GL_NV_conservative_raster"))
+    {
         printf("Conservative rasterization supported\n");
-    } else {
+    }
+    else
+    {
         printf("Conservative rasterization not supported\n");
     }
 

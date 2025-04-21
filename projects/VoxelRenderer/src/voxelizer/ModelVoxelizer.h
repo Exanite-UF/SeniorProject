@@ -73,7 +73,6 @@ private:
     glm::mat4 viewY {};
     glm::mat4 viewZ {};
 
-
     std::vector<glm::vec3> activeVoxels {};
     std::shared_ptr<TransformComponent> cameraTransform {};
     std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponents {};
