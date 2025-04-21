@@ -710,6 +710,19 @@ void Program::run()
                 float menuHeight = windowSize.y / 4;
                 const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
 
+                // ImGui Cross Hair
+                ImGuiIO& io = ImGui::GetIO();
+                ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+                ImVec2 center = ImVec2(io.DisplaySize.x * 0.5f + 0.5f, io.DisplaySize.y * 0.5f + 0.5f);
+                float size = 7.0f;
+                ImU32 color = IM_COL32(255, 255, 255, 255); // white
+
+                // Draw horizontal line
+                drawList->AddLine(ImVec2(center.x - size, center.y), ImVec2(center.x + size, center.y), color, 1.0f);
+                // Draw vertical line
+                drawList->AddLine(ImVec2(center.x, center.y - size), ImVec2(center.x, center.y + size), color, 1.0f);
+
                 for (int i = 0; i < numMenus; i++)
                 {
                     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.4f));
@@ -844,12 +857,6 @@ void Program::run()
                             if (modelVoxelizer->isVoxelized)
                             {
                                 ImGui::Spacing();
-                                //if (ImGui::Button("Add to world"))
-                                //{
-                                //    modelVoxelizer->addToWorld();
-                                //    scene->addObjectChunk(modelVoxelizer->getChunkComponent());
-                                //}
-                                ImGui::Text("Left click to add to world.");
                                 if (input->isButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && isCursorCaptured)
                                 {
                                     if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL))
@@ -897,7 +904,7 @@ void Program::run()
 
                             // Ray Cast
 
-                            
+                        
                             ImGui::Spacing();
                             if (allChunkComponentsInScene.size() > 0)
                             {
@@ -925,6 +932,12 @@ void Program::run()
                                     allChunkComponentsInScene.clear();
                                 }
 
+                            }
+
+                            if (modelVoxelizer->isVoxelized)
+                            {
+                                ImGui::Text("LMB - Add to world");
+                                ImGui::Text("LMB + Left Control - Add to world facing camera");
                             }
 
                             ImGui::PopStyleColor(3);
