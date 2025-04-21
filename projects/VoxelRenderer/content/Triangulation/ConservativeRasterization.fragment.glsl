@@ -13,9 +13,8 @@ void main()
 
     ivec3 voxelCoord = ivec3(normalizedPos * gridSize);
 
-    if (all(greaterThanEqual(voxelCoord, ivec3(0))) && all(lessThan(voxelCoord, ivec3(gridSize)))) {
+    if (all(greaterThanEqual(voxelCoord, ivec3(0))) && all(lessThan(voxelCoord, ivec3(gridSize))))
+    {
         imageAtomicAdd(voxelTexture, voxelCoord, 1);
     }
-
 }
-

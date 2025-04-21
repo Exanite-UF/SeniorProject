@@ -1,7 +1,7 @@
 #include "Program.h"
 
-#include <src/utilities/ImGui.h>
 #include <src/utilities/ImFileBrowser.h>
+#include <src/utilities/ImGui.h>
 #include <src/utilities/OpenGl.h>
 
 #include <tracy/Tracy.hpp>
@@ -372,13 +372,9 @@ void Program::run()
         // Keeping Track of Objects
         std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponentsInScene;
 
-        //File Browser Setup
+        // File Browser Setup
         ImGui::FileBrowser fileDialog(
-            ImGuiFileBrowserFlags_CloseOnEsc | 
-            ImGuiFileBrowserFlags_ConfirmOnEnter |
-            ImGuiFileBrowserFlags_SkipItemsCausingError |
-            ImGuiFileBrowserFlags_EditPathString
-        );
+            ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_ConfirmOnEnter | ImGuiFileBrowserFlags_SkipItemsCausingError | ImGuiFileBrowserFlags_EditPathString);
 
         fileDialog.SetTitle("Import Model...");
         fileDialog.SetTypeFilters({ ".fbx", ".obj", ".dae", ".blend", ".glTF", ".3ds", ".ply" });
@@ -509,7 +505,7 @@ void Program::run()
                         camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
 
                         cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
-                    }          
+                    }
                 }
                 else
                 {
@@ -724,19 +720,18 @@ void Program::run()
                 style.ScrollbarSize = 12.0f;
 
                 ImVec4* colors = style.Colors;
-                colors[ImGuiCol_WindowBg]        = ImVec4(0.12f, 0.12f, 0.12f, 0.8f);
-                colors[ImGuiCol_ChildBg]         = ImVec4(0.15f, 0.15f, 0.15f, 0.5f);
-                colors[ImGuiCol_Border]          = ImVec4(0.3f, 0.3f, 0.3f, 0.0f); 
-                colors[ImGuiCol_FrameBg]         = ImVec4(0.2f, 0.2f, 0.2f, 0.5f);
-                colors[ImGuiCol_Button]          = ImVec4(0.3f, 0.3f, 0.35f, 0.6f);
-                colors[ImGuiCol_ButtonHovered]   = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
-                colors[ImGuiCol_ButtonActive]    = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
-                colors[ImGuiCol_TitleBg]         = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-                colors[ImGuiCol_TitleBgActive]   = ImVec4(0.1f, 0.1f, 0.1f, 0.8f);
-                colors[ImGuiCol_Header]          = ImVec4(0.3f, 0.3f, 0.4f, 0.6f);
-                colors[ImGuiCol_HeaderHovered]   = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
-                colors[ImGuiCol_HeaderActive]    = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
-
+                colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.12f, 0.12f, 0.8f);
+                colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.15f, 0.15f, 0.5f);
+                colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 0.0f);
+                colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.2f, 0.2f, 0.5f);
+                colors[ImGuiCol_Button] = ImVec4(0.3f, 0.3f, 0.35f, 0.6f);
+                colors[ImGuiCol_ButtonHovered] = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
+                colors[ImGuiCol_ButtonActive] = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
+                colors[ImGuiCol_TitleBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+                colors[ImGuiCol_TitleBgActive] = ImVec4(0.1f, 0.1f, 0.1f, 0.8f);
+                colors[ImGuiCol_Header] = ImVec4(0.3f, 0.3f, 0.4f, 0.6f);
+                colors[ImGuiCol_HeaderHovered] = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
+                colors[ImGuiCol_HeaderActive] = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
 
                 // Crosshair
                 ImDrawList* drawList = ImGui::GetBackgroundDrawList();
@@ -811,7 +806,6 @@ void Program::run()
                                 {
                                     fileDialog.Open();
                                 }
-                                
                             }
                             fileDialog.Display();
 
@@ -867,12 +861,11 @@ void Program::run()
                                     ImGui::Spacing();
                                     if (ImGui::Button("Voxelize Model"))
                                     {
-                                        
+
                                         modelPreviewer->createVoxelWindow(window, modelVoxelizer);
                                         isModelVoxelized = true;
                                     }
                                 }
-                                
                             }
                             ImGui::PopStyleColor(3);
 
@@ -916,7 +909,7 @@ void Program::run()
                             {
                                 ImGui::Text("Loading...");
                             }
-                            
+
                             if (isModelVoxelized)
                             {
                                 ImGui::Spacing();
@@ -930,7 +923,6 @@ void Program::run()
 
                             // Ray Cast
 
-                        
                             ImGui::Spacing();
                             if (allChunkComponentsInScene.size() > 0)
                             {
@@ -957,7 +949,6 @@ void Program::run()
                                     }
                                     allChunkComponentsInScene.clear();
                                 }
-
                             }
 
                             if (modelVoxelizer->isVoxelized)

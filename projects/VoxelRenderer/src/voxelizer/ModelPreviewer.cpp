@@ -7,9 +7,6 @@
 #include <src/windowing/Window.h>
 #include <thread>
 
-
-
-
 ModelPreviewer::~ModelPreviewer()
 {
     rasterizationShader.reset();
@@ -24,7 +21,6 @@ void ModelPreviewer::setModel(const std::shared_ptr<Model>& model)
 
     triangleShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathTriangle, Content::Triangulation::fragShaderPathTriangle);
     voxelShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathVoxel, Content::Triangulation::fragShaderPathVoxel);
-
 }
 
 void ModelPreviewer::createTriangleWindow(const std::shared_ptr<Window>& mainWindow, const std::shared_ptr<ModelVoxelizer>& modelVoxelizer, std::string modelPath)
@@ -93,10 +89,11 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
     // Create Voxel Window in the main thread
     voxelWindow = std::make_shared<Window>("Voxelizer voxel window", mainWindow.get(), false, false);
     voxelWindow->setWindowed(300, 300);
-    if (!glewIsSupported("GL_ARB_shader_image_load_store")) {
+    if (!glewIsSupported("GL_ARB_shader_image_load_store"))
+    {
         std::cerr << "GL_ARB_shader_image_load_store is not supported!" << std::endl;
     }
-    
+
     // Restore original context
     mainWindow->makeContextCurrent();
 
@@ -104,13 +101,13 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
     voxelThread = std::thread([this, modelVoxelizer]()
         {
             voxelWindow->makeContextCurrent();
-            
+
             rasterizationShader = ShaderManager::getInstance().getGraphicsProgram(Content::Triangulation::vertShaderPathRasterization, Content::Triangulation::fragShaderPathRasterization);
             modelVoxelizer->rasterizationShader = rasterizationShader;
 
             rayMarchingShader = ShaderManager::getInstance().getComputeProgram(Content::Triangulation::compShaderPathRayMarch);
             modelVoxelizer->rayMarchingShader = rayMarchingShader;
-        
+
             printf("STARTING RENDER LOOP\n");
 
             // generate voxels
@@ -199,7 +196,7 @@ void ModelPreviewer::closeWindowVoxel()
 {
     // Signal thead to stop
     voxelThreadRunning = false;
-    
+
     // Ensure window gets closed
     if (voxelWindow)
     {

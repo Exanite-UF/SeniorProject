@@ -46,7 +46,6 @@ private:
     glm::vec3 minBounds {};
     glm::vec3 maxBounds {};
 
-
     std::vector<Vertex> voxelMesh {};
 
     // Voxel Rendering
@@ -74,11 +73,9 @@ private:
     glm::mat4 viewY {};
     glm::mat4 viewZ {};
 
-
     std::vector<glm::vec3> activeVoxels {};
     std::shared_ptr<TransformComponent> cameraTransform {};
     std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponents {};
-
 
     // Chunk Data
     std::shared_ptr<VoxelChunkData> chunkData {};
@@ -166,6 +163,5 @@ public:
 
     void clearResources();
 
-    void setVoxelResolution(int resolution) { gridResolution = resolution; }   
-
+    void setVoxelResolution(int resolution) { gridResolution = resolution; }
 };

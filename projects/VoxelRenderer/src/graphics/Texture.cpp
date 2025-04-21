@@ -8,7 +8,7 @@ Texture::Texture(GLuint textureId, TextureType type, glm::ivec2 size, bool isCub
     this->textureId = textureId;
     if (TextureManager::getInstance().areBindlessTexturesEnabled())
     {
-        //bindlessHandle = glGetTextureHandleARB(textureId);
+        // bindlessHandle = glGetTextureHandleARB(textureId);
     }
 
     this->type = type;
@@ -46,11 +46,11 @@ void Texture::makeBindlessHandle()
     // Make the bindles handle if needed
     if (bindlessHandle == 0)
     {
-        //bindlessHandle = glGetTextureHandleARB(textureId);
+        // bindlessHandle = glGetTextureHandleARB(textureId);
     }
 
     // Make the handle resident on whatever thread is calling this function
-    //if (!glIsTextureHandleResidentARB(bindlessHandle))
+    // if (!glIsTextureHandleResidentARB(bindlessHandle))
     //{
     //    glMakeTextureHandleResidentARB(bindlessHandle);
     //}
