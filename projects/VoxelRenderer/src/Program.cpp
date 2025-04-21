@@ -369,6 +369,9 @@ void Program::run()
         bool isModelLoaded = false;
         bool isModelVoxelized = false;
 
+        // Keeping Track of Objects
+        std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponentsInScene;
+
         //File Browser Setup
         ImGui::FileBrowser fileDialog(
             ImGuiFileBrowserFlags_CloseOnEsc | 
@@ -792,36 +795,36 @@ void Program::run()
                             {
                                 ImGui::Text("Model: %s", modelFileName.c_str());
                                 ImGui::Spacing();
-                                ImGui::Text("Voxel Resolution");
-                                ImGui::Indent(indentSize);
-                                static int comboIndex = 0;
-                                static const char* comboItems[] = { "x16", "x32", "x64", "x128", "x256" };
-                                if (ImGui::Combo("Res", &comboIndex, comboItems, IM_ARRAYSIZE(comboItems)))
-                                {
-                                    switch (comboIndex)
-                                    {
-                                        case 0:
-                                            modelVoxelizer->setVoxelResolution(16);
-                                            std::cout << "Voxel Resolution: 16" << std::endl;
-                                            break;
-                                        case 1:
-                                            modelVoxelizer->setVoxelResolution(32);
-                                            break;
-                                        case 2:
-                                            modelVoxelizer->setVoxelResolution(64);
-                                            break;
-                                        case 3:
-                                            modelVoxelizer->setVoxelResolution(128);
-                                            break;
-                                        case 4:
-                                            modelVoxelizer->setVoxelResolution(256);
-                                            break;
-                                    }
-                                }
-                                ImGui::Unindent(indentSize);
 
                                 if (!isModelVoxelized)
                                 {
+                                    ImGui::Text("Voxel Resolution");
+                                    ImGui::Indent(indentSize);
+                                    static int comboIndex = 2;
+                                    static const char* comboItems[] = { "x16", "x32", "x64", "x128", "x256" };
+                                    if (ImGui::Combo("Res", &comboIndex, comboItems, IM_ARRAYSIZE(comboItems)))
+                                    {
+                                        switch (comboIndex)
+                                        {
+                                            case 0:
+                                                modelVoxelizer->setVoxelResolution(16);
+                                                break;
+                                            case 1:
+                                                modelVoxelizer->setVoxelResolution(32);
+                                                break;
+                                            case 2:
+                                                modelVoxelizer->setVoxelResolution(64);
+                                                break;
+                                            case 3:
+                                                modelVoxelizer->setVoxelResolution(128);
+                                                break;
+                                            case 4:
+                                                modelVoxelizer->setVoxelResolution(256);
+                                                break;
+                                        }
+                                    }
+                                    ImGui::Unindent(indentSize);
+
                                     ImGui::Spacing();
                                     if (ImGui::Button("Voxelize Model"))
                                     {
@@ -865,11 +868,13 @@ void Program::run()
                                         modelVoxelizer->addToWorld(position, finalRotation);
                                         std::cout << "Position: " << position.x << " " << position.y << " " << position.z << std::endl;
                                         scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                        allChunkComponentsInScene.push_back(modelVoxelizer->getChunkComponent());
                                     }
                                     else
                                     {
                                         modelVoxelizer->addToWorld();
                                         scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                        allChunkComponentsInScene.push_back(modelVoxelizer->getChunkComponent());
                                     }
                                     std::cout << "Left mouse button clicked!" << std::endl;
                                 }
@@ -891,12 +896,18 @@ void Program::run()
                             }
                             
                             ImGui::Spacing();
-                            if (ImGui::Button("Clear All"))
+                            if (allChunkComponentsInScene.size() > 0)
                             {
-                                for (auto& Component : scene->getObjectChunks())
+                                ImGui::Text("Objects in world: %d", allChunkComponentsInScene.size());
+                                if (ImGui::Button("Clear All"))
                                 {
-                                    scene->removeObjectChunk(Component);
+                                    for (auto& Component : allChunkComponentsInScene)
+                                    {
+                                        scene->removeObjectChunk(Component);
+                                    }
+                                    allChunkComponentsInScene.clear();
                                 }
+
                             }
 
                             ImGui::PopStyleColor(3);
