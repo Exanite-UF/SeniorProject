@@ -444,13 +444,9 @@ void ModelVoxelizer::voxelizeModel()
     triangleVoxelization(voxelGrid);
     if (isExtensionSupported("GL_NV_conservative_raster")) {
         printf("Conservative rasterization supported\n");
-        //performConservativeRasterization();
     } else {
         printf("Conservative rasterization not supported\n");
-        //triangleVoxelization(voxelGrid);
     }
-    //performConservativeRasterization();
-    //performRayMarchingVoxelization();
 
     generateVoxelMesh();
 }
@@ -646,12 +642,6 @@ void ModelVoxelizer::addToWorld(glm::vec3 position, glm::quat rotation)
     // Pass along scene object
     auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
     chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
-
-    // static std::random_device rd;
-    // static std::mt19937 gen(rd());
-    // std::uniform_int_distribution<uint16_t> dis(0, static_cast<uint16_t>(Constants::VoxelChunk::maxMaterialCount - 1));
-    // uint16_t randomizedIndex = dis(gen);
-    // MaterialManager::getInstance().getMaterialByIndex(randomizedIndex)
 
     allChunkComponents.push_back(chunkComponent);
 
