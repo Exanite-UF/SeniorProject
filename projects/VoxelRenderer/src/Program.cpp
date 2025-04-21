@@ -458,6 +458,10 @@ void Program::run()
                 currentRenderFps = rendersThisCycle / fpsCycleTimer;
                 averagedRenderDeltaTime = fpsCycleTimer / rendersThisCycle;
 
+                if(std::isnan(frameTimePerPixel) || std::isinf(frameTimePerPixel)){
+                    frameTimePerPixel = -1;
+                }
+
                 {
                     auto temp = renderer.getRenderResolution();
                     float newSample = averagedRenderDeltaTime / (temp.x * temp.y);
