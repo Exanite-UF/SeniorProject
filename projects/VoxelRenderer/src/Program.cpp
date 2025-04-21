@@ -407,6 +407,9 @@ void Program::run()
         fileDialog.SetTypeFilters({ ".fbx", ".obj", ".dae", ".blend", ".glTF", ".3ds", ".ply" });
         fileDialog.SetPwd("content/Triangulation");
 
+        ImGuiIO& io = ImGui::GetIO();
+        ImFont* bigFont = io.Fonts->AddFontFromFileTTF(std::string(Content::imguiFont).c_str(), 20.0f);
+
         bool isCursorCaptured = false;
 
         renderer.setScene(scene);
@@ -755,7 +758,6 @@ void Program::run()
                 const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
 
                 // ImGui Setup
-                ImGuiIO& io = ImGui::GetIO();
 
                 ImGuiStyle& style = ImGui::GetStyle();
                 style.WindowRounding = 6.0f;
@@ -1046,7 +1048,16 @@ void Program::run()
                         }
                         case 4:
                         {
-                            ImGui::Text("ABOUT");
+                            ImGui::PushFont(bigFont);
+                            ImGui::Text("Voxel Rendering Project");
+                            ImGui::PopFont();
+                            ImGui::Text("Spring 2025");
+                            ImGui::Spacing();
+                            ImGui::Text("Developed by:");
+                            ImGui::Text("William Chen");
+                            ImGui::Text("Alex Gallardo");
+                            ImGui::Text("Giovanni Perez Colon");
+                            ImGui::Text("Collin Stebbins");
 
                             break;
                         }
