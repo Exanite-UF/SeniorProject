@@ -1,10 +1,10 @@
 #include <chrono>
 #include <src/Content.h>
 #include <src/graphics/ShaderManager.h>
-#include <src/voxelizer/ModelPreviewer.h>
 #include <src/utilities/OpenGl.h>
+#include <src/voxelizer/ModelPreviewer.h>
+#include <src/windowing/GlfwContext.h>
 #include <src/windowing/Window.h>
-#include <src/windowing/GLFWContext.h> // Include the header for GLFWWindow
 #include <thread>
 
 

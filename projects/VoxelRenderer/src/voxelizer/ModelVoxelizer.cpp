@@ -1,14 +1,13 @@
 #include <src/gameobjects/GameObject.h>
 #include <src/gameobjects/TransformComponent.h>
 #include <src/graphics/ShaderProgram.h>
+#include <src/utilities/OpenGl.h>
 #include <src/voxelizer/ModelVoxelizer.h>
+#include <src/windowing/GlfwContext.h>
+#include <src/windowing/Window.h>
+#include <src/world/MaterialManager.h>
 #include <src/world/VoxelChunkCommandBuffer.h>
 #include <src/world/VoxelChunkManager.h>
-#include <src/world/MaterialManager.h>
-#include <src/utilities/OpenGl.h>
-#include <src/windowing/GLFWContext.h>
-#include <src/windowing/Window.h>
-
 
 #include <random>
 
