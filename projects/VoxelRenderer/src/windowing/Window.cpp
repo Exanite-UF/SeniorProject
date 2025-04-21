@@ -1,6 +1,7 @@
 #include <stdexcept>
 
 #include <src/windowing/Window.h>
+#include <src/Content.h>
 
 Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enableImGui, bool isMainWindow)
     : GlfwContext(contextName, true, shareWith)
@@ -31,6 +32,9 @@ Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enab
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
+        ImFont* sfFont = io.Fonts->AddFontFromFileTTF(std::string(Content::imguiFont).c_str(), 16.0f);
+        io.FontDefault = sfFont;
+
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
         ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);

@@ -710,17 +710,43 @@ void Program::run()
                 float menuHeight = windowSize.y / 4;
                 const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
 
-                // ImGui Cross Hair
+                // ImGui Setup
                 ImGuiIO& io = ImGui::GetIO();
+
+                ImGuiStyle& style = ImGui::GetStyle();
+                style.WindowRounding = 6.0f;
+                style.FrameRounding = 5.0f;
+                style.GrabRounding = 5.0f;
+                style.ScrollbarRounding = 6.0f;
+
+                style.WindowBorderSize = 0.0f;
+                style.FrameBorderSize = 0.0f;
+                style.ScrollbarSize = 12.0f;
+
+                ImVec4* colors = style.Colors;
+                colors[ImGuiCol_WindowBg]        = ImVec4(0.12f, 0.12f, 0.12f, 0.8f);
+                colors[ImGuiCol_ChildBg]         = ImVec4(0.15f, 0.15f, 0.15f, 0.5f);
+                colors[ImGuiCol_Border]          = ImVec4(0.3f, 0.3f, 0.3f, 0.0f); 
+                colors[ImGuiCol_FrameBg]         = ImVec4(0.2f, 0.2f, 0.2f, 0.5f);
+                colors[ImGuiCol_Button]          = ImVec4(0.3f, 0.3f, 0.35f, 0.6f);
+                colors[ImGuiCol_ButtonHovered]   = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
+                colors[ImGuiCol_ButtonActive]    = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
+                colors[ImGuiCol_TitleBg]         = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+                colors[ImGuiCol_TitleBgActive]   = ImVec4(0.1f, 0.1f, 0.1f, 0.8f);
+                colors[ImGuiCol_Header]          = ImVec4(0.3f, 0.3f, 0.4f, 0.6f);
+                colors[ImGuiCol_HeaderHovered]   = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
+                colors[ImGuiCol_HeaderActive]    = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
+
+
+                // Crosshair
                 ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
                 ImVec2 center = ImVec2(io.DisplaySize.x * 0.5f + 0.5f, io.DisplaySize.y * 0.5f + 0.5f);
                 float size = 7.0f;
-                ImU32 color = IM_COL32(255, 255, 255, 255); // white
 
-                // Draw horizontal line
+                ImU32 color = IM_COL32(255, 255, 255, 255);
+
                 drawList->AddLine(ImVec2(center.x - size, center.y), ImVec2(center.x + size, center.y), color, 1.0f);
-                // Draw vertical line
                 drawList->AddLine(ImVec2(center.x, center.y - size), ImVec2(center.x, center.y + size), color, 1.0f);
 
                 for (int i = 0; i < numMenus; i++)

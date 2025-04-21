@@ -55,6 +55,9 @@ public:
     constexpr static std::string_view toneMapShader = "content/PostProcessing/ToneMap.fragment.glsl";
     constexpr static std::string_view showAngularSizeShader = "content/PostProcessing/ShowAngularSize.fragment.glsl";
 
+    //Font
+    constexpr static std::string_view imguiFont = "content/fonts/RobotoMono-Medium.ttf";
+
     class Triangulation
     {
     public:
@@ -66,4 +69,5 @@ public:
         constexpr static std::string_view fragShaderPathRasterization = "content/Triangulation/ConservativeRasterization.fragment.glsl";
         constexpr static std::string_view compShaderPathRayMarch = "content/Triangulation/RayMarching.comp.glsl";
     };
+
 };
