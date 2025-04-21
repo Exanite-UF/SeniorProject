@@ -1,5 +1,6 @@
 #include "Program.h"
 
+#include <src/utilities/ImFileBrowser.h>
 #include <src/utilities/ImGui.h>
 #include <src/utilities/OpenGl.h>
 
@@ -230,9 +231,9 @@ void Program::run()
         // Create the renderer
         Renderer renderer(window, offscreenContext);
 
-        float renderRatio = 1.f;//0.66666666f;
+        float renderRatio = 1.f; // 0.66666666f;
         float targetReprojectionFPS = 20;
-        bool isAutomaticResolutionAdjustmentEnabled = false;
+        bool isAutomaticResolutionAdjustmentEnabled = true;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
@@ -387,14 +388,26 @@ void Program::run()
         PointSynthesizerWorldGenerator pointSynthesizerWorldGenerator(poissonDiskPointSynthesizer);
         pointSynthesizerWorldGenerator.setChunkSize(chunkSize);
 
-        // IMGUI Menu
-        bool showMenuGUI = false;
-
         // Model Previewer
         std::shared_ptr<ModelPreviewer> modelPreviewer = std::make_shared<ModelPreviewer>();
         std::shared_ptr<ModelVoxelizer> modelVoxelizer = std::make_shared<ModelVoxelizer>();
+        modelVoxelizer->setSceneObject(sceneObject);
+        modelVoxelizer->setSceneCameraTransform(cameraTransform);
         bool isModelLoaded = false;
         bool isModelVoxelized = false;
+
+        // Keeping Track of Objects
+        std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponentsInScene;
+
+        // File Browser Setup
+        ImGui::FileBrowser fileDialog(
+            ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_ConfirmOnEnter | ImGuiFileBrowserFlags_SkipItemsCausingError | ImGuiFileBrowserFlags_EditPathString);
+
+        fileDialog.SetTitle("Import Model...");
+        fileDialog.SetTypeFilters({ ".fbx", ".obj" });
+        fileDialog.SetPwd("content/Triangulation");
+
+        bool isCursorCaptured = false;
 
         renderer.setScene(scene);
         renderer.startAsynchronousReprojection();
@@ -514,13 +527,18 @@ void Program::run()
             {
                 if (!inputManager->cursorEnteredThisFrame)
                 {
+                    int mode = glfwGetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR);
+
                     auto mouseDelta = input->getMouseDelta();
 
-                    camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
-                    camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
-                    camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
+                    if (isCursorCaptured)
+                    {
+                        camera->rotation.y -= mouseDelta.x * camera->mouseSensitivity;
+                        camera->rotation.x += mouseDelta.y * camera->mouseSensitivity;
+                        camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
 
-                    cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+                        cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
+                    }
                 }
                 else
                 {
@@ -570,10 +588,9 @@ void Program::run()
                 if (isGroundMovementEnabled)
                 {
                     auto result = scene->raycast(camera->getTransform()->getGlobalPosition(), glm::vec3(0.0, 0.0, -1));
-                    // std::cout << result.first << " " << result.second.x << " " << result.second.y << " " << result.second.z << std::endl;
-                    if (result.first > 0)
+                    if (result.isValid)
                     {
-                        groundCameraHeight = result.second.z + 1.6 * 8;
+                        groundCameraHeight = result.position.z + 1.6 * 8;
 
                         glm::vec3 camPos = camera->getTransform()->getGlobalPosition();
                         float p = 1 - std::exp(-groundCameraSnapSpeed * deltaTime);
@@ -683,10 +700,12 @@ void Program::run()
                     if (mode == GLFW_CURSOR_DISABLED)
                     {
                         glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                        isCursorCaptured = false;
                     }
                     else
                     {
                         glfwSetInputMode(window->getGlfwWindowHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                        isCursorCaptured = true;
                     }
                 }
                 if (input->isKeyPressed(GLFW_KEY_END))
@@ -725,6 +744,44 @@ void Program::run()
                 float menuWidth = windowSize.x / numMenus;
                 float menuHeight = windowSize.y / 4;
                 const char* menuTitles[numMenus] = { "Stats (F3)", "Model Importer", "World Generation", "Controls", "About" };
+
+                // ImGui Setup
+                ImGuiIO& io = ImGui::GetIO();
+
+                ImGuiStyle& style = ImGui::GetStyle();
+                style.WindowRounding = 6.0f;
+                style.FrameRounding = 5.0f;
+                style.GrabRounding = 5.0f;
+                style.ScrollbarRounding = 6.0f;
+
+                style.WindowBorderSize = 0.0f;
+                style.FrameBorderSize = 0.0f;
+                style.ScrollbarSize = 12.0f;
+
+                ImVec4* colors = style.Colors;
+                colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.12f, 0.12f, 0.8f);
+                colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.15f, 0.15f, 0.5f);
+                colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 0.0f);
+                colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.2f, 0.2f, 0.5f);
+                colors[ImGuiCol_Button] = ImVec4(0.3f, 0.3f, 0.35f, 0.6f);
+                colors[ImGuiCol_ButtonHovered] = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
+                colors[ImGuiCol_ButtonActive] = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
+                colors[ImGuiCol_TitleBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+                colors[ImGuiCol_TitleBgActive] = ImVec4(0.1f, 0.1f, 0.1f, 0.8f);
+                colors[ImGuiCol_Header] = ImVec4(0.3f, 0.3f, 0.4f, 0.6f);
+                colors[ImGuiCol_HeaderHovered] = ImVec4(0.4f, 0.4f, 0.5f, 0.7f);
+                colors[ImGuiCol_HeaderActive] = ImVec4(0.5f, 0.5f, 0.6f, 0.8f);
+
+                // Crosshair
+                ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+                ImVec2 center = ImVec2(io.DisplaySize.x * 0.5f + 0.5f, io.DisplaySize.y * 0.5f + 0.5f);
+                float size = 7.0f;
+
+                ImU32 color = IM_COL32(255, 255, 255, 255);
+
+                drawList->AddLine(ImVec2(center.x - size, center.y), ImVec2(center.x + size, center.y), color, 1.0f);
+                drawList->AddLine(ImVec2(center.x, center.y - size), ImVec2(center.x, center.y + size), color, 1.0f);
 
                 for (int i = 0; i < numMenus; i++)
                 {
@@ -779,38 +836,27 @@ void Program::run()
                         }
                         case 1:
                         {
-                            // Should be relative path
-                            // std::string modelFileName = "../../content/Triangulation/suzanne.obj";
-                            std::string modelFileName = "content/Triangulation/suzanne.obj";
+                            std::string modelFilePath = "content/Triangulation/suzanne.obj";
+                            static std::string modelFileName;
 
-                            ImGui::Text("Please choose a file.");
-                            ImGui::Indent(indentSize);
-                            ImGui::PushID("ModelKey");
-                            ImGui::InputText("", &modelFileName);
-                            ImGui::PopID();
-                            ImGui::Unindent(indentSize);
-
-                            // Triangle Mesh Preview
-                            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.750f, 0.625f, 0.5f));
-                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.129f, 0.460f, 0.405f, 0.5f));
-                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
-                            if (ImGui::Button("Import & Preview Model"))
+                            if (!isModelLoaded)
                             {
-                                // static std::string lastFile = modelFileName;
-                                showOriginalModelMenu = !showOriginalModelMenu;
-                                if (showOriginalModelMenu)
+                                if (ImGui::Button("Import Model..."))
                                 {
-                                    // make this set and load model so that the VAO/VBO work on same thread
-                                    modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFileName);
-                                    isModelLoaded = true;
-                                }
-                                else
-                                {
-                                    modelPreviewer->closeWindowTriangle();
-                                    isModelLoaded = false;
+                                    fileDialog.Open();
                                 }
                             }
-                            ImGui::PopStyleColor(3);
+                            fileDialog.Display();
+
+                            if (fileDialog.HasSelected())
+                            {
+                                modelFilePath = fileDialog.GetSelected().string();
+                                modelFileName = std::filesystem::path(modelFilePath).filename().string();
+                                fileDialog.ClearSelected();
+                                showOriginalModelMenu = !showOriginalModelMenu;
+                                modelPreviewer->createTriangleWindow(window, modelVoxelizer, modelFilePath);
+                                isModelLoaded = true;
+                            }
 
                             // Voxel Mesh Preview
                             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.770f, 0.372f, 0.0f, 0.5f));
@@ -819,19 +865,44 @@ void Program::run()
 
                             if (isModelLoaded)
                             {
-                                if (ImGui::Button("Voxelize & Preview Model"))
-                                {
-                                    showVoxelizedModelMenu = !showVoxelizedModelMenu;
+                                ImGui::Text("Model: %s", modelFileName.c_str());
+                                ImGui::Spacing();
 
-                                    if (showVoxelizedModelMenu)
+                                if (!isModelVoxelized)
+                                {
+                                    ImGui::Text("Voxel Resolution");
+                                    ImGui::Indent(indentSize);
+                                    static int comboIndex = 2;
+                                    static const char* comboItems[] = { "x16", "x32", "x64", "x128", "x256" };
+                                    if (ImGui::Combo("Res", &comboIndex, comboItems, IM_ARRAYSIZE(comboItems)))
                                     {
+                                        switch (comboIndex)
+                                        {
+                                            case 0:
+                                                modelVoxelizer->setVoxelResolution(16);
+                                                break;
+                                            case 1:
+                                                modelVoxelizer->setVoxelResolution(32);
+                                                break;
+                                            case 2:
+                                                modelVoxelizer->setVoxelResolution(64);
+                                                break;
+                                            case 3:
+                                                modelVoxelizer->setVoxelResolution(128);
+                                                break;
+                                            case 4:
+                                                modelVoxelizer->setVoxelResolution(256);
+                                                break;
+                                        }
+                                    }
+                                    ImGui::Unindent(indentSize);
+
+                                    ImGui::Spacing();
+                                    if (ImGui::Button("Voxelize Model"))
+                                    {
+
                                         modelPreviewer->createVoxelWindow(window, modelVoxelizer);
                                         isModelVoxelized = true;
-                                    }
-                                    else
-                                    {
-                                        modelPreviewer->closeWindowVoxel();
-                                        isModelVoxelized = false;
                                     }
                                 }
                             }
@@ -841,11 +912,88 @@ void Program::run()
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.313f, 0.450f, 0.310f, 0.5f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
 
+                            if (modelVoxelizer->isVoxelized)
+                            {
+                                ImGui::Spacing();
+                                if (input->isButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && isCursorCaptured)
+                                {
+                                    if (input->isKeyHeld(GLFW_KEY_LEFT_CONTROL))
+                                    {
+                                        glm::vec3 position = cameraTransform->getGlobalPosition() + cameraTransform->getForwardDirection() * 50.0f;
+                                        glm::quat initialRotationZ = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+                                        glm::quat initialRotationY = glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+                                        glm::vec3 targetPoint = cameraTransform->getGlobalPosition();
+                                        glm::vec3 direction = glm::normalize(targetPoint - position);
+                                        glm::vec3 up = cameraTransform->getUpDirection(); // Or compute from transform
+                                        glm::quat lookAtRotation = glm::quatLookAt(direction, up);
+
+                                        glm::quat finalRotation = lookAtRotation * initialRotationY;
+
+                                        modelVoxelizer->addToWorld(position, finalRotation);
+                                        std::cout << "Position: " << position.x << " " << position.y << " " << position.z << std::endl;
+                                        scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                        allChunkComponentsInScene.push_back(modelVoxelizer->getChunkComponent());
+                                    }
+                                    else
+                                    {
+                                        modelVoxelizer->addToWorld();
+                                        scene->addObjectChunk(modelVoxelizer->getChunkComponent());
+                                        allChunkComponentsInScene.push_back(modelVoxelizer->getChunkComponent());
+                                    }
+                                    std::cout << "Left mouse button clicked!" << std::endl;
+                                }
+                            }
+                            else if (isModelVoxelized)
+                            {
+                                ImGui::Text("Loading...");
+                            }
+
                             if (isModelVoxelized)
                             {
-                                if (ImGui::Button("Add to world"))
+                                ImGui::Spacing();
+                                if (ImGui::Button("New Model"))
                                 {
+                                    isModelLoaded = false;
+                                    isModelVoxelized = false;
+                                    modelPreviewer->clearResources();
                                 }
+                            }
+
+                            // Ray Cast
+
+                            ImGui::Spacing();
+                            if (allChunkComponentsInScene.size() > 0)
+                            {
+                                if (input->isButtonPressed(GLFW_MOUSE_BUTTON_RIGHT) && isCursorCaptured)
+                                {
+                                    RaycastHit result = scene->raycast(cameraTransform->getGlobalPosition(), cameraTransform->getForwardDirection());
+                                    if (result.isValid)
+                                    {
+                                        std::shared_ptr<VoxelChunkComponent> hitChunk = result.object->getComponent<VoxelChunkComponent>();
+                                        scene->removeObjectChunk(hitChunk);
+                                        allChunkComponentsInScene.erase(std::remove(allChunkComponentsInScene.begin(), allChunkComponentsInScene.end(), hitChunk), allChunkComponentsInScene.end());
+                                    }
+                                    else
+                                    {
+                                        std::cout << "Raycast did not hit any object." << std::endl;
+                                    }
+                                }
+                                ImGui::Text("Objects in world: %d", allChunkComponentsInScene.size());
+                                if (ImGui::Button("Clear All"))
+                                {
+                                    for (auto& Component : allChunkComponentsInScene)
+                                    {
+                                        scene->removeObjectChunk(Component);
+                                    }
+                                    allChunkComponentsInScene.clear();
+                                }
+                            }
+
+                            if (modelVoxelizer->isVoxelized)
+                            {
+                                ImGui::Text("LMB - Add to world");
+                                ImGui::Text("LMB + Left Control - Add to world facing camera");
                             }
 
                             ImGui::PopStyleColor(3);

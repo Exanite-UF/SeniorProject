@@ -10,6 +10,8 @@
 #include "VoxelChunkUtility.h"
 #include <src/gameobjects/TransformComponent.h>
 
+#include "RaycastHit.h"
+
 struct RayHit
 {
     bool wasHit;
@@ -108,11 +110,11 @@ bool VoxelChunkComponent::getExistsOnGpu() const
     return chunk.has_value();
 }
 
-std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::vec3 direction, float currentDepth)
+RaycastHit VoxelChunkComponent::raycast(glm::vec3 start, glm::vec3 direction, float currentDepth)
 {
     if (!mutex.try_lock_shared())
     {
-        return { -1, glm::vec3(0) };
+        return RaycastHit::invalid();
     }
 
     RayHit hit;
@@ -189,17 +191,17 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     {
         hit.isNearest = false;
         mutex.unlock_shared();
-        return { -1, glm::vec3(0) };
+        return RaycastHit::invalid();
     }
 
-    float depth = length(direction * voxelWorldScale * distToCube); // Find how far the ray has traveled from the start
+    float depth = glm::length(direction * voxelWorldScale * distToCube); // Find how far the ray has traveled from the start
 
     // If the start of the voxel volume is behind the currently closest thing, then there is not reason to continue
     if (depth > currentDepth)
     {
         hit.isNearest = false;
         mutex.unlock_shared();
-        return { -1, glm::vec3(0) };
+        return RaycastHit::invalid();
     }
 
     bool isOutside = true; // Used to make the image appear to be backface culled (It actually drastically decreases performance if rendered from inside the voxels)
@@ -323,11 +325,20 @@ std::pair<float, glm::vec3> VoxelChunkComponent::raycast(glm::vec3 start, glm::v
     if (!hit.wasHit)
     {
         mutex.unlock_shared();
-        return { -1, glm::vec3(0) };
+        return RaycastHit::invalid();
     }
 
     mutex.unlock_shared();
-    return { hit.dist, hit.hitLocation };
+
+    {
+        RaycastHit result {};
+        result.distance = hit.dist;
+        result.position = hit.hitLocation;
+        result.isValid = true;
+        result.object = getGameObject();
+
+        return result;
+    }
 }
 
 void VoxelChunkComponent::allocateGpuData(const glm::ivec3& size)

@@ -1,11 +1,15 @@
 #include <chrono>
 #include <src/Content.h>
 #include <src/graphics/ShaderManager.h>
+#include <src/utilities/OpenGl.h>
 #include <src/voxelizer/ModelPreviewer.h>
+#include <src/windowing/GlfwContext.h>
+#include <src/windowing/Window.h>
 #include <thread>
 
 ModelPreviewer::~ModelPreviewer()
 {
+    rayMarchingShader.reset();
     closeWindowTriangle();
     closeWindowVoxel();
 }
@@ -22,13 +26,14 @@ void ModelPreviewer::createTriangleWindow(const std::shared_ptr<Window>& mainWin
 {
     if (triangleThreadRunning)
     {
-        return;
+        closeWindowTriangle();
     }
 
     this->modelVoxelizer = modelVoxelizer;
 
     // Create Triangle Window in the main thread
     triangleWindow = std::make_shared<Window>("Voxelizer triangle window", mainWindow.get(), false, false);
+    triangleWindow->setWindowed(300, 300);
 
     // Restore original context
     mainWindow->makeContextCurrent();
@@ -42,7 +47,7 @@ void ModelPreviewer::createTriangleWindow(const std::shared_ptr<Window>& mainWin
             setModel(modelVoxelizer->getModel());
 
             // Render Loop
-            while (triangleThreadRunning && !glfwWindowShouldClose(triangleWindow->getGlfwWindowHandle()))
+            while (triangleThreadRunning)
             {
                 // Limit FPS
                 static auto last_frame = std::chrono::steady_clock::now();
@@ -75,13 +80,18 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
 {
     if (voxelThreadRunning)
     {
-        return;
+        closeWindowVoxel();
     }
 
     this->modelVoxelizer = modelVoxelizer;
 
     // Create Voxel Window in the main thread
     voxelWindow = std::make_shared<Window>("Voxelizer voxel window", mainWindow.get(), false, false);
+    voxelWindow->setWindowed(300, 300);
+    if (!glewIsSupported("GL_ARB_shader_image_load_store"))
+    {
+        std::cerr << "GL_ARB_shader_image_load_store is not supported!" << std::endl;
+    }
 
     // Restore original context
     mainWindow->makeContextCurrent();
@@ -91,13 +101,16 @@ void ModelPreviewer::createVoxelWindow(const std::shared_ptr<Window>& mainWindow
         {
             voxelWindow->makeContextCurrent();
 
+            rayMarchingShader = ShaderManager::getInstance().getComputeProgram(Content::Triangulation::compShaderPathRayMarch);
+            modelVoxelizer->rayMarchingShader = rayMarchingShader;
+
             printf("STARTING RENDER LOOP\n");
 
             // generate voxels
             modelVoxelizer->voxelizeModel();
 
             // Render Loop
-            while (voxelThreadRunning && !glfwWindowShouldClose(voxelWindow->getGlfwWindowHandle()))
+            while (voxelThreadRunning)
             {
                 // Limit FPS
                 static auto last_frame = std::chrono::steady_clock::now();
@@ -144,6 +157,7 @@ void ModelPreviewer::renderTriangleWindow()
 void ModelPreviewer::renderVoxelWindow()
 {
     glEnable(GL_DEPTH_TEST);
+
     glClearColor(0.2f, 0.2f, 0.2f, 0);
     glClearDepth(1);
     glDepthFunc(GL_LESS);
@@ -190,4 +204,31 @@ void ModelPreviewer::closeWindowVoxel()
     {
         voxelThread.join();
     }
+}
+
+void ModelPreviewer::clearResources()
+{
+    // Close Windows and Threads
+    if (triangleThreadRunning)
+    {
+        closeWindowTriangle();
+    }
+
+    if (voxelThreadRunning)
+    {
+        GLFWwindow* curContext = glfwGetCurrentContext();
+        voxelWindow->makeContextCurrent();
+        modelVoxelizer->clearResources();
+        if (curContext)
+        {
+            glfwMakeContextCurrent(curContext);
+        }
+        closeWindowVoxel();
+    }
+
+    triangleWindow.reset();
+    voxelWindow.reset();
+    loadedModel.reset();
+    triangleShader.reset();
+    voxelShader.reset();
 }

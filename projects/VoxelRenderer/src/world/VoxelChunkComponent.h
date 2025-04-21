@@ -9,6 +9,7 @@
 #include <src/gameobjects/Component.h>
 #include <src/threading/CancellationToken.h>
 #include <src/threading/PendingTasks.h>
+#include <src/world/RaycastHit.h>
 #include <src/world/VoxelChunk.h>
 #include <src/world/VoxelChunkData.h>
 
@@ -74,7 +75,10 @@ public:
     const VoxelChunkData& getChunkData();
 
     // Requires mutex exclusive access
+    // Do NOT use unless you know what you are doing
     // Prefer using a command buffer instead
+    //
+    // Improper access to this will result in data inconsistencies
     VoxelChunkData& getRawChunkData();
 
     // This method itself is unsynchronized
@@ -87,7 +91,7 @@ public:
 
     bool getExistsOnGpu() const;
 
-    std::pair<float, glm::vec3> raycast(glm::vec3 start, glm::vec3 direction, float currentDepth);
+    RaycastHit raycast(glm::vec3 start, glm::vec3 direction, float currentDepth);
 
 protected:
     void onRemovingFromWorld() override;

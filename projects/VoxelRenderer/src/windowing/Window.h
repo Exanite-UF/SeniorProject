@@ -60,6 +60,7 @@ public:
 
     void setFullscreen();
     void setWindowed();
+    void setWindowed(int width, int height);
 
     // Find the monitor that the window is most likely to be on
     // Based on window-monitor overlap

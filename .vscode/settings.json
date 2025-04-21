@@ -117,6 +117,8 @@
         "pointers": "cpp",
         "*.tcc": "cpp",
         "string_view": "cpp",
-        "xstddef": "cpp"
+        "xstddef": "cpp",
+        "generator": "cpp",
+        "mdspan": "cpp"
     }
 }

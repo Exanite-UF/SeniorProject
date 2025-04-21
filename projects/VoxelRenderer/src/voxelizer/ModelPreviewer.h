@@ -26,14 +26,15 @@ private:
     std::thread voxelThread {};
 
     // Camera Attributes
-    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
-    glm::vec3 cameraForwardDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 cameraPosition = glm::vec3(-5.0f, 0.0f, 5.0f);
+    glm::vec3 cameraForwardDirection = glm::vec3(0.5f, 0.0f, -0.5f);
     glm::vec3 cameraUpDirection = glm::vec3(0.0f, 1.0f, 0.0f);
 
     std::shared_ptr<Model> loadedModel {};
 
     std::shared_ptr<ShaderProgram> triangleShader {};
     std::shared_ptr<ShaderProgram> voxelShader {};
+    std::shared_ptr<ShaderProgram> rayMarchingShader {};
 
     std::shared_ptr<ModelVoxelizer> modelVoxelizer {};
 
@@ -51,4 +52,6 @@ public:
 
     void closeWindowTriangle();
     void closeWindowVoxel();
+
+    void clearResources();
 };

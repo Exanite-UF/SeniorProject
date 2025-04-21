@@ -1,5 +1,6 @@
 #include <stdexcept>
 
+#include <src/Content.h>
 #include <src/windowing/Window.h>
 
 Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enableImGui, bool isMainWindow)
@@ -31,6 +32,9 @@ Window::Window(const std::string& contextName, GlfwContext* shareWith, bool enab
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
+        ImFont* sfFont = io.Fonts->AddFontFromFileTTF(std::string(Content::imguiFont).c_str(), 16.0f);
+        io.FontDefault = sfFont;
+
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
         ImGui_ImplGlfw_InitForOpenGL(glfwWindowHandle, true);
@@ -215,6 +219,12 @@ void Window::setFullscreen()
 
 void Window::setWindowed()
 {
+    glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowedPosition.x, lastWindowedPosition.y, lastWindowedSize.x, lastWindowedSize.y, 0);
+}
+
+void Window::setWindowed(int width, int height)
+{
+    lastWindowedSize = glm::i32vec2(width, height);
     glfwSetWindowMonitor(glfwWindowHandle, nullptr, lastWindowedPosition.x, lastWindowedPosition.y, lastWindowedSize.x, lastWindowedSize.y, 0);
 }
 

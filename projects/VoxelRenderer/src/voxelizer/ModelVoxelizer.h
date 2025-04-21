@@ -2,6 +2,8 @@
 
 #include <src/utilities/OpenGl.h>
 #include <src/voxelizer/Model.h>
+#include <src/world/VoxelChunkComponent.h>
+#include <src/world/VoxelChunkData.h>
 
 struct HashFunction
 {
@@ -37,7 +39,7 @@ class ModelVoxelizer
 
 private:
     std::shared_ptr<Model> loadedModel {};
-    int gridResolution {};
+    int gridResolution = 64;
     glm::ivec3 gridSize {};
     glm::vec3 voxelSize {};
     std::vector<bool> voxelGrid {};
@@ -51,7 +53,27 @@ private:
     unsigned int voxelVBO {};
     unsigned int voxelEBO {};
     unsigned int instanceVBO {};
+
+    // Ray Marching
+    unsigned int triangleSSBO {};
+
+    // Model Rendering for Rasterization
+    unsigned int modelVAO {};
+    unsigned int modelVBO {};
+    unsigned int modelEBO {};
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+
+    // Conservative Rasterization Algorithm
+    unsigned int voxelTexture {};
+
     std::vector<glm::vec3> activeVoxels {};
+    std::shared_ptr<TransformComponent> cameraTransform {};
+    std::vector<std::shared_ptr<VoxelChunkComponent>> allChunkComponents {};
+
+    // Chunk Data
+    std::shared_ptr<VoxelChunkData> chunkData {};
+    std::shared_ptr<GameObject> sceneObject {};
 
     void setupBoundingBox();
 
@@ -103,18 +125,32 @@ private:
 
     void triangleVoxelization(std::vector<bool>& voxels);
 
-    void raymarchVoxelization(std::vector<bool>& voxels);
+    void performRayMarchingVoxelization();
 
     void generateVoxelMesh();
 
 public:
     bool isVoxelized = false;
+    std::shared_ptr<VoxelChunkComponent> chunkComponent {};
 
     ~ModelVoxelizer();
 
+    std::shared_ptr<ShaderProgram> rayMarchingShader {};
+
     void loadModel(char* path);
     std::shared_ptr<Model> getModel();
-    void voxelizeModel(int option = 0);
+    std::shared_ptr<VoxelChunkData> getChunkData();
+    void voxelizeModel();
+    void setSceneObject(std::shared_ptr<GameObject> sceneObject) { this->sceneObject = sceneObject; }
+    void setSceneCameraTransform(std::shared_ptr<TransformComponent> cameraTransform) { this->cameraTransform = cameraTransform; }
+    std::shared_ptr<VoxelChunkComponent> getChunkComponent() { return chunkComponent; }
+    std::vector<std::shared_ptr<VoxelChunkComponent>> getChunkComponents() { return allChunkComponents; }
 
     void drawVoxels(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize);
+
+    void addToWorld(glm::vec3 position = glm::vec3(0.0f), glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
+
+    void clearResources();
+
+    void setVoxelResolution(int resolution) { gridResolution = resolution; }
 };

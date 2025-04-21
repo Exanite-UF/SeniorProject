@@ -1,11 +1,43 @@
+#include <src/gameobjects/GameObject.h>
+#include <src/gameobjects/TransformComponent.h>
 #include <src/graphics/ShaderProgram.h>
+#include <src/utilities/OpenGl.h>
 #include <src/voxelizer/ModelVoxelizer.h>
+#include <src/windowing/GlfwContext.h>
+#include <src/windowing/Window.h>
+#include <src/world/MaterialManager.h>
+#include <src/world/VoxelChunkCommandBuffer.h>
+#include <src/world/VoxelChunkManager.h>
+
+#include <random>
+
+// Helper
+bool isExtensionSupported(const char* extensionName)
+{
+    GLint numExtensions;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
+    for (GLint i = 0; i < numExtensions; ++i)
+    {
+        const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+        if (std::strcmp(ext, extensionName) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 ModelVoxelizer::~ModelVoxelizer() = default;
 
 std::shared_ptr<Model> ModelVoxelizer::getModel()
 {
     return loadedModel;
+}
+
+std::shared_ptr<VoxelChunkData> ModelVoxelizer::getChunkData()
+{
+    return chunkData;
 }
 
 void ModelVoxelizer::loadModel(char* path)
@@ -31,9 +63,19 @@ void ModelVoxelizer::setupBoundingBox()
     minBounds -= glm::vec3(1.0f);
     maxBounds += glm::vec3(1.0f);
 
-    gridResolution = 16;
-    gridSize = glm::ivec3(gridResolution);
-    voxelSize = (maxBounds - minBounds) / glm::vec3(gridSize);
+    glm::vec3 bounds = maxBounds - minBounds;
+    std::cout << "Bounds: (" << bounds.x << ", " << bounds.y << ", " << bounds.z << ")" << std::endl;
+    float maxDim = std::max({ bounds.x, bounds.y, bounds.z });
+
+    if (maxDim < 1e-6f)
+        maxDim = 1.0f;
+    glm::vec3 normalizedDims = (bounds / maxDim) * (float)gridResolution;
+    gridSize = glm::ivec3(
+        std::ceil(normalizedDims.x),
+        std::ceil(normalizedDims.y),
+        std::ceil(normalizedDims.z));
+
+    voxelSize = bounds / glm::vec3(gridSize);
     voxelGrid = std::vector<bool>(gridSize.x * gridSize.y * gridSize.z, false);
 
     printf("BOUNDING BOX SETUP\n");
@@ -113,7 +155,6 @@ bool ModelVoxelizer::triangleIntersection(const Triangle& tri, const glm::vec3& 
     return triangleBoxOverlap(boxCenter, boxHalfSize, tri.vertices);
 }
 
-// FIX WITH BVH
 void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
 {
     printf("TRIANGLE VOXELIZATION BEGIN\n");
@@ -143,17 +184,15 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
         {
             for (int x = 0; x < gridSize.x; ++x)
             {
-                // std::cout << z << " " << y << " " << x << std::endl;
                 glm::vec3 voxelMin = minBounds + glm::vec3(x, y, z) * voxelSize;
-                glm::ivec3 gridCell = worldToGrid(voxelMin); //
 
-                // for (const Triangle& tri : loadedModel->getTriangles())
+                glm::ivec3 gridCell = worldToGrid(voxelMin);
+
                 for (const Triangle& tri : spatialGrid[gridCell])
                 {
                     if (triangleIntersection(tri, voxelMin))
                     {
                         localVoxels[z * gridSize.x * gridSize.y + y * gridSize.x + x] = true;
-                        // voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x] = true;
                         break;
                     }
                 }
@@ -168,11 +207,81 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
     printf("TRIANGLE VOXELIZATION DONE\n");
 }
 
-void ModelVoxelizer::raymarchVoxelization(std::vector<bool>& voxels)
+void ModelVoxelizer::performRayMarchingVoxelization()
 {
+    // Gather Triangles
+    std::vector<Triangle> triangles = loadedModel->getTriangles();
+    std::vector<glm::vec3> triangleVertices;
+    triangleVertices.reserve(triangles.size() * 3);
+
+    for (const Triangle& tri : triangles)
+    {
+        triangleVertices.push_back(tri.vertices[0].position);
+        triangleVertices.push_back(tri.vertices[1].position);
+        triangleVertices.push_back(tri.vertices[2].position);
+    }
+
+    // Generate Buffer Objects
+    glGenBuffers(1, &triangleSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, triangleSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, triangleVertices.size() * sizeof(glm::vec3), triangleVertices.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, triangleSSBO);
+
+    glGenTextures(1, &voxelTexture);
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glTexStorage3D(GL_TEXTURE_3D, 1, GL_R32UI, gridSize.x, gridSize.y, gridSize.z);
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        std::cerr << "OpenGL Error: " << error << std::endl;
+    }
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
+    rayMarchingShader->use();
+
+    int triCount = static_cast<int>(triangleVertices.size() / 3);
+    glUniform1i(glGetUniformLocation(rayMarchingShader->programId, "triCount"), triCount);
+
+    GLint gridSizeLoc = glGetUniformLocation(rayMarchingShader->programId, "gridSize");
+    GLint minBoundsLoc = glGetUniformLocation(rayMarchingShader->programId, "minBounds");
+    GLint maxBoundsLoc = glGetUniformLocation(rayMarchingShader->programId, "maxBounds");
+
+    glUniform3fv(gridSizeLoc, 1, glm::value_ptr(glm::vec3(gridSize)));
+    glUniform3fv(minBoundsLoc, 1, glm::value_ptr(minBounds));
+    glUniform3fv(maxBoundsLoc, 1, glm::value_ptr(maxBounds));
+    if (gridSizeLoc == -1 || minBoundsLoc == -1 || maxBoundsLoc == -1)
+    {
+        std::cerr << "Error: Failed to get uniform location for one or more uniforms." << std::endl;
+    }
+
+    glm::ivec3 dispatch = (gridSize + glm::ivec3(7)) / glm::ivec3(8); // Round up to the nearest multiple of 8
+    glDispatchCompute(dispatch.x, dispatch.y, dispatch.z);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    std::vector<unsigned int> voxelData(gridSize.x * gridSize.y * gridSize.z);
+
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, voxelData.data());
+    std::cout << "Voxel (0, 0, 0): " << voxelData[0] << std::endl;
+
+    const GLubyte* renderer = glGetString(GL_RENDERER);
+    const GLubyte* version = glGetString(GL_VERSION);
+    std::cout << "Renderer: " << renderer << std::endl;
+    std::cout << "OpenGL Version: " << version << std::endl;
+
+    for (size_t i = 0; i < voxelData.size(); ++i)
+    {
+        voxelGrid[i] = (voxelData[i] > 0);
+    }
 }
 
-void ModelVoxelizer::voxelizeModel(int option)
+void ModelVoxelizer::voxelizeModel()
 {
     printf("VOXELIZING\n");
     if (!loadedModel)
@@ -182,7 +291,8 @@ void ModelVoxelizer::voxelizeModel(int option)
 
     setupBoundingBox();
 
-    // triangleVoxelization(voxelGrid);
+    triangleVoxelization(voxelGrid);
+    // performRayMarchingVoxelization();
 
     generateVoxelMesh();
 }
@@ -249,34 +359,7 @@ void ModelVoxelizer::generateVoxelMesh()
         22, 23, 20
     };
 
-    // for (int z = 0; z < gridSize.z; ++z) {
-    //     for (int y = 0; y < gridSize.y; ++y) {
-    //         for (int x = 0; x < gridSize.x; ++x) {
-    //
-    //            if (!voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
-    //            {
-    //                continue;
-    //            }
-    //
-    //            glm::vec3 voxelCenter = minBounds + glm::vec3(x + 0.5f, y + 0.5f, z + 0.5f) * voxelSize;
-    //
-    //            // Transform template vertices to world space
-    //            for (const auto& index : cubeIndices) {
-    //                Vertex v;
-    //                v.Position = glm::vec3(cubeVertices[(index * 8)], cubeVertices[(index * 8) + 1], cubeVertices[(index * 8) + 2]);
-    //                v.TexCoords = glm::vec2(cubeVertices[(index * 8) + 3], cubeVertices[(index * 8) + 4]);
-    //                v.Normal = glm::vec3(cubeVertices[(index * 8) + 5], cubeVertices[(index * 8) + 6], cubeVertices[(index * 8) + 7]);
-    //                v.Position = v.Position * voxelSize + voxelCenter;
-    //                voxelMesh.push_back(v);
-    //            }
-    //        }
-    //    }
-    //}
-
     // Setup
-
-    activeVoxels.clear();
-    activeVoxels.push_back(glm::vec3(0, 0, 0));
 
     glGenVertexArrays(1, &voxelVAO);
     glGenBuffers(1, &voxelVBO);
@@ -316,16 +399,36 @@ void ModelVoxelizer::generateVoxelMesh()
     }
     glBindVertexArray(0);
 
-    // activeVoxels.clear();
-    // for (int z = 0; z < gridSize.z; ++z) {
-    //     for (int y = 0; y < gridSize.y; ++y) {
-    //         for (int x = 0; x < gridSize.x; ++x) {
-    //             if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]) {
-    //                 activeVoxels.emplace_back(x, y, z);
-    //             }
-    //         }
-    //     }
-    // }
+    activeVoxels.clear();
+    glm::vec3 gridCenter = minBounds + (glm::vec3(gridSize) * 0.5f);
+
+    static std::random_device rd;
+
+    // VoxelChunkData
+    chunkData = std::make_shared<VoxelChunkData>(gridSize);
+
+#pragma omp parallel for collapse(3) schedule(dynamic)
+    for (int z = 0; z < gridSize.z; ++z)
+    {
+        for (int y = 0; y < gridSize.y; ++y)
+        {
+            for (int x = 0; x < gridSize.x; ++x)
+            {
+                static std::mt19937 gen(rd());
+                std::uniform_int_distribution<uint16_t> dis(0, static_cast<uint16_t>(Constants::VoxelChunk::maxMaterialCount - 1));
+                uint16_t randomizedIndex = dis(gen);
+                chunkData->setVoxelOccupancy(glm::ivec3(x, y, z), voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x]);
+                chunkData->setVoxelMaterial(glm::ivec3(x, y, z), MaterialManager::getInstance().getMaterialByIndex(randomizedIndex));
+
+                if (voxelGrid[z * gridSize.x * gridSize.y + y * gridSize.x + x])
+                {
+                    glm::vec3 voxelWorldPosition = minBounds + glm::vec3(x, y, z);
+                    glm::vec3 centeredVoxelPosition = voxelWorldPosition - gridCenter;
+                    activeVoxels.emplace_back(centeredVoxelPosition);
+                }
+            }
+        }
+    }
 
     isVoxelized = true;
     std::cout << "VOXELIZED!" << std::endl;
@@ -348,7 +451,8 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     // Camera Setup
     glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraForwardDirection, cameraUpDirection);
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.001f, 1000.0f);
-    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model = glm::mat4(1.0f); // Initialize to identity matrix
+    model = glm::scale(model, voxelSize); // Apply scaling
 
     glUniformMatrix4fv(glGetUniformLocation(shader->programId, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(glGetUniformLocation(shader->programId, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -371,8 +475,90 @@ void ModelVoxelizer::drawVoxels(const std::shared_ptr<ShaderProgram>& shader, gl
     // Render voxels with instancing
     glBindVertexArray(voxelVAO);
     {
-        // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, activeVoxels.size());
     }
     glBindVertexArray(0);
+}
+
+void ModelVoxelizer::addToWorld(glm::vec3 position, glm::quat rotation)
+{
+    // VoxelChunkComponent
+    // Pass along scene object
+    auto voxelChunkObject = sceneObject->createChildObject("Voxelized model");
+    chunkComponent = voxelChunkObject->addComponent<VoxelChunkComponent>();
+
+    // static std::random_device rd;
+    // static std::mt19937 gen(rd());
+    // std::uniform_int_distribution<uint16_t> dis(0, static_cast<uint16_t>(Constants::VoxelChunk::maxMaterialCount - 1));
+    // uint16_t randomizedIndex = dis(gen);
+    // MaterialManager::getInstance().getMaterialByIndex(randomizedIndex)
+
+    allChunkComponents.push_back(chunkComponent);
+
+    // Set Default Position and Rotation
+    if (position == glm::vec3(0.0f))
+    {
+        position = cameraTransform->getGlobalPosition() + cameraTransform->getForwardDirection() * 50.0f;
+    }
+    if (rotation == glm::quat(1.0f, 0.0f, 0.0f, 0.0f))
+    {
+        rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    }
+
+    chunkComponent->getTransform()->addGlobalPosition(position);
+    chunkComponent->getTransform()->addGlobalRotation(rotation);
+
+    // Send to World
+    VoxelChunkCommandBuffer commandBuffer {};
+    commandBuffer.copyFrom(chunkData);
+    commandBuffer.setExistsOnGpu(true);
+
+    VoxelChunkManager::getInstance().submitCommandBuffer(chunkComponent, commandBuffer);
+}
+
+void ModelVoxelizer::clearResources()
+{
+    // Reset shared pointers
+    loadedModel.reset();
+    chunkData.reset();
+
+    for (auto& chunkComponent : allChunkComponents)
+    {
+        chunkComponent.reset();
+    }
+
+    // Clear vectors
+    voxelGrid.clear();
+    voxelMesh.clear();
+    activeVoxels.clear();
+
+    // Reset OpenGL buffers
+    if (voxelVAO)
+    {
+        glDeleteVertexArrays(1, &voxelVAO);
+        voxelVAO = 0;
+    }
+    if (voxelVBO)
+    {
+        glDeleteBuffers(1, &voxelVBO);
+        voxelVBO = 0;
+    }
+    if (voxelEBO)
+    {
+        glDeleteBuffers(1, &voxelEBO);
+        voxelEBO = 0;
+    }
+    if (instanceVBO)
+    {
+        glDeleteBuffers(1, &instanceVBO);
+        instanceVBO = 0;
+    }
+
+    // Reset other variables
+
+    gridSize = glm::ivec3(0);
+    voxelSize = glm::vec3(0.0f);
+    minBounds = glm::vec3(0.0f);
+    maxBounds = glm::vec3(0.0f);
+    isVoxelized = false;
 }
