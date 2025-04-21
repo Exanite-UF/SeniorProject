@@ -176,14 +176,14 @@ void ModelPreviewer::renderVoxelWindow()
 
 void ModelPreviewer::closeWindowTriangle()
 {
-    // Signal thead to stop
-    triangleThreadRunning = false;
-
     // Ensure window gets closed
     if (triangleWindow)
     {
         glfwSetWindowShouldClose(triangleWindow->getGlfwWindowHandle(), true);
     }
+
+    // Signal thead to stop
+    triangleThreadRunning = false;
 
     // Wait for thread to finish
     if (triangleThread.joinable())
