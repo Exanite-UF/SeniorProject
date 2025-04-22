@@ -25,6 +25,8 @@ private:
     std::thread triangleThread {};
     std::thread voxelThread {};
 
+    float previewZoom = 1.0f;
+
     // Camera Attributes
     glm::vec3 cameraPosition = glm::vec3(-5.0f, 0.0f, 5.0f);
     glm::vec3 cameraForwardDirection = glm::vec3(0.5f, 0.0f, -0.5f);
@@ -55,4 +57,9 @@ public:
     void closeWindowVoxel();
 
     void clearResources();
+
+    void setPreviewZoom(float zoom)
+    {
+        previewZoom = zoom;
+    }
 };
