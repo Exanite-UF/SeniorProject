@@ -645,6 +645,16 @@ void Program::run()
                     renderer.setBounces(numberOfBounces);
                 }
 
+                if (input->isKeyPressed(GLFW_KEY_K))
+                {
+                    isAutomaticResolutionAdjustmentEnabled = !isAutomaticResolutionAdjustmentEnabled;
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_EQUAL))
+                {
+                    renderRatio = 1;
+                }
+
                 if (input->isKeyPressed(GLFW_KEY_L))
                 {
                     skyboxIndex = (skyboxIndex + 1) % skyboxes.size();
@@ -841,6 +851,7 @@ void Program::run()
                             ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
                             ImGui::Text("Render Ratio: %.2f", renderRatio);
                             ImGui::Text("Number of bounces: %d", numberOfBounces);
+                            ImGui::Text("Automatic Render Resolution: %s", isAutomaticResolutionAdjustmentEnabled ? "True" : "False");
 
                             break;
                         }
@@ -1035,6 +1046,8 @@ void Program::run()
                             ImGui::Text("T - Change Noise Type");
                             ImGui::Text("G - Toggle Reprojection");
                             ImGui::Text("V - Toggle Bounce Count");
+                            ImGui::Text("K - Toggle Automatic Render Resolution");
+                            ImGui::Text("= - Set Render Resolution to 1");
                             ImGui::Text("B - Pause/Unpause Rendering");
                             ImGui::Text("J - Toggle ground camera");
                             ImGui::Text("L - Toggle skybox");
