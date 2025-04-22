@@ -492,7 +492,7 @@ void PrototypeWorldGenerator::showDebugMenu()
                 ImGui::SliderFloat("Surface Probability (of voxel occupation)", &surfaceProbability, 0, 1);
                 ImGui::SliderFloat("Air Probability (of voxel occupation)", &airProbability, 0, 1);
                 ImGui::SliderFloat("Fall off from bottom (higher -> deeper caves)", &surfaceToBottomFalloffRate, 0, 5);
-                
+
                 ImGui::EndMenu();
             }
 
