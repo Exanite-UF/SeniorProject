@@ -64,13 +64,13 @@ void Mesh::draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPo
 
     // Camera Setup
     glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraForwardDirection, cameraUpDirection);
-    //glm::mat4 projection = glm::perspective(glm::radians(60.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.001f, 1000.0f);
+    // glm::mat4 projection = glm::perspective(glm::radians(60.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.001f, 1000.0f);
     glm::mat4 projection = glm::ortho(
-        -zoom * static_cast<float>(windowSize.x) / windowSize.y,  // Left
-        zoom * static_cast<float>(windowSize.x) / windowSize.y,   // Right
-        -zoom,                                                   // Bottom
-        zoom,                                                    // Top
-        0.001f, 1000.0f                                               // Near and far clipping planes
+        -zoom * static_cast<float>(windowSize.x) / windowSize.y, // Left
+        zoom * static_cast<float>(windowSize.x) / windowSize.y, // Right
+        -zoom, // Bottom
+        zoom, // Top
+        0.001f, 1000.0f // Near and far clipping planes
     );
     glm::mat4 model = glm::mat4(1.0f);
     glUniformMatrix4fv(glGetUniformLocation(shader->programId, "model"), 1, GL_FALSE, glm::value_ptr(model));
