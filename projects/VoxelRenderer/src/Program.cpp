@@ -1047,7 +1047,7 @@ void Program::run()
                             ImGui::Text("G - Toggle Reprojection");
                             ImGui::Text("V - Toggle Bounce Count");
                             ImGui::Text("K - Toggle Automatic Render Resolution");
-                            ImGui::Text("= - Set Render Resolution to 1");
+                            ImGui::Text("= - Set Render Resolution Ratio to 1");
                             ImGui::Text("B - Pause/Unpause Rendering");
                             ImGui::Text("J - Toggle ground camera");
                             ImGui::Text("L - Toggle skybox");
