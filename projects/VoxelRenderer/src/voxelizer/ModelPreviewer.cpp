@@ -154,7 +154,7 @@ void ModelPreviewer::renderTriangleWindow()
 
     if (loadedModel)
     {
-        loadedModel->draw(triangleShader, cameraPosition, cameraForwardDirection, cameraUpDirection, triangleWindow->size);
+        loadedModel->draw(triangleShader, cameraPosition, cameraForwardDirection, cameraUpDirection, triangleWindow->size, previewZoom);
     }
 }
 
@@ -170,20 +170,21 @@ void ModelPreviewer::renderVoxelWindow()
 
     if (modelVoxelizer && modelVoxelizer->isVoxelized)
     {
-        modelVoxelizer->drawVoxels(voxelShader, cameraPosition, cameraForwardDirection, cameraUpDirection, voxelWindow->size);
+        modelVoxelizer->drawVoxels(voxelShader, cameraPosition, cameraForwardDirection, cameraUpDirection, voxelWindow->size, previewZoom);
     }
 }
 
 void ModelPreviewer::closeWindowTriangle()
 {
+    // Signal thead to stop
+    triangleThreadRunning = false;
+
     // Ensure window gets closed
     if (triangleWindow)
     {
         glfwSetWindowShouldClose(triangleWindow->getGlfwWindowHandle(), true);
     }
 
-    // Signal thead to stop
-    triangleThreadRunning = false;
 
     // Wait for thread to finish
     if (triangleThread.joinable())

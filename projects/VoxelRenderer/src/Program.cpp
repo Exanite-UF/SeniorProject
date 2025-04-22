@@ -744,7 +744,7 @@ void Program::run()
                 {
                     renderRatio = glm::clamp(renderRatio + input->getMouseScroll().y * 0.01f, 0.01f, 2.0f);
                 }
-                else
+                else if (!input->isKeyHeld(GLFW_KEY_Z))
                 {
                     camera->moveSpeed *= pow(1.1, input->getMouseScroll().y);
                 }
@@ -873,10 +873,21 @@ void Program::run()
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.510f, 0.320f, 0.143f, 0.5f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
 
+                            static float zoom = 1.0f;
+                            if (zoom < 0.0f)
+                            {
+                                zoom = 0.0f;
+                            }
                             if (isModelLoaded)
                             {
                                 ImGui::Text("Model: %s", modelFileName.c_str());
                                 ImGui::Spacing();
+                                ImGui::Text("Z + Mouse Scroll - Preview Zoom");
+                                if (input->isKeyHeld(GLFW_KEY_Z) && input->getMouseScroll().y != 0)
+                                {
+                                    zoom -= input->getMouseScroll().y * 0.05f;
+                                    modelPreviewer->setPreviewZoom(zoom);
+                                }
 
                                 if (!isModelVoxelized)
                                 {
@@ -1004,6 +1015,7 @@ void Program::run()
                             {
                                 ImGui::Text("LMB - Add to world");
                                 ImGui::Text("LMB + Left Control - Add to world facing camera");
+                                ImGui::Text("RMB - Delete object");
                             }
 
                             ImGui::PopStyleColor(3);
