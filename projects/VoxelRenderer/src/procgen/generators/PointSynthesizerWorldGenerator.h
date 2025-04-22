@@ -9,7 +9,7 @@ protected:
     std::shared_ptr<PointSynthesizer> pointSynthesizer;
 
     int seed = 3;
-    int height = 50;
+    int pillarHeight = 50;
 
     void generateData(VoxelChunkData& data) override;
 

@@ -18,12 +18,13 @@ void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
     auto& materialManager = MaterialManager::getInstance();
 
     std::shared_ptr<Material> whiteMaterial;
-    WorldUtility::tryGetMaterial("greyscale_0", materialManager, whiteMaterial);
-
-    std::shared_ptr<Material> blackMaterial;
     WorldUtility::tryGetMaterial("greyscale_255", materialManager, whiteMaterial);
 
+    std::shared_ptr<Material> blackMaterial;
+    WorldUtility::tryGetMaterial("greyscale_0", materialManager, blackMaterial);
+
     std::vector<glm::vec3> points;
+    pointSynthesizer->setSeed(seed);
     pointSynthesizer->generatePoints(points, 20);
     pointSynthesizer->rescalePointsToChunkSize(points, data);
 
@@ -45,7 +46,7 @@ void PointSynthesizerWorldGenerator::generateData(VoxelChunkData& data)
     {
         glm::ivec3 point = glm::ivec3(points[i]);
 
-        for (int z = 0; z <= height; ++z)
+        for (int z = 0; z <= pillarHeight; ++z)
         {
             glm::ivec3 voxel = { point.x, point.y, z };
 
@@ -62,11 +63,12 @@ void PointSynthesizerWorldGenerator::showDebugMenu()
 {
     ImGui::PushID("PointSynthesizerWorldGenerator");
     {
-        if (ImGui::CollapsingHeader("Poisson Disk Visual Generator (F9)"))
+        if (ImGui::CollapsingHeader("Poisson Disk Pillar Visual Generator (F9)"))
         {
             if (ImGui::BeginMenu("Value"))
             {
-                ImGui::SliderInt("Height", &height, 1, 100);
+                ImGui::SliderInt("Seed", &seed, 1, 100);
+                ImGui::SliderInt("Pillar Height", &pillarHeight, 1, 100);
                 ImGui::EndMenu();
             }
         }
