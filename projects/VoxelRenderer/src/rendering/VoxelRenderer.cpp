@@ -177,7 +177,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 {
     ZoneScoped;
 
-    beforeCast(maxDepth, scene);
+    beforeCast(maxDepth, scene, true);
 
     // handleDirtySizing();//Do not handle dirty sizing, this function should only be working with data that alreay exist. Resizing would invalidate that data
     glUseProgram(fullCastProgram);
@@ -198,27 +198,43 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         rayDirectionBuffer1.bind(3);
     }
 
-    // Occupancy Map = 5
-    // Material Map = 6
+    // Occupancy Map = 4
+    // Material Map = 5
 
-    rayMisc.bind(7);
+    rayMisc.bind(6);
 
     MaterialManager& materialManager = MaterialManager::getInstance();
-    materialManager.getMaterialDefinitionsBuffer().bind(8); // This binds the material definitions for each material
+    materialManager.getMaterialDefinitionsBuffer().bind(7); // This binds the material definitions for each material
 
     if (whichAccumulationBuffer)
     {
-        attentuationBuffer1.bind(9);
-        accumulatedLightBuffer1.bind(10);
-        attentuationBuffer2.bind(11);
-        accumulatedLightBuffer2.bind(12);
+        attentuationBuffer1.bind(8);
+        accumulatedLightBuffer1.bind(9);
+        attentuationBuffer2.bind(10);
+        accumulatedLightBuffer2.bind(11);
     }
     else
     {
-        attentuationBuffer1.bind(11);
-        accumulatedLightBuffer1.bind(12);
-        attentuationBuffer2.bind(9);
-        accumulatedLightBuffer2.bind(10);
+        attentuationBuffer1.bind(10);
+        accumulatedLightBuffer1.bind(11);
+        attentuationBuffer2.bind(8);
+        accumulatedLightBuffer2.bind(9);
+    }
+
+
+    positionBuffer.bind(12);
+
+    if (whichSampleRadiance)
+    {
+        sampleDirection1.bind(13);
+        sampleRadiance1.bind(14);
+        sampleWeights1.bind(15);
+    }
+    else
+    {
+        sampleDirection2.bind(13);
+        sampleRadiance2.bind(14);
+        sampleWeights2.bind(15);
     }
 
     {
@@ -233,6 +249,15 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
         glUniform1i(glGetUniformLocation(fullCastProgram, "firstMipMapLevel"), firstMipMapLevel);
         glUniform1i(glGetUniformLocation(fullCastProgram, "maxIterations"), maxIterations);
+
+        //The past camera position maps corresponds to the resevoirs
+        glUniform3fv(glGetUniformLocation(fullCastProgram, "pastCameraPosition"), 1, glm::value_ptr(pastCameraPosition));
+        glUniform4fv(glGetUniformLocation(fullCastProgram, "pastCameraRotation"), 1, glm::value_ptr(pastCameraRotation));
+        glUniform1f(glGetUniformLocation(fullCastProgram, "pastCameraFovTan"), std::tan(pastCameraFOV * 0.5)); // A little bit of randomness for temporal accumulation
+
+        std::shared_ptr<SkyboxComponent> skybox = scene->getSkybox();
+        glUniform1f(glGetUniformLocation(fullCastProgram, "sunAngularSize"), skybox->getSunAngularSize());
+        glUniform3fv(glGetUniformLocation(fullCastProgram, "sunDirection"), 1, glm::value_ptr(skybox->getSunDirection()));
 
         for (auto& chunkComponent : chunks)
         {
@@ -262,7 +287,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
 
                 auto& chunk = chunkComponent->getChunk();
 
-                chunk->bindBuffers(5, 6);
+                chunk->bindBuffers(4, 5);
                 {
                     const auto chunkSize = chunk->getSize();
 
@@ -296,10 +321,22 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     attentuationBuffer1.unbind();
     accumulatedLightBuffer1.unbind();
     attentuationBuffer2.unbind();
-    accumulatedLightBuffer2.unbind();
+    accumulatedLightBuffer2.unbind();    
 
-    normalBuffer.unbind();
     positionBuffer.unbind();
+
+    if (whichSampleRadiance)
+    {
+        sampleDirection1.unbind();
+        sampleRadiance1.unbind();
+        sampleWeights1.unbind();
+    }
+    else
+    {
+        sampleDirection2.unbind();
+        sampleRadiance2.unbind();
+        sampleWeights2.unbind();
+    }
 
     glUseProgram(0);
 

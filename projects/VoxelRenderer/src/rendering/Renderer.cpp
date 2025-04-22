@@ -301,15 +301,21 @@ void Renderer::_render()
             voxelRenderer->executePathTrace(chunks, bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, scene);
         }
 
-        // This need SVGF's framebuffer
-        // voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
-        voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
+        //Enables or disables SVGF
+        if(true){
+            voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
 
-        // SVGF
-        svgf->lock();
-        svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
-        svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
-        svgf->unlock();
+            // SVGF
+            svgf->lock();
+            svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
+            svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
+            svgf->unlock();
+        }else{
+            voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
+        }
+    
+
+        
 
         olderRenderedPosition = lastRenderedPosition;
         lastRenderedPosition = currentCameraPosition;

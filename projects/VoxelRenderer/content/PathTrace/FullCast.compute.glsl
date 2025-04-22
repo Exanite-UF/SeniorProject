@@ -44,6 +44,14 @@ ivec2 offset;
 uniform int firstMipMapLevel;
 uniform int maxIterations;
 
+
+uniform vec3 pastCameraPosition;
+uniform vec4 pastCameraRotation; // quaternion
+uniform float pastCameraFovTan;
+
+uniform float sunAngularSize; // The angle of the sun in diameter
+uniform vec3 sunDirection;
+
 layout(std430, binding = 0) buffer RayPosition
 {
     float rayPosition[];
@@ -93,7 +101,7 @@ void setRayDirection(ivec3 coord, vec3 value)
     rayDirectionOut[2 + index] = float16_t(value.z);
 }
 
-layout(std430, binding = 5) buffer OccupancyMap
+layout(std430, binding = 4) buffer OccupancyMap
 {
     readonly uint occupancyMap[];
 };
@@ -109,7 +117,7 @@ uint getOccupancyByte(ivec3 coord, int mipMapTexture)
     return (occupancyMap[bufferIndex] & (255 << (8 * bufferOffset))) >> (8 * bufferOffset);
 }
 
-layout(std430, binding = 6) buffer MaterialMap
+layout(std430, binding = 5) buffer MaterialMap
 {
     readonly uint materialMap[];
 };
@@ -124,7 +132,7 @@ uint getMaterialIndex(ivec3 voxelPosition)
     return (materialMap[i32Index] & (0xffff << bitsShifted)) >> bitsShifted;
 }
 
-layout(std430, binding = 7) buffer RayMisc
+layout(std430, binding = 6) buffer RayMisc
 {
     float rayMisc[];
 };
@@ -142,12 +150,12 @@ void setRayDepth(ivec3 coord, float value)
 }
 
 // Each entry is 32 bytes long (There are 12 bytes of padding)
-layout(std430, binding = 8) buffer MaterialDefinitions
+layout(std430, binding = 7) buffer MaterialDefinitions
 {
     restrict MaterialDefinition materialDefinitions[];
 };
 
-layout(std430, binding = 9) buffer AttenuationIn
+layout(std430, binding = 8) buffer AttenuationIn
 {
     restrict float16_t attenuationIn[];
 };
@@ -159,17 +167,17 @@ vec3 getPriorAttenuation(ivec3 coord)
     return vec3(attenuationIn[index + 0], attenuationIn[index + 1], attenuationIn[index + 2]);
 }
 
-layout(std430, binding = 10) buffer AccumulatedLightIn
+layout(std430, binding = 9) buffer AccumulatedLightIn
 {
     restrict float16_t accumulatedLightIn[];
 };
 
-layout(std430, binding = 11) buffer AttenuationOut
+layout(std430, binding = 10) buffer AttenuationOut
 {
     restrict float16_t attenuationOut[];
 };
 
-layout(std430, binding = 12) buffer AccumulatedLightOut
+layout(std430, binding = 11) buffer AccumulatedLightOut
 {
     restrict float16_t accumulatedLightOut[];
 };
@@ -190,6 +198,54 @@ void changeLightAccumulation(ivec3 coord, vec3 deltaValue)
     accumulatedLightOut[1 + index] = float16_t(accumulatedLightIn[1 + index] + deltaValue.y);
     accumulatedLightOut[2 + index] = float16_t(accumulatedLightIn[2 + index] + deltaValue.z);
 }
+
+layout(std430, binding = 12) buffer FirstHitPosition
+{
+    float firstHitPosition[];
+};
+
+vec3 getFirstHitPosition(ivec3 coord)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 3, axis order is x y
+
+    return vec3(firstHitPosition[0 + index], firstHitPosition[1 + index], firstHitPosition[2 + index]);
+}
+
+layout(std430, binding = 13) buffer SampleDirectionIn
+{
+    float16_t sampleDirectionIn[];
+};
+
+vec4 getSampleDirection(ivec3 coord)
+{
+    int index = 4 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec4(sampleDirectionIn[index + 0], sampleDirectionIn[index + 1], sampleDirectionIn[index + 2], sampleDirectionIn[index + 3]);
+}
+
+layout(std430, binding = 14) buffer SampleRadianceIn
+{
+    float16_t sampleRadiancein[];
+};
+
+vec3 getSampleRadiance(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec3(sampleRadiancein[index + 0], sampleRadiancein[index + 1], sampleRadiancein[index + 2]);
+}
+
+layout(std430, binding = 15) buffer SampleWeightsIn
+{
+    float16_t sampleWeightsIn[];
+};
+
+vec3 getSampleWeights(ivec3 coord)
+{
+    int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
+    return vec3(sampleWeightsIn[index + 0], sampleWeightsIn[index + 1], sampleWeightsIn[index + 2]);
+}
+
+
+
 
 struct RayHit
 {
@@ -660,12 +716,88 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
 
     vec4 nextDirection = sampleGGX2(voxelMaterial.roughness, randomVec2(seed), direction, normal);
 
+    // If a sun ray could hit the sun, then try
+    if (sunAngularSize > 0 && dot(normal, sunDirection) > 0.0)
+    {
+        float p = 0.1;
+        float maxTheta = sunAngularSize * (3.1415926589 / 180.0) / 2.0;
+        vec3 targetDir = normalize(sunDirection);
+
+        if (randomVec2(seed).x < p)
+        {
+            float cosTheta = 1 - randomVec2(seed).x * (1 - cos(maxTheta));
+            float theta = acos(cosTheta);
+            float phi = randomVec2(seed).y * 2 * 3.1415926589;
+
+            vec3 local = vec3(sin(theta), sin(theta), cos(theta)) * vec3(cos(phi), sin(phi), 1);
+
+            vec3 up = abs(targetDir.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+            vec3 tangent = normalize(cross(up, targetDir));
+            vec3 bitangent = cross(targetDir, tangent);
+
+            vec3 dir = normalize(local.x * tangent + local.y * bitangent + local.z * targetDir);
+
+            nextDirection = vec4(dir, 1 / (p / (2 * 3.1415926589 * (1 - cos(maxTheta)))) * dot(dir.xyz, normal));
+        }
+        else
+        {
+            nextDirection.w = 1 / ((1 - p) / nextDirection.w);
+        }
+    }
+
     vec3 brdfValue = brdf2(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
     // vec4 nextDirection = sampleGGX(voxelMaterial.roughness, randomVec2(seed), direction, normal);
     // vec3 brdfValue = dot(nextDirection.xyz, normal) * brdf(normal, direction, nextDirection.xyz, voxelMaterial) * nextDirection.w;
 
-    vec3 receivedLight = voxelMaterial.emission * attentuation;
+    vec3 incomingLight = voxelMaterial.emission;
+
+    // Sample from ReSTIR resevoir
+    {
+        //Load the resevoir
+
+        vec3 screenSpacePosition = hit.hitLocation;
+        screenSpacePosition -= pastCameraPosition; // Place relative to camera
+        screenSpacePosition = qtransform(vec4(pastCameraRotation.xyz, -pastCameraRotation.w), screenSpacePosition); // Rotate into camera space
+        screenSpacePosition.yz /= vec2(1, float(resolution.y) / resolution.x) * pastCameraFovTan; // Warp for fov
+
+        screenSpacePosition.yz /= screenSpacePosition.x; // Put into camera space
+
+        screenSpacePosition = vec3(-screenSpacePosition.y, screenSpacePosition.z, screenSpacePosition.x); // Blit the data
+        // x = x screen space (possibly flipped, probably not)
+        // y = y screen space
+        // z = depth
+
+        screenSpacePosition.xy *= 0.5;
+        screenSpacePosition.xy += 0.5;
+
+        if(screenSpacePosition.z > 0 && !any(greaterThan(screenSpacePosition.xy, vec2(1))) && !any(lessThan(screenSpacePosition.xy, vec2(0)))){
+            //This needs to be the pixel of the screen that the resevoir corresponds to
+            //If the hit location is off screen, then don't sample a resevoir
+            ivec3 resevoirTexelCoord = ivec3(screenSpacePosition.xy * resolution.xy, 0);
+
+            vec3 samplePosition = getFirstHitPosition(resevoirTexelCoord);//This is actually the wrong position, since we need the previous frame's first hit location
+            float strength = exp(-length(samplePosition - hit.hitLocation) * 0.1) / 2;//So this gradual rejection is needed so that camera movement doesn't reject things it shouldn't (it reduces false rejection)
+
+            vec3 temporalResevoirRadiance = getSampleRadiance(resevoirTexelCoord);
+            vec4 temporalResevoirDirection = getSampleDirection(resevoirTexelCoord);
+            vec3 temporalResevoirWeights = getSampleWeights(resevoirTexelCoord);
+
+            vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
+            vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
+            if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
+            {
+                incomingLight *= 1 - strength;
+                incomingLight += strength * sampleOutgoingLight;
+            }
+        }
+
+
+        
+    }
+    
+
+    vec3 receivedLight = incomingLight * attentuation;
 
     // Set the output buffers
     setRayPosition(texelCoord, position); // Set where the ray should start from next

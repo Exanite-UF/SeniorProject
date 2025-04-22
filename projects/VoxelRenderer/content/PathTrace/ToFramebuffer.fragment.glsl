@@ -574,21 +574,22 @@ void main()
     }
 
     // Sample from ReSTIR resevoir
-    {
-        vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
-        vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
-        if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
-        {
-            light += sampleOutgoingLight;
-            samples++;
-        }
-    }
+    //{
+    //    vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
+    //    vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
+    //    if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
+    //    {
+    //        light += sampleOutgoingLight;
+    //        samples++;
+    //    }
+    //}
 
     // Saves values of ReSTIR resevoir
     {
         setSampleRadiance(texelCoord, temporalResevoirRadiance);
         setSampleDirection(texelCoord, temporalResevoirDirection);
         setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
+        //setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), temporalResevoirWeights.y, temporalResevoirWeights.z));
     }
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);
