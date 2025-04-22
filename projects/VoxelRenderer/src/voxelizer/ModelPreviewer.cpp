@@ -185,7 +185,6 @@ void ModelPreviewer::closeWindowTriangle()
         glfwSetWindowShouldClose(triangleWindow->getGlfwWindowHandle(), true);
     }
 
-
     // Wait for thread to finish
     if (triangleThread.joinable())
     {
