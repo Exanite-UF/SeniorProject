@@ -484,18 +484,22 @@ void PrototypeWorldGenerator::showDebugMenu()
         {
             if (ImGui::BeginMenu("Stone Terrain"))
             {
+                ImGui::SliderFloat("Frequency/Scale 2D", &frequency2D, 0, 0.01, "%.4f");
+                ImGui::SliderFloat("Frequency/Scale 3D", &frequency3D, 0, 0.01, "%.4f");
                 ImGui::SliderInt("Base Height", &baseHeight, 0, chunkSize.z);
                 ImGui::SliderInt("Octaves", &octaves, 1, 5);
-                ImGui::SliderFloat("Persistence", &persistence, 0, 1);
-                ImGui::SliderFloat("Frequency", &frequency2D, 0, 1);
                 ImGui::SliderInt("Terrain Max Amplitude", &terrainMaxAmplitude, 0, chunkSize.z);
-
+                ImGui::SliderFloat("Surface Probability (of voxel occupation)", &surfaceProbability, 0, 1);
+                ImGui::SliderFloat("Air Probability (of voxel occupation)", &airProbability, 0, 1);
+                ImGui::SliderFloat("Fall off from bottom (higher -> deeper caves)", &surfaceToBottomFalloffRate, 0, 5);
+                
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu("Surface Dirt"))
+            if (ImGui::BeginMenu("Surface Dirt and Grass"))
             {
                 ImGui::SliderInt("Grass Depth", &grassDepth, 0, 20);
+                ImGui::SliderInt("No More Grass Depth (cave grass)", &noMoreGrassDepth, 0, 20);
                 ImGui::SliderInt("Dirt Depth", &dirtDepth, 0, 20);
 
                 ImGui::EndMenu();
@@ -503,12 +507,14 @@ void PrototypeWorldGenerator::showDebugMenu()
 
             if (ImGui::BeginMenu("Surface Trees"))
             {
+                ImGui::SliderInt("Voxels per meter", &voxelsPerMeter, 0, 7);
                 ImGui::DragFloatRange2("Tree Height Range (Meters)", &treeHeightRangeMeters.x, &treeHeightRangeMeters.y);
                 ImGui::DragFloatRange2("Tree Width Range (Meters)", &treeWidthRangeMeters.x, &treeWidthRangeMeters.y);
                 ImGui::DragFloatRange2("Leaf Width X Range (Meters)", &leafWidthXRangeMeters.x, &leafWidthXRangeMeters.y);
                 ImGui::DragFloatRange2("Leaf Width Y Range (Meters)", &leafWidthYRangeMeters.x, &leafWidthYRangeMeters.y);
                 ImGui::DragFloatRange2("Leaf Extent Above Range (Meters)", &leafExtentAboveZRangeMeters.x, &leafExtentAboveZRangeMeters.y);
                 ImGui::DragFloatRange2("Leaf Extent Below Range (Meters)", &leafExtentBelowZRangeMeters.x, &leafExtentBelowZRangeMeters.y);
+                ImGui::SliderFloat("Probability leaf voxel is filled", &leafProbabilityToFill, 0, 1);
 
                 ImGui::EndMenu();
             }

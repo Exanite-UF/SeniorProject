@@ -15,11 +15,8 @@ private:
 
     int seed = 1;
 
-    // Stone Terrain
+    // Terrain
     int octaves = 3;
-    float persistence = 0.5;
-
-    glm::vec2 scale2D = glm::vec2(1 / 8.0);
 
     float frequency2D = 0.002 / 8; // Scale of the 2D perlin noise
     float frequency3D = 0.01 / 2; // Scale of the 3D perlin noise
