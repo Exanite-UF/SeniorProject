@@ -564,9 +564,9 @@ void main()
                 vec3 newLight = getLight(coord);
                 vec4 newSecondaryDirection = getSecondaryDirection(coord);
 
-                //float multiplier = kernel[i + 1] * kernel[j + 1];
-                //light += newLight * brdf2(normal, direction, newSecondaryDirection.xyz, voxelMaterial) * newSecondaryDirection.w * multiplier;
-                //samples += multiplier;
+                float multiplier = kernel[i + 1] * kernel[j + 1];
+                light += newLight * brdf2(normal, direction, newSecondaryDirection.xyz, voxelMaterial) * newSecondaryDirection.w * multiplier;
+                samples += multiplier;
 
                 addSample(coord, seed + (i + 2) + 3 * (j + 2), normal, direction, newLight, newSecondaryDirection);
             }
