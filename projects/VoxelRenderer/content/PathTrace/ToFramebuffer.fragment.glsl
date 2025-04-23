@@ -387,9 +387,9 @@ void addSample(ivec3 coord, float seed, vec3 normal, vec3 primaryDirection, vec3
     float newWeight = length(newLight) * newSecondaryDirection.w; // length(thisOutgoingRadiance) * thisNextDirection.w;
     float sumWeight = temporalResevoirWeights.y + newWeight;
     float newSampleCount = temporalResevoirWeights.z + 1;
-    bool condition = (randomVec2(seed).x < (newWeight / sumWeight)); // || length(sampledLight) == 0;
+    bool condition = randomVec2(seed).x < (newWeight / sumWeight); // || length(sampledLight) == 0;
 
-    if (condition)
+    if (condition || length(temporalResevoirRadiance) == 0)
     {
         vec4 direction = vec4(newSecondaryDirection.xyz, ggxPDF(newSecondaryDirection.xyz, primaryDirection, normal));
         vec3 weights = vec3((sumWeight / (newSampleCount * length(newLight))), sumWeight, newSampleCount);
@@ -501,11 +501,11 @@ void main()
     temporalResevoirDirection = getSampleDirection(previousTexelCoord);
     temporalResevoirWeights = getSampleWeights(previousTexelCoord);
 
-    if (true || any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || depthDifference > 1)
+    if (any(lessThan(previousTexelCoord, ivec3(0))) || any(greaterThanEqual(previousTexelCoord, resolution.xyz)) || (dot(temporalResevoirDirection.xyz, normal) < 0) || isnan(temporalResevoirWeights.x) || depthDifference > 1)
     {
-        temporalResevoirRadiance *= 0;
-        temporalResevoirDirection *= 0;
-        temporalResevoirWeights *= 0;
+        temporalResevoirRadiance = vec3(0);
+        temporalResevoirDirection = vec4(0);
+        temporalResevoirWeights = vec3(0);
     }
 
     // Update ReSTIR resevoir

@@ -233,7 +233,7 @@ void Program::run()
 
         float renderRatio = 0.5f;//0.66666666f;
         float targetReprojectionFPS = 20;
-        bool isAutomaticResolutionAdjustmentEnabled = true;
+        bool isAutomaticResolutionAdjustmentEnabled = false;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
@@ -645,6 +645,16 @@ void Program::run()
                     renderer.setBounces(numberOfBounces);
                 }
 
+                if (input->isKeyPressed(GLFW_KEY_K))
+                {
+                    isAutomaticResolutionAdjustmentEnabled = !isAutomaticResolutionAdjustmentEnabled;
+                }
+
+                if (input->isKeyPressed(GLFW_KEY_BACKSLASH))
+                {
+                    renderRatio = 1;
+                }
+
                 if (input->isKeyPressed(GLFW_KEY_L))
                 {
                     skyboxIndex = (skyboxIndex + 1) % skyboxes.size();
@@ -744,7 +754,7 @@ void Program::run()
                 {
                     renderRatio = glm::clamp(renderRatio + input->getMouseScroll().y * 0.01f, 0.01f, 2.0f);
                 }
-                else
+                else if (!input->isKeyHeld(GLFW_KEY_Z))
                 {
                     camera->moveSpeed *= pow(1.1, input->getMouseScroll().y);
                 }
@@ -841,6 +851,7 @@ void Program::run()
                             ImGui::Text("Render Resolution: %d x %d", renderer.getRenderResolution().x, renderer.getRenderResolution().y);
                             ImGui::Text("Render Ratio: %.2f", renderRatio);
                             ImGui::Text("Number of bounces: %d", numberOfBounces);
+                            ImGui::Text("Automatic Render Resolution: %s", isAutomaticResolutionAdjustmentEnabled ? "True" : "False");
 
                             break;
                         }
@@ -873,10 +884,21 @@ void Program::run()
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.510f, 0.320f, 0.143f, 0.5f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
 
+                            static float zoom = 1.0f;
+                            if (zoom < 0.0f)
+                            {
+                                zoom = 0.0f;
+                            }
                             if (isModelLoaded)
                             {
                                 ImGui::Text("Model: %s", modelFileName.c_str());
                                 ImGui::Spacing();
+                                ImGui::Text("Z + Mouse Scroll - Preview Zoom");
+                                if (input->isKeyHeld(GLFW_KEY_Z) && input->getMouseScroll().y != 0)
+                                {
+                                    zoom -= input->getMouseScroll().y * 0.05f;
+                                    modelPreviewer->setPreviewZoom(zoom);
+                                }
 
                                 if (!isModelVoxelized)
                                 {
@@ -1004,6 +1026,7 @@ void Program::run()
                             {
                                 ImGui::Text("LMB - Add to world");
                                 ImGui::Text("LMB + Left Control - Add to world facing camera");
+                                ImGui::Text("RMB - Delete object");
                             }
 
                             ImGui::PopStyleColor(3);
@@ -1035,6 +1058,8 @@ void Program::run()
                             ImGui::Text("T - Change Noise Type");
                             ImGui::Text("G - Toggle Reprojection");
                             ImGui::Text("V - Toggle Bounce Count");
+                            ImGui::Text("K - Toggle Automatic Render Resolution");
+                            ImGui::Text("\\ - Set Render Resolution Ratio to 1");
                             ImGui::Text("B - Pause/Unpause Rendering");
                             ImGui::Text("J - Toggle ground camera");
                             ImGui::Text("L - Toggle skybox");
