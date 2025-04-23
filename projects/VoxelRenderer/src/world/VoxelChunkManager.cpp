@@ -893,7 +893,7 @@ void VoxelChunkManager::showDebugMenu()
                 auto windowPosition = ImGui::GetWindowPos();
                 auto drawPosition = ImGui::GetCursorPos();
 
-                auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000"))); // Green
+                auto unloadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ff0000"))); // Red
                 auto loadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#ffff00"))); // Yellow
                 auto unloadingCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#333333"))); // Gray
                 auto loadedCellColor = ImGui::ColorConvertFloat4ToU32(ImGuiUtility::toImGui(ColorUtility::htmlToSrgb("#00ff00"))); // Green
