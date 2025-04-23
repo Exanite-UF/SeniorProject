@@ -206,7 +206,7 @@ void Program::run()
 
         //Test locations
         {
-            if(true){
+            if(false){
                 cameraTransform->setGlobalPosition(glm::vec3(-1298.10, -451.20, 73.19));
     
                 camera->rotation.y -= -0.785398163397;
@@ -227,7 +227,7 @@ void Program::run()
                 cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
     
-            if (false)
+            if (true)
             {
                 cameraTransform->setGlobalPosition(glm::vec3(-635, 76, 214));
     
