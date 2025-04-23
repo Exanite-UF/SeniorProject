@@ -844,7 +844,7 @@ void VoxelChunkManager::showDebugMenu()
 
     if (ImGui::CollapsingHeader("VoxelChunkManager"))
     {
-        if (ImGui::Checkbox("Enable chunk loading", &settings.isChunkLoadingEnabled))
+        if (ImGui::Checkbox("Enable chunk load updates", &settings.isChunkLoadingEnabled))
         {
             state.isChunkLoadingDirty = true;
         }
@@ -854,7 +854,7 @@ void VoxelChunkManager::showDebugMenu()
             state.isChunkLoadingDirty = true;
         }
 
-        ImGui::Checkbox("Enable chunk LODing", &settings.isChunkLoddingEnabled);
+        ImGui::Checkbox("Enable chunk LOD updates", &settings.isChunkLoddingEnabled);
 
         ImGui::SliderFloat("LOD base distance", &settings.lodBaseDistance, 256, 2048);
         ImGui::SliderFloat("LOD distance scaling factor", &settings.lodDistanceScalingFactor, 1, 3);
