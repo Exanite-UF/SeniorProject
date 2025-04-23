@@ -7,11 +7,11 @@ Model::Model(const std::string& path)
     loadModel(path);
 }
 
-void Model::draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize)
+void Model::draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraPosition, glm::vec3 cameraForwardDirection, glm::vec3 cameraUpDirection, glm::ivec2 windowSize, float zoom)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
-        meshes[i].draw(shader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize);
+        meshes[i].draw(shader, cameraPosition, cameraForwardDirection, cameraUpDirection, windowSize, zoom);
     }
 }
 
