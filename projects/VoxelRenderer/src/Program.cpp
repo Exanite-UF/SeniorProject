@@ -233,7 +233,7 @@ void Program::run()
 
         float renderRatio = 1.f; // 0.66666666f;
         float targetReprojectionFPS = 20;
-        bool isAutomaticResolutionAdjustmentEnabled = false;
+        bool isAutomaticResolutionAdjustmentEnabled = true;
         // Render resolution can be set separately from display resolution
         // renderer.setAsynchronousOverdrawFOV(10 * 3.1415926589 / 180);
 
