@@ -166,6 +166,8 @@ bool ModelVoxelizer::triangleIntersection(const Triangle& tri, const glm::vec3& 
 
 void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
 {
+    ZoneScoped;
+
     printf("TRIANGLE VOXELIZATION BEGIN\n");
 
     std::unordered_map<glm::ivec3, std::vector<Triangle>, HashFunction> spatialGrid;
@@ -218,6 +220,8 @@ void ModelVoxelizer::triangleVoxelization(std::vector<bool>& voxels)
 
 void ModelVoxelizer::setupModelForRasterization()
 {
+    ZoneScoped;
+
     glGenTextures(1, &voxelTexture);
     glGenVertexArrays(1, &modelVAO);
     glGenBuffers(1, &modelVBO);
@@ -280,7 +284,6 @@ void ModelVoxelizer::setupModelForRasterization()
 
 void ModelVoxelizer::renderModelForRasterization()
 {
-
     glBindVertexArray(modelVAO);
 
     // Issue the draw call
@@ -294,6 +297,8 @@ void ModelVoxelizer::renderModelForRasterization()
 
 void ModelVoxelizer::performConservativeRasterization()
 {
+    ZoneScoped;
+
     setupModelForRasterization();
 
     glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
@@ -366,6 +371,8 @@ void ModelVoxelizer::performConservativeRasterization()
 
 void ModelVoxelizer::performRayMarchingVoxelization()
 {
+    ZoneScoped;
+
     // Gather Triangles
     std::vector<Triangle> triangles = loadedModel->getTriangles();
     std::vector<glm::vec3> triangleVertices;
@@ -440,6 +447,8 @@ void ModelVoxelizer::performRayMarchingVoxelization()
 
 void ModelVoxelizer::voxelizeModel()
 {
+    ZoneScoped;
+
     printf("VOXELIZING\n");
     if (!loadedModel)
     {
@@ -463,6 +472,8 @@ void ModelVoxelizer::voxelizeModel()
 
 void ModelVoxelizer::generateVoxelMesh()
 {
+    ZoneScoped;
+
     printf("GENERATING VOXEL MESH\n");
 
     std::vector cubeVertices = {

@@ -1,9 +1,12 @@
 #include <src/utilities/OpenGl.h>
 #include <src/voxelizer/Model.h>
 #include <stb_image.h>
+#include <tracy/Tracy.hpp>
 
 Model::Model(const std::string& path)
 {
+    ZoneScoped;
+
     loadModel(path);
 }
 
@@ -17,6 +20,8 @@ void Model::draw(const std::shared_ptr<ShaderProgram>& shader, glm::vec3 cameraP
 
 void Model::loadModel(const std::string& path)
 {
+    ZoneScoped;
+
     Assimp::Importer import;
     const aiScene* scene = import.ReadFile(path,
         aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
