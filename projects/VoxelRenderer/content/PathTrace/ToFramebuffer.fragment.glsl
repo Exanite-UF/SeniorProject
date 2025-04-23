@@ -516,9 +516,9 @@ void main()
         {
             radius = 0;
 
-            temporalResevoirRadiance *= 0;
-            temporalResevoirDirection *= 0;
-            temporalResevoirWeights *= 0;
+            temporalResevoirRadiance = vec3(0);
+            temporalResevoirDirection = vec4(0);
+            temporalResevoirWeights = vec3(0);
         }
         // radius = 0;
 
