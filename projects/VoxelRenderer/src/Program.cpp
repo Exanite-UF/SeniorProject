@@ -203,42 +203,41 @@ void Program::run()
         scene->setCamera(camera);
         // cameraTransform->setGlobalPosition(glm::vec3(0, 0, chunkSize.z * 0.5));
 
-
-        //Test locations
+        // Test locations
         {
-            if(true){
+            if (true)
+            {
                 cameraTransform->setGlobalPosition(glm::vec3(-1298.10, -451.20, 73.19));
-    
+
                 camera->rotation.y -= -0.785398163397;
                 camera->rotation.x += 0.523598775598;
                 camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
-    
+
                 cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
-    
+
             if (false)
             {
                 cameraTransform->setGlobalPosition(glm::vec3(-391, 90, 79));
-    
+
                 camera->rotation.y -= 0.349065850399;
                 camera->rotation.x += 0.0174532925199; // 0.523598775598;
                 camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
-    
+
                 cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
-    
+
             if (false)
             {
                 cameraTransform->setGlobalPosition(glm::vec3(-635, 76, 214));
-    
+
                 camera->rotation.y -= -0.785398163397;
                 camera->rotation.x += 0.523598775598;
                 camera->rotation.x = glm::clamp(camera->rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
-    
+
                 cameraTransform->setGlobalRotation(glm::angleAxis(camera->rotation.y, glm::vec3(0.f, 0.f, 1.f)) * glm::angleAxis(camera->rotation.x, glm::vec3(0, 1, 0)));
             }
         }
-        
 
         // Initialize the chunk manager
         voxelChunkManager.initialize(scene, chunkModificationThreadContexts);
