@@ -574,15 +574,15 @@ void main()
     }
 
     // Sample from ReSTIR resevoir
-    //{
-    //    vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
-    //    vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
-    //    if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
-    //    {
-    //        light += sampleOutgoingLight;
-    //        samples++;
-    //    }
-    //}
+    {
+        vec3 brdfValue = brdf2(normal, direction, temporalResevoirDirection.xyz, voxelMaterial) * temporalResevoirDirection.w;
+        vec3 sampleOutgoingLight = temporalResevoirRadiance.xyz * brdfValue * temporalResevoirWeights.x;
+        if (!any(isnan(sampleOutgoingLight)) && !any(isinf(sampleOutgoingLight)))
+        {
+            light += sampleOutgoingLight;
+            samples++;
+        }
+    }
 
     // Saves values of ReSTIR resevoir
     {
