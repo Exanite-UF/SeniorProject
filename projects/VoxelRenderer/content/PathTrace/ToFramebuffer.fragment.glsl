@@ -589,7 +589,7 @@ void main()
         setSampleRadiance(texelCoord, temporalResevoirRadiance);
         setSampleDirection(texelCoord, temporalResevoirDirection);
         setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), decay * temporalResevoirWeights.y, decay * temporalResevoirWeights.z));
-        //setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), temporalResevoirWeights.y, temporalResevoirWeights.z));
+        // setSampleWeights(texelCoord, vec3((temporalResevoirWeights.y / (temporalResevoirWeights.z * length(temporalResevoirRadiance))), temporalResevoirWeights.y, temporalResevoirWeights.z));
     }
 
     normal = qtransform(vec4(-cameraRotation.xyz, cameraRotation.w), normal);

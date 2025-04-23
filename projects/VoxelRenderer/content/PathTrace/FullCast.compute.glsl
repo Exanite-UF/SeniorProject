@@ -44,7 +44,6 @@ ivec2 offset;
 uniform int firstMipMapLevel;
 uniform int maxIterations;
 
-
 uniform vec3 pastCameraPosition;
 uniform vec4 pastCameraRotation; // quaternion
 uniform float pastCameraFovTan;
@@ -243,9 +242,6 @@ vec3 getSampleWeights(ivec3 coord)
     int index = 3 * (coord.x + resolution.x * (coord.y)); // Stride of 1, axis order is x y
     return vec3(sampleWeightsIn[index + 0], sampleWeightsIn[index + 1], sampleWeightsIn[index + 2]);
 }
-
-
-
 
 struct RayHit
 {
@@ -753,8 +749,9 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     vec3 incomingLight = voxelMaterial.emission;
 
     // Sample from ReSTIR resevoir
-    if(true){
-        //Load the resevoir
+    if (true)
+    {
+        // Load the resevoir
 
         vec3 screenSpacePosition = hit.hitLocation;
         screenSpacePosition -= pastCameraPosition; // Place relative to camera
@@ -771,13 +768,14 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
         screenSpacePosition.xy *= 0.5;
         screenSpacePosition.xy += 0.5;
 
-        if(screenSpacePosition.z > 0 && !any(greaterThan(screenSpacePosition.xy, vec2(1))) && !any(lessThan(screenSpacePosition.xy, vec2(0)))){
-            //This needs to be the pixel of the screen that the resevoir corresponds to
-            //If the hit location is off screen, then don't sample a resevoir
+        if (screenSpacePosition.z > 0 && !any(greaterThan(screenSpacePosition.xy, vec2(1))) && !any(lessThan(screenSpacePosition.xy, vec2(0))))
+        {
+            // This needs to be the pixel of the screen that the resevoir corresponds to
+            // If the hit location is off screen, then don't sample a resevoir
             ivec3 resevoirTexelCoord = ivec3(screenSpacePosition.xy * resolution.xy, 0);
 
-            vec3 samplePosition = getFirstHitPosition(resevoirTexelCoord);//This is actually the wrong position, since we need the previous frame's first hit location
-            float strength = exp(-length(samplePosition - hit.hitLocation) * 0.1) / 2;//So this gradual rejection is needed so that camera movement doesn't reject things it shouldn't (it reduces false rejection)
+            vec3 samplePosition = getFirstHitPosition(resevoirTexelCoord); // This is actually the wrong position, since we need the previous frame's first hit location
+            float strength = exp(-length(samplePosition - hit.hitLocation) * 0.1) / 2; // So this gradual rejection is needed so that camera movement doesn't reject things it shouldn't (it reduces false rejection)
 
             vec3 temporalResevoirRadiance = getSampleRadiance(resevoirTexelCoord);
             vec4 temporalResevoirDirection = getSampleDirection(resevoirTexelCoord);
@@ -791,11 +789,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
                 incomingLight += strength * sampleOutgoingLight;
             }
         }
-
-
-        
     }
-    
 
     vec3 receivedLight = incomingLight * attentuation;
 
