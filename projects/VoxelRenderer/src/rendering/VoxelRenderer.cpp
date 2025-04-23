@@ -221,7 +221,6 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         accumulatedLightBuffer2.bind(9);
     }
 
-
     positionBuffer.bind(12);
 
     if (whichSampleRadiance)
@@ -250,7 +249,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
         glUniform1i(glGetUniformLocation(fullCastProgram, "firstMipMapLevel"), firstMipMapLevel);
         glUniform1i(glGetUniformLocation(fullCastProgram, "maxIterations"), maxIterations);
 
-        //The past camera position maps corresponds to the resevoirs
+        // The past camera position maps corresponds to the resevoirs
         glUniform3fv(glGetUniformLocation(fullCastProgram, "pastCameraPosition"), 1, glm::value_ptr(pastCameraPosition));
         glUniform4fv(glGetUniformLocation(fullCastProgram, "pastCameraRotation"), 1, glm::value_ptr(pastCameraRotation));
         glUniform1f(glGetUniformLocation(fullCastProgram, "pastCameraFovTan"), std::tan(pastCameraFOV * 0.5)); // A little bit of randomness for temporal accumulation
@@ -321,7 +320,7 @@ void VoxelRenderer::executeRayTrace(const std::vector<std::shared_ptr<VoxelChunk
     attentuationBuffer1.unbind();
     accumulatedLightBuffer1.unbind();
     attentuationBuffer2.unbind();
-    accumulatedLightBuffer2.unbind();    
+    accumulatedLightBuffer2.unbind();
 
     positionBuffer.unbind();
 

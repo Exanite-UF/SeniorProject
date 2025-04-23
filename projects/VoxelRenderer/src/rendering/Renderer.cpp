@@ -301,8 +301,9 @@ void Renderer::_render()
             voxelRenderer->executePathTrace(chunks, bounces, lastRenderedPosition, lastRenderedRotation, lastRenderedFOV, scene);
         }
 
-        //Enables or disables SVGF
-        if(true){
+        // Enables or disables SVGF
+        if (true)
+        {
             voxelRenderer->render(svgf->getFramebuffer(), svgf->getDrawBuffer(), currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
 
             // SVGF
@@ -310,12 +311,11 @@ void Renderer::_render()
             svgf->integrateFrame(currentCameraPosition, currentCameraRotation, currentCameraFOV, currentCameraPosition - lastRenderedPosition);
             svgf->display(getWorkingFramebuffer(), drawBuffers, 4, currentCameraFOV);
             svgf->unlock();
-        }else{
+        }
+        else
+        {
             voxelRenderer->render(getWorkingFramebuffer(), drawBuffers, currentCameraPosition, currentCameraRotation, currentCameraFOV, scene);
         }
-    
-
-        
 
         olderRenderedPosition = lastRenderedPosition;
         lastRenderedPosition = currentCameraPosition;
