@@ -51,6 +51,12 @@ jobs:
       - name: Build
         run: cmake --build build --target VoxelRenderer --config ${{ matrix.configuration }}
 
+      - name: Upload build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build_Linux_${{ matrix.configuration }}
+          path: build
+
   windows:
     name: Build for Windows
     runs-on: windows-2022
@@ -91,3 +97,9 @@ jobs:
 
       - name: Build
         run: cmake --build build --config ${{ matrix.configuration }}
+
+      - name: Upload build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build_Windows_${{ matrix.configuration }}
+          path: build
