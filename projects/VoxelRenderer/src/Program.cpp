@@ -768,6 +768,7 @@ void Program::run()
                 else if (input->isKeyHeld(GLFW_KEY_LEFT_ALT) && input->getMouseScroll().y != 0)
                 {
                     renderRatio = glm::clamp(renderRatio + input->getMouseScroll().y * 0.01f, 0.01f, 2.0f);
+                    isAutomaticResolutionAdjustmentEnabled = false;
                 }
                 else if (!input->isKeyHeld(GLFW_KEY_Z))
                 {
