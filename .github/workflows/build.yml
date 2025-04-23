@@ -51,6 +51,11 @@ jobs:
       - name: Build
         run: cmake --build build --target VoxelRenderer --config ${{ matrix.configuration }}
 
+      - name: Upload build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build_Linux_${{ matrix.configuration }}
+          path: build
 
   windows:
     name: Build for Windows
@@ -84,10 +89,6 @@ jobs:
           restore-keys: |
             cmake-{{ runner.os }}-
 
-#      - name: Install dependencies
-#        run: |
-#          choco install opengl
-
       - name: Configure CMake
         run: |
           set CC=cl
@@ -96,3 +97,9 @@ jobs:
 
       - name: Build
         run: cmake --build build --config ${{ matrix.configuration }}
+
+      - name: Upload build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build_Windows_${{ matrix.configuration }}
+          path: build
