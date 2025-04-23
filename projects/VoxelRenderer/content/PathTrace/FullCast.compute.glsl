@@ -753,7 +753,7 @@ void BRDF(ivec3 texelCoord, RayHit hit, vec3 rayDirection, vec3 attentuation)
     vec3 incomingLight = voxelMaterial.emission;
 
     // Sample from ReSTIR resevoir
-    {
+    if(true){
         //Load the resevoir
 
         vec3 screenSpacePosition = hit.hitLocation;
